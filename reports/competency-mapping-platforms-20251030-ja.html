@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>コンピテンシーマッピングとスキルオントロジープラットフォーム トレンド分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← トップ</a>
+<div class="language-switcher">
+<button class="lang-btn active" onclick="window.location.href='competency-mapping-platforms-20251030-ja.html'">日本語</button>
+<button class="lang-btn" onclick="window.location.href='competency-mapping-platforms-20251030-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='competency-mapping-platforms-20251030-en.html'">English</button>
+</div>
+</div>
+<h1>コンピテンシーマッピングと<br/>スキルオントロジープラットフォーム</h1>
+<div class="subtitle">労働市場のスキルインテリジェンスとタレントマッピングの進化</div>
+<div class="meta">レポート作成日：2025年10月30日 | 標準版レポート（5ページ）</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 主要トレンド Top 5 -->
+<section class="section" id="trends">
+<h2 class="section-title">主要トレンド Top 5</h2>
+<h3 class="subsection-title">1. Lightcastスキル分類体系：労働市場データの統合的リアルタイム分析</h3>
+<p><strong>現状：</strong>Lightcast（旧EMSI Burning Glass）は、40,000以上のデータソースから毎日更新される33,000以上のスキルを包括的に分類する業界最大のスキル分類体系を運営しています。この分類体系は、求人情報、履歴書、教育プログラム、給与データを統合し、労働市場の動向をリアルタイムで追跡します。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>スキル分類の構造</h4>
+<p>• <strong>3つのスキルタイプ：</strong>ST1スキル（専門スキル）、共通スキル、資格認定<br/>
+                        • <strong>31のカテゴリ：</strong>IT、ヘルスケア、金融など業界別に整理<br/>
+                        • <strong>階層的分類：</strong>広範なスキルから具体的なスキルまで階層化<br/>
+                        • <strong>スキル関連性：</strong>類似スキル、代替スキル、補完スキルの関係をマッピング</p>
+</div>
+<div class="trend-card">
+<h4>主要機能</h4>
+<p>• <strong>労働市場洞察：</strong>職種別の需要スキルと供給ギャップを分析<br/>
+                        • <strong>給与データ統合：</strong>スキルと報酬の相関関係を可視化<br/>
+                        • <strong>教育プログラム分析：</strong>学習プログラムとキャリアパスを接続<br/>
+                        • <strong>APIアクセス：</strong>企業システムへの統合が可能</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://lightcast.io/" target="_blank">Lightcast</a> |
+                    <a href="https://skills.lightcast.io/" target="_blank">Lightcast Open Skills</a>
+</div>
+<p><strong>展望：</strong>Lightcastは2025年以降、AIとNLPを活用してスキル分類の精度を向上させ、グローバル労働市場の標準として確立されることが期待されます。企業は、人材採用から従業員のキャリア開発まで、データ駆動型の意思決定を実現できるようになります。</p>
+<h3 class="subsection-title">2. O*NETスキルフレームワーク：米国労働省の標準化スキル体系</h3>
+<p><strong>現状：</strong>O*NET（Occupational Information Network）は、米国労働省が管理する包括的な職業分類およびスキルフレームワークで、1,000以上の職業と35のスキルを7つのカテゴリに分類しています。教育機関、政府機関、企業が広く採用する公的な標準として機能しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>7つのスキルカテゴリ</h4>
+<p>• <strong>コンテンツスキル：</strong>読解力、数学、科学<br/>
+                        • <strong>プロセススキル：</strong>批判的思考、アクティブラーニング、モニタリング<br/>
+                        • <strong>社会的スキル：</strong>コミュニケーション、交渉、サービス志向<br/>
+                        • <strong>複雑な問題解決：</strong>問題特定と解決策の実行</p>
+</div>
+<div class="trend-card">
+<h4>主要機能</h4>
+<p>• <strong>職業マッチング：</strong>スキルプロファイルから適合職業を推薦<br/>
+                        • <strong>教育プログラム設計：</strong>職業要件に基づくカリキュラム開発<br/>
+                        • <strong>キャリア移行支援：</strong>転職時のスキルギャップ分析<br/>
+                        • <strong>無料アクセス：</strong>オープンデータベースとして公開</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://www.onetonline.org/" target="_blank">O*NET OnLine</a> |
+                    <a href="https://www.onetcenter.org/" target="_blank">O*NET Resource Center</a>
+</div>
+<p><strong>展望：</strong>O*NETは、AIとデータサイエンスの新しい職業を追加し、デジタル経済に対応したスキルフレームワークへと進化しています。政府主導の標準として、キャリアガイダンスと労働市場政策の基盤となります。</p>
+<h3 class="subsection-title">3. ESCO：欧州多言語スキル分類システム</h3>
+<p><strong>現状：</strong>ESCO（European Skills, Competences, Qualifications and Occupations）は、欧州委員会が開発した多言語（27言語対応）のスキル、コンピテンシー、資格、職業の分類システムです。EU加盟国間での労働力の移動性を高め、教育と労働市場の接続を強化するために設計されています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>ESCO分類の特徴</h4>
+<p>• <strong>3つの主要部門：</strong>職業、スキル/コンピテンシー、資格<br/>
+                        • <strong>13,890の職業：</strong>欧州労働市場を網羅<br/>
+                        • <strong>13,000以上のスキル：</strong>技術スキルと横断的スキルを分類<br/>
+                        • <strong>27言語対応：</strong>EU全域での相互運用性を確保</p>
+</div>
+<div class="trend-card">
+<h4>主要活用事例</h4>
+<p>• <strong>求人マッチング：</strong>EURESなど欧州求人ポータルに統合<br/>
+                        • <strong>教育カリキュラム：</strong>大学や職業訓練プログラムの標準化<br/>
+                        • <strong>資格認定：</strong>国境を越えた資格の相互認証<br/>
+                        • <strong>オープンデータ：</strong>APIとLinked Dataで公開</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://esco.ec.europa.eu/" target="_blank">ESCO Portal</a> |
+                    <a href="https://ec.europa.eu/esco/portal" target="_blank">European Commission ESCO</a>
+</div>
+<p><strong>展望：</strong>ESCOは、AIとデジタルスキルの分類を拡充し、グローバルスキル標準のモデルとして他地域にも影響を与えています。欧州のデジタル単一市場において、人材流動性を促進する重要な基盤となります。</p>
+<h3 class="subsection-title">4. スキルベースタレントマーケットプレイス：AIによる人材最適配置</h3>
+<p><strong>現状：</strong>Gloat、Fuel50、Eightfold AIなどのスキルベースタレントマーケットプレイスは、従業員のスキルプロファイルをリアルタイムで分析し、社内の新しい役割、プロジェクト、学習機会とマッチングする内部タレントマーケットを提供します。これにより、企業は既存の人材を最大限に活用し、従業員エンゲージメントを向上させます。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>プラットフォームの核心機能</h4>
+<p>• <strong>Gloat：</strong>市場対応型スキルオントロジー、内部採用とギグプロジェクトのマッチング<br/>
+                        • <strong>Fuel50：</strong>I/O心理学者が設計した20,000スキル分類、キャリアパス可視化<br/>
+                        • <strong>Eightfold AI：</strong>ディープラーニングによる人材推薦、スキルギャップ予測<br/>
+                        • <strong>iMocha：</strong>3,000以上のスキル評価、コーディングテスト統合</p>
+</div>
+<div class="trend-card">
+<h4>ビジネス効果</h4>
+<p>• <strong>内部採用率向上：</strong>30-50%の増加を実現<br/>
+                        • <strong>離職率低減：</strong>キャリア成長機会の可視化で定着率向上<br/>
+                        • <strong>スキルギャップの早期発見：</strong>将来必要なスキルを予測<br/>
+                        • <strong>ダイバーシティ推進：</strong>スキルベースの客観的評価</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://www.fuel50.com/" target="_blank">Fuel50</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://www.imocha.io/" target="_blank">iMocha</a>
+</div>
+<p><strong>展望：</strong>2025年以降、スキルベースタレントマーケットプレイスは、リモートワークとハイブリッドワークの普及により、企業のタレント戦略の中核となります。AIによる継続的なスキル分析とパーソナライズされた学習推薦が標準機能となります。</p>
+<h3 class="subsection-title">5. AIスキルインテリジェンス市場の急成長</h3>
+<p><strong>現状：</strong>AIを活用したスキルインテリジェンス市場は、2024年から2032年にかけて20.1%のCAGRで成長し、265億6000万ドルに達すると予測されています。企業は、人材の採用、育成、配置の各段階でAIスキル分析を導入し、データ駆動型の意思決定を実現しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>市場成長の要因</h4>
+<p>• <strong>スキルベース採用の普及：</strong>学歴よりスキルを重視する企業が増加<br/>
+                        • <strong>スキルギャップの深刻化：</strong>技術革新による需要と供給のミスマッチ<br/>
+                        • <strong>リスキリングへの投資：</strong>既存従業員のスキル転換が急務<br/>
+                        • <strong>AI精度の向上：</strong>NLPとMLによる高精度なスキル分析</p>
+</div>
+<div class="trend-card">
+<h4>主要活用領域</h4>
+<p>• <strong>人材採用：</strong>AIによる候補者スキルマッチング<br/>
+                        • <strong>スキルギャップ分析：</strong>組織全体のスキル不足を可視化<br/>
+                        • <strong>学習推薦：</strong>個人に最適な研修プログラムを提案<br/>
+                        • <strong>キャリアパス設計：</strong>次のステップを予測的に推薦</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://www.gartner.com/en/human-resources" target="_blank">Gartner HR Research</a> |
+                    <a href="https://www.forrester.com/research/" target="_blank">Forrester Talent Management Research</a>
+</div>
+<p><strong>展望：</strong>AIスキルインテリジェンスは、HRテックの中核技術として定着し、すべての企業規模で導入が進みます。スキルデータの標準化とプライバシー保護が重要な課題となり、業界全体での共通フレームワーク構築が求められます。</p>
+</section>
+<!-- SECTION 2: 競争環境と市場ポジショニング -->
+<section class="section" id="competitive">
+<h2 class="section-title">競争環境と市場ポジショニング</h2>
+<h3 class="subsection-title">4層市場構造</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">コンピテンシーマッピングとスキルオントロジー市場は、データソース、対象ユーザー、機能の深さによって4つの層に分類されます。公的標準フレームワークから企業向けAIプラットフォームまで、多様な選択肢が存在します。</p>
+<table>
+<thead>
+<tr>
+<th>プラットフォーム名</th>
+<th>カテゴリ</th>
+<th>スキル数</th>
+<th>主要特徴</th>
+<th>対象ユーザー</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lightcast</strong></td>
+<td>労働市場データ</td>
+<td>33,000+</td>
+<td>リアルタイム労働市場分析、給与データ統合</td>
+<td>企業、教育機関、政府</td>
+</tr>
+<tr>
+<td><strong>O*NET</strong></td>
+<td>公的標準</td>
+<td>35スキル</td>
+<td>米国政府標準、1,000職業分類</td>
+<td>キャリアカウンセラー、教育機関</td>
+</tr>
+<tr>
+<td><strong>ESCO</strong></td>
+<td>公的標準（欧州）</td>
+<td>13,000+</td>
+<td>27言語対応、EU労働市場統合</td>
+<td>EU企業、教育機関、政府</td>
+</tr>
+<tr>
+<td><strong>Gloat</strong></td>
+<td>タレントマーケットプレイス</td>
+<td>市場対応型</td>
+<td>内部採用マッチング、ギグプロジェクト</td>
+<td>大企業（5,000名以上）</td>
+</tr>
+<tr>
+<td><strong>Fuel50</strong></td>
+<td>タレントマーケットプレイス</td>
+<td>20,000</td>
+<td>キャリアパス可視化、I/O心理学設計</td>
+<td>中大企業</td>
+</tr>
+<tr>
+<td><strong>Eightfold AI</strong></td>
+<td>AIタレントプラットフォーム</td>
+<td>ディープラーニング</td>
+<td>予測的人材推薦、スキルギャップ予測</td>
+<td>エンタープライズ</td>
+</tr>
+<tr>
+<td><strong>iMocha</strong></td>
+<td>スキル評価</td>
+<td>3,000+</td>
+<td>技術スキルテスト、コーディング評価</td>
+<td>IT企業、採用チーム</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">市場トレンド（5つの主要変化）</h3>
+<ul class="key-findings">
+<li><strong>公的標準の国際化：</strong>O*NETとESCOが相互運用性を高め、グローバルスキル標準の基盤を形成</li>
+<li><strong>リアルタイムデータへのシフト：</strong>Lightcastのような動的データソースが静的分類体系を補完</li>
+<li><strong>AI統合の加速：</strong>すべての主要プラットフォームがNLPとMLを導入し、自動スキル推論を実現</li>
+<li><strong>内部タレントマーケットの普及：</strong>大企業が社内人材の可視化とスキル活用を優先</li>
+<li><strong>スキル評価の標準化：</strong>iMochaなどの客観的評価ツールが採用と育成の両面で活用</li>
+</ul>
+<h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 活用アイデア -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">活用アイデア</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>公的標準の活用（O*NET/ESCO）</strong> - キャリアカウンセリングや教育プログラム設計の基礎として活用。無料でアクセス可能なため、初期投資を抑えて標準的なスキルフレームワークを導入できます。</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>労働市場データ分析（Lightcast）</strong> - 採用戦略や人材育成計画の策定に活用。リアルタイムの需要データから将来のスキルギャップを予測し、戦略的な人材投資を実現します。</p>
+<p style="line-height: 1.6;">3. <strong>内部タレントマーケットプレイス（Gloat/Fuel50）</strong> - 大企業が社内人材のスキルを可視化し、内部採用とプロジェクトマッチングを最適化。従業員のキャリア成長機会を拡大し、定着率を向上させます。</p>
+</div>
+</section>
+<!-- SECTION 4: エグゼクティブサマリー -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">エグゼクティブサマリー</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+<ul class="key-findings">
+<li><strong>スキル分類の標準化が進展：</strong>公的標準（O*NET、ESCO）と民間データ（Lightcast）が補完関係を形成し、グローバルスキル分類の基盤が確立されています。</li>
+<li><strong>AIスキルインテリジェンス市場の急成長：</strong>2024-2032年に20.1%のCAGRで成長し、265億6000万ドル市場に到達。企業のデータ駆動型人材戦略を支援します。</li>
+<li><strong>内部タレントマーケットの普及：</strong>Gloat、Fuel50、Eightfold AIなどのプラットフォームが、社内人材の最適配置と従業員エンゲージメント向上を実現しています。</li>
+<li><strong>リアルタイムデータの重要性：</strong>Lightcastの33,000スキル分類は毎日更新され、労働市場の動的な変化に対応。静的な分類体系を補完する役割を果たします。</li>
+<li><strong>多言語対応の必要性：</strong>ESCOの27言語対応モデルは、グローバル企業と教育機関にとって人材流動性を高める重要な基盤となっています。</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選択ガイド</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>キャリアカウンセリングや教育機関 → O*NET/ESCO</strong><br/>
+                        理由：無料でアクセス可能な公的標準として、職業分類とスキルフレームワークが整備されています。<br/><br/>
+<strong>採用戦略と労働市場分析 → Lightcast</strong><br/>
+                        理由：リアルタイムの労働市場データと給与情報を統合し、データ駆動型の意思決定を支援します。<br/><br/>
+<strong>大企業の内部人材活用 → Gloat/Fuel50/Eightfold AI</strong><br/>
+                        理由：AIによる社内タレントマッチングと予測的スキルギャップ分析で、人材の最適配置を実現します。<br/><br/>
+<strong>技術スキルの客観的評価 → iMocha</strong><br/>
+                        理由：3,000以上のスキル評価テストとコーディング評価で、採用と育成の両面で活用できます。
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（スキル分類とAI分析の融合により、企業と教育機関の人材戦略が大きく進化しています。公的標準と民間プラットフォームの連携が、グローバルな人材流動性とスキル開発を促進します）</p>
+</section>
+<!-- SECTION 5: 主要用語の説明 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>スキルオントロジー：</strong>スキル、職業、産業間の関係を構造化したフレームワーク。類似スキル、代替スキル、補完スキルの関係をマッピングし、キャリアパスや学習推薦の基盤となります。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>コンピテンシーマッピング：</strong>組織や個人のスキルと能力を体系的に評価し、可視化するプロセス。スキルギャップの特定とキャリア開発計画の策定に活用されます。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>タレントマーケットプレイス：</strong>社内の人材スキルをリアルタイムで分析し、新しい役割、プロジェクト、学習機会とマッチングする内部市場プラットフォーム。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>スキルインテリジェンス：</strong>AIとデータ分析を活用して、労働市場のスキル需要、供給、トレンドを予測的に分析する技術。採用、育成、配置の意思決定を支援します。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>スキルベース採用：</strong>学歴や職歴よりも、候補者の実際のスキルと能力を重視する採用アプローチ。IBMやGoogleなどの大手企業が学位要件を撤廃し、スキル重視の採用を推進しています。
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 参考資料 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>参考資料</h3>
+<p><strong>データ収集：</strong>2025年10月30日</p>
+<ul>
+<li>• <a href="https://lightcast.io/" target="_blank">Lightcast - Skills Classification and Labor Market Data</a></li>
+<li>• <a href="https://www.onetonline.org/" target="_blank">O*NET Online - Occupational Information Network</a></li>
+<li>• <a href="https://esco.ec.europa.eu/" target="_blank">ESCO - European Skills, Competences, Qualifications and Occupations</a></li>
+<li>• <a href="https://gloat.com/" target="_blank">Gloat - Talent Marketplace Platform</a></li>
+<li>• <a href="https://www.fuel50.com/" target="_blank">Fuel50 - Career Pathing and Skills Platform</a></li>
+<li>• <a href="https://eightfold.ai/" target="_blank">Eightfold AI - Talent Intelligence Platform</a></li>
+<li>• <a href="https://www.imocha.io/" target="_blank">iMocha - Skills Assessment Platform</a></li>
+<li>• <a href="https://www.gartner.com/en/human-resources" target="_blank">Gartner HR Research - AI Skills Intelligence Market Forecast</a></li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['データ範囲', 'リアルタイム性', '多言語対応', 'AI統合', 'アクセス性'],
+                datasets: [
+                    {
+                        label: 'Lightcast',
+                        data: [95, 95, 70, 85, 60],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'O*NET',
+                        data: [70, 60, 50, 40, 100],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ESCO',
+                        data: [80, 65, 100, 50, 95],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gloat',
+                        data: [85, 90, 60, 95, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 11
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

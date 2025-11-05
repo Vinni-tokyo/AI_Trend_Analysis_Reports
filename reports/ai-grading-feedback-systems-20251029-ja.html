@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<title>AI採点およびフィードバックシステム トレンド分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, #001e5c 0%, #003d8f 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; text-decoration: none; font-size: 0.75rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; cursor: pointer; }
+        .lang-btn.active { background: white; color: #001e5c; }
+        .header h1 { font-size: 1.2rem; line-height: 1.3; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; }
+        .section-title { font-size: 1.4rem; border-bottom: 2px solid #1a1a1a; padding-bottom: 0.25rem; margin-bottom: 0.4rem; }
+        .subsection-title { font-size: 1.1rem; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { border: 1px solid #e5e5e5; padding: 1.5rem; border-radius: 4px; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.7rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        .chart-container { position: relative; height: 250px; margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e5e5; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; font-weight: bold; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; border-radius: 4px; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; font-size: 0.7rem; }
+        .sources ul { list-style: none; }
+        @media (max-width: 600px) { .trend-grid { grid-template-columns: 1fr; } }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← ホーム</a>
+<div>
+<button class="lang-btn active" onclick="window.location.href='ai-grading-feedback-systems-20251029-ja.html'">日本語</button>
+<button class="lang-btn" onclick="window.location.href='ai-grading-feedback-systems-20251029-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='ai-grading-feedback-systems-20251029-en.html'">English</button>
+</div>
+</div>
+<h1>AI採点およびフィードバックシステム<br/>トレンド分析</h1>
+<div style="font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9;">교육자 업무 부담을 80% 줄이는 자동화 혁신</div>
+<div style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.8;">レポート作成日：2025年10月29日 | 標準レポート（5-8ページ）</div>
+</div>
+<div class="content">
+<section class="section">
+<h2 class="section-title">主要トレンド Top 5</h2>
+<h3 class="subsection-title">1. Turnitin：盗作検出からAI文章検証まで</h3>
+<p><strong>現状：</strong> 世界210か国21,000機関で使用されるTurnitinは、単純な盗作検出を超えてAI生成コンテンツ検出機能まで提供します。2023年4月リリースされたAI文章検証機能は98%の精度でChatGPTなどのAI作成テキストを識別します。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>コア機能</h4>
+<p>• <strong>AI 탐지:</strong> GPT-3.5/4 생성 텍스트 98% 精度 식별<br/>
+                        • <strong>표절 검사:</strong> 700억 개 웹페이지, 학술 논문 대조<br/>
+                        • <strong>유사도 리포트:</strong> 문장별 원본 출처 표시</p>
+</div>
+<div class="trend-card">
+<h4>主な利点</h4>
+<p>• <strong>학문적 정직성:</strong> AI 시대 부정행위 방지<br/>
+                        • <strong>글로벌 표준:</strong> 210개국 교육기관 신뢰<br/>
+                        • <strong>LMS 통합:</strong> Canvas, Blackboard 완벽 연동</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://www.turnitin.com/" target="_blank">Turnitin</a> |
+                    <a href="https://www.turnitin.com/products/feedback-studio" target="_blank">Turnitin Feedback Studio</a>
+</div>
+<p><strong>展望：</strong> 2025年末までにAI検出機能が全ての学術文章評価の必須要素として定着すると予想されます。</p>
+<h3 class="subsection-title">2. Gradescope：採点時間80%短縮するAIアシスタント</h3>
+<p><strong>現状：</strong> Turnitin所有のGradescopeは、AIベース採点で教育者の業務時間を80%短縮します。筆記回答をOCRで認識し、類似回答をグループ化して一括採点できます。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>コア機能</h4>
+<p>• <strong>AI 보조 채점:</strong> 유사 답변 자동 그룹화<br/>
+                        • <strong>필기 인식:</strong> 손글씨 답안 OCR 처리<br/>
+                        • <strong>루브릭 기반:</strong> 평가 기준 일관성 유지</p>
+</div>
+<div class="trend-card">
+<h4>主な利点</h4>
+<p>• <strong>시간 절감:</strong> 채점 시간 80% 단축<br/>
+                        • <strong>공정성:</strong> 동일 답변 동일 점수 보장<br/>
+                        • <strong>분석:</strong> 학급 전체 성적 분포 가시화</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://www.gradescope.com/" target="_blank">Gradescope</a>
+</div>
+<p><strong>展望：</strong> 2026年までに米国大学の50%以上がAI採点ツールを導入すると展望されます。</p>
+<h3 class="subsection-title">3. エッセイ自動採点：NLPベース記述式評価</h3>
+<p><strong>現状：</strong> 자연어 처리(NLP) 기술을 활용한 자동 에세이 채점(AES) 시스템이 주관식 답안의 일관된 평가를 가능하게 합니다. 문법, 어휘, 논리 구조를 분석하여 즉각적인 피드백을 제공합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>コア機能</h4>
+<p>• <strong>NLP 분석:</strong> 문법, 어휘, 논리성 평가<br/>
+                        • <strong>즉시 피드백:</strong> 제출 즉시 점수와 개선점 제시<br/>
+                        • <strong>학습 분석:</strong> 취약 영역 자동 식별</p>
+</div>
+<div class="trend-card">
+<h4>主な利点</h4>
+<p>• <strong>일관성:</strong> 채점자 편향 제거<br/>
+                        • <strong>拡張性:</strong> 수천 건 동시 채점 가능<br/>
+                        • <strong>학습 효과:</strong> 반복 작성으로 실력 향상</p>
+</div>
+</div>
+<p><strong>展望：</strong> 標準化試験でのエッセイ自動採点採択率が2025年比2倍増加する見通しです。</p>
+<h3 class="subsection-title">4. コーディング課題自動評価：GitHub Classroom &amp; Codio</h3>
+<p><strong>現状：</strong> プログラミング課題を自動的にテストして採点するプラットフォームがCS教育の標準になっています。GitHub Classroomは自動テスト実行とコードレビューをサポートします。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>コア機能</h4>
+<p>• <strong>자동 테스트:</strong> 단위 테스트 자동 실행<br/>
+                        • <strong>즉시 피드백:</strong> 코드 제출 시 즉시 결과<br/>
+                        • <strong>표절 탐지:</strong> 코드 유사도 분석</p>
+</div>
+<div class="trend-card">
+<h4>主な利点</h4>
+<p>• <strong>실무 경험:</strong> Git 워크플로우 학습<br/>
+                        • <strong>拡張性:</strong> 수백 명 학생 관리 가능<br/>
+                        • <strong>업계 표준:</strong> 실제 개발 환경과 동일</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://classroom.github.com/" target="_blank">GitHub Classroom</a> |
+                    <a href="https://www.codio.com/" target="_blank">Codio</a>
+</div>
+<p><strong>展望：</strong> 2025年までにCSプログラムの90%以上が自動採点システムを使用すると予想されます。</p>
+<h3 class="subsection-title">5. 시장 성장: 2025년 10억 달러 돌파</h3>
+<p><strong>現状：</strong> AI採点およびフィードバックシステム 시장은 2025년 10억 달러를 돌파하고, 2030년까지 연평균 25% 성장할 것으로 전망됩니다. 미국 대학의 40%가 이미 AI 채점 도구를 도입했습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>시장 동인</h4>
+<p>• <strong>교육자 부족:</strong> 채점 업무 자동화 필요성<br/>
+                        • <strong>온라인 교육:</strong> 원격 학습 급증<br/>
+                        • <strong>コスト 절감:</strong> 인건비 대비 효율성</p>
+</div>
+<div class="trend-card">
+<h4>성장 전망</h4>
+<p>• <strong>대학 도입:</strong> 미국 40% 이미 사용 중<br/>
+                        • <strong>시장 규모:</strong> 2025년 10억 달러<br/>
+                        • <strong>성장률:</strong> 연평균 25% CAGR</p>
+</div>
+</div>
+<p><strong>展望：</strong> K-12 교육에서도 2026년부터 AI 채점 도입이 본격화될 것입니다.</p>
+</section>
+<section class="section">
+<h2 class="section-title">競争環境</h2>
+<table>
+<thead>
+<tr><th>サービス</th><th>特化分野</th><th>コア機能</th><th>ターゲット</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Turnitin</strong></td><td>盗作およびAI検出</td><td>98% AI文章検証</td><td>全分野</td></tr>
+<tr><td><strong>Gradescope</strong></td><td>筆記回答</td><td>80%時間節約</td><td>STEM</td></tr>
+<tr><td><strong>GitHub Classroom</strong></td><td>コーディング課題</td><td>自動テスト実行</td><td>CS教育</td></tr>
+<tr><td><strong>Grammarly</strong></td><td>文章</td><td>文法/語調分析</td><td>言語学習</td></tr>
+</tbody>
+</table>
+<h3 class="subsection-title">市場トレンド</h3>
+<ul class="key-findings">
+<li><strong>AI 탐지 필수화:</strong> ChatGPT 등장 이후 AI 생성 콘텐츠 검증 필수</li>
+<li><strong>하이브리드 접근:</strong> AI 초안 + 교육자 최종 검토 모델 확산</li>
+<li><strong>즉시 피드백:</strong> 학생이 즉시 결과 확인하고 재제출 가능</li>
+<li><strong>학습 분석 통합:</strong> 채점 데이터로 학습 패턴 분석</li>
+</ul>
+<div class="chart-container"><canvas id="chart"></canvas></div>
+</section>
+<section class="section">
+<h2 class="section-title">活用アイデア</h2>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem;">1. <strong>대량 채점 자동화</strong> - 객관식·단답형은 100% 자동, 서술형은 AI 초안 후 교수 검토</p>
+<p style="margin-bottom: 1rem;">2. <strong>즉시 피드백 제공</strong> - 학생이 제출 즉시 점수와 개선점 확인, 재제출 허용</p>
+<p>3. <strong>학습 분석 활용</strong> - 채점 데이터로 학급 전체 취약점 파악, 맞춤형 보충 수업</p>
+</div>
+</section>
+<section class="section">
+<h2 class="section-title">要約</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem;">核心インサイト</h3>
+<ul class="key-findings">
+<li><strong>업무 절감:</strong> 채점 시간 80% 단축으로 교육자 본연 업무 집중</li>
+<li><strong>AI 탐지:</strong> Turnitin 98% 精度로 AI 생성 콘텐츠 식별</li>
+<li><strong>시장 성장:</strong> 2025년 10억 달러, 연 25% 성장</li>
+<li><strong>도입률:</strong> 미국 대학 40% 이미 사용</li>
+</ul>
+<p style="margin-top: 1rem;"><strong>선택 가이드:</strong> 표절 검사 → Turnitin | 필기 채점 → Gradescope | コーディング課題 → GitHub Classroom</p>
+</div>
+</section>
+<section class="section">
+<h2 class="section-title" style="font-size: 1rem;">主要用語</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div><strong>NLP (자연어 처리)</strong> - 컴퓨터가 인간 언어를 이해·분석하는 기술</div>
+<div><strong>OCR</strong> - 손글씨·인쇄물을 디지털 텍스트로 변환</div>
+<div><strong>루브릭</strong> - 평가 기준표, 일관된 채점 보장</div>
+</div>
+</section>
+<section class="section">
+<div class="sources">
+<h3>参考資料</h3>
+<p><strong>데이터 수집:</strong> 2025년 10월 29일</p>
+<ul>
+<li>• <a href="https://www.turnitin.com/" target="_blank">Turnitin公式サイト</a></li>
+<li>• <a href="https://www.gradescope.com/" target="_blank">Gradescope</a></li>
+<li>• <a href="https://classroom.github.com/" target="_blank">GitHub Classroom</a></li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        new Chart(document.getElementById('chart'), {
+            type: 'radar',
+            data: {
+                labels: ['精度', '速度', '使用しやすさ', 'コスト', '拡張性'],
+                datasets: [
+                    {label: 'Turnitin', data: [98, 85, 90, 70, 95], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 2},
+                    {label: 'Gradescope', data: [90, 95, 85, 75, 90], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)', borderWidth: 2},
+                    {label: 'GitHub Classroom', data: [95, 90, 80, 100, 85], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)', borderWidth: 2}
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100 } } }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

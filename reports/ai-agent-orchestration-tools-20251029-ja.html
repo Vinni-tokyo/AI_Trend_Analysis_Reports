@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIエージェントオーケストレーションツール 트렌드 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, #001e5c 0%, #003d8f 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid #001e5c;
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: #001e5c;
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← ホーム</a>
+<div class="language-switcher">
+<button class="lang-btn active" onclick="window.location.href='ai-agent-orchestration-tools-20251029-ja.html'">日本語</button>
+<button class="lang-btn" onclick="window.location.href='ai-agent-orchestration-tools-20251029-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='ai-agent-orchestration-tools-20251029-en.html'">English</button>
+</div>
+</div>
+<h1>AIエージェントオーケストレーションツール 트렌드 분석</h1>
+<div class="subtitle">차세대 멀티 에이전트 프레임워크와 워크플로우 자동화 플랫폼 종합 비교</div>
+<div class="meta">보고서 작성일: 2025년 10월 29일 | 표준 보고서 (5-8페이지)</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 주요 트렌드 Top 5 -->
+<section class="section" id="trends">
+<h2 class="section-title">주요 트렌드 Top 5</h2>
+<h3 class="subsection-title">1. OpenAI Agent Kit: 공식 에이전트 SDK의 등장</h3>
+<p><strong>現状：</strong> OpenAI가 2025년 3월 공식 Agents SDK를 출시하면서 에이전트 개발의 표준화가 가속화되고 있습니다. MCP(Model Context Protocol) 통합 지원으로 Anthropic의 Claude와 상호운용성을 확보하며, 호스팅형 도구 실행으로 인프라 부담을 크게 줄였습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>HostedMCPTool:</strong> 서버 측에서 도구 실행을 처리하여 콜백 없이 원격 도구 호출 가능<br/>
+                        • <strong>내장 오케스트레이션:</strong> 에이전트 워크플로우 관리 및 추적 기능 기본 제공<br/>
+                        • <strong>MCP 표준 지원:</strong> Anthropic의 MCP 프로토콜 완전 채택으로 Claude 등 타 LLM과 연동 용이</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>간편한 에이전트 구축:</strong> Python 코드 몇 줄로 완전한 에이전트 시스템 구축<br/>
+                        • <strong>엔터프라이즈 지원:</strong> OpenAI 인프라 활용으로 확장성과 안정성 확보<br/>
+                        • <strong>생태계 통합:</strong> ChatGPT 데스크톱 앱, Responses API 전반에 MCP 통합</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://platform.openai.com/docs/agents" target="_blank">OpenAI Agent Builder</a>
+</div>
+<p><strong>展望：</strong> OpenAIの公式SDKは 2025년 하반기 エンタープライズ導入の標準となると予想され, MCPプロトコルはマルチLLM環境で必須インフラとして定着する見通しです.</p>
+<h3 class="subsection-title">2. MCP (Model Context Protocol): エージェント相互運用性の革新</h3>
+<p><strong>現状：</strong> Anthropicが 2024년 11월 発表した MCP는 AIシステムが外部ツールおよびデータソースと接続する方法を標準化するオープンソースフレームワークです. 2025년 3월 OpenAIが公式採択して業界標準として浮上しました.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>표준화된 프로토콜:</strong> LLM이 데이터베이스, CRM, 외부 API와 통신하는 일관된 방식 제공<br/>
+                        • <strong>서버-클라이언트 아키텍처:</strong> MCP 서버가 도구를 노출하고 모델이 대화 중 호출<br/>
+                        • <strong>오픈 사양:</strong> 누구나 MCP 서버를 구축하여 생태계에 기여 가능</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>벤더 락인 방지:</strong> 여러 LLM 제공자 간 자유로운 전환 가능<br/>
+                        • <strong>도구 재사용성:</strong> 한 번 구축한 MCP 서버를 모든 호환 에이전트에서 활용<br/>
+                        • <strong>엔터프라이즈 통합:</strong> 기존 시스템과의 연결이 표준화되어 구현 시간 단축</p>
+</div>
+</div>
+<p><strong>展望：</strong> MCP는 2025년 말까지 멀티 벤더 에이전트 환경을 구축하는 조직의 필수 프로토콜이 될 것이며, Cloudflare 등 주요 플랫폼의 네이티브 지원이 확대될 전망입니다.</p>
+<h3 class="subsection-title">3. LangGraph: 결정론적 에이전트 제어의 선두주자</h3>
+<p><strong>現状：</strong> LangChain 팀이 개발한 LangGraph는 에이전트 흐름을 그래프(노드, 엣지, 상태)로 정의하여 정밀한 실행 제어를 가능하게 합니다. 재현 가능한 디버깅과 장기 실행 작업 재개 기능으로 엔터프라이즈 워크플로우에 적합합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>그래프 기반 오케스트레이션:</strong> 노드와 엣지로 에이전트 플로우를 시각적으로 정의<br/>
+                        • <strong>상태 관리:</strong> 실행 전반에 걸친 메모리와 컨텍스트 유지<br/>
+                        • <strong>재생 및 디버그:</strong> 실행 과정을 단계별로 재생하여 문제 진단</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>결정론적 분기:</strong> 조건부 로직으로 예측 가능한 에이전트 동작 구현<br/>
+                        • <strong>장기 작업 지원:</strong> 중단된 작업을 정확한 지점에서 재개 가능<br/>
+                        • <strong>엔터프라이즈 워크플로우:</strong> 복잡한 비즈니스 프로세스를 코드로 표현</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.langchain.com/langgraph" target="_blank">LangGraph</a>
+</div>
+<p><strong>展望：</strong> エンタープライズ環境で監査追跡と再現性が重要になるにつれ LangGraphの決定論的アプローチが 2025년 下半期金融、医療など規制産業で選好されるでしょう.</p>
+<h3 class="subsection-title">4. n8n: 노코드/로우코드 AI 워크플로우의 대중화</h3>
+<p><strong>現状：</strong> n8n은 422개 이상의 통합을 제공하는 오픈소스 워크플로우 자동화 플랫폼으로, 2025년 3월 6천만 달러 투자를 유치하며 기업 고객 3,000개, 활성 사용자 20만 명을 확보했습니다. AI 친화적 방향으로 전환하며 매출이 5배 증가했습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>비주얼 워크플로우 편집기:</strong> 드래그 앤 드롭 인터페이스로 복잡한 자동화 구축<br/>
+                        • <strong>AI 통합:</strong> OpenAI, Azure OpenAI와 기본 통합, Python/JavaScript 노드 지원<br/>
+                        • <strong>오픈소스 유연성:</strong> 무제한 셀프 호스팅 옵션, 완전한 데이터 통제</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>접근성:</strong> 비개발자도 AI 워크플로우를 구축 가능<br/>
+                        • <strong>확장성:</strong> 코드 노드로 커스텀 로직 추가 가능<br/>
+                        • <strong>비용 효율:</strong> 셀프 호스팅 시 워크플로우 개수 제한 없음</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://n8n.io/" target="_blank">n8n</a> |
+                    <a href="https://zapier.com/" target="_blank">Zapier</a>
+</div>
+<p><strong>展望：</strong> 2025년 ハイブリッドノーコード/ローコードアプローチが拡散するにつれ n8nは技術チームとビジネスチームを接続するブリッジツールとして位置づけられる見通しです.</p>
+<h3 class="subsection-title">5. CrewAI vs AutoGen: 협업 에이전트 프레임워크의 양대 산맥</h3>
+<p><strong>現状：</strong> CrewAI는 역할 기반 협업에 초점을 맞춘 오픈소스 프레임워크로, 팀워크 워크플로우에 최적화되어 있습니다. Microsoft의 AutoGen은 대화 중심 에이전트로, 토론과 반복을 통한 솔루션 도출에 강점을 보입니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>CrewAI 강점</h4>
+<p>• <strong>역할/작업 오케스트레이션:</strong> 각 에이전트에 명확한 역할과 책임 부여<br/>
+                        • <strong>프로세스 플로우:</strong> 순차적, 병렬, 조건부 작업 체인 지원<br/>
+                        • <strong>팀 시뮬레이션:</strong> 실제 팀 협업 방식을 코드로 구현</p>
+</div>
+<div class="trend-card">
+<h4>AutoGen 강점</h4>
+<p>• <strong>대화형 협업:</strong> 에이전트 간 토론으로 최적 솔루션 도출<br/>
+                        • <strong>가드레일:</strong> 최대 턴 수, 비용 제한, 평가 체크포인트 기본 제공<br/>
+                        • <strong>Human-in-the-loop:</strong> 인간의 개입이 필요한 시점 명확히 정의</p>
+</div>
+</div>
+<p><strong>展望：</strong> 2025년 하반기 협업 에이전트 패러다임이 확산되면서 역할 기반 워크플로우(CrewAI)와 토론 기반 접근(AutoGen)이 상호보완적으로 발전할 것입니다.</p>
+</section>
+<!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+<section class="section" id="competitive">
+<h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+<h3 class="subsection-title">4계층 시장 구조</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI 에이전트 오케스트레이션 시장은 진입 장벽과 제어 수준에 따라 4개 계층으로 구분됩니다. 상위로 갈수록 기술 복잡도가 높지만 유연성과 제어력이 증가합니다.</p>
+<table>
+<thead>
+<tr>
+<th>도구명</th>
+<th>카테고리</th>
+<th>특징</th>
+<th>대상 사용자</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OpenAI Agent Kit</strong></td>
+<td>공식 SDK</td>
+<td>MCP 지원, 호스팅형 도구 실행, 엔터프라이즈급 인프라</td>
+<td>Claude 연동이 필요한 기업</td>
+</tr>
+<tr>
+<td><strong>n8n</strong></td>
+<td>노코드/로우코드</td>
+<td>422개 통합, 비주얼 편집기, 셀프 호스팅 가능</td>
+<td>비개발자 포함 전체 팀</td>
+</tr>
+<tr>
+<td><strong>Make (Integromat)</strong></td>
+<td>노코드 자동화</td>
+<td>직관적인 비주얼 편집기, 팀 협업 기능 강화</td>
+<td>간단한 자동화가 필요한 팀</td>
+</tr>
+<tr>
+<td><strong>LangGraph</strong></td>
+<td>코드 우선 오케스트레이션</td>
+<td>그래프 기반 플로우, 상태 관리, 재생 가능한 디버깅</td>
+<td>정밀 제어가 필요한 개발자</td>
+</tr>
+<tr>
+<td><strong>CrewAI</strong></td>
+<td>멀티 에이전트 협업</td>
+<td>역할 기반 오케스트레이션, 작업 체인, 프로세스 플로우</td>
+<td>팀 워크플로우 시뮬레이션 필요 조직</td>
+</tr>
+<tr>
+<td><strong>AutoGen</strong></td>
+<td>대화형 에이전트</td>
+<td>에이전트 간 토론, 가드레일, Human-in-the-loop</td>
+<td>반복적 솔루션 도출이 필요한 Python 개발자</td>
+</tr>
+<tr>
+<td><strong>MCP</strong></td>
+<td>프로토콜 표준</td>
+<td>벤더 중립적 상호운용성, 도구 재사용성</td>
+<td>멀티 LLM 환경 구축 조직</td>
+</tr>
+<tr>
+<td><strong>Lleverage / Lindy</strong></td>
+<td>AI 네이티브 플랫폼</td>
+<td>자연어로 워크플로우 정의, AI 기반 자동화</td>
+<td>신속한 프로토타이핑이 필요한 팀</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 활용 방안 -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">활용 방안</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 사례를 소개합니다.</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>파일럿 프로그램 탐색</strong> - 여러 조직이 MCP를 활용한 파일럿 프로그램을 시작하여 기존 인프라와의 적합성을 평가하고 있습니다.</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>하이브리드 접근 방식</strong> - 비주얼 도구(n8n)와 코드 우선 프레임워크(LangGraph)를 결합하여 기술팀과 비즈니스팀을 모두 지원하는 사례가 증가하고 있습니다.</p>
+<p style="line-height: 1.6;">3. <strong>내부 AI 생태계 구축</strong> - 엔터프라이즈 조직들이 표준화된 프로토콜(MCP)을 평가하여 장기적인 유연성을 확보하는 추세입니다.</p>
+</div>
+</section>
+<!-- SECTION 4: 핵심 요약 -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">핵심 요약</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 발견사항</h3>
+<ul class="key-findings">
+<li><strong>MCP 표준화 가속:</strong> OpenAI의 MCP 채택으로 멀티 벤더 에이전트 환경이 현실화되고 있습니다.</li>
+<li><strong>하이브리드 도구 부상:</strong> 노코드와 코드 우선 접근을 결합한 플랫폼(n8n)이 팀 전체의 접근성을 높이고 있습니다.</li>
+<li><strong>결정론적 제어 수요:</strong> 규제 산업에서 재현 가능하고 감사 가능한 에이전트 워크플로우(LangGraph)에 대한 수요가 증가하고 있습니다.</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>Claude 통합 우선 → OpenAI Agent Kit (+ MCP)</strong><br/>
+                        이유: MCP 네이티브 지원으로 Claude와 원활한 상호운용성 확보<br/>
+<strong>비주얼 워크플로우 필요 → n8n</strong><br/>
+                        이유: 비개발자도 422개 통합을 활용한 복잡한 자동화 구축 가능<br/>
+<strong>복잡한 멀티 에이전트 시나리오 → LangGraph</strong><br/>
+                        이유: 결정론적 분기와 상태 관리로 엔터프라이즈 워크플로우 정밀 제어
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (MCP 표준화로 벤더 락인 리스크가 감소하고, 다양한 수준의 기술 팀이 활용할 수 있는 도구 생태계가 성숙하고 있습니다.)</p>
+</section>
+<!-- SECTION 5: 주요 용어 설명 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>MCP (Model Context Protocol)</strong> - LLM이 외부 도구 및 데이터 소스와 통신하는 방식을 표준화하는 오픈 소스 프레임워크. 오케스트라 지휘자처럼 여러 악기(도구)를 조율하는 역할을 합니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>에이전트 오케스트레이션</strong> - 여러 AI 에이전트가 복잡한 작업을 수행하도록 조율하는 소프트웨어 플랫폼. 각 에이전트에 역할을 부여하고 협업을 관리합니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>결정론적 제어 (Deterministic Control)</strong> - 동일한 입력에 대해 항상 동일한 출력을 보장하는 에이전트 동작 방식. 금융, 의료 등 감사 추적이 중요한 산업에서 필수적입니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>노코드/로우코드 (No-code/Low-code)</strong> - 비개발자도 드래그 앤 드롭 인터페이스로 소프트웨어를 구축할 수 있는 개발 방식. 필요시 코드 추가가 가능합니다.
+                    </div>
+<div>
+<strong>Human-in-the-loop</strong> - AI 에이전트가 중요한 결정을 내리기 전에 인간의 승인을 받도록 설계된 워크플로우. 위험을 줄이고 품질을 보장합니다.
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 참고 자료 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>참고 자료</h3>
+<p><strong>데이터 수집:</strong> 2025년 10월 29일</p>
+<ul>
+<li>• <a href="https://openai.github.io/openai-agents-python/mcp/" target="_blank">OpenAI Agents SDK - Model Context Protocol Documentation</a></li>
+<li>• <a href="https://sider.ai/blog/ai-tools/best-agentic-ai-frameworks-for-developers-in-2025-what-to-build-with-and-why" target="_blank">10 Best Agentic AI Frameworks for Developers in 2025</a></li>
+<li>• <a href="https://sangeethasaravanan.medium.com/langgraph-vs-crewai-vs-autogen-choosing-the-right-ai-agent-framework-in-2025-596525ef575a" target="_blank">LangGraph vs crewAI vs AutoGen: Choosing the Right AI Agent Framework</a></li>
+<li>• <a href="https://medium.com/aigenverse/a-developers-guide-to-multi-agent-frameworks-crewai-autogen-and-langgraph-15531c0c7dfe" target="_blank">A Developer's Guide to Multi-Agent Frameworks</a></li>
+<li>• <a href="https://techcrunch.com/2025/03/24/fair-code-pioneer-n8n-raises-60m-for-ai-powered-workflow-automation/" target="_blank">Fair-code pioneer n8n raises $60M for AI-powered workflow automation</a></li>
+<li>• <a href="https://sider.ai/blog/ai-tools/n8n-review-2025-the-flexible-automation-platform-power-users-love" target="_blank">n8n Review 2025: The Flexible Automation Platform Power Users Love</a></li>
+<li>• <a href="https://www.prompthub.us/blog/openais-agents-sdk-and-anthropics-model-context-protocol-mcp" target="_blank">OpenAI's Agents SDK and Anthropic's Model Context Protocol</a></li>
+<li>• <a href="https://blog.cloudflare.com/building-ai-agents-with-mcp-authn-authz-and-durable-objects/" target="_blank">Building AI Agents with MCP, Authentication &amp; Authorization</a></li>
+<li>• <a href="https://en.wikipedia.org/wiki/Model_Context_Protocol" target="_blank">Model Context Protocol - Wikipedia</a></li>
+</ul>
+<p style="margin-top: 0.5rem; font-size: 0.65rem; color: #808080;"><em>주: 실제 URL 링크가 포함되어 있습니다. WebSearch 결과에서 수집한 URL을 사용했습니다.</em></p>
+</div>
+</section>
+</div>
+</div>
+<script>
+        // Chart.js - 주요 플랫폼 비교 차트
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['사용 편의성', '유연성', '엔터프라이즈 기능', '커뮤니티', '가격'],
+                datasets: [
+                    {
+                        label: 'OpenAI AgentKit',
+                        data: [95, 70, 85, 60, 75],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'n8n',
+                        data: [85, 90, 70, 85, 90],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'LangGraph',
+                        data: [65, 95, 80, 75, 85],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'MCP',
+                        data: [70, 85, 90, 70, 95],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI駆動型教育プラットフォーム</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← トップ</a>
+<div class="language-switcher">
+<button class="lang-btn active" onclick="window.location.href='ai-powered-educational-platforms-20251030-ja.html'">日本語</button>
+<button class="lang-btn" onclick="window.location.href='ai-powered-educational-platforms-20251030-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='ai-powered-educational-platforms-20251030-en.html'">English</button>
+</div>
+</div>
+<h1>AI駆動型教育プラットフォーム</h1>
+<div class="subtitle">適応学習、AI チューター、自動評価の包括的分析</div>
+<div class="meta">レポート作成日：2025年10月30日 | 標準版レポート（5-8ページ）</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 主要トレンド Top 4 -->
+<section class="section" id="trends">
+<h2 class="section-title">主要トレンド Top 4</h2>
+<h3 class="subsection-title">1. AI教育市場の爆発的成長：2030年に322.7億ドル到達予測</h3>
+<p><strong>現状：</strong>グローバルAI教育市場は2025年の58.8億ドルから2030年には322.7億ドルに成長し、年平均成長率32.9%を記録する見込みです。適応学習プラットフォーム、自動評価システム、パーソナライズ学習への需要拡大が成長を牽引しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>市場成長データ</h4>
+<p>• <strong>2025年市場規模：</strong>58.8億ドル<br/>
+                        • <strong>2030年予測：</strong>322.7億ドル<br/>
+                        • <strong>年平均成長率：</strong>32.9% CAGR<br/>
+                        • <strong>最速成長分野：</strong>適応評価（46.7% CAGR）</p>
+</div>
+<div class="trend-card">
+<h4>主要成長ドライバー</h4>
+<p>• <strong>パーソナライズ学習：</strong>最大30%の学習成果向上<br/>
+                        • <strong>クラウドネイティブ：</strong>学習プラットフォームの移行<br/>
+                        • <strong>必修AI カリキュラム：</strong>各国での導入拡大<br/>
+                        • <strong>管理効率化：</strong>教育機関の運営コスト削減</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.grandviewresearch.com/industry-analysis/artificial-intelligence-ai-education-market-report" target="_blank">Grand View Research AI教育市場レポート</a> |
+                    <a href="https://www.imarcgroup.com/ai-in-education-market" target="_blank">IMARC AI教育市場分析</a>
+</div>
+<p><strong>展望：</strong>2030年代にかけてAI教育プラットフォームは主流となり、適応学習と自動評価が標準機能として全教育機関に普及します。NLP（自然言語処理）とコンピュータビジョンの進化により、より高度なパーソナライゼーションが実現します。</p>
+<h3 class="subsection-title">2. Khan Academy Khanmigo：信頼できるAI チューターの確立</h3>
+<p><strong>現状：</strong>Khan Academy が提供するKhanmigoは、GPT-4を基盤とするAI チューターおよび教員支援ツールです。Microsoft との提携により、米国のK-12教員全員に無料パイロット版を提供し、年間利用料を60ドルから35ドルに値下げして学校区への導入障壁を大幅に低下させました。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>Khanmigo の核心機能</h4>
+<p>• <strong>ソクラテス式学習：</strong>直接回答せず質問で導く<br/>
+                        • <strong>エッセイ添削：</strong>改訂プロセスを段階的にガイド<br/>
+                        • <strong>個別最適化：</strong>リアルタイムで学習レベル調整<br/>
+                        • <strong>価格：</strong>年間35ドル（60ドルから値下げ）</p>
+</div>
+<div class="trend-card">
+<h4>教員向け支援機能</h4>
+<p>• <strong>レッスンプラン：</strong>標準準拠のカリキュラム作成<br/>
+                        • <strong>学習成果サマリー：</strong>生徒の作業の即座要約<br/>
+                        • <strong>ルーブリック生成：</strong>評価基準の自動作成<br/>
+                        • <strong>Microsoft 提携：</strong>K-12教員無料アクセス</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.khanmigo.ai/" target="_blank">Khanmigo</a> |
+                    <a href="https://www.khanacademy.org/" target="_blank">Khan Academy</a> |
+                    <a href="https://news.microsoft.com/source/features/ai/khan-academy-and-microsoft-partner-to-expand-access-to-ai-tools/" target="_blank">Microsoft-Khan Academy パートナーシップ</a>
+</div>
+<p><strong>展望：</strong>Enid High School のパイロット校では、Khanmigoを幾何学で1学期使用後、不合格者がゼロになりました。信頼できる非営利団体によるAI教育ツールとして、今後も教育機関での採用が加速します。</p>
+<h3 class="subsection-title">3. AI 自動評価システムの実用化：採点時間40-90%削減</h3>
+<p><strong>現状：</strong>GradescopeやTurnitin等のAI自動評価プラットフォームが教員の評価業務時間を40-90%削減しています。Gradescopeは700万問以上を評価し、2,600大学、14万人の教員、320万人の学生が利用する主要プラットフォームに成長しました。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>Gradescope の技術的特徴</h4>
+<p>• <strong>AI グルーピング：</strong>類似回答を自動分類<br/>
+                        • <strong>採点時間削減：</strong>40%の時間短縮<br/>
+                        • <strong>対応形式：</strong>多肢選択、記述、プログラミング課題<br/>
+                        • <strong>フィードバック速度：</strong>一貫性のある即座フィードバック</p>
+</div>
+<div class="trend-card">
+<h4>導入実績と効果</h4>
+<p>• <strong>評価問題数：</strong>7億問以上<br/>
+                        • <strong>導入機関：</strong>2,600大学、16,000機関（全世界）<br/>
+                        • <strong>利用者数：</strong>教員14万人、学生320万人<br/>
+                        • <strong>時間削減：</strong>平均50%の採点時間短縮</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.turnitin.com/products/gradescope/" target="_blank">Gradescope by Turnitin</a> |
+                    <a href="https://www.turnitin.com/" target="_blank">Turnitin</a>
+</div>
+<p><strong>展望：</strong>AI 自動評価システムは構造化された評価に最適で、教員がより本質的な教育活動（対話、指導、カリキュラム設計）に時間を割けるようになります。ただし、自由形式の創造的プロジェクトには人間の判断が依然として不可欠です。</p>
+<h3 class="subsection-title">4. 教育機関のAI 導入加速：管理者の40%が既に活用</h3>
+<p><strong>現状：</strong>教育管理者の40%が既にAI ツールを活用し、チャットボット、学習分析、管理業務自動化などに展開しています。米国の校長の約60%が業務にAI ツールを使用しており、生徒エンゲージメント向上と運営効率化が主な導入目的です。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>主要導入分野</h4>
+<p>• <strong>チャットボット：</strong>24時間学生サポート<br/>
+                        • <strong>学習分析：</strong>データ駆動の意思決定<br/>
+                        • <strong>管理業務：</strong>スケジュール、出席管理の自動化<br/>
+                        • <strong>授業支援：</strong>個別化学習パスの生成</p>
+</div>
+<div class="trend-card">
+<h4>導入統計</h4>
+<p>• <strong>教育管理者：</strong>40%がAI ツール使用<br/>
+                        • <strong>米国校長：</strong>60%が業務でAI 活用<br/>
+                        • <strong>主な目的：</strong>エンゲージメント向上（1位）<br/>
+                        • <strong>効果：</strong>管理時間30-50%削減</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.enrollify.org/blog/ai-in-education-statistics" target="_blank">AI in Education Statistics</a>
+</div>
+<p><strong>展望：</strong>今後5年間でAI は教育機関の標準インフラとなり、K-12から高等教育まで全レベルで採用が進みます。教員の役割は知識伝達者からファシリテーター・メンターへとシフトし、AI が反復的タスクを担当します。</p>
+</section>
+<!-- SECTION 2: 競争環境と市場ポジショニング -->
+<section class="section" id="competitive">
+<h2 class="section-title">競争環境と市場ポジショニング</h2>
+<h3 class="subsection-title">4層市場構造：対象者とアプローチによる分類</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI 教育プラットフォーム市場は、対象者、主要機能、価格帯により4つの層に分類されます。</p>
+<table>
+<thead>
+<tr>
+<th>プラットフォーム</th>
+<th>カテゴリ</th>
+<th>主要機能</th>
+<th>対象</th>
+<th>価格帯</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Khan Academy Khanmigo</strong></td>
+<td>AI チューター</td>
+<td>ソクラテス式学習、個別最適化、エッセイ添削</td>
+<td>K-12生徒・教員</td>
+<td>年間35ドル</td>
+</tr>
+<tr>
+<td><strong>Duolingo Max</strong></td>
+<td>AI 言語学習</td>
+<td>ロールプレイ、回答説明機能、会話練習</td>
+<td>語学学習者</td>
+<td>月額30ドル</td>
+</tr>
+<tr>
+<td><strong>Gradescope</strong></td>
+<td>AI 自動評価</td>
+<td>AI グルーピング、自動採点、フィードバック生成</td>
+<td>高等教育機関</td>
+<td>機関契約</td>
+</tr>
+<tr>
+<td><strong>Turnitin Feedback Studio</strong></td>
+<td>評価・盗作検出</td>
+<td>盗作検出、評価支援、AI ライティング検出</td>
+<td>K-12、高等教育</td>
+<td>機関契約</td>
+</tr>
+<tr>
+<td><strong>MagicSchool AI</strong></td>
+<td>教員ツール</td>
+<td>レッスンプラン生成、IEP 作成、評価作成</td>
+<td>K-12教員</td>
+<td>無料～有料プラン</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 活用アイデア -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">活用アイデア</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>AI チューター試験導入プログラム</strong> - Khan Academy KhanmigoまたはDuolingo Maxを使用して、1学期の試験運用で学習成果と教員フィードバックを評価。</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>自動採点システム段階導入</strong> - 多肢選択式から開始し、記述式、プログラミング課題へと段階的にGradescope導入範囲を拡大。</p>
+<p style="line-height: 1.6;">3. <strong>教員向けAI リテラシー研修</strong> - MicrosoftとKhan Academyの無料リソースを活用し、教員がAI ツールを効果的に活用できるトレーニングプログラムを構築。</p>
+</div>
+</section>
+<!-- SECTION 4: エグゼクティブサマリー -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">エグゼクティブサマリー</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+<ul class="key-findings">
+<li><strong>市場爆発的成長：</strong>AI 教育市場は2025年58.8億ドルから2030年322.7億ドルに成長（32.9% CAGR）。適応学習とパーソナライゼーションが主要成長ドライバー。</li>
+<li><strong>信頼できるAI チューター確立：</strong>Khan Academy Khanmigoが年間35ドルでK-12教員と生徒にGPT-4ベースのソクラテス式学習を提供。Microsoft提携により無料パイロット版も展開。</li>
+<li><strong>自動評価の実用化：</strong>Gradescopeが採点時間40%削減、700万問以上を評価。2,600大学、14万教員、320万学生が利用する主流プラットフォームに成長。</li>
+<li><strong>教育機関の積極導入：</strong>教育管理者の40%、米国校長の60%が既にAI ツールを業務に活用。チャットボット、学習分析、管理自動化が主要用途。</li>
+<li><strong>教員の役割変化：</strong>AI が反復的タスクを担当することで、教員はファシリテーター・メンターとしての本質的教育活動に集中可能。</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>K-12生徒・教員 → Khan Academy Khanmigo</strong><br/>
+                        理由：信頼できる非営利団体、年間35ドルの低価格、ソクラテス式学習で批判的思考力育成<br/><br/>
+<strong>語学学習者 → Duolingo Max</strong><br/>
+                        理由：AI ロールプレイで会話練習、回答説明機能で理解深化、5億ユーザーの実績<br/><br/>
+<strong>高等教育機関（自動採点） → Gradescope</strong><br/>
+                        理由：採点時間40%削減、多様な課題形式対応、2,600大学の導入実績<br/><br/>
+<strong>教員（レッスンプラン作成） → MagicSchool AI</strong><br/>
+                        理由：無料から使用可能、IEP・評価基準の自動生成、K-12教員向けに最適化
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>非常にポジティブ（市場の急成長と主流プラットフォームの確立により、AI 教育は転換点を迎えている）</p>
+</section>
+<!-- SECTION 5: 主要用語の説明 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>適応学習（Adaptive Learning）</strong> - AI が学習者の理解度とペースに基づいて、リアルタイムで教材の難易度と順序を調整する学習方式。学習成果を最大30%向上させることが研究で示されています。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>ソクラテス式学習（Socratic Method）</strong> - 直接的な回答を与えず、質問を通じて学習者自身が答えを導き出すよう促す教育手法。批判的思考力と問題解決能力の育成に効果的です。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>AI 自動評価（AI-Assisted Grading）</strong> - AI と自然言語処理を使用して、多肢選択、記述式、プログラミング課題を自動採点するシステム。教員の採点時間を40-50%削減します。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>パーソナライズ学習（Personalized Learning）</strong> - 各学習者の興味、能力、学習スタイルに合わせてカスタマイズされた教育体験。AI により大規模なパーソナライゼーションが実現可能になりました。
+                    </div>
+<div>
+<strong>NLP（自然言語処理）</strong> - コンピューターが人間の言語を理解・生成・処理する技術。AI チューターやエッセイ評価システムで、文脈理解と適切なフィードバック生成に使用されます。
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 参考資料 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>参考資料</h3>
+<p><strong>データ収集：</strong>2025年10月30日</p>
+<ul>
+<li>• <a href="https://www.grandviewresearch.com/industry-analysis/artificial-intelligence-ai-education-market-report" target="_blank">Grand View Research. (2025). "AI In Education Market Size &amp; Share | Industry Report, 2030."</a></li>
+<li>• <a href="https://www.khanmigo.ai/" target="_blank">Khan Academy. (2025). "Meet Khanmigo: Khan Academy's AI-powered teaching assistant &amp; tutor."</a></li>
+<li>• <a href="https://news.microsoft.com/source/features/ai/khan-academy-and-microsoft-partner-to-expand-access-to-ai-tools/" target="_blank">Microsoft. (2025). "Khan Academy and Microsoft partner to expand access to AI tools."</a></li>
+<li>• <a href="https://www.turnitin.com/products/gradescope/" target="_blank">Turnitin. (2025). "Gradescope | Assess flexibly and transform grading into learning."</a></li>
+<li>• <a href="https://www.classcentral.com/report/chatgpt-on-duolingo-khan-academy/" target="_blank">Class Central. (2025). "Personalized AI-Powered Tutors are Here, but at a Premium."</a></li>
+<li>• <a href="https://www.enrollify.org/blog/ai-in-education-statistics" target="_blank">Enrollify. (2025). "AI in Education Statistics: Facts &amp; Trends for 2025."</a></li>
+<li>• <a href="https://www.imarcgroup.com/ai-in-education-market" target="_blank">IMARC Group. (2025). "AI in Education Market Size, Share, Growth Report 2025-33."</a></li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['使いやすさ', 'パーソナライゼーション', 'コスト効率', 'エンタープライズ機能', 'コミュニティ'],
+                datasets: [
+                    {
+                        label: 'Khan Academy Khanmigo',
+                        data: [95, 90, 85, 70, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Duolingo Max',
+                        data: [90, 95, 70, 60, 95],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gradescope',
+                        data: [75, 70, 80, 95, 85],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'MagicSchool AI',
+                        data: [85, 75, 90, 65, 75],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

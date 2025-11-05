@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI 브라우저 트렌드 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, #001e5c 0%, #003d8f 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid #001e5c;
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: #001e5c;
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← 홈</a>
+<div class="language-switcher">
+<button class="lang-btn" onclick="window.location.href='ai-browsers-20251029-ja.html'">日本語</button>
+<button class="lang-btn active" onclick="window.location.href='ai-browsers-20251029-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='ai-browsers-20251029-en.html'">English</button>
+</div>
+</div>
+<h1>AI 브라우저 트렌드 분석</h1>
+<div class="subtitle">차세대 인텔리전트 브라우징 경험의 도래와 에이전트형 브라우저의 부상</div>
+<div class="meta">보고서 작성일: 2025년 10월 29일 | 표준 보고서 (5-8페이지)</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 주요 트렌드 Top 5 -->
+<section class="section" id="trends">
+<h2 class="section-title">주요 트렌드 Top 5</h2>
+<h3 class="subsection-title">1. ChatGPT Atlas: OpenAI의 브라우저 시장 진입</h3>
+<p><strong>현황:</strong> OpenAI가 2025년 10월 21일 ChatGPT Atlas 브라우저를 발표하며 macOS용으로 무료 제공을 시작했습니다. Windows, iOS, Android 버전도 곧 출시될 예정입니다. 모든 웹페이지에 대화형 AI를 직접 내장하여 Chrome의 지배적 지위에 도전하고 있습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>네이티브 AI 통합:</strong> 브라우징 중인 페이지에 실시간 대화형 AI 지원<br/>
+                        • <strong>에이전트 모드:</strong> Plus·Pro 회원 대상 자율적 태스크 실행 기능 제공<br/>
+                        • <strong>크로스 플랫폼 지원:</strong> 주요 OS 전체를 아우르는 전개 계획</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>무료 접근:</strong> 기본 기능은 모든 사용자에게 무료 제공<br/>
+                        • <strong>끊김 없는 경험:</strong> 브라우징 중 외부 도구로 전환할 필요 없음<br/>
+                        • <strong>태스크 자동화:</strong> 복잡한 웹 태스크를 AI가 대행</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://openai.com/" target="_blank">ChatGPT</a>
+</div>
+<p><strong>전망:</strong> 2025년 말까지 Atlas가 브라우저 점유율의 5-10%를 차지할 것으로 예상되며, Chrome의 독점 체제에 처음으로 본격적인 도전장을 내민 존재가 됩니다.</p>
+<h3 class="subsection-title">2. Perplexity Comet: 에이전트형 브라우저의 선구자</h3>
+<p><strong>현황:</strong> Perplexity가 2025년 10월 2일 무료 공개한 Comet은 챗봇형 검색 엔진으로 기능하며, 이메일 요약, 웹페이지 탐색, 캘린더 초대 발송 등의 태스크를 자율적으로 실행합니다. 스마트 헬퍼형이 아닌 진정한 AI 에이전트형 브라우저입니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>자율적 브라우징:</strong> 사용자 지시에 따라 자동으로 웹사이트 탐색<br/>
+                        • <strong>복잡한 태스크 처리:</strong> 여러 단계가 필요한 작업을 단일 지시로 완료<br/>
+                        • <strong>통합 검색 엔진:</strong> 대화형 인터페이스로 정보 검색과 실행을 통합</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>완전 무료:</strong> 2025년 10월 현재 모든 기능을 무료로 이용 가능<br/>
+                        • <strong>시간 절약:</strong> 수동으로 페이지를 넘기거나 정보를 수집할 필요 없음<br/>
+                        • <strong>의도 이해:</strong> 사용자의 의도를 해석하여 태스크 지원</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.perplexity.ai/" target="_blank">Perplexity</a>
+</div>
+<p><strong>전망:</strong> 에이전트형 브라우저가 주류가 되는 전환점으로, 2025년 후반 Strawberry Browser 등 유사 제품의 등장이 예상되며 브라우징 패러다임의 근본적 변화를 촉진합니다.</p>
+<h3 class="subsection-title">3. Brave Leo: 프라이버시 중심의 진화형 AI 브라우저</h3>
+<p><strong>현황:</strong> Brave는 Leo의 기본 모델을 Llama 2 13B에서 Mixtral 8x7B, Llama 3.1 8B로 단계적으로 업그레이드했으며, 무료 버전에서도 Claude Haiku와 Qwen 3 14B를 제공합니다. Premium 회원에게는 Claude Sonnet 4와 DeepSeek R1 접근 권한을 부여했습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>즉시 사용 가능:</strong> 가입이나 결제 없이 모든 기능에 접근<br/>
+                        • <strong>멀티 콘텐츠 지원:</strong> 웹페이지, PDF, YouTube 동영상, Google Docs 처리<br/>
+                        • <strong>질문 제안 기능:</strong> 페이지 내용 기반으로 깊은 통찰을 얻기 위한 질문 자동 생성</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>프라이버시 보호:</strong> Brave의 프라이버시 우선 철학 계승<br/>
+                        • <strong>유연한 모델 선택:</strong> 작업에 따라 최적의 AI 모델 선택 가능<br/>
+                        • <strong>컨텍스트 적응:</strong> 다양한 콘텐츠 유형에 자동으로 최적화</p>
+</div>
+</div>
+<p><strong>전망:</strong> 프라이버시 의식이 높은 사용자층을 중심으로 2025년 말까지 Leo가 월간 활성 사용자 1,000만 명을 돌파할 것으로 예측됩니다.</p>
+<h3 class="subsection-title">4. Google Chrome + Gemini: 무료화로 가속화되는 보급</h3>
+<p><strong>현황:</strong> Google은 2025년 9월 기존 Pro 전용이었던 Gemini AI 기능을 미국 내 모든 Chrome 사용자에게 무료로 개방했습니다. 복잡한 페이지 요약, 읽고 있는 내용에 대한 질문 응답, 이전 방문 페이지 정보 회상, 여러 탭 간 컨텍스트 이해가 가능합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>사이드 패널 통합:</strong> 브라우징 중 언제든 AI 지원에 접근 가능<br/>
+                        • <strong>Workspace 연동:</strong> Docs, Sheets, Gmail과의 깊은 통합<br/>
+                        • <strong>멀티모달:</strong> 이미지, 음성, 텍스트를 아우르는 처리 능력</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>압도적인 점유율:</strong> Chrome 63% 시장 점유율을 활용한 보급<br/>
+                        • <strong>실시간 검색 연동:</strong> Google 생태계 전체와의 통합<br/>
+                        • <strong>프라이버시 설정:</strong> 기본적으로 꺼져 있으며 명시적 옵트인 필요</p>
+</div>
+</div>
+<p><strong>전망:</strong> 2025년 말까지 Chrome 사용자의 40%가 Gemini 기능을 최소 월 1회 사용할 것으로 예측되며, AI 브라우저의 표준 경험을 정의합니다.</p>
+<h3 class="subsection-title">5. Microsoft Edge Copilot: 생산성 통합의 심화</h3>
+<p><strong>현황:</strong> 2025년 업데이트로 Copilot Actions와 Copilot Journeys를 도입했습니다. Copilot Mode를 통해 Edge는 채팅 주도형 어시스턴트로 변모하여 페이지 요약, 여러 탭 간 제품 비교, 가격 추적, 음성·텍스트 프롬프트 응답이 가능합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>핵심 기능</h4>
+<p>• <strong>Copilot Actions:</strong> 반복 작업 자동화 기능<br/>
+                        • <strong>Copilot Journeys:</strong> 장기 작업 추적 및 컨텍스트 유지<br/>
+                        • <strong>Microsoft 365 통합:</strong> Teams, Outlook, OneDrive와 원활히 연동</p>
+</div>
+<div class="trend-card">
+<h4>주요 이점</h4>
+<p>• <strong>엔터프라이즈 지향:</strong> 조직의 워크플로우에 최적화<br/>
+                        • <strong>음성 조작 지원:</strong> 핸즈프리 브라우징 지원<br/>
+                        • <strong>탭 간 분석:</strong> 여러 소스의 정보 통합 및 비교</p>
+</div>
+</div>
+<p><strong>전망:</strong> Microsoft 365를 사용하는 기업 환경에서 2025년 말까지 Edge가 비즈니스 브라우저의 사실상 표준이 될 것으로 예측됩니다.</p>
+</section>
+<!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+<section class="section" id="competitive">
+<h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+<h3 class="subsection-title">AI 브라우저 시장의 양대 카테고리</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI 브라우저는 크게 두 가지 카테고리로 분류됩니다: 채팅과 요약 같은 AI 기능을 추가하는 스마트 헬퍼형(Arc Max, Brave Leo, Microsoft Edge Copilot, ChatGPT Atlas)과 자율적으로 브라우징과 작업을 수행하는 AI 에이전트형(Perplexity Comet, Strawberry Browser)입니다.</p>
+<table>
+<thead>
+<tr>
+<th>브라우저명</th>
+<th>카테고리</th>
+<th>특징</th>
+<th>대상 사용자</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ChatGPT Atlas</strong></td>
+<td>스마트 헬퍼</td>
+<td>대화형 AI 내장, 에이전트 모드(유료), 크로스 플랫폼</td>
+<td>ChatGPT 헤비 유저</td>
+</tr>
+<tr>
+<td><strong>Perplexity Comet</strong></td>
+<td>AI 에이전트</td>
+<td>자율적 브라우징, 복잡 태스크 처리, 검색 엔진 통합</td>
+<td>효율 중시의 파워 유저</td>
+</tr>
+<tr>
+<td><strong>Brave Leo</strong></td>
+<td>스마트 헬퍼</td>
+<td>프라이버시 보호, 즉시 사용, 멀티 모델 지원</td>
+<td>프라이버시 의식이 높은 사용자</td>
+</tr>
+<tr>
+<td><strong>Chrome + Gemini</strong></td>
+<td>스마트 헬퍼</td>
+<td>무료 AI 기능, Workspace 통합, 사이드 패널 설계</td>
+<td>기존 Chrome 사용자 전반</td>
+</tr>
+<tr>
+<td><strong>Edge Copilot</strong></td>
+<td>스마트 헬퍼</td>
+<td>Microsoft 365 연동, 음성 조작, 탭 간 분석</td>
+<td>기업·비즈니스 사용자</td>
+</tr>
+<tr>
+<td><strong>Arc Max</strong></td>
+<td>스마트 헬퍼</td>
+<td>워크스페이스형 UI, 세로 탭, AI 요약</td>
+<td>디자인 중시 크리에이티브층</td>
+</tr>
+<tr>
+<td><strong>Opera Aria / Neon</strong></td>
+<td>스마트 헬퍼 / 에이전트</td>
+<td>사이드바 AI, Neon은 에이전트형 개발 중</td>
+<td>신기능을 시험하고 싶은 얼리어답터</td>
+</tr>
+<tr>
+<td><strong>SigmaOS Airis</strong></td>
+<td>스마트 헬퍼</td>
+<td>Mac 전용, 워크스페이스 UI, 태스크 자동화</td>
+<td>Mac 사용자·생산성 중시층</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">주요 브라우저 비교 차트</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 활용 방안 -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">활용 방안</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 사례를 소개합니다.</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>조사·리서치 업무 효율화</strong> - 여러 소스에서 정보를 수집하는 작업을 AI 에이전트(Comet)에 맡기고, 요약·분석에 집중하는 활용 패턴이 확산되고 있습니다.</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>프라이버시 중심 환경 구축</strong> - 기업의 기밀 정보를 다루는 부서에서 Brave Leo와 같은 프라이버시 우선 브라우저를 표준화하는 움직임이 관찰됩니다.</p>
+<p style="line-height: 1.6;">3. <strong>생태계 통합을 통한 생산성 향상</strong> - Microsoft 365 환경에서는 Edge Copilot, Google Workspace 환경에서는 Chrome Gemini를 활용해 기존 도구와의 연계를 극대화하는 사례가 증가하고 있습니다.</p>
+</div>
+</section>
+<!-- SECTION 4: 핵심 요약 -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">핵심 요약</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 발견사항</h3>
+<ul class="key-findings">
+<li><strong>시장의 급성장:</strong> AI 브라우저 시장은 2024년 45억 달러에서 2034년 768억 달러로 연평균 32.8% 성장할 전망입니다.</li>
+<li><strong>에이전트형으로의 전환:</strong> 스마트 헬퍼형에서 자율적인 AI 에이전트형으로의 전환이 2025년 후반 본격화됩니다.</li>
+<li><strong>프라이버시가 기본값:</strong> 모든 주요 브라우저가 AI 기능을 기본적으로 꺼두고 명시적 옵트인을 요구하고 있습니다.</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>자율적 태스크 처리 필요 → Perplexity Comet</strong><br/>
+                        이유: AI 에이전트가 복잡한 멀티스텝 태스크를 자동 실행<br/>
+<strong>프라이버시 중시 → Brave Leo</strong><br/>
+                        이유: 가입 불필요, 프라이버시 우선 설계<br/>
+<strong>기존 생태계 통합 → Chrome Gemini(Google) / Edge Copilot(Microsoft)</strong><br/>
+                        이유: Workspace 또는 Microsoft 365와의 깊은 연계로 생산성 극대화
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 매우 긍정적 (AI 브라우저는 수동적인 정보 소비에서 능동적인 어시스턴스 경험으로 브라우징 패러다임을 근본적으로 변화시키고 있습니다.)</p>
+</section>
+<!-- SECTION 5: 주요 용어 설명 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>AI 에이전트형 브라우저</strong> - 사용자의 지시에 따라 자율적으로 웹사이트를 탐색하고 작업을 완료하는 브라우저. 기존의 "사용자가 브라우징한다"에서 "AI가 브라우징한다"로의 패러다임 전환입니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>스마트 헬퍼형 브라우저</strong> - 채팅, 요약, 번역 등의 AI 기능을 추가하지만 사용자 자신이 브라우징을 수행하는 전통적 방식의 연장선상에 있는 브라우저입니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>멀티모달 AI</strong> - 텍스트, 이미지, 음성, 동영상 등 여러 형식의 데이터를 이해하고 처리할 수 있는 AI. Gemini 등이 대표적입니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>웹 그라운딩</strong> - AI가 실시간으로 웹 검색을 수행하여 최신 정보에 기반한 응답을 생성하는 기능. Perplexity, Gemini 등이 강점을 보입니다.
+                    </div>
+<div>
+<strong>옵트인 설계</strong> - AI 기능이 기본적으로 꺼져 있으며 사용자가 명시적으로 활성화해야 하는 프라이버시 보호 설계. 2025년 업계 표준입니다.
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 참고 자료 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>참고 자료</h3>
+<p><strong>데이터 수집:</strong> 2025년 10월 29일</p>
+<ul>
+<li>• <a href="https://techcrunch.com/2025/10/21/as-the-browser-wars-heat-up-here-are-the-hottest-alternatives-to-chrome-and-safari-in-2025/" target="_blank">TechCrunch - 브라우저 전쟁이 가열되면서 등장하는 Chrome과 Safari 대안들 (2025)</a></li>
+<li>• <a href="https://skywork.ai/blog/agent/chatgpt-atlas-vs-arc-browser-vs-brave-leo-2025-full-comparison/" target="_blank">ChatGPT Atlas vs Arc Browser vs Brave Leo 2025 완전 비교</a></li>
+<li>• <a href="https://brave.com/blog/leo-roadmap-2025-update/" target="_blank">브라우저 AI 구축: Leo의 개발 진행 상황 및 계획 - Brave</a></li>
+<li>• <a href="https://research.aimultiple.com/ai-web-browser/" target="_blank">ChatGPT Atlas 포함 주요 AI 웹 브라우저 벤치마크</a></li>
+<li>• <a href="https://www.sigmabrowser.com/blog/best-browsers-with-ai-features-comparison-and-reviews" target="_blank">AI 기능을 갖춘 최고의 브라우저: 비교 및 리뷰</a></li>
+<li>• <a href="https://www.orangeseo.net/blog/2025/10/23/the-ai-browser-war" target="_blank">AI 브라우저 전쟁: Chrome, Edge, ChatGPT Atlas &amp; Comet</a></li>
+<li>• <a href="https://clickup.com/blog/hub/ai/news/openai-launches-chatgpt-atlas-browser/" target="_blank">OpenAI, Chrome의 지배력에 도전하는 ChatGPT Atlas 브라우저 출시</a></li>
+<li>• <a href="https://analyticsindiamag.com/ai-trends/top-5-ai-powered-web-browsers-in-2025-worth-considering/" target="_blank">2025년 고려해볼 만한 AI 기반 웹 브라우저 상위 5개</a></li>
+<li>• <a href="https://www.datastudios.org/post/chatgpt-vs-microsoft-copilot-vs-google-gemini-full-report-and-comparison-july-2025-update" target="_blank">ChatGPT vs Microsoft Copilot vs Google Gemini: 전체 보고서 및 비교 (2025년 7월)</a></li>
+</ul>
+<p style="margin-top: 0.5rem; font-size: 0.65rem; color: #808080;"><em>주: 실제 URL 링크가 포함되어 있습니다. WebSearch 결과에서 수집한 URL을 사용했습니다.</em></p>
+</div>
+</section>
+</div>
+</div>
+<script>
+        // Chart.js - 주요 브라우저 비교 차트
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['사용 편의성', 'AI 기능', '프라이버시', '생태계 통합', '가격'],
+                datasets: [
+                    {
+                        label: 'ChatGPT Atlas',
+                        data: [85, 95, 70, 75, 90],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Brave Leo',
+                        data: [90, 80, 95, 65, 95],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Chrome Gemini',
+                        data: [95, 85, 60, 95, 100],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'Perplexity Comet',
+                        data: [80, 100, 75, 70, 100],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

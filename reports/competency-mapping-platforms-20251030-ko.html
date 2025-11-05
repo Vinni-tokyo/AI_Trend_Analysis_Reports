@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>역량 매핑 및 스킬 온톨로지 플랫폼 트렌드 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← 홈</a>
+<div class="language-switcher">
+<button class="lang-btn" onclick="window.location.href='competency-mapping-platforms-20251030-ja.html'">日本語</button>
+<button class="lang-btn active" onclick="window.location.href='competency-mapping-platforms-20251030-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='competency-mapping-platforms-20251030-en.html'">English</button>
+</div>
+</div>
+<h1>역량 매핑 및<br/>스킬 온톨로지 플랫폼</h1>
+<div class="subtitle">노동 시장 스킬 인텔리전스와 인재 매핑의 진화</div>
+<div class="meta">보고서 작성일: 2025년 10월 30일 | 표준 보고서 (5페이지)</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 주요 트렌드 Top 5 -->
+<section class="section" id="trends">
+<h2 class="section-title">주요 트렌드 Top 5</h2>
+<h3 class="subsection-title">1. Lightcast 스킬 분류 체계: 노동시장 데이터의 통합적 실시간 분석</h3>
+<p><strong>현황:</strong> Lightcast(구 EMSI Burning Glass)는 40,000개 이상의 데이터 소스에서 매일 업데이트되는 33,000개 이상의 스킬을 포괄적으로 분류하는 업계 최대 규모의 스킬 분류 체계를 운영합니다. 이 분류 체계는 구인 정보, 이력서, 교육 프로그램, 급여 데이터를 통합하여 노동시장 동향을 실시간으로 추적합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>스킬 분류 구조</h4>
+<p>• <strong>3가지 스킬 타입:</strong> ST1 스킬(전문 스킬), 공통 스킬, 자격증<br/>
+                        • <strong>31개 카테고리:</strong> IT, 헬스케어, 금융 등 산업별 정리<br/>
+                        • <strong>계층적 분류:</strong> 광범위한 스킬부터 구체적 스킬까지 계층화<br/>
+                        • <strong>스킬 연관성:</strong> 유사 스킬, 대체 스킬, 보완 스킬 관계 매핑</p>
+</div>
+<div class="trend-card">
+<h4>주요 기능</h4>
+<p>• <strong>노동시장 인사이트:</strong> 직무별 수요 스킬과 공급 갭 분석<br/>
+                        • <strong>급여 데이터 통합:</strong> 스킬과 보상의 상관관계 시각화<br/>
+                        • <strong>교육 프로그램 분석:</strong> 학습 프로그램과 커리어 패스 연결<br/>
+                        • <strong>API 액세스:</strong> 기업 시스템 통합 지원</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://lightcast.io/" target="_blank">Lightcast</a> |
+                    <a href="https://skills.lightcast.io/" target="_blank">Lightcast Open Skills</a>
+</div>
+<p><strong>전망:</strong> Lightcast는 2025년 이후 AI와 NLP를 활용하여 스킬 분류의 정확도를 향상시키고, 글로벌 노동시장의 표준으로 확립될 것으로 예상됩니다. 기업은 인재 채용부터 직원 커리어 개발까지 데이터 기반 의사결정을 실현할 수 있게 됩니다.</p>
+<h3 class="subsection-title">2. O*NET 스킬 프레임워크: 미국 노동부의 표준화 스킬 체계</h3>
+<p><strong>현황:</strong> O*NET(Occupational Information Network)은 미국 노동부가 관리하는 포괄적인 직업 분류 및 스킬 프레임워크로, 1,000개 이상의 직업과 35개 스킬을 7개 카테고리로 분류합니다. 교육기관, 정부기관, 기업이 널리 채택하는 공적 표준으로 기능합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>7가지 스킬 카테고리</h4>
+<p>• <strong>콘텐츠 스킬:</strong> 독해력, 수학, 과학<br/>
+                        • <strong>프로세스 스킬:</strong> 비판적 사고, 능동적 학습, 모니터링<br/>
+                        • <strong>사회적 스킬:</strong> 커뮤니케이션, 협상, 서비스 지향<br/>
+                        • <strong>복잡한 문제 해결:</strong> 문제 식별 및 솔루션 실행</p>
+</div>
+<div class="trend-card">
+<h4>주요 기능</h4>
+<p>• <strong>직업 매칭:</strong> 스킬 프로필에서 적합 직업 추천<br/>
+                        • <strong>교육 프로그램 설계:</strong> 직업 요구사항 기반 커리큘럼 개발<br/>
+                        • <strong>커리어 전환 지원:</strong> 이직 시 스킬 갭 분석<br/>
+                        • <strong>무료 접근:</strong> 오픈 데이터베이스로 공개</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.onetonline.org/" target="_blank">O*NET OnLine</a> |
+                    <a href="https://www.onetcenter.org/" target="_blank">O*NET Resource Center</a>
+</div>
+<p><strong>전망:</strong> O*NET은 AI와 데이터 사이언스의 새로운 직업을 추가하며 디지털 경제에 대응한 스킬 프레임워크로 진화하고 있습니다. 정부 주도의 표준으로서 커리어 가이던스와 노동시장 정책의 기반이 됩니다.</p>
+<h3 class="subsection-title">3. ESCO: 유럽 다국어 스킬 분류 시스템</h3>
+<p><strong>현황:</strong> ESCO(European Skills, Competences, Qualifications and Occupations)는 유럽연합이 개발한 다국어(27개 언어 지원) 스킬, 역량, 자격증, 직업 분류 시스템입니다. EU 회원국 간 노동력 이동성을 높이고 교육과 노동시장의 연결을 강화하기 위해 설계되었습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>ESCO 분류 특징</h4>
+<p>• <strong>3개 주요 부문:</strong> 직업, 스킬/역량, 자격증<br/>
+                        • <strong>13,890개 직업:</strong> 유럽 노동시장 전체 포괄<br/>
+                        • <strong>13,000개 이상 스킬:</strong> 기술 스킬과 횡단 스킬 분류<br/>
+                        • <strong>27개 언어 지원:</strong> EU 전역 상호운용성 확보</p>
+</div>
+<div class="trend-card">
+<h4>주요 활용 사례</h4>
+<p>• <strong>구인 매칭:</strong> EURES 등 유럽 구인 포털 통합<br/>
+                        • <strong>교육 커리큘럼:</strong> 대학 및 직업훈련 프로그램 표준화<br/>
+                        • <strong>자격증 인정:</strong> 국경을 넘어선 자격증 상호 인증<br/>
+                        • <strong>오픈 데이터:</strong> API와 Linked Data로 공개</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://esco.ec.europa.eu/" target="_blank">ESCO Portal</a> |
+                    <a href="https://ec.europa.eu/esco/portal" target="_blank">European Commission ESCO</a>
+</div>
+<p><strong>전망:</strong> ESCO는 AI와 디지털 스킬 분류를 확대하며 글로벌 스킬 표준 모델로서 다른 지역에도 영향을 미치고 있습니다. 유럽의 디지털 단일 시장에서 인재 유동성을 촉진하는 중요한 기반이 됩니다.</p>
+<h3 class="subsection-title">4. 스킬 기반 인재 마켓플레이스: AI를 통한 인재 최적 배치</h3>
+<p><strong>현황:</strong> Gloat, Fuel50, Eightfold AI 등 스킬 기반 인재 마켓플레이스는 직원의 스킬 프로필을 실시간으로 분석하여 사내 새로운 역할, 프로젝트, 학습 기회와 매칭하는 내부 인재 시장을 제공합니다. 이를 통해 기업은 기존 인재를 최대한 활용하고 직원 몰입도를 향상시킵니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>플랫폼 핵심 기능</h4>
+<p>• <strong>Gloat:</strong> 시장 대응형 스킬 온톨로지, 내부 채용 및 긱 프로젝트 매칭<br/>
+                        • <strong>Fuel50:</strong> I/O 심리학자 설계 20,000 스킬 분류, 커리어 패스 시각화<br/>
+                        • <strong>Eightfold AI:</strong> 딥러닝 기반 인재 추천, 스킬 갭 예측<br/>
+                        • <strong>iMocha:</strong> 3,000개 이상 스킬 평가, 코딩 테스트 통합</p>
+</div>
+<div class="trend-card">
+<h4>비즈니스 효과</h4>
+<p>• <strong>내부 채용률 향상:</strong> 30-50% 증가 실현<br/>
+                        • <strong>이직률 감소:</strong> 커리어 성장 기회 가시화로 정착률 향상<br/>
+                        • <strong>스킬 갭 조기 발견:</strong> 미래 필요 스킬 예측<br/>
+                        • <strong>다양성 추진:</strong> 스킬 기반 객관적 평가</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://www.fuel50.com/" target="_blank">Fuel50</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://www.imocha.io/" target="_blank">iMocha</a>
+</div>
+<p><strong>전망:</strong> 2025년 이후 스킬 기반 인재 마켓플레이스는 원격근무와 하이브리드 근무의 보급으로 기업 인재 전략의 핵심이 됩니다. AI를 통한 지속적인 스킬 분석과 개인화된 학습 추천이 표준 기능이 됩니다.</p>
+<h3 class="subsection-title">5. AI 스킬 인텔리전스 시장의 급성장</h3>
+<p><strong>현황:</strong> AI를 활용한 스킬 인텔리전스 시장은 2024년부터 2032년까지 연평균 20.1%의 성장률(CAGR)을 보이며 265억 6천만 달러에 도달할 것으로 예측됩니다. 기업은 인재 채용, 육성, 배치의 각 단계에서 AI 스킬 분석을 도입하여 데이터 기반 의사결정을 실현하고 있습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>시장 성장 요인</h4>
+<p>• <strong>스킬 기반 채용 확산:</strong> 학력보다 스킬을 중시하는 기업 증가<br/>
+                        • <strong>스킬 갭 심각화:</strong> 기술 혁신으로 인한 수요-공급 미스매치<br/>
+                        • <strong>리스킬링 투자:</strong> 기존 직원의 스킬 전환이 시급<br/>
+                        • <strong>AI 정확도 향상:</strong> NLP와 ML을 통한 고정밀 스킬 분석</p>
+</div>
+<div class="trend-card">
+<h4>주요 활용 영역</h4>
+<p>• <strong>인재 채용:</strong> AI 기반 후보자 스킬 매칭<br/>
+                        • <strong>스킬 갭 분석:</strong> 조직 전체 스킬 부족 가시화<br/>
+                        • <strong>학습 추천:</strong> 개인에 최적화된 연수 프로그램 제안<br/>
+                        • <strong>커리어 패스 설계:</strong> 다음 단계를 예측적으로 추천</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.gartner.com/en/human-resources" target="_blank">Gartner HR Research</a> |
+                    <a href="https://www.forrester.com/research/" target="_blank">Forrester Talent Management Research</a>
+</div>
+<p><strong>전망:</strong> AI 스킬 인텔리전스는 HR 테크의 핵심 기술로 정착하며 모든 기업 규모에서 도입이 진행됩니다. 스킬 데이터의 표준화와 프라이버시 보호가 중요한 과제가 되며, 업계 전체에서 공통 프레임워크 구축이 요구됩니다.</p>
+</section>
+<!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+<section class="section" id="competitive">
+<h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+<h3 class="subsection-title">4계층 시장 구조</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">역량 매핑 및 스킬 온톨로지 시장은 데이터 소스, 대상 사용자, 기능 깊이에 따라 4개 계층으로 분류됩니다. 공적 표준 프레임워크부터 기업용 AI 플랫폼까지 다양한 선택지가 존재합니다.</p>
+<table>
+<thead>
+<tr>
+<th>플랫폼명</th>
+<th>카테고리</th>
+<th>스킬 수</th>
+<th>주요 특징</th>
+<th>대상 사용자</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lightcast</strong></td>
+<td>노동시장 데이터</td>
+<td>33,000+</td>
+<td>실시간 노동시장 분석, 급여 데이터 통합</td>
+<td>기업, 교육기관, 정부</td>
+</tr>
+<tr>
+<td><strong>O*NET</strong></td>
+<td>공적 표준</td>
+<td>35개 스킬</td>
+<td>미국 정부 표준, 1,000개 직업 분류</td>
+<td>커리어 상담사, 교육기관</td>
+</tr>
+<tr>
+<td><strong>ESCO</strong></td>
+<td>공적 표준 (유럽)</td>
+<td>13,000+</td>
+<td>27개 언어 지원, EU 노동시장 통합</td>
+<td>EU 기업, 교육기관, 정부</td>
+</tr>
+<tr>
+<td><strong>Gloat</strong></td>
+<td>인재 마켓플레이스</td>
+<td>시장 대응형</td>
+<td>내부 채용 매칭, 긱 프로젝트</td>
+<td>대기업 (5,000명 이상)</td>
+</tr>
+<tr>
+<td><strong>Fuel50</strong></td>
+<td>인재 마켓플레이스</td>
+<td>20,000</td>
+<td>커리어 패스 시각화, I/O 심리학 설계</td>
+<td>중대기업</td>
+</tr>
+<tr>
+<td><strong>Eightfold AI</strong></td>
+<td>AI 인재 플랫폼</td>
+<td>딥러닝</td>
+<td>예측적 인재 추천, 스킬 갭 예측</td>
+<td>엔터프라이즈</td>
+</tr>
+<tr>
+<td><strong>iMocha</strong></td>
+<td>스킬 평가</td>
+<td>3,000+</td>
+<td>기술 스킬 테스트, 코딩 평가</td>
+<td>IT 기업, 채용팀</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">시장 트렌드 (5가지 주요 변화)</h3>
+<ul class="key-findings">
+<li><strong>공적 표준의 국제화:</strong> O*NET과 ESCO가 상호운용성을 높이며 글로벌 스킬 표준 기반 형성</li>
+<li><strong>실시간 데이터로의 전환:</strong> Lightcast와 같은 동적 데이터 소스가 정적 분류 체계 보완</li>
+<li><strong>AI 통합 가속:</strong> 모든 주요 플랫폼이 NLP와 ML을 도입하여 자동 스킬 추론 실현</li>
+<li><strong>내부 인재 시장 확산:</strong> 대기업이 사내 인재의 가시화와 스킬 활용 우선</li>
+<li><strong>스킬 평가 표준화:</strong> iMocha 등 객관적 평가 도구가 채용과 육성 양면에서 활용</li>
+</ul>
+<h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 활용 아이디어 -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">활용 아이디어</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근법을 소개합니다.</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>공적 표준 활용 (O*NET/ESCO)</strong> - 커리어 상담 및 교육 프로그램 설계의 기초로 활용. 무료 접근 가능하여 초기 투자를 낮추면서 표준적 스킬 프레임워크 도입이 가능합니다.</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>노동시장 데이터 분석 (Lightcast)</strong> - 채용 전략 및 인재 육성 계획 수립에 활용. 실시간 수요 데이터로 미래 스킬 갭을 예측하고 전략적 인재 투자를 실현합니다.</p>
+<p style="line-height: 1.6;">3. <strong>내부 인재 마켓플레이스 (Gloat/Fuel50)</strong> - 대기업이 사내 인재의 스킬을 가시화하고 내부 채용과 프로젝트 매칭을 최적화. 직원의 커리어 성장 기회를 확대하고 정착률을 향상시킵니다.</p>
+</div>
+</section>
+<!-- SECTION 4: 요약 -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">요약</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 포인트</h3>
+<ul class="key-findings">
+<li><strong>스킬 분류 표준화 진전:</strong> 공적 표준(O*NET, ESCO)과 민간 데이터(Lightcast)가 보완 관계를 형성하며 글로벌 스킬 분류 기반 확립</li>
+<li><strong>AI 스킬 인텔리전스 시장 급성장:</strong> 2024-2032년 연평균 20.1% 성장하여 265억 6천만 달러 시장 도달. 기업의 데이터 기반 인재 전략 지원</li>
+<li><strong>내부 인재 시장 확산:</strong> Gloat, Fuel50, Eightfold AI 등 플랫폼이 사내 인재 최적 배치와 직원 몰입도 향상 실현</li>
+<li><strong>실시간 데이터의 중요성:</strong> Lightcast의 33,000 스킬 분류는 매일 업데이트되어 노동시장의 동적 변화에 대응. 정적 분류 체계 보완 역할</li>
+<li><strong>다국어 지원 필요성:</strong> ESCO의 27개 언어 지원 모델은 글로벌 기업과 교육기관에 인재 유동성을 높이는 중요한 기반</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>커리어 상담 및 교육기관 → O*NET/ESCO</strong><br/>
+                        이유: 무료 접근 가능한 공적 표준으로 직업 분류 및 스킬 프레임워크 정비<br/><br/>
+<strong>채용 전략 및 노동시장 분석 → Lightcast</strong><br/>
+                        이유: 실시간 노동시장 데이터와 급여 정보 통합하여 데이터 기반 의사결정 지원<br/><br/>
+<strong>대기업 내부 인재 활용 → Gloat/Fuel50/Eightfold AI</strong><br/>
+                        이유: AI 기반 사내 인재 매칭과 예측적 스킬 갭 분석으로 인재 최적 배치 실현<br/><br/>
+<strong>기술 스킬 객관적 평가 → iMocha</strong><br/>
+                        이유: 3,000개 이상 스킬 평가 테스트와 코딩 평가로 채용 및 육성 양면 활용
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (스킬 분류와 AI 분석의 융합으로 기업과 교육기관의 인재 전략이 크게 진화하고 있습니다. 공적 표준과 민간 플랫폼의 연계가 글로벌 인재 유동성과 스킬 개발을 촉진합니다)</p>
+</section>
+<!-- SECTION 5: 주요 용어 설명 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>스킬 온톨로지:</strong> 스킬, 직업, 산업 간 관계를 구조화한 프레임워크. 유사 스킬, 대체 스킬, 보완 스킬의 관계를 매핑하여 커리어 패스 및 학습 추천의 기반이 됩니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>역량 매핑:</strong> 조직이나 개인의 스킬과 능력을 체계적으로 평가하고 가시화하는 프로세스. 스킬 갭 식별과 커리어 개발 계획 수립에 활용됩니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>인재 마켓플레이스:</strong> 사내 인재 스킬을 실시간으로 분석하여 새로운 역할, 프로젝트, 학습 기회와 매칭하는 내부 시장 플랫폼.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>스킬 인텔리전스:</strong> AI와 데이터 분석을 활용하여 노동시장의 스킬 수요, 공급, 트렌드를 예측적으로 분석하는 기술. 채용, 육성, 배치 의사결정을 지원합니다.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>스킬 기반 채용:</strong> 학력이나 경력보다 후보자의 실제 스킬과 능력을 중시하는 채용 접근법. IBM과 Google 등 대기업이 학위 요건을 철폐하고 스킬 중심 채용을 추진하고 있습니다.
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 참고 자료 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>참고 자료</h3>
+<p><strong>데이터 수집:</strong> 2025년 10월 30일</p>
+<ul>
+<li>• <a href="https://lightcast.io/" target="_blank">Lightcast - Skills Classification and Labor Market Data</a></li>
+<li>• <a href="https://www.onetonline.org/" target="_blank">O*NET Online - Occupational Information Network</a></li>
+<li>• <a href="https://esco.ec.europa.eu/" target="_blank">ESCO - European Skills, Competences, Qualifications and Occupations</a></li>
+<li>• <a href="https://gloat.com/" target="_blank">Gloat - Talent Marketplace Platform</a></li>
+<li>• <a href="https://www.fuel50.com/" target="_blank">Fuel50 - Career Pathing and Skills Platform</a></li>
+<li>• <a href="https://eightfold.ai/" target="_blank">Eightfold AI - Talent Intelligence Platform</a></li>
+<li>• <a href="https://www.imocha.io/" target="_blank">iMocha - Skills Assessment Platform</a></li>
+<li>• <a href="https://www.gartner.com/en/human-resources" target="_blank">Gartner HR Research - AI Skills Intelligence Market Forecast</a></li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['데이터 범위', '실시간성', '다국어 지원', 'AI 통합', '접근성'],
+                datasets: [
+                    {
+                        label: 'Lightcast',
+                        data: [95, 95, 70, 85, 60],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'O*NET',
+                        data: [70, 60, 50, 40, 100],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ESCO',
+                        data: [80, 65, 100, 50, 95],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gloat',
+                        data: [85, 90, 60, 95, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 11
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

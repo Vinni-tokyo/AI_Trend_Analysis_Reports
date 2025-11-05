@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>교육 데이터 통합 및 상호운용성 표준</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.75rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← 홈</a>
+<div class="language-switcher">
+<button class="lang-btn" onclick="window.location.href='educational-data-integration-20251030-ja.html'">日本語</button>
+<button class="lang-btn active" onclick="window.location.href='educational-data-integration-20251030-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='educational-data-integration-20251030-en.html'">English</button>
+</div>
+</div>
+<h1>교육 데이터 통합 및 상호운용성 표준</h1>
+<div class="subtitle">Ed-Fi, OneRoster, LTI, CALIPER를 통한 데이터 표준화의 진화</div>
+<div class="meta">리포트 작성일: 2025년 10월 30일 | 표준 리포트 (5-8페이지)</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 주요 트렌드 TOP 5 -->
+<section class="section" id="trends">
+<h2 class="section-title">주요 트렌드 TOP 5</h2>
+<h3 class="subsection-title">1. 교육 데이터 분석 시장의 폭발적 성장과 AI 통합</h3>
+<p><strong>현황:</strong> 교육 및 학습 분석 시장은 <strong>2024년 407억 5천만 달러에서 2033년 1,425억 4천만 달러로 성장</strong>할 전망입니다 (연평균 성장률 13.44%). 이러한 성장은 AI 기반 예측 분석, 개인화된 학습 경로, 실시간 학생 성과 대시보드에 대한 수요 증가에 기인합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>시장 추진 요인</h4>
+<p>• <strong>예측 분석:</strong> AI를 활용한 조기 경고 시스템으로 학생 성적 및 중퇴 위험 예측<br/>
+                        • <strong>개인화:</strong> 개별 학생에게 맞춤화된 학습 경로 자동 생성<br/>
+                        • <strong>실시간 모니터링:</strong> 교사를 위한 학생 성과 대시보드로 즉시 개입</p>
+</div>
+<div class="trend-card">
+<h4>지역별 동향</h4>
+<p>• <strong>북미:</strong> 시장 점유율 36.8%로 선도 (2024년)<br/>
+                        • <strong>유럽:</strong> GDPR 준수의 엄격한 데이터 보호 요구사항<br/>
+                        • <strong>아시아 태평양:</strong> 최고 성장 지역, K-12 디지털화 투자 증가</p>
+</div>
+</div>
+<p><strong>전망:</strong> 2025-2033년 동안 교육 기관은 데이터 기반 의사결정, 학생 성과 개선, 운영 효율성 향상의 혜택을 받을 것입니다.</p>
+<h3 class="subsection-title">2. Ed-Fi Alliance 데이터 표준과 OneRoster 통합</h3>
+<p><strong>현황:</strong> 2025년의 중요한 발전으로, <strong>1EdTech와 Ed-Fi Alliance의 데이터 표준 통합으로 OneRoster가 Ed-Fi 데이터 표준에 정렬된 데이터에 액세스 가능</strong>해졌습니다. 현재 현장 테스트 중이며, 파일럿 파트너로는 델라웨어 주 교육부, ClassLink, Education Analytics가 포함됩니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>기술적 접근 방식</h4>
+<p>• <strong>Ed-Fi ODS/API:</strong> 학생, 교직원, 성적, 출석, 평가 데이터 중앙 집중화<br/>
+                        • <strong>OneRoster API:</strong> Ed-Fi 데이터를 로스터링 도구가 사용 가능한 형식으로 제공<br/>
+                        • <strong>공동 운영 위원회:</strong> 통합 전략을 개발하는 합동 로스터링 운영 위원회</p>
+</div>
+<div class="trend-card">
+<h4>구현 사례</h4>
+<p>• <strong>Michigan Data Hub:</strong> OneRoster와 Ed-Fi 표준을 통합하여 MiDataHub 생태계에서 데이터를 더욱 접근 가능하고 실행 가능하게 만듦<br/>
+                        • <strong>ClassLink:</strong> OneRoster와 Ed-Fi 데이터 표준을 연결</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.ed-fi.org/" target="_blank">Ed-Fi Alliance</a> |
+                    <a href="https://www.1edtech.org/standards/oneroster" target="_blank">OneRoster</a> |
+                    <a href="https://www.classlink.com/" target="_blank">ClassLink</a>
+</div>
+<p><strong>전망:</strong> 2025년 Tech Congress와 Learning Impact 컨퍼런스에서 제안이 공유되었으며, 2026년 초 정식 출시를 위해 이해관계자 피드백을 수집 중입니다.</p>
+<h3 class="subsection-title">3. IMS Global LTI 1.3 및 LTI Advantage의 업계 표준화</h3>
+<p><strong>현황:</strong> <strong>Learning Tools Interoperability (LTI) 1.3</strong>은 LMS와 외부 교육 도구 간의 안전한 통합을 위한 업계 표준입니다. Canvas, Moodle, Blackboard, D2L Brightspace, Schoology와 같은 주요 LMS 플랫폼이 LTI 1.3 with Advantage를 지원합니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>LTI Advantage 기능</h4>
+<p>• <strong>Names and Role Provisioning Services (NRPS):</strong> 사용자 정보 자동 동기화<br/>
+                        • <strong>Deep Linking:</strong> LMS 내 외부 콘텐츠 직접 삽입<br/>
+                        • <strong>Assignment and Grade Services (AGS):</strong> 외부 도구에서 LMS로 성적 자동 반환</p>
+</div>
+<div class="trend-card">
+<h4>마이그레이션 타임라인</h4>
+<p>• <strong>2025년 7월 1일:</strong> Canvas EduApp 및 Brightspace Plugin이 LTI 1.3 전용으로 전환<br/>
+                        • <strong>비추천화:</strong> OAuth 1.0a 및 LTI 1.0/1.1/1.2/2.0 인증 폐지<br/>
+                        • <strong>보안:</strong> 1EdTech Security Framework로 강화된 보안</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.1edtech.org/standards/lti" target="_blank">LTI Standard</a> |
+                    <a href="https://www.instructure.com/canvas" target="_blank">Canvas LMS</a> |
+                    <a href="https://www.blackboard.com/" target="_blank">Blackboard</a>
+</div>
+<p><strong>전망:</strong> K-20 기관 전반에 걸쳐 EdTech 공급업체에 LTI Advantage 채택 및 1EdTech 인증 획득을 강력히 요구하고 있습니다.</p>
+<h3 class="subsection-title">4. CALIPER Analytics 프레임워크를 통한 학습 분석 표준화</h3>
+<p><strong>현황:</strong> <strong>CALIPER Analytics 1.2</strong> (1EdTech)는 학습 활동 데이터를 수집하고 교환하기 위한 표준 형식을 제공합니다. 구조화된 어휘 세트를 제공하여 서로 다른 애플리케이션의 이벤트 데이터를 변환하고 교환할 수 있습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>주요 구성요소</h4>
+<p>• <strong>Metric Profiles:</strong> 학습 활동을 모델링하는 도메인별 용어 세트<br/>
+                        • <strong>Sensor API:</strong> 계측된 애플리케이션에서 대상 엔드포인트로 이벤트 데이터 정렬 및 전송<br/>
+                        • <strong>JSON-LD 형식:</strong> 각 이벤트 및 엔티티는 JSON-LD 문서로 표현</p>
+</div>
+<div class="trend-card">
+<h4>사용 목적</h4>
+<p>• <strong>데이터 상호 운용성:</strong> 서로 다른 시스템 간 학습 데이터 공유 촉진<br/>
+                        • <strong>데이터 기반 의사결정:</strong> 학생 행동 및 성과에 대한 통찰력 획득<br/>
+                        • <strong>엔벨로프 구조:</strong> Sensor의 메타데이터와 데이터 페이로드를 포함하는 JSON 구조</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www.1edtech.org/standards/caliper" target="_blank">CALIPER Analytics</a> |
+                    <a href="https://www.imsglobal.org/spec/caliper/v1p2" target="_blank">CALIPER 1.2 Specification</a>
+</div>
+<p><strong>전망:</strong> 교육 기관은 여러 시스템의 학습 데이터를 단일 분석 플랫폼으로 집계하여 학생 행동 및 성과에 대한 통찰력을 얻을 수 있습니다.</p>
+<h3 class="subsection-title">5. FERPA 현대화 및 데이터 프라이버시 강화 (2025년 업데이트)</h3>
+<p><strong>현황:</strong> 미국 교육부는 <strong>2025년 Family Educational Rights and Privacy Act (FERPA) 업데이트 지침</strong>을 발표하여 클라우드 기반 교육 기술, AI 분석, 제3자 데이터 공유에 대한 새로운 지침을 포함했습니다.</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>주요 업데이트 사항</h4>
+<p>• <strong>AI 및 예측 분석:</strong> AI 모델에서 학생 데이터 사용 시 명시적 동의 필요<br/>
+                        • <strong>데이터 최소화:</strong> 학교는 의도된 교육 목적에 필요한 최소한의 학생 데이터만 수집해야 함<br/>
+                        • <strong>제3자 계약:</strong> 데이터 보존, 삭제, 보안 관행에 대한 강화된 요구사항</p>
+</div>
+<div class="trend-card">
+<h4>컴플라이언스 과제</h4>
+<p>• <strong>사이버보안 격차:</strong> 2025년 중반 명확한 사이버보안 요구사항 부족 지적<br/>
+                        • <strong>벤더 평가:</strong> SaaS 제공업체가 FERPA의 엄격한 개인정보 보호 요구사항 준수 여부 신중히 평가<br/>
+                        • <strong>SOC 2 Type II:</strong> 벤더의 데이터 보안 표준 준수를 보여주는 인증</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 관련 링크:</strong>
+<a href="https://www2.ed.gov/policy/gen/guid/fpco/ferpa/" target="_blank">FERPA - U.S. Department of Education</a>
+</div>
+<p><strong>전망:</strong> 2025년 4월 30일까지 주 교육 기관 및 지방 교육 기관은 이러한 의무 사항 준수를 입증하는 문서 제출이 요구되었습니다. 교육부는 집행 및 투명성을 강화하고 있습니다.</p>
+</section>
+<!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+<section class="section" id="competitive">
+<h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+<h3 class="subsection-title">4계층 시장 구조</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">교육 데이터 상호 운용성 생태계는 오픈 표준, 사양, 컴플라이언스 프레임워크로 구성됩니다:</p>
+<table>
+<thead>
+<tr>
+<th>플랫폼/표준</th>
+<th>카테고리</th>
+<th>주요 기능</th>
+<th>대상 사용 사례</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ed-Fi Alliance</strong></td>
+<td>데이터 표준</td>
+<td>ODS/API, 무료 오픈소스</td>
+<td>K-12 학생 정보 시스템 통합</td>
+</tr>
+<tr>
+<td><strong>OneRoster 1.2</strong></td>
+<td>로스터링</td>
+<td>학생·교직원 데이터 교환, OAuth 2.0</td>
+<td>SIS-LMS 데이터 동기화</td>
+</tr>
+<tr>
+<td><strong>LTI 1.3 (LTI Advantage)</strong></td>
+<td>도구 통합</td>
+<td>SSO, 성적 반환, Deep Linking</td>
+<td>LMS-외부 도구 연결</td>
+</tr>
+<tr>
+<td><strong>CALIPER Analytics 1.2</strong></td>
+<td>학습 분석</td>
+<td>학습 이벤트 데이터, Sensor API</td>
+<td>학습 분석 및 대시보드</td>
+</tr>
+<tr>
+<td><strong>FERPA (2025 업데이트)</strong></td>
+<td>프라이버시 규정</td>
+<td>학생 데이터 프라이버시, 명시적 동의</td>
+<td>컴플라이언스 및 동의 관리</td>
+</tr>
+<tr>
+<td><strong>xAPI (Experience API)</strong></td>
+<td>학습 경험 추적</td>
+<td>LMS 외부 학습 활동 캡처</td>
+<td>비형식 학습 추적</td>
+</tr>
+<tr>
+<td><strong>Common Education Data Standards (CEDS)</strong></td>
+<td>데이터 요소 정의</td>
+<td>데이터 요소 표준화</td>
+<td>교육 데이터 요소 표준화</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+<h3 class="subsection-title">시장 트렌드 (5가지 주요 변화)</h3>
+<ul style="font-size: 0.95rem; line-height: 1.8; margin-left: 1.5rem;">
+<li><strong>통합 가속화:</strong> Ed-Fi + OneRoster와 같은 상호 운용성 표준 통합으로 학군이 데이터 사일로 타파</li>
+<li><strong>보안 중시:</strong> LTI 1.3 및 OAuth 2.0으로 전환, 이전 버전 (LTI 1.1/1.2) 비추천화 진행</li>
+<li><strong>AI 기반 분석 증가:</strong> 교육 데이터 분석 시장 2024-2033년 3.5배 성장, FERPA 준수 AI 사용 초점</li>
+<li><strong>클라우드 우선:</strong> SaaS 기반 로스터링 및 분석 도구가 온프레미스 솔루션 대체</li>
+<li><strong>프라이버시 규제 강화:</strong> FERPA 2025 업데이트로 명시적 동의, 데이터 최소화, 벤더 투명성 의무화</li>
+</ul>
+</section>
+<!-- SECTION 3: 적용 아이디어 -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">적용 아이디어</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근 방식을 소개합니다.</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>K-12 학군용 통합 데이터 허브</strong> - Ed-Fi ODS/API + OneRoster + CALIPER를 결합하여 학생 정보 시스템 (SIS), 학습 관리 시스템, 평가 플랫폼의 데이터를 중앙 집중화하는 데이터 허브를 구축합니다. 교사는 통합 대시보드에서 실시간 학생 성과, 출석, 행동 데이터를 확인할 수 있으며, 조기 경고 시스템이 위험에 처한 학생을 자동으로 식별합니다.</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>고등교육용 LTI 1.3 기반 LMS 통합</strong> - Canvas, Blackboard, Moodle과 같은 LMS 플랫폼은 LTI Advantage를 사용하여 외부 도구 (예: Turnitin, Kaltura, Perusall)를 통합합니다. Deep Linking을 통해 교수진은 LMS 내에서 직접 외부 콘텐츠를 삽입할 수 있으며, Assignment and Grade Services (AGS)를 통해 성적이 자동으로 성적부에 반환됩니다.</p>
+<p style="line-height: 1.6;">3. <strong>FERPA 준수 학습 분석 플랫폼</strong> - CALIPER + FERPA 2025 지침을 활용하여 학생 데이터 프라이버시를 보호하면서 학습 분석을 수행하는 플랫폼을 개발합니다. 기관은 CALIPER를 사용하여 LMS, 디지털 교과서, 평가 도구의 학습 이벤트를 수집하고, AI 모델은 학생 성공을 예측합니다. 데이터 최소화, 익명화, 학부모 동의 워크플로우가 FERPA 요구사항을 충족합니다.</p>
+</div>
+</section>
+<!-- SECTION 4: 요약 정리 -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">요약 정리</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 요점</h3>
+<ul class="key-findings">
+<li><strong>폭발적 시장 성장:</strong> 교육 데이터 분석 시장은 2024년 407.5억 달러에서 2033년 1,425.4억 달러로 성장 (연평균 성장률 13.44%). AI 기반 예측 분석과 개인화가 주요 추진 요인.</li>
+<li><strong>표준 통합 진전:</strong> Ed-Fi Alliance와 OneRoster의 통합으로 K-12 학군이 통합 데이터 인프라 구축 가능. 2025년 현장 테스트 중.</li>
+<li><strong>LTI 1.3 업계 표준화:</strong> Canvas, Moodle, Blackboard, D2L이 LTI Advantage 완전 지원. 2025년 7월부터 이전 버전 비추천화 시작.</li>
+<li><strong>CALIPER 학습 데이터 표준:</strong> 여러 플랫폼에서 학습 데이터를 집계하여 예측 분석 및 개인화 개입 가능.</li>
+<li><strong>FERPA 2025 업데이트:</strong> AI 및 제3자 데이터 공유에 대한 새 지침 도입. 기관은 혁신과 학생 프라이버시 균형 필요.</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>K-12 SIS 통합 우선 조직 → Ed-Fi Alliance + OneRoster</strong><br/>
+                        이유: 학생, 교직원, 성적, 출석 데이터 중앙 집중화로 여러 시스템 간 원활한 데이터 흐름 실현. 파일럿 실적 보유 (델라웨어주, ClassLink).<br/>
+<strong>LMS 도구 통합 우선 조직 → LTI 1.3 (LTI Advantage)</strong><br/>
+                        이유: Canvas, Blackboard, Moodle 등 주요 LMS에서 완전 지원. Deep Linking, 성적 자동 반환, 강화된 보안 제공.<br/>
+<strong>학습 분석 우선 조직 → CALIPER Analytics</strong><br/>
+                        이유: 서로 다른 시스템에서 학습 이벤트 데이터를 표준 형식으로 수집·교환. AI 기반 예측 분석 및 개인화 개입 실현.<br/>
+<strong>프라이버시 컴플라이언스 우선 조직 → FERPA 2025 지침</strong><br/>
+                        이유: AI 모델 사용 시 명시적 동의, 데이터 최소화, 제3자 계약 강화 등 최신 요구사항 준수.
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (교육 데이터 통합 표준 채택으로 데이터 기반 의사결정, 학생 성과 개선, 운영 효율성 향상 가능. 단, FERPA 2025 지침 준수 및 사이버보안 강화 필수)</p>
+</section>
+<!-- SECTION 5: 주요 용어 설명 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>Ed-Fi Alliance</strong> - K-12 교육 데이터 상호 운용성을 위한 무료 오픈소스 데이터 표준을 개발하는 비영리 조직. Ed-Fi ODS/API로 학생, 교직원, 성적 데이터 중앙 집중화.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>OneRoster 1.2</strong> - 학생, 교직원, 강좌, 등록 데이터를 교환하기 위한 1EdTech 표준 (OAuth 2.0 사용). SIS와 LMS 간 데이터 동기화에 사용.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>LTI 1.3 (Learning Tools Interoperability)</strong> - LMS와 외부 교육 도구 간의 안전한 통합을 위한 업계 표준 (OAuth2 및 OpenID Connect 사용). LTI Advantage는 성적 자동 반환, Deep Linking 등 고급 기능 제공.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>CALIPER Analytics</strong> - 학습 활동 데이터를 수집하고 교환하기 위한 1EdTech 사양 (구조화된 학습 이벤트 어휘 제공). Sensor API로 서로 다른 애플리케이션에서 이벤트 데이터 정렬·전송.
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>FERPA (Family Educational Rights and Privacy Act)</strong> - 학생 교육 기록을 보호하는 미국 연방법 (2025년 업데이트에는 AI 및 제3자 데이터 공유에 대한 새 지침 포함). 명시적 동의, 데이터 최소화, 벤더 투명성 요구.
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 참고 자료 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>참고 자료</h3>
+<p><strong>데이터 수집:</strong> 2025년 10월 30일</p>
+<ul>
+<li>• <a href="https://www.1edtech.org/about/partners/ed-fi" target="_blank">1EdTech - Ed-Fi Alliance Partnership</a></li>
+<li>• <a href="https://www.ed-fi.org/blog/bringing-two-data-standards-together-to-power-student-success/" target="_blank">Ed-Fi Alliance - Bringing Two Data Standards Together</a></li>
+<li>• <a href="https://www.1edtech.org/standards/lti/lti-advantage-adoption" target="_blank">1EdTech - LTI Advantage Adoption</a></li>
+<li>• <a href="https://www.imarcgroup.com/education-learning-analytics-market" target="_blank">IMARC Group - Education and Learning Analytics Market Report 2033</a></li>
+<li>• <a href="https://www.1edtech.org/standards/caliper" target="_blank">1EdTech - Caliper Analytics</a></li>
+<li>• <a href="https://concentric.ai/maintain-ferpa-compliance-with-concentric-ai/" target="_blank">Concentric AI - 2025 AI Guide to FERPA Compliance</a></li>
+<li>• <a href="https://www.flywire.com/resources/cto-pov-how-higher-education-institutions-can-balance-ai-tech-and-ferpa-compliance" target="_blank">Flywire - AI and FERPA Compliance</a></li>
+<li>• <a href="https://www.the74million.org/article/50-years-after-ferpas-passage-ed-privacy-law-needs-an-update-for-the-ai-era/" target="_blank">The 74 Million - FERPA Needs Update for AI Era</a></li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['상호운용성', '보안', '확장성', '커뮤니티 지원', '비용 및 접근성'],
+                datasets: [
+                    {
+                        label: 'Ed-Fi + OneRoster',
+                        data: [95, 85, 90, 80, 95],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'LTI 1.3 Advantage',
+                        data: [90, 95, 85, 90, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'CALIPER Analytics',
+                        data: [85, 80, 80, 75, 90],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'xAPI',
+                        data: [75, 70, 75, 85, 95],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

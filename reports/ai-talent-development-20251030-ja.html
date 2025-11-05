@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI人材育成とスキルギャップ解消</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← トップ</a>
+<div class="language-switcher">
+<button class="lang-btn active" onclick="window.location.href='ai-talent-development-20251030-ja.html'">日本語</button>
+<button class="lang-btn" onclick="window.location.href='ai-talent-development-20251030-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='ai-talent-development-20251030-en.html'">English</button>
+</div>
+</div>
+<h1>AI人材育成とスキルギャップ解消</h1>
+<div class="subtitle">企業認定プログラム、大学教育、政府主導イニシアチブの総合分析</div>
+<div class="meta">レポート作成日：2025年10月30日 | 標準版レポート（5-8ページ）</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 主要トレンド Top 4 -->
+<section class="section" id="trends">
+<h2 class="section-title">主要トレンド Top 4</h2>
+<h3 class="subsection-title">1. 企業主導の認定プログラム拡大：GoogleとMicrosoftの民主化戦略</h3>
+<p><strong>現状：</strong>GoogleとMicrosoftが無料〜低コストのAI認定プログラムを大規模展開しています。Google AI Essentialsは10時間未満で修了可能な無料プログラムで、事前知識不要でAI生産性スキルを習得できます。Microsoft Azure AI Fundamentals(AI-900)は技術・非技術両方のバックグラウンドに対応し、2025年には50,000件の無料試験バウチャーを提供しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>Google AI Essentials</h4>
+<p>• <strong>学習時間：</strong>10時間未満で修了可能<br/>
+                        • <strong>費用：</strong>完全無料<br/>
+                        • <strong>前提条件：</strong>事前知識不要<br/>
+                        • <strong>認定証：</strong>Google認定証授与</p>
+</div>
+<div class="trend-card">
+<h4>Microsoft Azure AI</h4>
+<p>• <strong>AI-900バウチャー：</strong>50,000件無料提供（2025年）<br/>
+                        • <strong>対象者：</strong>技術・非技術両対応<br/>
+                        • <strong>学習パス：</strong>Fundamentals → Associate → Expert<br/>
+                        • <strong>プラットフォーム：</strong>Microsoft Learn、Coursera</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://grow.google/ai/" target="_blank">Google AI Essentials</a> |
+                    <a href="https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-fundamentals/" target="_blank">Microsoft Azure AI Fundamentals</a>
+</div>
+<p><strong>展望：</strong>大手テクノロジー企業による認定プログラムの無料化・民主化により、AI教育のアクセス障壁が大幅に低下しています。企業のAI人材育成コストを削減しながら、標準化されたスキル評価基盤を提供します。</p>
+<h3 class="subsection-title">2. 深刻なAIスキルギャップ：訓練供給の不足</h3>
+<p><strong>現状：</strong>OECD調査によると、現在の教育コースのわずか0.3%〜5.5%しかAIコンテンツを提供していません。従業員の準備状況も深刻で、AIツール使用に「非常に快適」と感じるのはわずか6%、Gallup調査では約3分の1が明確に不快感を示しています。企業の44%が自動化とAIによる重要スキルの混乱を報告し、経営者の87%が大きなスキルギャップを予測しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>教育供給の不足</h4>
+<p>• <strong>AIコンテンツ提供：</strong>全コースの0.3-5.5%のみ<br/>
+                        • <strong>トレーニング政策：</strong>確立している企業は14%<br/>
+                        • <strong>スキル開発プログラム：</strong>保有企業は8%<br/>
+                        • <strong>OECD警告：</strong>供給が需要を満たさない可能性</p>
+</div>
+<div class="trend-card">
+<h4>従業員の準備状況</h4>
+<p>• <strong>快適に使用：</strong>わずか6%（非常に快適）<br/>
+                        • <strong>不快感：</strong>約33%（Gallup調査）<br/>
+                        • <strong>スキル混乱：</strong>44%の企業が報告<br/>
+                        • <strong>ギャップ予測：</strong>経営者の87%が懸念</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.oecd.org/en/publications/bridging-the-ai-skills-gap_66d0702e-en.html" target="_blank">OECD スキルギャップ報告</a> |
+                    <a href="https://www.ibm.com/think/insights/ai-skills-gap" target="_blank">IBM AI Skills Gap</a>
+</div>
+<p><strong>展望：</strong>OECDは「AIスキルギャップが技能の深淵になるリスク」を警告しています。企業と政府による迅速な介入がなければ、個人と組織がAI駆動の未来で繁栄する能力が脅かされます。データリテラシー、批判的思考、問題解決能力、適応力が AI時代の成功に不可欠なスキルとなります。</p>
+<h3 class="subsection-title">3. 大学AIプログラムの急成長：120%増加の背景</h3>
+<p><strong>現状：</strong>AI関連学位授与数は2011年以降120%増加し、学士・修士両レベルで劇的な成長を見せています。現在14以上の大学がAI学士号プログラムを提供し、2024年にペンシルベニア大学がアイビーリーグ初のAI専門学位を開設しました。2025年春学期にはネブラスカ大学オマハ校、秋学期には南フロリダ大学がプログラムを開始予定です。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>成長データ</h4>
+<p>• <strong>学位増加率：</strong>2011年以降120%増加<br/>
+                        • <strong>年間成長：</strong>2010年以降約5%の安定成長<br/>
+                        • <strong>STEM比較：</strong>AI学位がSTEM平均を上回る成長<br/>
+                        • <strong>プログラム数：</strong>14以上の大学がBS in AI提供</p>
+</div>
+<div class="trend-card">
+<h4>主要プログラム</h4>
+<p>• <strong>Penn (2024)：</strong>アイビーリーグ初のAI学位<br/>
+                        • <strong>Nebraska Omaha：</strong>2025年春入学開始<br/>
+                        • <strong>South Florida：</strong>2025年秋開始予定<br/>
+                        • <strong>対象者：</strong>学部生、大学院生、キャリアチェンジャー</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.cnbc.com/2025/01/22/colleges-that-offer-bachelors-degrees-in-ai.html" target="_blank">CNBC AI学位プログラム</a> |
+                    <a href="https://ai.seas.upenn.edu/academics/undergraduate/" target="_blank">Penn AI Program</a>
+</div>
+<p><strong>展望：</strong>大学AIプログラムは今後も高い成長を維持し、2025-2030年にかけて更なる拡大が予想されます。従来の学位に比べ、AI専門学位は就職市場での競争力を大幅に高め、特にテクノロジー企業からの需要が高まっています。</p>
+<h3 class="subsection-title">4. 政府主導のAI教育イニシアチブ：WIOA資金活用</h3>
+<p><strong>現状：</strong>2025年4月、トランプ大統領は「米国の若者のための人工知能教育推進」大統領令に署名し、ホワイトハウスAI教育タスクフォースを設立しました。このイニシアチブはK-12へのAI統合促進、教育者への包括的なAIトレーニング提供、若者向けAI概念の早期体験を目指しています。労働長官はWIOA資金をAIスキル開発に活用するよう指示されています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>政府イニシアチブ</h4>
+<p>• <strong>大統領令：</strong>2025年4月署名<br/>
+                        • <strong>タスクフォース：</strong>ホワイトハウスAI教育TF設立<br/>
+                        • <strong>大統領チャレンジ：</strong>若者向けAI Challenge計画<br/>
+                        • <strong>K-12統合：</strong>AI教育の早期体験促進</p>
+</div>
+<div class="trend-card">
+<h4>WIOA資金プログラム</h4>
+<p>• <strong>資金源：</strong>連邦WIOA予算活用<br/>
+                        • <strong>対象：</strong>AIスキル開発、職場実習<br/>
+                        • <strong>見習いプログラム：</strong>AIベースの拡大<br/>
+                        • <strong>60+組織：</strong>4年間リソース提供を誓約</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク:</strong>
+<a href="https://www.whitehouse.gov/presidential-actions/2025/04/advancing-artificial-intelligence-education-for-american-youth/" target="_blank">ホワイトハウス AI教育行政命令</a> |
+                    <a href="https://www.ai.gov/initiatives/education" target="_blank">AI.gov 教育イニシアチブ</a>
+</div>
+<p><strong>展望：</strong>政府の大規模な介入により、K-12から労働力開発まで包括的なAI教育エコシステムが構築されます。60以上の組織による公民連携により、資金、教材、技術、メンターシップが提供され、次世代のAI人材育成が加速します。</p>
+</section>
+<!-- SECTION 2: 競争環境と市場ポジショニング -->
+<section class="section" id="competitive">
+<h2 class="section-title">競争環境と市場ポジショニング</h2>
+<h3 class="subsection-title">4層市場構造：アクセス性とコストによる分類</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI人材育成市場は、アクセス性、費用、対象者、提供機関により4つの層に分類されます。</p>
+<table>
+<thead>
+<tr>
+<th>プログラム</th>
+<th>カテゴリ</th>
+<th>特徴</th>
+<th>対象</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Google AI Essentials</strong></td>
+<td>企業認定（無料）</td>
+<td>10時間、完全無料、事前知識不要、Google認定証</td>
+<td>初心者、ビジネス専門家、学生</td>
+</tr>
+<tr>
+<td><strong>Microsoft Azure AI</strong></td>
+<td>企業認定（一部無料）</td>
+<td>50,000無料バウチャー、技術・非技術対応、包括的学習パス</td>
+<td>IT専門家、開発者、ビジネスユーザー</td>
+</tr>
+<tr>
+<td><strong>大学AIプログラム</strong></td>
+<td>学位プログラム</td>
+<td>学士・修士学位、120%成長、14以上の認定プログラム</td>
+<td>学部生、大学院生、キャリアチェンジャー</td>
+</tr>
+<tr>
+<td><strong>政府WIOAプログラム</strong></td>
+<td>労働力開発</td>
+<td>連邦資金支援、見習いプログラム、職場実習の機会</td>
+<td>労働力転換者、失業者、職業訓練生</td>
+</tr>
+<tr>
+<td><strong>IBM AI Upskilling</strong></td>
+<td>エンタープライズ</td>
+<td>特定分野(マーケティング、コーディング)、基礎モデル</td>
+<td>企業従業員、組織のAI変革</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 活用アイデア -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">活用アイデア</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>AIスキルギャップ分析プラットフォーム</strong> - 企業向けに従業員の現在のAIスキルレベルを評価し、役割別の必要スキルとのギャップを特定。GoogleやMicrosoft認定プログラムと統合して進捗を追跡。</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>K-12 AI教育コンテンツマーケットプレイス</strong> - ホワイトハウスAI教育イニシアチブをサポートし、教育者がAIカリキュラム、レッスンプラン、実践的なアクティビティを共有・発見できるプラットフォーム。</p>
+<p style="line-height: 1.6;">3. <strong>適応型AI学習コンパニオン</strong> - ユーザーの背景(技術/非技術)に基づいてコンテンツをカスタマイズし、Google、Microsoft、大学プログラムを含む複数の認定パスを推奨する学習システム。</p>
+</div>
+</section>
+<!-- SECTION 4: エグゼクティブサマリー -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">エグゼクティブサマリー</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+<ul class="key-findings">
+<li><strong>スキルギャップの深刻さ：</strong>トレーニングコースの0.3%〜5.5%のみがAIコンテンツを提供、従業員の6%のみがAI使用に快適と回答。OECDは「スキルギャップが技能の深淵になるリスク」を警告。</li>
+<li><strong>企業認定の拡大：</strong>GoogleとMicrosoftが無料〜低コストの認定プログラムを大規模展開。Microsoft AI-900バウチャー50,000件提供により、AI教育のアクセス障壁が大幅に低下。</li>
+<li><strong>大学プログラムの成長：</strong>AI学位授与数が2011年以降120%増加、14以上の大学がBS in AIプログラムを提供。2024年Penn大学がアイビーリーグ初のAI専門学位を開設。</li>
+<li><strong>政府の介入：</strong>2025年大統領令によりホワイトハウスAI教育タスクフォース設立、WIOA資金活用でAIスキル開発を推進。60以上の組織が4年間リソース提供を誓約。</li>
+<li><strong>重要スキル：</strong>データリテラシー、批判的思考、ソフトスキル、問題解決能力、適応力がAI時代の成功に不可欠。技術だけでなく判断力と限界理解が重要。</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>初心者/ビジネスユーザー → Google AI Essentials</strong><br/>
+                        理由：10時間未満の無料トレーニング、事前知識不要で生産性向上に焦点<br/><br/>
+<strong>IT専門家/開発者 → Microsoft Azure AI Fundamentals(AI-900)</strong><br/>
+                        理由：技術基礎を構築、Associate/Expertレベルへ進行可能、50,000件無料バウチャー<br/><br/>
+<strong>学位取得希望者 → 大学AIプログラム</strong><br/>
+                        理由：14以上の大学提供、ペンシルベニア大、ネブラスカ大等が選択肢、キャリア競争力向上<br/><br/>
+<strong>労働力転換 → 政府資金支援WIOAプログラム</strong><br/>
+                        理由：連邦資金支援、見習いプログラム、職場実習の機会を活用<br/><br/>
+<strong>企業組織 → IBM AI Upskilling</strong><br/>
+                        理由：特定分野に特化したエンタープライズAIトレーニング、組織のAI変革を支援
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（企業と政府による大規模投資が進行中だが、教育供給の不足は深刻な課題として残る）</p>
+</section>
+<!-- SECTION 5: 主要用語の説明 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>AI Essentials (Google)</strong> - Googleが提供する10時間未満の自習型AIトレーニングプログラム。事前知識不要で、AI生産性スキル習得に焦点を当て、修了時にGoogle認定証を授与します。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>Azure AI Fundamentals (AI-900)</strong> - MicrosoftのAI基礎認定資格。Azureに関連する基本的なAI概念を証明し、技術・非技術両方のバックグラウンドに対応。データサイエンスやソフトウェア工学の経験は不要です。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>WIOA (Workforce Innovation and Opportunity Act)</strong> - 米国連邦法で、労働力開発とスキルトレーニングに資金を提供。2025年の大統領令により、AIスキル開発と職場実習の機会に資金を活用することが奨励されています。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>AIスキルギャップ</strong> - AIツールとシステムを効果的に使用するために必要なスキルと、現在の労働力が持つスキルとの差。OECDは、現在のトレーニング供給が一般的なAIリテラシースキルの需要を満たすのに不十分である可能性を指摘しています。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>ホワイトハウスAI教育タスクフォース</strong> - 2025年4月の大統領令により設立。若者向けの大統領AI Challengeを計画・実施し、K-12 AI教育のためのリソース提供の官民パートナーシップを確立します。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>AIリテラシー</strong> - AIツール、概念、影響についての基本的な理解。AIシステムとどのように相互作用するか、その機能と限界を理解し、日常業務でAIを責任を持って使用する能力を含みます。
+                    </div>
+<div>
+<strong>適応型学習</strong> - 個々の学習者のニーズ、パフォーマンス、好みに基づいて教育コンテンツと経験をカスタマイズする教育アプローチ。AI人材育成では、技術的背景、学習ペース、キャリア目標に基づいてトレーニングパスを調整します。
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 参考資料 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>参考資料</h3>
+<p><strong>データ収集：</strong>2025年10月30日</p>
+<ul>
+<li>• <a href="https://www.oecd.org/en/publications/bridging-the-ai-skills-gap_66d0702e-en.html" target="_blank">OECD. (2025). "Bridging the AI Skills Gap: Is Training Keeping Up?"</a></li>
+<li>• <a href="https://grow.google/ai/" target="_blank">Google. (2025). "Google AI Essentials - Grow with Google."</a></li>
+<li>• <a href="https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-fundamentals/" target="_blank">Microsoft Learn. (2025). "Microsoft Certified: Azure AI Fundamentals."</a></li>
+<li>• <a href="https://www.whitehouse.gov/presidential-actions/2025/04/advancing-artificial-intelligence-education-for-american-youth/" target="_blank">The White House. (2025). "Advancing Artificial Intelligence Education for American Youth - Executive Order."</a></li>
+<li>• <a href="https://www.cnbc.com/2025/01/22/colleges-that-offer-bachelors-degrees-in-ai.html" target="_blank">CNBC. (2025). "14 Colleges That Offer Bachelor's Degrees in AI."</a></li>
+<li>• <a href="https://www.ibm.com/think/insights/ai-skills-gap" target="_blank">IBM Think. (2025). "AI Skills Gap Analysis and Upskilling Strategy."</a></li>
+<li>• Georgetown CSET. (2024). "Leading the Charge: Top-Producing AI Programs in U.S. Universities - 120% Growth Since 2011."</li>
+<li>• Gallup. (2024). "Workforce AI Readiness Survey: Only 6% Feel Very Comfortable Using AI."</li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['アクセス性', 'コスト効率', '認知度', 'コンテンツ品質', 'キャリア影響'],
+                datasets: [
+                    {
+                        label: 'Google AI Essentials',
+                        data: [95, 100, 90, 85, 75],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Microsoft Azure AI',
+                        data: [90, 95, 85, 90, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: '大学AIプログラム',
+                        data: [60, 40, 75, 95, 95],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: '政府WIOAプログラム',
+                        data: [70, 90, 50, 70, 80],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>

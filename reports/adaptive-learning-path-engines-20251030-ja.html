@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>アダプティブラーニングパスエンジン トレンド分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    
+/* Interaction Components Styles */
+.interaction-section{max-width:1000px;margin:1.5rem auto;padding:0 1.5rem}
+.interaction-card{background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem}
+.interaction-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd}
+.interaction-title{font-size:1.1rem;font-weight:600;color:#333}
+.like-section{display:flex;align-items:center;gap:0.75rem}
+.like-btn{background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem}
+.like-btn:hover{background:#f5f5f5;border-color:#ccc}
+.like-btn.liked{color:#e74c3c;border-color:#e74c3c}
+.like-count{font-size:0.9rem;color:#666}
+.comment-form{margin-bottom:1.5rem}
+.comment-input-group{margin-bottom:0.75rem}
+.comment-input-group label{display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem}
+.comment-input-group input,.comment-input-group textarea{width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem}
+.comment-input-group input:focus,.comment-input-group textarea:focus{outline:none;border-color:#999}
+.comment-input-group textarea{min-height:80px;resize:vertical}
+.comment-submit-btn{background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem}
+.comment-submit-btn:hover{background:#555}
+.comment-submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.comments-list{margin-top:1.5rem}
+.comment-item{background:#fff;border-left:2px solid #ddd;padding:0.75rem;margin-bottom:0.75rem}
+.comment-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;padding-bottom:0;border:none}
+.comment-author{font-weight:600;color:#333;font-size:0.85rem}
+.comment-hash{font-size:0.7rem;color:#999;font-family:monospace}
+.comment-time{font-size:0.7rem;color:#999;margin-left:auto}
+.comment-content{color:#555;line-height:1.5;font-size:0.9rem}
+@media(max-width:600px){.interaction-header{flex-direction:column;align-items:flex-start;gap:0.5rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="header-actions">
+<a class="back-btn" href="../index.html">← トップ</a>
+<div class="language-switcher">
+<button class="lang-btn active" onclick="window.location.href='adaptive-learning-path-engines-20251030-ja.html'">日本語</button>
+<button class="lang-btn" onclick="window.location.href='adaptive-learning-path-engines-20251030-ko.html'">한국어</button>
+<button class="lang-btn" onclick="window.location.href='adaptive-learning-path-engines-20251030-en.html'">English</button>
+</div>
+</div>
+<h1>アダプティブラーニングパスエンジン</h1>
+<div class="subtitle">AIによる個別化学習経路の最前線</div>
+<div class="meta">レポート作成日：2025年10月30日 | 標準版レポート（5ページ）</div>
+</div>
+<div class="content">
+<!-- SECTION 1: 主要トレンド Top 5 -->
+<section class="section" id="trends">
+<h2 class="section-title">主要トレンド Top 5</h2>
+<h3 class="subsection-title">1. AI駆動型LXP市場の爆発的成長</h3>
+<p><strong>現状：</strong>学習体験プラットフォーム（LXP）市場は、2025年の28億1,576万ドルから2033年には289億579万ドルに成長し、年平均成長率33.79%を記録する見込みです。アダプティブラーニング市場も2024年の28億7,000万ドルから2025年には43億9,000万ドルへ、前年比52.7%の急成長を遂げています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>市場成長の要因</h4>
+<p>• <strong>教育AI市場の拡大：</strong>2024年58億8,000万ドルから2025年83億ドル（+41%）、2030年には322億7,000万ドルへ<br/>
+                        • <strong>リスキリング需要：</strong>IBMの予測では今後3年以内に14億人がAIによる変革で再教育が必要<br/>
+                        • <strong>個別化の標準化：</strong>機械学習アルゴリズムがプロファイル、行動、スキルギャップを分析し自動推薦<br/>
+                        • <strong>教育機関の優先順位：</strong>高等教育機関の57%が2025年にAIを優先（前年49%から上昇）</p>
+</div>
+<div class="trend-card">
+<h4>導入状況</h4>
+<p>• <strong>教師の60%：</strong>既に日常業務でAIを統合<br/>
+                        • <strong>学生の67%：</strong>定期的にAI技術を学習に活用<br/>
+                        • <strong>企業研修の進化：</strong>コンピテンシーベースモデルで自己ペース学習を実現<br/>
+                        • <strong>ハイブリッド教育：</strong>高等教育機関がハイブリッド・コンピテンシーベースモデルを採用</p>
+</div>
+</div>
+<p><strong>展望：</strong>2025年以降、AIパワードアダプティブラーニングは教育のあらゆる段階で標準となり、学習者一人ひとりに最適化された経路が自動生成される時代が到来します。企業研修と高等教育の両分野で、リアルタイムデータ分析に基づく動的なコンテンツ調整が主流になります。</p>
+<h3 class="subsection-title">2. Knewton Alta：Wileyによる高等教育特化型アダプティブ学習</h3>
+<p><strong>現状：</strong>Knewton Alta（Wileyが2019年買収）は、学生の習熟度を継続的にモニタリングし、リアルタイムで適応して学習成果を最大化するアダプティブラーニング技術を提供しています。23の主要教育機関および企業との提携を形成し、特にSTEM分野の高等教育で広く採用されています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>Knewton Altaの核心技術</h4>
+<p>• <strong>リアルタイム適応：</strong>学生が課題で苦戦すると、Altaは知識ギャップを即座に認識し、必要な時に必要な内容を提供<br/>
+                        • <strong>前提知識への遡及：</strong>前提概念に戻る必要がある場合でも、ジャストインタイムの補習を提供<br/>
+                        • <strong>継続的診断：</strong>各インタラクションで学生の習熟度を診断し、カスタマイズされた学習経路を作成<br/>
+                        • <strong>API統合：</strong>パートナー企業がKnewton APIを活用して継続的適応学習体験を構築</p>
+</div>
+<div class="trend-card">
+<h4>アクセシビリティと展開</h4>
+<p>• <strong>ADA準拠：</strong>WCAG 2.0 AAレベルの完全準拠（技術、コンテンツ、UXすべて）<br/>
+                        • <strong>Wileyインフラ統合：</strong>Wiley教育プラットフォームを通じて展開<br/>
+                        • <strong>STEM領域重視：</strong>数学、科学、工学系の高等教育課程に特化<br/>
+                        • <strong>2025年認定：</strong>トップアダプティブラーニングプラットフォームとして継続認定</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://www.wiley.com/en-us/education/alta" target="_blank">Knewton Alta</a> |
+                    <a href="https://dev.knewton.com/" target="_blank">Knewton API Documentation</a>
+</div>
+<p><strong>展望：</strong>Knewton AltaはWileyのグローバルネットワークを活用し、高等教育のSTEM分野でのデファクトスタンダードとしての地位を強化します。API統合により、他の教育プラットフォームへの技術提供が拡大します。</p>
+<h3 class="subsection-title">3. Smart Sparrow：概念レベルでの細粒度アダプティブ学習</h3>
+<p><strong>現状：</strong>Smart Sparrow（Pearsonが2020年買収）は、最も細かいレベル（概念と問題）から適応性を提供するクラウドベースのコースウェア開発プラットフォームです。700以上の教育機関で信頼され、制約ベースモデリングとモデルトレースを組み合わせたインテリジェント個別指導システムを実装しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>適応性の技術的基盤</h4>
+<p>• <strong>細粒度適応：</strong>学習が実際に起こり誤解が生じる概念・問題レベルで適応<br/>
+                        • <strong>レッスン内の個別化：</strong>すべての画面で学習者が個別化を体験<br/>
+                        • <strong>動的チュートリアル：</strong>フィードバックとレッスン経路を各学生に合わせて動的に調整<br/>
+                        • <strong>制約ベースモデリング：</strong>学生の回答から学習パターンを分析し個別指導を実現</p>
+</div>
+<div class="trend-card">
+<h4>開発者とデータ活用</h4>
+<p>• <strong>Adaptive eLearning Platform：</strong>適応的学習コンテンツとアプリケーションを開発するWebベースツール群<br/>
+                        • <strong>学習分析：</strong>学生の応答から学習方法を分析し、データ駆動型の改善を実現<br/>
+                        • <strong>個別フィードバック：</strong>問題領域を特定し、ターゲット学習を促進<br/>
+                        • <strong>Pearson統合：</strong>データを活用した個別化コース指導とフィードバック</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://www.smartsparrow.com/" target="_blank">Smart Sparrow</a> |
+                    <a href="https://www.smartsparrow.com/what-is-adaptive-learning/" target="_blank">What is Adaptive Learning</a>
+</div>
+<p><strong>展望：</strong>Pearsonの傘下でSmart Sparrowの技術は、グローバルな教育コンテンツに統合され、概念レベルの細粒度適応がより多くの教育機関で利用可能になります。データ駆動型のコース改善が加速します。</p>
+<h3 class="subsection-title">4. Area9 Lyceum Rhapsode：4次元個別化学習プラットフォーム</h3>
+<p><strong>現状：</strong>Area9 Lyceum Rhapsodeは、認知科学研究と25年の経験に基づくアダプティブラーニング技術で、習熟までの時間を最大50%短縮し、全学習者が100%のコンピテンシーを達成する可能性を提供します。3,000万人以上の学習者にサービスを提供し、数百の科目で数十億のデータポイントを収集しています。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>Rhapsodeスイートの構成</h4>
+<p>• <strong>Rhapsode Learner：</strong>完全個別化学習環境、アダプティブラーニングアプローチの完全実装<br/>
+                        • <strong>Rhapsode Curator：</strong>教育・学習のAdobe Creative Suite、コンテンツ作成ツール<br/>
+                        • <strong>Rhapsode Educator：</strong>リアルタイムデータ生成と分析機能<br/>
+                        • <strong>Rhapsode Reader：</strong>適応型電子書籍、教科書と個別化学習の橋渡し</p>
+</div>
+<div class="trend-card">
+<h4>2025年の進化（AI統合）</h4>
+<p>• <strong>Area9 MindFlow統合：</strong>生成AI技術により、適応型・個別化コンテンツを従来の3-10倍の速度で構築<br/>
+                        • <strong>学習効果の向上：</strong>測定可能な高い学習インパクトを実現<br/>
+                        • <strong>VitalSource提携：</strong>2024年提携でグローバルな個別化学習アクセスを拡大<br/>
+                        • <strong>2023-2025研究：</strong>状況的興味、認知活性化、学習成果を検証</p>
+</div>
+</div>
+<div class="related-links">
+<strong>🔗 関連リンク：</strong>
+<a href="https://area9lyceum.com/" target="_blank">Area9 Lyceum</a> |
+                    <a href="https://area9lyceum.com/adaptive-learning/multidimensional-learning/" target="_blank">Four-dimensional Learning</a>
+</div>
+<p><strong>展望：</strong>Area9 MindFlowの生成AI統合により、コンテンツ制作の時間とコストが劇的に削減され、より多くの教育機関が高品質なアダプティブラーニングを導入できるようになります。4次元個別化学習のグローバル標準となる可能性があります。</p>
+<h3 class="subsection-title">5. AIダッシュボードとリアルタイム学習分析の普及</h3>
+<p><strong>現状：</strong>教育機関は、適応アルゴリズムを活用したAIダッシュボードを導入し、どの学生が概念を習得し、どの学生に追加サポートが必要かをリアルタイムで把握できるようになっています。機械学習アルゴリズムが学習者データを分析し、指導の内容、提供方法、ペースを適応させます。</p>
+<div class="trend-grid">
+<div class="trend-card">
+<h4>教師向けAIダッシュボード</h4>
+<p>• <strong>習熟度の可視化：</strong>概念別に学生の習得状況をリアルタイム表示<br/>
+                        • <strong>早期介入：</strong>追加サポートが必要な学生を自動検出<br/>
+                        • <strong>パフォーマンス分析：</strong>学習者の強みと改善が必要な領域を特定<br/>
+                        • <strong>データ駆動型意思決定：</strong>分析結果に基づく指導計画の調整</p>
+</div>
+<div class="trend-card">
+<h4>学習者体験の個別化</h4>
+<p>• <strong>リアルタイム調整：</strong>コンテンツと活動を学習者のペースと理解レベルに合わせて調整<br/>
+                        • <strong>学習スタイル適応：</strong>好みの学習方法を分析し最適な体験を提供<br/>
+                        • <strong>自己ペース学習：</strong>コンピテンシーベースモデルで特定スキルを自分のペースで習得<br/>
+                        • <strong>モジュラーコンテンツ：</strong>評価とコンピテンシーマッピングを統合したアーキテクチャ</p>
+</div>
+</div>
+<p><strong>展望：</strong>2025年以降、AIダッシュボードは教育の必須ツールとなり、予測的な介入とパーソナライズされた学習推薦が標準機能になります。学習者データのリアルタイム分析により、教育の質と効率が大幅に向上します。</p>
+</section>
+<!-- SECTION 2: 競争環境と市場ポジショニング -->
+<section class="section" id="competitive">
+<h2 class="section-title">競争環境と市場ポジショニング</h2>
+<h3 class="subsection-title">3層市場構造</h3>
+<p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">アダプティブラーニングパスエンジン市場は、技術的アプローチ、対象市場、統合レベルによって3つの層に分類されます。企業研修から高等教育まで、多様なニーズに対応するソリューションが展開されています。</p>
+<table>
+<thead>
+<tr>
+<th>プラットフォーム名</th>
+<th>カテゴリ</th>
+<th>技術的特徴</th>
+<th>主要対象</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knewton Alta</strong></td>
+<td>高等教育特化</td>
+<td>リアルタイム適応、API統合、WCAG準拠</td>
+<td>大学・STEM分野</td>
+</tr>
+<tr>
+<td><strong>Smart Sparrow</strong></td>
+<td>コースウェア開発</td>
+<td>概念レベル適応、制約ベースモデリング</td>
+<td>700以上の教育機関</td>
+</tr>
+<tr>
+<td><strong>Area9 Rhapsode</strong></td>
+<td>4次元個別化</td>
+<td>生成AI統合、習熟時間50%短縮</td>
+<td>企業研修・高等教育</td>
+</tr>
+<tr>
+<td><strong>CogBooks</strong></td>
+<td>コンピテンシーベース</td>
+<td>自己ペース学習、モジュラーコンテンツ</td>
+<td>高等教育機関</td>
+</tr>
+</tbody>
+</table>
+<h3 class="subsection-title">市場トレンド（5つの主要変化）</h3>
+<ul class="key-findings">
+<li><strong>生成AIの統合加速：</strong>Area9 MindFlowなど、コンテンツ制作の3-10倍高速化を実現</li>
+<li><strong>リアルタイム分析の標準化：</strong>AIダッシュボードによる学習者パフォーマンスの即座可視化</li>
+<li><strong>コンピテンシーベースモデルの普及：</strong>57%の高等教育機関がAIを優先、自己ペース学習を推進</li>
+<li><strong>企業買収による統合：</strong>Wiley（Knewton）、Pearson（Smart Sparrow）がグローバル展開を加速</li>
+<li><strong>マルチモーダル学習の実装：</strong>テキスト、音声、動画、インタラクティブコンテンツの統合</li>
+</ul>
+<h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+<div class="chart-container">
+<canvas id="competitiveChart"></canvas>
+</div>
+</section>
+<!-- SECTION 3: 活用アイデア -->
+<section class="section" id="application-ideas">
+<h2 class="section-title">活用アイデア</h2>
+<p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+<div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+<p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>高等教育STEM分野（Knewton Alta）</strong> - 数学、科学、工学系の大学課程でリアルタイム適応学習を導入。学生の習熟度に応じた前提知識の補習を自動提供し、学習成果を向上させます。</p>
+<p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>企業研修の個別化（Area9 Rhapsode）</strong> - 従業員のスキル習得時間を50%短縮する4次元個別化学習を実現。生成AI統合により、研修コンテンツの制作時間を3-10倍削減します。</p>
+<p style="line-height: 1.6;">3. <strong>カスタムコース開発（Smart Sparrow）</strong> - 概念レベルの細粒度適応を活用し、データ駆動型のコース改善を実現。700以上の教育機関で採用されている実績があります。</p>
+</div>
+</section>
+<!-- SECTION 4: エグゼクティブサマリー -->
+<section class="section" id="executive-summary">
+<h2 class="section-title">エグゼクティブサマリー</h2>
+<div class="executive-summary">
+<h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+<ul class="key-findings">
+<li><strong>市場の爆発的成長：</strong>LXP市場は2025-2033年に年平均33.79%成長、アダプティブラーニング市場は2024-2025年に前年比52.7%成長を記録。</li>
+<li><strong>AI統合の標準化：</strong>教師の60%、学生の67%がAIを活用し、高等教育機関の57%が2025年にAIを優先（前年49%から上昇）。</li>
+<li><strong>主要プラットフォームの進化：</strong>Knewton Alta（Wiley）、Smart Sparrow（Pearson）、Area9 Rhapsodeが、それぞれ高等教育、コースウェア開発、4次元個別化で市場をリード。</li>
+<li><strong>生成AIの革命的影響：</strong>Area9 MindFlowによりコンテンツ制作時間が3-10倍高速化、教育機関の導入障壁が大幅に低下。</li>
+<li><strong>リアルタイム分析の普及：</strong>AIダッシュボードにより、学習者パフォーマンスの即座可視化と予測的介入が標準機能に。</li>
+</ul>
+<h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選択ガイド</h3>
+<p style="font-size: 0.95rem; line-height: 1.8;">
+<strong>高等教育STEM分野 → Knewton Alta</strong><br/>
+                        理由：WCAG準拠のアクセシビリティと23の主要教育機関との提携実績。Wileyプラットフォームで簡単に展開可能。<br/><br/>
+<strong>カスタムコース開発 → Smart Sparrow</strong><br/>
+                        理由：概念レベルの細粒度適応により、データ駆動型のコース改善が可能。Pearson統合で高品質コンテンツにアクセス。<br/><br/>
+<strong>企業研修の効率化 → Area9 Rhapsode</strong><br/>
+                        理由：習熟時間を50%短縮し、生成AI統合でコンテンツ制作を3-10倍高速化。3,000万人の学習者データに基づく実証済み効果。
+                    </p>
+</div>
+<p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（AI技術の進化と生成AIの統合により、アダプティブラーニングは教育の主流となり、すべての学習者が個別最適化された経路で効率的に学習できる時代が到来しています）</p>
+</section>
+<!-- SECTION 5: 主要用語の説明 -->
+<section class="section" id="terminology">
+<h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+<div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+<div style="margin-bottom: 0.4rem;">
+<strong>アダプティブラーニングパスエンジン：</strong>学習者のパフォーマンス、強み、改善領域をAIで分析し、コンテンツと活動をリアルタイムで適応させる技術。個別化された学習経路を自動生成します。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>LXP（学習体験プラットフォーム）：</strong>機械学習アルゴリズムで学習者プロファイル、行動、スキルギャップを分析し、関連コンテンツや学習経路を自動推薦するプラットフォーム。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>制約ベースモデリング：</strong>学習者の回答から誤解や知識ギャップを特定し、個別化されたフィードバックと補習を提供するAI技術。Smart Sparrowが採用。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>コンピテンシーベース教育：</strong>学習者が特定のスキルを自分のペースで習得できる教育モデル。完了時間ではなく、習熟度を基準とします。
+                    </div>
+<div style="margin-bottom: 0.4rem;">
+<strong>4次元個別化学習：</strong>Area9 Lyceum Rhapsodeが提唱する、学習内容、ペース、スタイル、習熟度の4つの次元で個別化する学習アプローチ。
+                    </div>
+</div>
+</section>
+<!-- SECTION 6: 参考資料 -->
+<section class="section" id="sources">
+<div class="sources">
+<h3>参考資料</h3>
+<p><strong>データ収集：</strong>2025年10月30日</p>
+<ul>
+<li>• <a href="https://www.wiley.com/en-us/education/alta" target="_blank">Knewton Alta - Wiley Adaptive Learning Platform</a></li>
+<li>• <a href="https://www.smartsparrow.com/" target="_blank">Smart Sparrow - Adaptive eLearning Platform</a></li>
+<li>• <a href="https://area9lyceum.com/" target="_blank">Area9 Lyceum - Rhapsode Adaptive Learning</a></li>
+<li>• <a href="https://elearningindustry.com/ai-powered-adaptive-learning-ushering-in-a-new-era-of-education-in-2025" target="_blank">AI-Powered Adaptive Learning: A New Era (eLearning Industry)</a></li>
+<li>• <a href="https://sam-solutions.com/blog/ai-powered-learning-experience-platforms/" target="_blank">Top 10 AI-Powered Learning Experience Platforms (SaM Solutions)</a></li>
+<li>• <a href="https://training.safetyculture.com/blog/adaptive-learning-platforms/" target="_blank">The Top 12 Adaptive Learning Platforms (SC Training)</a></li>
+</ul>
+</div>
+</section>
+</div>
+</div>
+<script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['個別化精度', 'リアルタイム適応', 'コンテンツ制作', 'スケーラビリティ', '教育機関統合'],
+                datasets: [
+                    {
+                        label: 'Knewton Alta',
+                        data: [90, 95, 70, 85, 90],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Smart Sparrow',
+                        data: [95, 90, 85, 75, 80],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Area9 Rhapsode',
+                        data: [100, 85, 95, 90, 75],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 11
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+<div class="pdf-download-section" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+<button onclick="generatePDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white;
+                       border: none;
+                       padding: 15px 25px;
+                       font-size: 16px;
+                       font-weight: 600;
+                       border-radius: 50px;
+                       cursor: pointer;
+                       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+                       display: flex;
+                       align-items: center;
+                       gap: 10px;
+                       transition: all 0.3s ease;">
+<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"></path>
+</svg>
+            Download PDF
+        </button>
+</div>
+<script>
+    function generatePDF() {
+        // Method 1: Use browser's native print-to-PDF
+        window.print();
+
+        // Show helpful message
+        setTimeout(function() {
+            if (!window.matchMedia('print').matches) {
+                alert('💡 Tip: In the print dialog, select "Save as PDF" as the destination.');
+            }
+        }, 500);
+    }
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.textContent = `
+        @media print {
+            .pdf-download-section {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            @page {
+                margin: 2cm;
+            }
+        }
+    `;
+    document.head.appendChild(printStyles);
+
+    // Add hover effect
+    const button = document.querySelector('.pdf-download-section button');
+    if (button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.5)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+        });
+    }
+    </script>
+
+<!-- Interaction Components -->
+<div class="interaction-section">
+    <!-- Like Section -->
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments & Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn">
+                    <span>🤍</span> Like
+                </button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+
+        <!-- Comment Form -->
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Interaction Script -->
+<script src="../assets/interaction.js"></script>
+
+</body>
+</html>
