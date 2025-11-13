@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Learning Analytics: Predictive Models and Real-Time Dashboards</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ai-learning-analytics-20251107-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='ai-learning-analytics-20251107-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='ai-learning-analytics-20251107-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>AI Learning Analytics: Predictive Models and Real-Time Dashboards</h1>
+            <div class="subtitle">Learning Outcome Prediction, Early At-Risk Student Detection, Data Governance</div>
+            <div class="meta">Report Date: November 7, 2025 | Standard Report (5-8 pages)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Top 5 Key Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Key Trends</h2>
+
+                <h3 class="subsection-title">1. Predictive Analytics Tools Market Dominance (57.8% Usage Rate)</h3>
+                <p><strong>Current State:</strong> Predictive analytics tools captured 57.8% usage rate in the learning analytics market in 2024, becoming the most dominant category. In progressive US universities, over 80% of pilot programs use predictive tools integrated with generative AI summarization features. Machine learning models achieve 85-95% predictive accuracy in at-risk student identification, with random forest and gradient boosting algorithms recording AUC scores of 0.92-0.96 in dropout prediction tasks.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Features</h4>
+                        <p>• <strong>At-Risk Student Identification:</strong> Predicts dropout risk with 85-95% accuracy<br>
+                        • <strong>Comprehensive Monitoring:</strong> Tracks over 800 risk factors (Georgia State University case)<br>
+                        • <strong>Automated Intervention:</strong> Generates 90,000 targeted interventions annually</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Technical Approaches</h4>
+                        <p>• <strong>Ensemble Learning:</strong> Random forests, gradient boosting<br>
+                        • <strong>Deep Learning:</strong> Performance exceeding traditional statistical methods<br>
+                        • <strong>Generative AI Integration:</strong> Adopted in over 80% of pilot programs</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.civitaslearning.com/" target="_blank">Civitas Learning</a> |
+                    <a href="https://www.starfishsolutions.com/" target="_blank">Starfish</a> |
+                    <a href="https://hyperspace.mv/predictive-analytics-education/" target="_blank">Hyperspace MV</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Prescriptive analytics, as the next evolution stage of predictive analytics, shows the highest CAGR projection at 22.3%. 2025 will be a turning point shifting from simple risk prediction to automatic recommendation of data-driven concrete intervention strategies.</p>
+
+                <h3 class="subsection-title">2. Evolution of Real-Time Dashboards and AI Integration</h3>
+                <p><strong>Current State:</strong> Brightspace Insights leverages AI to provide real-time student performance analysis and prediction, featuring real-time dashboards, predictive analytics identifying at-risk students, and customizable reports for targeted interventions. Canvas (47% adoption in US universities) and Brightspace (19%) lead the market where 87% of faculty actively use LMS analytics features. Many educational platforms provide dashboards visualizing student progress over time, highlighting trends, strengths, and areas needing improvement.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Brightspace Insights</h4>
+                        <p>• <strong>Advanced Analytics Suite:</strong> Predictive modeling, adaptive learning paths, competency-based progress tracking<br>
+                        • <strong>Real-Time Monitoring:</strong> Live dashboards of student activity<br>
+                        • <strong>Early Intervention:</strong> Predictive alerts enabling proactive support</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Canvas Analytics</h4>
+                        <p>• <strong>Market Leader:</strong> 47% US university adoption (Brightspace 19%)<br>
+                        • <strong>Faculty Engagement:</strong> 87% of faculty actively use analytics features in US universities<br>
+                        • <strong>Student Activity Visualization:</strong> Dashboards enabling proactive intervention</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.d2l.com/brightspace/" target="_blank">Brightspace by D2L</a> |
+                    <a href="https://www.instructure.com/canvas" target="_blank">Canvas by Instructure</a> |
+                    <a href="https://www.digitallearninginstitute.com/blog/ai-driven-evolution-in-learning-analytics-for-digital-education" target="_blank">Digital Learning Institute</a>
+                </div>
+
+                <p><strong>Outlook:</strong> For educators, real-time feedback helps improve teaching practices. Analytics dashboards track classroom engagement and provide insights into which teaching methods are most effective. In 2025, AI will assist in adapting curricula in real-time based on industry needs, student performance, and social trends.</p>
+
+                <h3 class="subsection-title">3. CALIPER Analytics Standard v1.2 for Interoperability</h3>
+                <p><strong>Current State:</strong> CALIPER is the 1EdTech CALIPER Analytics learning measurement framework, providing standards for expressing, capturing, and marshalling metrics generated by learning activities and intended for consumption in conforming analytics stores or services. The CALIPER Analytics specification provides a structured approach to describing, collecting, and exchanging learning activity data, with a central goal of establishing a common vocabulary for describing learning interactions.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Technical Components</h4>
+                        <p>• <strong>Sensor API:</strong> Marshal and transmit event data from instrumented applications<br>
+                        • <strong>Metric Profiles:</strong> Standard data structures for each learning activity type<br>
+                        • <strong>JSON-LD Format:</strong> Represents events and entities as linked data</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Industry Adoption</h4>
+                        <p>• <strong>Certified Companies:</strong> Blackboard, D2L, Elsevier, McGraw-Hill, VitalSource<br>
+                        • <strong>Data Interoperability:</strong> Collect data from multiple tools, systems, LMS<br>
+                        • <strong>Common Vocabulary:</strong> Achieve consistent description with unified terminology</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.imsglobal.org/spec/caliper/v1p2" target="_blank">CALIPER v1.2 Specification</a> |
+                    <a href="https://www.imsglobal.org/hed-learning-data-and-caliper" target="_blank">Why CALIPER Matters</a> |
+                    <a href="https://www.magicedtech.com/blogs/caliper-analytics-everything-you-need-to-know/" target="_blank">CALIPER Guide</a>
+                </div>
+
+                <p><strong>Outlook:</strong> CALIPER 1.1 expanded and refined the Caliper information model, adding three new profiles: Basic Profile, Forum Profile, and ToolUse Profile. The v1.2 specification shows further evolution, enabling comprehensive information provision to educational dashboards, academic early warning systems, and advising tools.</p>
+
+                <h3 class="subsection-title">4. FERPA/GDPR Compliance Automation and Data Governance</h3>
+                <p><strong>Current State:</strong> In 2025, as AI becomes essential to EdTech, FERPA compliance is more important than ever. Learning analytics requires special protection beyond standard privacy compliance, as it reveals detailed information about cognitive development and academic difficulties. Most K-12 school districts actively use 100-300 educational technology vendors, with large districts potentially managing 500+ vendor relationships. Over the past 5 years, 62% of educational institutions reported experiencing data breaches.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Regulatory Compliance Requirements</h4>
+                        <p>• <strong>FERPA Enhancement:</strong> Enforcement strengthened by Department of Education's new guidance<br>
+                        • <strong>COPPA Penalties:</strong> Fines up to $51,744 per affected child<br>
+                        • <strong>GDPR Integration:</strong> Explicit consent required for child data, challenges in FERPA interaction</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Best Practices (2025)</h4>
+                        <p>• <strong>Automated Monitoring:</strong> Real-time tracking of compliance status<br>
+                        • <strong>FERPA Contract Templates:</strong> Streamlined with standardized contracts<br>
+                        • <strong>AI-Specific DPIA:</strong> Privacy impact assessment for learning analytics platforms</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://secureprivacy.ai/blog/school-data-governance-software-ferpa-coppa-k-12" target="_blank">School Data Governance Software 2025</a> |
+                    <a href="https://complydog.com/blog/edtech-saas-compliance-student-privacy-gdpr-implementation" target="_blank">EdTech SaaS Compliance Guide</a> |
+                    <a href="https://scrut.io/post/education-records-ferpa" target="_blank">FERPA Compliance</a>
+                </div>
+
+                <p><strong>Outlook:</strong> School data governance software has become essential for K-12 institutions navigating complex privacy regulations. Automated compliance monitoring, regular security audits, staff training programs, and privacy impact assessments dedicated to AI implementation will become standard practices in 2025.</p>
+
+                <h3 class="subsection-title">5. New Goals and Measurements in Educational Data Mining (EDM 2025)</h3>
+                <p><strong>Current State:</strong> The Educational Data Mining (EDM) community has a unique opportunity to redefine learning goals and outcomes by leveraging expertise in both AI and educational science. In 2025, large language models can easily mark discussion posts as on-topic or off-topic with minimal prompt engineering, and chatbots can classify vast amounts of student work and transform it into numbers educators can quickly analyze. Modern student success analytics platforms have evolved far beyond simple grade tracking into comprehensive ecosystem monitors analyzing hundreds of data points to predict student outcomes.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>New Measurement Approaches</h4>
+                        <p>• <strong>Multimodal Data Integration:</strong> Academic performance, engagement, finances, social connections, behavioral patterns<br>
+                        • <strong>Comprehensive Risk Profiles:</strong> Holistic student view beyond single grades<br>
+                        • <strong>Real-Time Analytics:</strong> Early catching before problems escalate</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Emerging Trends</h4>
+                        <p>• <strong>Explainable AI:</strong> Increased transparency in algorithmic decision-making<br>
+                        • <strong>Automated Intervention Recommendations:</strong> Transform predictions into effective actions<br>
+                        • <strong>Ethical Considerations:</strong> Address algorithmic bias and privacy</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://educationaldatamining.org/edm2025/" target="_blank">EDM 2025 Conference</a> |
+                    <a href="https://openeducationanalytics.org/" target="_blank">Open Education Analytics</a> |
+                    <a href="https://learning-analytics.info/index.php/JLA/announcement/view/191" target="_blank">Journal of Learning Analytics</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Critical challenges in the EDM field include data quality and integration, model interpretability, ethical considerations around algorithmic decision-making, and transforming predictions into effective interventions. Beyond 2025, new methodologies and best practices will be established addressing these challenges.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape and Market Positioning -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">Four-Tier Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The learning analytics market is clearly divided into four tiers based on analytics type and deployment scale.</p>
+
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><strong>Tier 1: Predictive Analytics Platforms (57.8% Usage Rate)</strong><br>
+                • Key Players: Civitas Learning, Starfish, EAB Navigate<br>
+                • Value Proposition: Early at-risk student identification, intervention recommendations, 85-95% predictive accuracy<br>
+                • Track Record: Georgia State University - tracking 800+ risk factors, 90,000 interventions annually</p>
+
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><strong>Tier 2: LMS-Integrated Dashboards (99% Adoption)</strong><br>
+                • Key Players: Canvas (47% share), Brightspace (19%), Blackboard (18%), Moodle (11%)<br>
+                • Value Proposition: Real-time visualization, 87% active faculty use, proactive intervention<br>
+                • Features: Student activity tracking, performance metrics, custom reports</p>
+
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><strong>Tier 3: Data Visualization & BI Tools</strong><br>
+                • Key Players: BrightBytes, Power BI for Education, Tableau<br>
+                • Value Proposition: Progress visualization over time, trend analysis, data-driven decision making<br>
+                • Strengths: Robust analytics capabilities, customizable dashboards</p>
+
+                <p style="margin-bottom: 1rem; font-size: 0.95rem;"><strong>Tier 4: Data Governance & Compliance</strong><br>
+                • Key Players: SecurePrivacy, ComplyDog, Redactable<br>
+                • Value Proposition: Automated FERPA/GDPR compliance, 100-500 vendor management, risk assessment<br>
+                • Regulations: COPPA fines up to $51,744/child, Department of Education FERPA enforcement enhanced</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Category</th>
+                            <th>Market Share/Adoption</th>
+                            <th>Core Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Canvas</strong></td>
+                            <td>LMS-Integrated Analytics</td>
+                            <td>47% US universities</td>
+                            <td>Student activity visualization, proactive intervention</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Brightspace</strong></td>
+                            <td>LMS-Integrated Analytics</td>
+                            <td>19% US universities</td>
+                            <td>Predictive modeling, adaptive learning, competency tracking</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Civitas Learning</strong></td>
+                            <td>Predictive Analytics</td>
+                            <td>57.8% usage (all predictive tools)</td>
+                            <td>Risk prediction, intervention recommendations</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Starfish</strong></td>
+                            <td>Early Warning</td>
+                            <td>-</td>
+                            <td>Real-time alerts, case management</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Power BI</strong></td>
+                            <td>BI/Visualization</td>
+                            <td>-</td>
+                            <td>Custom dashboards, data integration</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SecurePrivacy</strong></td>
+                            <td>Data Governance</td>
+                            <td>-</td>
+                            <td>Automated FERPA/GDPR monitoring, vendor management</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Market Trends (2025)</h3>
+                <ul style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>Shift from Predictive to Prescriptive:</strong> Prescriptive analytics highest CAGR at 22.3%, evolving toward automatic recommendation of concrete intervention strategies</li>
+                    <li><strong>Accelerated Generative AI Integration:</strong> Generative AI summarization features adopted in over 80% of pilot programs</li>
+                    <li><strong>Multimodal Data Integration:</strong> Comprehensive risk profiles integrating academic performance, engagement, finances, social connections</li>
+                    <li><strong>Explainable AI Frameworks:</strong> Transparency in algorithmic decision-making and bias mitigation as critical challenges</li>
+                    <li><strong>Enhanced Privacy Regulations:</strong> FERPA enforcement strengthened, COPPA fines increased, GDPR integration complexity</li>
+                </ul>
+
+                <h3 class="subsection-title">Key Platform Comparison Chart</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key utilization approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Predictive Analytics Pilot Program</strong> - Validate at-risk student identification accuracy in one semester (Goal: achieve 85-95% predictive accuracy)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Maximize Existing LMS Analytics</strong> - Achieve 87% active faculty use with Canvas (47%) or Brightspace (19%) built-in analytics dashboards</p>
+                    <p style="line-height: 1.6;">3. <strong>Implement Data Governance Automation</strong> - Introduce automated FERPA/GDPR monitoring tools for 100-300 vendor management (500+ for large districts)</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Points</h3>
+                    <ul class="key-findings">
+                        <li><strong>Predictive Analytics Market Dominance:</strong> 57.8% usage rate (2024) most dominant, prescriptive analytics highest CAGR projection at 22.3%.</li>
+                        <li><strong>High-Accuracy Prediction Achieved:</strong> Machine learning models 85-95% accuracy in at-risk student identification, Georgia State University generates 90,000 interventions annually.</li>
+                        <li><strong>LMS Analytics Proliferation:</strong> 99% of US universities deploy LMS analytics, 87% active faculty use. Canvas 47%, Brightspace 19% market share.</li>
+                        <li><strong>Enhanced Privacy Regulations:</strong> COPPA fines up to $51,744/child, 62% of institutions experienced data breaches in past 5 years. 100-500 vendor management essential.</li>
+                        <li><strong>Rapid Market Growth:</strong> Learning analytics market expanding from $14.05B (2025) to $37.21B (2030), CAGR 21.5%.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Institutions Prioritizing Early At-Risk Student Identification → Civitas Learning / Starfish</strong><br>
+                        Reason: Predictive analytics tools lead market with 57.8% usage rate. Identify at-risk students with 85-95% high accuracy, proven by Georgia State University track record (800 risk factors tracked, 90,000 interventions annually).<br>
+                        <strong>Institutions Wanting to Leverage Existing LMS (Canvas, Brightspace) → Built-in Analytics Dashboards</strong><br>
+                        Reason: 99% of US universities already deployed LMS analytics, 87% active faculty use. Canvas 47%, Brightspace 19% high market share. Immediately available without additional system introduction.<br>
+                        <strong>Large Districts Managing 100+ Vendors → SecurePrivacy / ComplyDog</strong><br>
+                        Reason: Most K-12 districts manage 100-300 vendors (500+ for large districts). Automated FERPA/GDPR monitoring, COPPA fine risk mitigation (up to $51,744/child) essential.<br>
+                        <strong>Institutions Seeking Enhanced Data Visualization and Decision-Making → Power BI / Tableau</strong><br>
+                        Reason: Progress visualization over time, customizable dashboards, robust BI capabilities support data-driven decision-making.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Positive (Predictive analytics tools occupy 57.8% of market, achieving 85-95% high accuracy. LMS analytics proliferation at 99%, active faculty use at 87% shows maturity. However, urgent response to enhanced privacy regulations (COPPA fine increases, FERPA enforcement strengthening) is essential.)</p>
+            </section>
+
+            <!-- SECTION 5: Key Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Learning Analytics</strong> - The measurement, collection, analysis, and reporting of data about learners and their contexts, for purposes of optimizing learning and the environments in which it occurs.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Predictive Analytics</strong> - Analytics method building machine learning models from historical data to predict student success probability, risk, and future outcomes. Market usage rate 57.8% (2024).
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Prescriptive Analytics</strong> - Next-generation analytics automatically recommending concrete intervention strategies beyond prediction. Highest CAGR projection at 22.3%.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CALIPER Analytics</strong> - Standard specification (v1.2) for collecting and exchanging learning activity data, developed by IMS Global (1EdTech). Includes Sensor API, metric profiles, JSON-LD format.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>FERPA (Family Educational Rights and Privacy Act)</strong> - US federal law protecting privacy of student educational records. 2025 sees enhanced enforcement by Department of Education.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>GDPR (General Data Protection Regulation)</strong> - EU General Data Protection Regulation. Requires explicit consent for child data, with complex challenges in FERPA interaction.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Educational Data Mining (EDM)</strong> - Interdisciplinary research field discovering new patterns from educational data to improve learning outcomes. 2025 theme: "New Goals, New Measurements."
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> November 7, 2025</p>
+                    <ul>
+                        <li>• <a href="https://www.mordorintelligence.com/industry-reports/learning-analytics-market" target="_blank">Mordor Intelligence: Learning Analytics Market 2025-2030</a></li>
+                        <li>• <a href="https://www.6wresearch.com/market-takeaways-view/how-big-is-the-learning-analytics-market" target="_blank">6Wresearch: Learning Analytics Market Trends 2031</a></li>
+                        <li>• <a href="https://www.digitallearninginstitute.com/blog/ai-driven-evolution-in-learning-analytics-for-digital-education" target="_blank">Digital Learning Institute: AI-Driven Evolution in Learning Analytics</a></li>
+                        <li>• <a href="https://www.imsglobal.org/spec/caliper/v1p2" target="_blank">IMS Global: CALIPER Analytics v1.2 Specification</a></li>
+                        <li>• <a href="https://secureprivacy.ai/blog/school-data-governance-software-ferpa-coppa-k-12" target="_blank">SecurePrivacy: School Data Governance Software 2025</a></li>
+                        <li>• <a href="https://mapademics.com/whitepapers/predicting-student-success-with-smart-analytics" target="_blank">Mapademics: Predictive Retention Analytics in Higher Ed 2025</a></li>
+                        <li>• <a href="https://educationaldatamining.org/edm2025/" target="_blank">Educational Data Mining 2025 Conference</a></li>
+                        <li>• <a href="https://www.edsurge.com/news/2024-12-06-how-are-new-ai-tools-changing-learning-analytics" target="_blank">EdSurge: How New AI Tools Are Changing Learning Analytics (Dec 2024)</a></li>
+                        <li>• <a href="https://www.rapidinnovation.io/post/ai-for-student-performance-analytics" target="_blank">Rapid Innovation: AI for Student Performance Analytics 2025</a></li>
+                        <li>• <a href="https://complydog.com/blog/edtech-saas-compliance-student-privacy-gdpr-implementation" target="_blank">ComplyDog: EdTech SaaS Compliance Guide</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Competitive Radar Chart
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Prediction Accuracy', 'Real-Time', 'Ease of Deployment', 'AI Integration', 'Compliance'],
+                datasets: [
+                    {
+                        label: 'Canvas Analytics',
+                        data: [75, 90, 95, 85, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)'
+                    },
+                    {
+                        label: 'Brightspace Insights',
+                        data: [85, 85, 80, 90, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        pointBackgroundColor: 'rgb(34, 197, 94)'
+                    },
+                    {
+                        label: 'Civitas Learning',
+                        data: [95, 70, 65, 75, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)'
+                    },
+                    {
+                        label: 'Power BI for Education',
+                        data: [65, 80, 75, 70, 75],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        pointBackgroundColor: 'rgb(168, 85, 247)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 11
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

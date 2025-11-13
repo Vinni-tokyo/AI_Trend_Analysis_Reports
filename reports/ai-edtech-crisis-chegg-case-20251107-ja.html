@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI EdTech危機：<br>Chegg事例分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ai-edtech-crisis-chegg-case-20251107-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='ai-edtech-crisis-chegg-case-20251107-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='ai-edtech-crisis-chegg-case-20251107-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AI EdTech危機：<br>Chegg事例分析</h1>
+            <div class="subtitle">ChatGPT出現後の教育テック産業の構造変化と生存戦略</div>
+            <div class="meta">レポート作成日：2025年11月7日 | 標準版レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. Cheggの崩壊：時価総額99%減少の衝撃</h3>
+                <p><strong>現状：</strong>宿題支援サービス大手のCheggは、ChatGPTの登場により壊滅的な打撃を受けました。2021年2月に時価総額$140億、株価$98を記録していた同社は、2024年11月には時価総額$1.91億、株価$1.77まで暴落し、99%の価値を失いました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>財務指標の崩壊</h4>
+                        <p>• <strong>株価暴落：</strong>2023年5月に1日で49%下落、過去最大の暴落を記録<br>
+                        • <strong>加入者喪失：</strong>50万人以上の有料会員（月額$19.95）が離脱<br>
+                        • <strong>収益減少：</strong>2024年Q4の純収益が24%減少</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>組織再編</h4>
+                        <p>• <strong>2025年5月：</strong>従業員22%削減（250人）<br>
+                        • <strong>2025年10月：</strong>さらに45%削減（388人）、「AIの新たな現実」を理由に<br>
+                        • <strong>Google検索流入：</strong>大幅減少によりトラフィックが激減</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.chegg.com/" target="_blank">Chegg</a> |
+                    <a href="https://www.cnbc.com/2023/05/02/chegg-drops-more-than-40percent-after-saying-chatgpt-is-killing-its-business.html" target="_blank">CNBC記事（株価暴落）</a>
+                </div>
+
+                <p><strong>展望：</strong>Cheggは上場企業として初めてAIプラットフォームがビジネスに損害を与えたことを公式に認めた企業となり、EdTech業界の危機を象徴する存在となりました。</p>
+
+                <h3 class="subsection-title">2. ChatGPTの破壊的影響：無料AI vs 有料EdTech</h3>
+                <p><strong>現状：</strong>2022年11月にOpenAIがリリースしたChatGPTは、従来の有料宿題支援サービスのビジネスモデルを根底から覆しました。学生たちは月額$19.95を支払う代わりに、無料のAIチャットボットに課題の解答を求めるようになりました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>学生のAI利用状況</h4>
+                        <p>• <strong>英国学部生：</strong>50%が課題にAIを使用<br>
+                        • <strong>米国ティーン：</strong>20%がChatGPTで宿題支援<br>
+                        • <strong>大学院生：</strong>学士・修士・博士課程の66%がChatGPTを定期的に使用（2024年7月）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>価格破壊の構造</h4>
+                        <p>• <strong>無料 vs 有料：</strong>ChatGPT無料版が月額$19.95のCheggを代替<br>
+                        • <strong>品質向上：</strong>GPT-4の精度がCheggの回答を上回る<br>
+                        • <strong>アクセシビリティ：</strong>24時間365日即座に回答</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://openai.com/chatgpt" target="_blank">ChatGPT</a> |
+                    <a href="https://www.cnbc.com/2024/04/30/online-education-stocks-tank-on-chatgpt-threat.html" target="_blank">CNBC記事（EdTech株暴落）</a>
+                </div>
+
+                <p><strong>展望：</strong>AIが教育コンテンツ制作コストをほぼゼロにしたことで、EdTech企業は「最良のコンテンツ」ではなく「最も効果的な学習ガイダンス」を提供できるかどうかが競争の焦点となっています。</p>
+
+                <h3 class="subsection-title">3. 既存EdTech企業の対応：統合戦略 vs 独自開発</h3>
+                <p><strong>現状：</strong>ChatGPTの脅威に直面した既存EdTech企業は、AI統合戦略を取るか独自開発に進むかの選択を迫られました。迅速な対応と適切な戦略選択が生存を左右しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Cheggの失敗した戦略</h4>
+                        <p>• <strong>2023年4月：</strong>OpenAIと提携、GPT-4ベースの「CheggMate」発表<br>
+                        • <strong>性能不足：</strong>期待を下回る結果、学生は無料ChatGPTを選択<br>
+                        • <strong>2023年8月：</strong>Scale AIに切り替え、独自LLM開発を試みるも失敗</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>業界全体の課題</h4>
+                        <p>• <strong>ROI重視：</strong>教育機関が測定可能な学習成果を要求<br>
+                        • <strong>93%がAI拡大予定：</strong>米国・カナダの大学教職員（2024年調査）<br>
+                        • <strong>ビジネスモデル転換：</strong>単なる技術導入ではなく、モデル全体の革新が必要</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://investor.chegg.com/Press-Releases/press-release-details/2023/Chegg-announces-CheggMate-the-new-AI-companion-built-with-GPT-4/default.aspx" target="_blank">CheggMate発表</a> |
+                    <a href="https://scale.com/" target="_blank">Scale AI</a>
+                </div>
+
+                <p><strong>展望：</strong>OpenAIのような大手AI企業と競争するのではなく、AIを活用した差別化された学習体験の提供が生存の鍵となります。</p>
+
+                <h3 class="subsection-title">4. 成功事例：Quizlet Q-Chat と Khan Academy Khanmigo</h3>
+                <p><strong>現状：</strong>一部のEdTech企業は迅速なAI統合により競争力を維持・強化しています。QuizletとKhan Academyは、AIを「脅威」ではなく「機会」と捉え、成功的な転換を遂げました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Quizlet Q-Chat</h4>
+                        <p>• <strong>2023年3月リリース：</strong>ChatGPT統合の「Q-Chat」AI家庭教師<br>
+                        • <strong>適応型学習：</strong>学生の理解度に応じて難易度を自動調整<br>
+                        • <strong>米国高校生の50%：</strong>がQuizletのデジタルフラッシュカードを使用</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Khan Academy Khanmigo</h4>
+                        <p>• <strong>GPT-4ベース：</strong>OpenAIと提携した個別指導AI<br>
+                        • <strong>信頼性重視：</strong>非営利組織の信頼性 + 最先端AI技術<br>
+                        • <strong>教育者向け：</strong>教師の業務支援機能も提供</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://quizlet.com/" target="_blank">Quizlet</a> |
+                    <a href="https://www.khanacademy.org/khan-labs" target="_blank">Khanmigo</a> |
+                    <a href="https://www.khanacademy.org/" target="_blank">Khan Academy</a>
+                </div>
+
+                <p><strong>展望：</strong>成功事例の共通点は、AIを既存サービスに統合し、「AI + 人間の専門知識」の組み合わせで付加価値を提供している点です。</p>
+
+                <h3 class="subsection-title">5. AI EdTech市場の急成長：2025年$69億→2030年$410億</h3>
+                <p><strong>現状：</strong>Cheggのような従来型EdTech企業が苦戦する一方で、AI教育市場全体は急速に拡大しています。AI統合に成功した企業は市場成長の恩恵を受けています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>AI教育市場の成長</h4>
+                        <p>• <strong>2025年：</strong>$69億（世界市場）<br>
+                        • <strong>2030年予測：</strong>$410億、CAGR 42.83%<br>
+                        • <strong>2034年予測：</strong>$1,123億、CAGR 36.02%</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>EdTech市場全体</h4>
+                        <p>• <strong>2024年：</strong>$2,470億<br>
+                        • <strong>2025年予測：</strong>$2,772億<br>
+                        • <strong>2034年予測：</strong>$9,077億、CAGR 13.9%</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.grandviewresearch.com/industry-analysis/artificial-intelligence-ai-education-market-report" target="_blank">Grand View Research（市場レポート）</a> |
+                    <a href="https://market.us/report/edtech-market/" target="_blank">Market.us（EdTech市場）</a>
+                </div>
+
+                <p><strong>展望：</strong>AIは教育産業全体を破壊するのではなく、適応できる企業にとっては巨大な成長機会を提供しています。北米が36%のシェアでリードしています。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層市場構造：無料AIから従来型EdTechまで</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI時代のEdTech市場は、無料AIツール、AI統合EdTech、従来型EdTech、エンタープライズLMSの4層構造に再編されています。Cheggは第3層（従来型EdTech）に位置し、上位2層からの圧力を受けています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ツール名</th>
+                            <th>カテゴリ</th>
+                            <th>特徴</th>
+                            <th>価格</th>
+                            <th>状況</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ChatGPT</strong></td>
+                            <td>無料AIツール</td>
+                            <td>汎用AI、即座の回答、高精度</td>
+                            <td>無料～$20/月</td>
+                            <td>急成長</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Claude</strong></td>
+                            <td>無料AIツール</td>
+                            <td>長文対応、論理的推論</td>
+                            <td>無料～$20/月</td>
+                            <td>急成長</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google Gemini</strong></td>
+                            <td>無料AIツール</td>
+                            <td>Google統合、マルチモーダル</td>
+                            <td>無料</td>
+                            <td>急成長</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Quizlet Q-Chat</strong></td>
+                            <td>AI統合EdTech</td>
+                            <td>フラッシュカード + AI家庭教師</td>
+                            <td>$35.99/年</td>
+                            <td>成功</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Khan Academy Khanmigo</strong></td>
+                            <td>AI統合EdTech</td>
+                            <td>構造化カリキュラム + AI</td>
+                            <td>無料～寄付</td>
+                            <td>成功</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chegg</strong></td>
+                            <td>従来型EdTech</td>
+                            <td>宿題解答、人間チューター</td>
+                            <td>$19.95/月</td>
+                            <td>危機</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Course Hero</strong></td>
+                            <td>従来型EdTech</td>
+                            <td>学習資料、過去問</td>
+                            <td>$9.95/月</td>
+                            <td>危機</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Canvas</strong></td>
+                            <td>エンタープライズLMS</td>
+                            <td>大学向けLMS、管理機能</td>
+                            <td>B2B契約</td>
+                            <td>安定</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場トレンド：5つの重要な変化</h3>
+                <ul class="key-findings">
+                    <li><strong>価格破壊：</strong>無料AIツールが有料EdTechサービスの価格設定モデルを崩壊させている</li>
+                    <li><strong>統合戦略の優位：</strong>AI統合に成功した企業（Quizlet、Khan Academy）が競争力を維持</li>
+                    <li><strong>従来型の淘汰：</strong>AI対応しない企業（Chegg、Course Hero）が市場シェアを急速に失っている</li>
+                    <li><strong>学習成果重視：</strong>ROI測定可能なEdTechソリューションが教育機関から選ばれている</li>
+                    <li><strong>北米市場リード：</strong>36%のシェアで北米が世界市場を牽引、高度な技術インフラが優位性</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>無料AI + 付加価値戦略</strong> - Khan AcademyやQuizletのように、無料AIツールと差別化された学習体験（構造化カリキュラム、進捗管理、コミュニティ）を組み合わせる。</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>AI統合による競争力強化</strong> - 既存サービスにOpenAI、Anthropic、GoogleのAIを統合し、迅速に市場投入することで、独自開発のコストとリスクを回避。</p>
+                    <p style="line-height: 1.6;">3. <strong>ニッチ市場への特化</strong> - 汎用AIが対応困難な専門分野（医学、法律、工学）や特定の学習スタイル（障害者支援、多言語学習）に特化したサービス展開。</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>Cheggの崩壊は氷山の一角：</strong>時価総額99%減少（$140億→$1.91億）は、AI対応しない従来型EdTech企業の危機を象徴。50万人以上の有料会員が無料ChatGPTに流出。</li>
+                        <li><strong>無料 vs 有料の構造的問題：</strong>ChatGPT無料版が月額$19.95のCheggを代替。AIによる教育コンテンツ制作コストのゼロ化が価格破壊を引き起こしている。</li>
+                        <li><strong>統合戦略の成功と失敗：</strong>Quizlet（Q-Chat）、Khan Academy（Khanmigo）は迅速なAI統合で成功。CheggのCheggMateは期待外れで失敗。独自開発より統合が有効。</li>
+                        <li><strong>市場は急成長中：</strong>AI教育市場は2025年$69億→2030年$410億（CAGR 42.8%）に成長予測。従来型EdTechの危機と市場全体の成長が同時進行。</li>
+                        <li><strong>生存の鍵は差別化：</strong>AIとの競争ではなく、AI + 人間の専門知識 + 構造化学習体験の組み合わせが重要。ROI測定可能なソリューションが選ばれる。</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide（EdTech企業向け）</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>迅速なAI統合を優先すべき企業 → OpenAI/Anthropic APIを活用</strong><br>
+                        理由：独自LLM開発は時間とコストがかかり、大手AI企業に勝てない。QuizletやKhan Academyの成功事例が証明。<br><br>
+                        <strong>専門分野に強みがある企業 → ニッチ市場への特化</strong><br>
+                        理由：汎用AIが対応困難な専門領域（医学、法律、工学）では、専門知識 + AI統合で差別化可能。<br><br>
+                        <strong>エンタープライズ向けLMS企業 → AI機能拡充とROI測定強化</strong><br>
+                        理由：教育機関は測定可能な学習成果を要求。Canvas、Blackboardは安定しているが、AI機能強化が必要。<br><br>
+                        <strong>宿題解答サービス → ビジネスモデル転換が急務</strong><br>
+                        理由：Cheggの事例が示すように、無料AIツールとの直接競争は不可能。付加価値（学習ガイダンス、進捗管理）への転換が必須。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ネガティブ（従来型EdTechにとって）/ ポジティブ（AI統合EdTechと市場全体にとって）。Cheggの崩壊は、AI時代に適応できない企業の淘汰を示す象徴的な事例です。一方、QuizletやKhan Academyの成功は、AIを機会として活用する企業が成長できることを証明しています。</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>EdTech（Education Technology）</strong> - 教育分野における技術の活用。オンライン学習プラットフォーム、学習管理システム（LMS）、宿題支援サービスなどを含む広範な概念。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>宿題支援サービス</strong> - Cheggのように、学生が宿題の解答や説明を得られる有料オンラインサービス。ChatGPT登場により大きな影響を受けている。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LMS（Learning Management System）</strong> - 学習管理システム。Canvas、Blackboardなど、大学や企業が教育コンテンツの配信、学生の進捗管理、成績評価を行うためのプラットフォーム。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>AI統合戦略</strong> - 既存サービスにOpenAI、Anthropic、GoogleなどのAI技術を組み込む戦略。独自開発よりも迅速かつ低コストで実現可能。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>価格破壊</strong> - 無料または低価格の新規参入者（ChatGPTなど）が、既存の高価格サービス（Chegg月額$19.95など）の価格設定モデルを崩壊させる現象。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ROI（Return on Investment）</strong> - 投資収益率。教育機関がEdTechツールに投資する際、測定可能な学習成果（成績向上、卒業率向上、教師の時間節約など）を求める指標。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>適応型学習（Adaptive Learning）</strong> - 学生の理解度や学習スタイルに応じて、コンテンツや難易度を自動調整する学習システム。AI技術により実現が容易になった。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2025年11月7日</p>
+                    <ul>
+                        <li>• <a href="https://www.cnbc.com/2023/05/02/chegg-drops-more-than-40percent-after-saying-chatgpt-is-killing-its-business.html" target="_blank">CNBC - Chegg shares drop more than 40% after company says ChatGPT is killing its business</a></li>
+                        <li>• <a href="https://gizmodo.com/chegg-is-on-its-last-legs-after-chatgpt-sent-its-stock-down-99-2000522585" target="_blank">Gizmodo - Chegg Is On Its Last Legs After ChatGPT Sent Its Stock Down 99%</a></li>
+                        <li>• <a href="https://sherwood.news/business/chegg-biggest-chatgpt-gen-ai-loser/" target="_blank">Sherwood News - ChatGPT scrambled the Chegg</a></li>
+                        <li>• <a href="https://www.npr.org/2025/08/06/g-s1-81012/chatgpt-ai-college-students-chegg-study" target="_blank">NPR - So long, study guides? The AI industry is going after students</a></li>
+                        <li>• <a href="https://investor.chegg.com/Press-Releases/press-release-details/2023/Chegg-announces-CheggMate-the-new-AI-companion-built-with-GPT-4/default.aspx" target="_blank">Chegg Press Release - CheggMate announcement</a></li>
+                        <li>• <a href="https://www.grandviewresearch.com/industry-analysis/artificial-intelligence-ai-education-market-report" target="_blank">Grand View Research - AI In Education Market Size & Share Report 2030</a></li>
+                        <li>• <a href="https://www.mordorintelligence.com/industry-reports/ai-in-education-market" target="_blank">Mordor Intelligence - AI in Education Market Analysis 2030</a></li>
+                        <li>• <a href="https://market.us/report/edtech-market/" target="_blank">Market.us - EdTech Market Size, Share, Trends</a></li>
+                        <li>• <a href="https://marketscale.com/industries/education-technology/chatgpt-is-eating-cheggs-lunch-experts-say-well-keep-seeing-ai-disruption-in-edtech/" target="_blank">MarketScale - AI Disruption in Education: It's About The Business Models AI Enables</a></li>
+                        <li>• <a href="https://www.christenseninstitute.org/blog/looking-beyond-the-hype-ai-wont-transform-classrooms-but-it-will-help-transform-education/" target="_blank">Christensen Institute - AI won't transform classrooms, but it will help transform education</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Competitive Landscape Radar Chart
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['価格競争力', '技術精度', 'ユーザー体験', 'ブランド信頼性', '付加価値'],
+                datasets: [
+                    {
+                        label: 'ChatGPT（無料）',
+                        data: [100, 95, 90, 85, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Quizlet Q-Chat',
+                        data: [75, 85, 95, 90, 95],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Chegg',
+                        data: [40, 70, 60, 65, 60],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Khan Academy Khanmigo',
+                        data: [90, 90, 85, 100, 90],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: { size: 10 }
+                        },
+                        pointLabels: {
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 }, padding: 10 }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

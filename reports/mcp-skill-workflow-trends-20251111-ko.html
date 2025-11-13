@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP와 Skill을 활용한 워크플로우 최신 트렌드 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='mcp-skill-workflow-trends-20251111-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='mcp-skill-workflow-trends-20251111-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='mcp-skill-workflow-trends-20251111-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>MCP와 Skill을 활용한 워크플로우<br>최신 트렌드 분석</h1>
+            <div class="subtitle">AI 통합 표준과 No-Code Agent의 부상</div>
+            <div class="meta">보고서 작성일: 2025년 11월 11일 | 표준 보고서 (5-8페이지)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. MCP (Model Context Protocol): AI 통합의 새로운 표준</h3>
+                <p><strong>현황:</strong> Anthropic이 2024년 11월 발표한 MCP는 AI 시스템이 외부 도구, 시스템, 데이터 소스와 통합하는 방식을 표준화하는 오픈 소스 프로토콜입니다. Claude Desktop, VS Code 등 주요 개발 환경에서 MCP 서버를 통해 수백 개의 외부 도구와 데이터베이스에 연결할 수 있습니다. 현재 프로토콜 버전은 2025-06-18입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 기능</h4>
+                        <p>• <strong>양방향 연결:</strong> AI 모델과 데이터 소스 간 안전한 통신<br>
+                        • <strong>표준화된 인터페이스:</strong> 통일된 방식으로 다양한 도구 접근<br>
+                        • <strong>보안 중심 설계:</strong> 디렉토리 접근 제어 및 권한 관리<br>
+                        • <strong>오픈 소스:</strong> 커뮤니티 주도 개발 및 확장</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>주요 MCP 서버</h4>
+                        <p>• <strong>Filesystem:</strong> 파일 읽기/쓰기, 디렉토리 관리<br>
+                        • <strong>Database:</strong> PostgreSQL, SQLite 연결 (DBHub by Bytebase)<br>
+                        • <strong>Git:</strong> 버전 관리 시스템 통합<br>
+                        • <strong>Google Drive/Slack:</strong> 엔터프라이즈 시스템 연동</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://docs.claude.com/en/docs/mcp" target="_blank">MCP 공식 문서</a> |
+                    <a href="https://github.com/modelcontextprotocol/servers" target="_blank">MCP Servers GitHub</a> |
+                    <a href="https://www.anthropic.com/news/model-context-protocol" target="_blank">Anthropic MCP 발표</a>
+                </div>
+
+                <p><strong>전망:</strong> MCP는 AI 통합의 사실상 표준으로 자리잡고 있으며, 더 많은 개발 도구와 플랫폼에서 채택될 것으로 예상됩니다. 2025년 4월 보안 연구에서 프롬프트 인젝션 등 보안 이슈가 지적되었으나, 표준화된 프로토콜로 인해 보안 패치와 개선이 빠르게 이루어지고 있습니다.</p>
+
+                <h3 class="subsection-title">2. Claude Skills: No-Code Agent Builder의 혁신</h3>
+                <p><strong>현황:</strong> Anthropic은 2025년 10월 Agent Skills를 발표하며 no-code agent 구축 시장에 진입했습니다. Skills는 재사용 가능한 폴더로, 작업별 지침, 스크립트, 리소스를 패키징하여 Claude가 자동으로 발견하고 실행할 수 있게 합니다. Messages API의 /v1/skills 엔드포인트를 통해 개발자는 프로그래밍 방식으로 스킬을 관리할 수 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 특징</h4>
+                        <p>• <strong>자동 오케스트레이션:</strong> Claude가 작업에 맞는 스킬을 자동 선택<br>
+                        • <strong>멀티 스킬 조합:</strong> 여러 스킬을 조합하여 복잡한 워크플로우 구성<br>
+                        • <strong>크로스 플랫폼:</strong> Claude 앱, Claude Code, API에서 동일하게 작동<br>
+                        • <strong>Code Execution Tool:</strong> 안전한 샌드박스 환경에서 실행</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시장 영향</h4>
+                        <p>• <strong>300,000개 이상 기업 사용:</strong> 2년간 300배 성장<br>
+                        • <strong>Artifacts 확장:</strong> 2025년 6월, 인터랙티브 앱 빌드 및 공유 기능 추가<br>
+                        • <strong>개발 민주화:</strong> 비개발자도 AI 에이전트 구축 가능<br>
+                        • <strong>엔터프라이즈 채택 가속:</strong> DevOps 워크플로우 자동화</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.anthropic.com/news/skills" target="_blank">Claude Skills 공식 발표</a> |
+                    <a href="https://docs.claude.com/en/docs/claude-code" target="_blank">Claude Code 문서</a>
+                </div>
+
+                <p><strong>전망:</strong> Claude Skills는 OpenAI Agent Builder, Google Opal과 경쟁하며 no-code agent 시장의 주요 플레이어로 자리잡을 것입니다. Anthropic의 "human-in-the-loop" 철학을 바탕으로 더 안전하고 제어 가능한 에이전트 구축 경험을 제공할 것으로 기대됩니다.</p>
+
+                <h3 class="subsection-title">3. Visual Workflow Tools + MCP: Low-Code 혁명</h3>
+                <p><strong>현황:</strong> n8n과 Zapier 같은 비주얼 워크플로우 도구들이 MCP 통합을 통해 진정한 Intelligent Process Automation (IPA)으로 진화하고 있습니다. Claude의 지능과 n8n의 오케스트레이션을 결합하여 단순한 RPA를 넘어 컨텍스트를 이해하고 판단하며 새로운 정보에 적응하는 워크플로우를 구축할 수 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 플랫폼</h4>
+                        <p>• <strong>n8n:</strong> 오픈소스, 셀프호스팅 가능, 400+ 통합<br>
+                        • <strong>Zapier Agents:</strong> 7,000+ 앱 연동, 비즈니스 중심<br>
+                        • <strong>Flowise:</strong> LLM 앱 구축에 특화된 드래그앤드롭 도구<br>
+                        • <strong>Docker MCP Toolkit:</strong> MCP 서버를 Docker로 쉽게 배포</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>사용 사례</h4>
+                        <p>• <strong>데이터 파이프라인:</strong> 자동 데이터 수집, 정제, 분석<br>
+                        • <strong>고객 지원 자동화:</strong> Slack, 이메일 통합 응답 시스템<br>
+                        • <strong>콘텐츠 생성:</strong> 멀티채널 콘텐츠 생성 및 배포<br>
+                        • <strong>모니터링 및 알림:</strong> 실시간 이벤트 감지 및 대응</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://n8n.io/" target="_blank">n8n</a> |
+                    <a href="https://zapier.com/" target="_blank">Zapier</a> |
+                    <a href="https://www.docker.com/blog/connect-mcp-servers-to-claude-desktop-with-mcp-toolkit/" target="_blank">Docker MCP Toolkit</a>
+                </div>
+
+                <p><strong>전망:</strong> MCP 표준 채택으로 low-code 도구들이 AI 에이전트 오케스트레이션의 중심축이 될 것입니다. 시민 개발자(citizen developer)가 복잡한 AI 워크플로우를 구축할 수 있게 되면서, 기업의 디지털 전환이 가속화될 것으로 예상됩니다.</p>
+
+                <h3 class="subsection-title">4. Code-First SDK: 개발자를 위한 완전한 제어</h3>
+                <p><strong>현황:</strong> LangGraph, CrewAI, AutoGen 등 코드 우선 프레임워크는 개발자에게 AI 에이전트 오케스트레이션에 대한 완전한 제어를 제공합니다. 각 프레임워크는 고유한 철학을 가지고 있으며, 사용 사례에 따라 선택할 수 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LangGraph</h4>
+                        <p>• <strong>그래프 기반 아키텍처:</strong> 복잡한 워크플로우 시각화<br>
+                        • <strong>조건부 실행:</strong> 동적 분기 및 루프<br>
+                        • <strong>프로덕션 중심:</strong> 확장 가능한 분산 시스템<br>
+                        • <strong>적합:</strong> 복잡한 멀티스텝 프로세스, 정교한 제어 필요</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>CrewAI</h4>
+                        <p>• <strong>역할 기반 모델:</strong> 에이전트를 팀원처럼 역할 부여<br>
+                        • <strong>빠른 프로토타이핑:</strong> 직관적인 추상화로 신속한 개발<br>
+                        • <strong>팀워크 중심:</strong> 협업 워크플로우 쉽게 구현<br>
+                        • <strong>적합:</strong> 빠른 실험, 간단한 멀티 에이전트 시스템</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>AutoGen</h4>
+                        <p>• <strong>대화 중심:</strong> 에이전트 간 비동기 대화로 협업<br>
+                        • <strong>이벤트 기반:</strong> v0.4에서 완전히 재작성 중<br>
+                        • <strong>Human-in-the-loop:</strong> 반복적 검토 및 승인 워크플로우<br>
+                        • <strong>적합:</strong> 브레인스토밍, 검토 중심 작업, 엔터프라이즈</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>선택 가이드</h4>
+                        <p>• <strong>LangGraph:</strong> 복잡도 + 제어 우선 시<br>
+                        • <strong>CrewAI:</strong> 속도 + 단순성 우선 시<br>
+                        • <strong>AutoGen:</strong> 대화형 협업 + 엔터프라이즈<br>
+                        • <strong>트레이드오프:</strong> 유연성 vs 학습 곡선</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.langchain.com/langgraph" target="_blank">LangGraph</a> |
+                    <a href="https://www.crewai.com/" target="_blank">CrewAI</a> |
+                    <a href="https://microsoft.github.io/autogen/" target="_blank">AutoGen</a>
+                </div>
+
+                <p><strong>전망:</strong> 각 프레임워크는 특정 니즈에 최적화되며 공존할 것입니다. LangGraph는 복잡한 프로덕션 시스템, CrewAI는 빠른 프로토타입, AutoGen은 엔터프라이즈 대화형 시스템에서 각각 강점을 보일 것입니다.</p>
+
+                <h3 class="subsection-title">5. AI Agent 시장 폭발적 성장: $5.9B → $105.6B</h3>
+                <p><strong>현황:</strong> 글로벌 AI 에이전트 시장은 2024년 $5.9B에서 2025년 $7.7B로 성장하며, 2034년까지 $105.6B에 도달할 것으로 전망됩니다 (CAGR 38.5%). 상위 기업(Amazon, Anthropic, Google, IBM, Meta, Microsoft, OpenAI)이 2024년 시장의 56%를 차지하고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>시장 동인</h4>
+                        <p>• <strong>멀티 에이전트 오케스트레이션:</strong> 복잡한 작업을 여러 에이전트가 협업<br>
+                        • <strong>모듈러 Low-Code 플랫폼:</strong> 기술 장벽 낮추기<br>
+                        • <strong>멀티모달 에이전트:</strong> 텍스트, 이미지, 음성 통합<br>
+                        • <strong>비즈니스 기능 전반 확산:</strong> 고객지원, 마케팅, 개발 등</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>주요 마일스톤</h4>
+                        <p>• <strong>2025년 1월:</strong> OpenAI Operator (CUA 모델) 출시<br>
+                        • <strong>2025년 6월:</strong> Google Trends "AI Agents" 검색 100% 피크<br>
+                        • <strong>2025년 10월:</strong> GitHub, OpenAI/Google/Anthropic 에이전트 통합<br>
+                        • <strong>Google-Anthropic 계약:</strong> 수백억 달러 규모 클라우드 딜</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.gminsights.com/industry-analysis/ai-agents-market" target="_blank">AI Agents Market Report</a> |
+                    <a href="https://www.cnbc.com/2025/10/28/github-openai-google-anthropic-agents-ai.html" target="_blank">GitHub AI Agents 통합</a>
+                </div>
+
+                <p><strong>전망:</strong> 2025년은 "AI 에이전트의 해"로 기록될 것입니다. No-code 도구의 등장으로 비개발자도 에이전트를 구축할 수 있게 되면서 시장 성장이 더욱 가속화될 것입니다. 2030년까지 대부분의 지식 작업에서 AI 에이전트가 일상적으로 사용될 것으로 예상됩니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4계층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">MCP와 Skill 워크플로우 시장은 사용자의 기술 수준과 요구사항에 따라 4개 계층으로 구분됩니다. No-Code Builder는 진입 장벽이 낮고 빠른 구축이 가능하며, Code-First SDK는 완전한 커스터마이징과 성능 최적화를 제공합니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>계층</th>
+                            <th>도구/플랫폼</th>
+                            <th>특징</th>
+                            <th>대상 사용자</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>No-Code Builder</strong></td>
+                            <td>Claude Skills, OpenAI Agent Builder, Google Opal</td>
+                            <td>자연어 기반, 즉시 배포, 진입 장벽 제로</td>
+                            <td>일반 사용자, 비즈니스 전문가</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Visual/Low-Code</strong></td>
+                            <td>n8n, Zapier Agents, Flowise</td>
+                            <td>드래그앤드롭, 빠른 구축, 직관적 UI</td>
+                            <td>시민 개발자, 비즈니스 팀</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Code-First SDK</strong></td>
+                            <td>LangGraph, CrewAI, AutoGen</td>
+                            <td>완전한 제어, 커스터마이징, 성능 최적화</td>
+                            <td>개발자, 엔지니어링 팀</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Enterprise Infrastructure</strong></td>
+                            <td>Amazon Bedrock, Vertex AI, Azure AI</td>
+                            <td>관리형 서비스, 보안/컴플라이언스, 엔터프라이즈 지원</td>
+                            <td>대기업, 규제 산업</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">시장 트렌드 (2025)</h3>
+                <ul style="list-style: none; padding-left: 0; font-size: 0.95rem; line-height: 1.8;">
+                    <li>• <strong>No-Code의 급부상:</strong> Claude Skills, OpenAI Agent Builder가 2025년 10월 출시되며 no-code 시장 경쟁 격화. 비개발자 접근성 대폭 향상.</li>
+                    <li>• <strong>MCP 표준화 확산:</strong> Anthropic MCP가 사실상 표준으로 자리잡으며, 다양한 도구와 플랫폼에서 채택. 상호운용성 증가.</li>
+                    <li>• <strong>멀티 에이전트 오케스트레이션:</strong> 단일 에이전트에서 팀 기반 협업으로 진화. LangGraph, CrewAI, AutoGen 등이 주도.</li>
+                    <li>• <strong>GitHub의 중재자 역할:</strong> 2025년 10월, GitHub이 OpenAI, Google, Anthropic 에이전트를 통합하며 "혼돈에 질서" 부여.</li>
+                    <li>• <strong>엔터프라이즈 채택 가속:</strong> 300,000개 이상 기업이 Claude 사용 (2년간 300배 증가). 워크플로우 자동화가 경쟁 우위 요소로 부상.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>MCP 파일럿 프로젝트</strong> - Claude Desktop + n8n MCP를 활용하여 워크플로우 자동화 검증 (예: 일일 보고서 생성 자동화)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Visual Tool 우선 배포</strong> - n8n 또는 Zapier로 no-code 워크플로우 구축 (예: 이메일 자동 분류 및 라우팅)</p>
+                    <p style="line-height: 1.6;">3. <strong>보안 평가 및 거버넌스</strong> - MCP 프롬프트 인젝션 리스크 평가 및 접근 제어 정책 수립</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 엑스큐티브 서머리 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">엑스큐티브 서머리</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 발견사항</h3>
+                    <ul class="key-findings">
+                        <li><strong>MCP 표준화:</strong> Anthropic MCP가 AI 통합의 사실상 표준으로 자리잡으며, Claude Desktop, VS Code 등 주요 개발 환경에서 채택. 2024년 11월 발표 이후 빠르게 확산.</li>
+                        <li><strong>No-Code 혁명:</strong> Claude Skills (2025년 10월)로 비개발자도 AI 에이전트 구축 가능. 300,000개 기업 사용, 2년간 300배 성장.</li>
+                        <li><strong>시장 폭발적 성장:</strong> AI 에이전트 시장 2024년 $5.9B → 2034년 $105.6B (CAGR 38.5%). 상위 7개 기업이 56% 점유.</li>
+                        <li><strong>4계층 시장 구조:</strong> No-Code Builder (Claude Skills) → Visual/Low-Code (n8n, Zapier) → Code-First SDK (LangGraph, CrewAI) → Enterprise (Bedrock, Vertex AI).</li>
+                        <li><strong>2025년 주요 마일스톤:</strong> OpenAI Operator (1월), GitHub 에이전트 통합 (10월), Claude Skills 출시 (10월), Google-Anthropic 수백억 달러 계약.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>빠른 프로토타이핑 우선 → Claude Skills 또는 n8n</strong><br>
+                        이유: 자연어 기반 구축, 즉시 배포 가능, 학습 곡선 최소화. 비즈니스 팀이 직접 워크플로우 생성 가능.<br><br>
+                        <strong>복잡한 멀티 에이전트 시스템 → LangGraph 또는 AutoGen</strong><br>
+                        이유: 정교한 제어, 조건부 분기, 확장 가능한 아키텍처. 프로덕션 환경에 적합.<br><br>
+                        <strong>엔터프라이즈 보안 및 컴플라이언스 → Bedrock 또는 Vertex AI</strong><br>
+                        이유: 관리형 서비스, GDPR/HIPAA 준수, 24/7 지원, SLA 보장.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>총합 평가:</strong> 긍정적 (MCP 표준화와 No-Code 도구의 등장으로 AI 워크플로우 자동화가 모든 조직에 접근 가능해짐. 시장 성장세 지속 예상)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MCP (Model Context Protocol)</strong> - AI 모델이 외부 도구, 데이터베이스, API에 연결하는 표준화된 방식. Anthropic이 2024년 11월 발표한 오픈 소스 프로토콜.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>No-Code Agent Builder</strong> - 코딩 없이 자연어 대화만으로 AI 에이전트를 생성하고 배포할 수 있는 도구 (예: Claude Skills, OpenAI Agent Builder).
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>멀티 에이전트 오케스트레이션</strong> - 여러 AI 에이전트가 역할을 분담하여 협업하는 시스템. 각 에이전트는 특정 작업에 특화되며, 중앙 오케스트레이터가 조율.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Visual Workflow Tool</strong> - 드래그앤드롭 UI로 워크플로우를 구축하는 Low-Code 도구 (예: n8n, Zapier). 코드 없이 자동화 구현 가능.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Code-First SDK</strong> - 프로그래밍 언어로 직접 코드를 작성하여 AI 에이전트를 구축하는 프레임워크 (예: LangGraph, CrewAI, AutoGen). 완전한 제어와 커스터마이징 가능.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Intelligent Process Automation (IPA)</strong> - 단순 규칙 기반 RPA를 넘어 AI가 컨텍스트를 이해하고 판단하며 새로운 정보에 적응하는 자동화.
+                    </div>
+                    <div>
+                        <strong>시민 개발자 (Citizen Developer)</strong> - 전문 개발자가 아니지만 No-Code/Low-Code 도구를 활용하여 소프트웨어를 구축하는 비즈니스 사용자.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 11월 11일</p>
+                    <ul>
+                        <li>• <a href="https://docs.claude.com/en/docs/mcp" target="_blank">Model Context Protocol - Claude Docs</a></li>
+                        <li>• <a href="https://www.anthropic.com/news/model-context-protocol" target="_blank">Introducing the Model Context Protocol - Anthropic</a></li>
+                        <li>• <a href="https://www.anthropic.com/news/skills" target="_blank">Introducing Agent Skills - Anthropic</a></li>
+                        <li>• <a href="https://github.com/modelcontextprotocol/servers" target="_blank">Model Context Protocol Servers - GitHub</a></li>
+                        <li>• <a href="https://www.gminsights.com/industry-analysis/ai-agents-market" target="_blank">AI Agents Market Size & Share Analysis 2025-2034</a></li>
+                        <li>• <a href="https://langfuse.com/blog/2025-03-19-ai-agent-comparison" target="_blank">Comparing Open-Source AI Agent Frameworks - Langfuse</a></li>
+                        <li>• <a href="https://www.datacamp.com/tutorial/crewai-vs-langgraph-vs-autogen" target="_blank">CrewAI vs LangGraph vs AutoGen - DataCamp</a></li>
+                        <li>• <a href="https://ai-claude.net/n8n-workflow-automation/" target="_blank">Claude AI n8n Workflow Automation Guide 2025</a></li>
+                        <li>• <a href="https://www.cnbc.com/2025/10/28/github-openai-google-anthropic-agents-ai.html" target="_blank">GitHub unites OpenAI, Google and Anthropic AI agents - CNBC</a></li>
+                        <li>• <a href="https://www.marktechpost.com/2025/10/25/google-vs-openai-vs-anthropic-the-agentic-ai-arms-race-breakdown/" target="_blank">Google vs OpenAI vs Anthropic: Agentic AI Arms Race - MarkTechPost</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Competitive Platform Comparison Chart
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['사용 편의성', '커스터마이징', '확장성', '커뮤니티', '비용 효율성'],
+                datasets: [
+                    {
+                        label: 'Claude Skills',
+                        data: [95, 60, 70, 75, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'n8n',
+                        data: [85, 75, 80, 90, 90],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'LangGraph',
+                        data: [60, 95, 90, 85, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'Amazon Bedrock',
+                        data: [70, 80, 95, 70, 60],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

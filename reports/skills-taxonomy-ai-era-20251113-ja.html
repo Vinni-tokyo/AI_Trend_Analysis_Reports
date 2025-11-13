@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIスキル分類システムとグローバルタレント分類法：次世代人材戦略の設計図</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .trend-card ul { margin-left: 1.2rem; margin-top: 0.5rem; }
+        .trend-card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='skills-taxonomy-ai-era-20251113-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='skills-taxonomy-ai-era-20251113-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='skills-taxonomy-ai-era-20251113-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AIスキル分類システムとグローバルタレント分類法：<br>次世代人材戦略の設計図</h1>
+            <div class="subtitle">プロジェクト中心のスキル分類フレームワークと職業マッピング分析</div>
+            <div class="meta">レポート作成日：2025年11月13日 | 標準レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. グローバルスキル分類標準：33,000スキルから35スキルまで</h3>
+                <p><strong>現状：</strong>世界の労働市場では3つの主要スキル分類システムが共存しており、それぞれ異なる粒度とカバレッジで人材能力を定義しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Lightcastスキル分類法</h4>
+                        <ul>
+                            <li><strong>規模：</strong>33,000+スキル、3階層構造</li>
+                            <li><strong>データソース：</strong>10億件以上の求人情報、数億のプロフィール</li>
+                            <li><strong>更新頻度：</strong>2週間ごとのリアルタイム更新</li>
+                            <li><strong>特徴：</strong>地域別の需給分析、40,000+データソース</li>
+                        </ul>
+                    </div>
+                    <div class="trend-card">
+                        <h4>O*NET・ESCO標準</h4>
+                        <ul>
+                            <li><strong>O*NET：</strong>35の包括的スキル、923職業分類（米国政府）</li>
+                            <li><strong>ESCO：</strong>13,890職業プロファイル、3,008スキル（EU、27言語）</li>
+                            <li><strong>調査方法：</strong>統計的ランダムサンプリング、企業・労働者調査</li>
+                            <li><strong>用途：</strong>政策立案、教育カリキュラム、労働市場分析</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://lightcast.io/open-skills" target="_blank">Lightcast Skills Taxonomy</a> |
+                    <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine</a> |
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO Portal</a>
+                </div>
+
+                <p><strong>展望：</strong>政府主導の標準（O*NET、ESCO）は政策立案に不可欠ですが、Lightcastのようなリアルタイムデータプラットフォームが急速に変化する労働市場のニーズを捉えており、両者の統合が次世代人材戦略の鍵となります。</p>
+
+                <h3 class="subsection-title">2. AI駆動スキルインテリジェンスプラットフォーム：静的分類から動的オントロジーへ</h3>
+                <p><strong>現状：</strong>従来のスキル分類法（タクソノミー）から、複雑な関係性を捉えるスキルオントロジーへの進化が加速しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要プラットフォーム</h4>
+                        <ul>
+                            <li><strong>Gloat：</strong>3,000+職務役割のロール特化型オントロジー</li>
+                            <li><strong>Fuel50：</strong>構造化されたAI駆動分類法とスキルマッピング</li>
+                            <li><strong>Eightfold AI：</strong>機械学習によるスキル関係推論</li>
+                            <li><strong>iMocha：</strong>3,000+ロールのプライマリ・セカンダリスキルマッピング</li>
+                        </ul>
+                    </div>
+                    <div class="trend-card">
+                        <h4>オントロジーの優位性</h4>
+                        <ul>
+                            <li><strong>関係性マッピング：</strong>スキル間の依存関係、前提条件を定義</li>
+                            <li><strong>リアルタイム更新：</strong>業界トレンドに合わせた動的調整</li>
+                            <li><strong>タレントマッチング：</strong>高度な人材配置とキャリアパス設計</li>
+                            <li><strong>ビッグデータ活用：</strong>パフォーマンスデータ、学習履歴から能力推論</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://fuel50.com/" target="_blank">Fuel50</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://www.imocha.io/" target="_blank">iMocha</a>
+                </div>
+
+                <p><strong>展望：</strong>スキルインテリジェンスプラットフォーム市場は急成長中。組織は63%高い成果達成率を実現しており、AI時代の人材戦略の中核インフラとなっています。</p>
+
+                <h3 class="subsection-title">3. グローバルスキルデータセットとワークフォース研究：2,800スキルのAI影響分析</h3>
+                <p><strong>現状：</strong>世界経済フォーラム、Coursera、QSなどが包括的なグローバルスキルレポートを発表し、AI時代のスキル需要を定量化しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要レポート</h4>
+                        <ul>
+                            <li><strong>WEF Future of Jobs 2025：</strong>2,800+の詳細スキルをグローバルスキル分類法で分析</li>
+                            <li><strong>Coursera Global Skills Report 2025：</strong>100+か国、GenAIスキル発展に焦点</li>
+                            <li><strong>QS World Future Skills Index：</strong>各国の将来スキル対応度評価</li>
+                            <li><strong>Skillsoft Survey 2025：</strong>HR/L&D専門家の10%のみが必要スキル保有と回答</li>
+                        </ul>
+                    </div>
+                    <div class="trend-card">
+                        <h4>重要な知見</h4>
+                        <ul>
+                            <li><strong>スキル寿命短縮：</strong>26年（25年前）→ 5年未満（現在）</li>
+                            <li><strong>グリーンスキルギャップ：</strong>2030年までに2.41億件の空席予測</li>
+                            <li><strong>GenAI優先度：</strong>プロンプトエンジニアリング、LLM統合が急増</li>
+                            <li><strong>ヒューマンスキル重視：</strong>批判的思考、リーダーシップ、コミュニケーションが上位</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.weforum.org/publications/the-future-of-jobs-report-2025/" target="_blank">WEF Future of Jobs 2025</a> |
+                    <a href="https://www.coursera.org/skills-reports/global" target="_blank">Coursera Global Skills Report</a> |
+                    <a href="https://www.qs.com/insights/world-future-skills-index" target="_blank">QS World Future Skills Index</a>
+                </div>
+
+                <p><strong>展望：</strong>リアルタイム労働市場データ（Lightcast、LinkedIn）と政府統計の組み合わせにより、企業は地域別の需要予測と戦略的人材計画を実現できます。</p>
+
+                <h3 class="subsection-title">4. スキルベース採用の企業実装：Accentureモデルと63%の成果向上</h3>
+                <p><strong>現状：</strong>スキルベースアプローチを採用する組織は結果達成率が63%高く、企業全体での導入が加速しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>実装フレームワーク</h4>
+                        <ul>
+                            <li><strong>プロジェクトチーム編成：</strong>技術リード、採用マネージャー、HR/L&Dの協働</li>
+                            <li><strong>スキル分類法構築：</strong>スキルライブラリ、ベンダー、インテリジェンスツール活用</li>
+                            <li><strong>段階的導入：</strong>評価→採用→昇進プロセスへの組み込み</li>
+                            <li><strong>インフラ整備：</strong>スキルを「通貨」として機能させるシステム構築</li>
+                        </ul>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Accenture事例</h4>
+                        <ul>
+                            <li><strong>開始年：</strong>2014年、スキル分類法とインフラ構築</li>
+                            <li><strong>統合範囲：</strong>評価、採用、昇進プロセス全体</li>
+                            <li><strong>成果：</strong>ワークフォースモビリティ向上、内部キャパシティ最適化</li>
+                            <li><strong>適応力：</strong>市場変化に応じた迅速な人材再配置</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.accenture.com/" target="_blank">Accenture</a> |
+                    <a href="https://www.aihr.com/blog/skills-taxonomy/" target="_blank">AIHR Skills Taxonomy Guide</a>
+                </div>
+
+                <p><strong>展望：</strong>スキルベース文化の構築がスキルベース採用成功の前提条件。組織は転移可能スキルを持つ従業員を迅速に特定し、重要プロジェクトに再配置できるようになります。</p>
+
+                <h3 class="subsection-title">5. AI時代の新スキル分類システム：KANVAS・WEFフレームワーク</h3>
+                <p><strong>現状：</strong>従来の静的分類システム（O*NET、ESCO）では対応できないAI時代の急速な変化に対し、新しい分類フレームワークが登場しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>最新分類システム</h4>
+                        <ul>
+                            <li><strong>KANVAS：</strong>コルモゴロフ-アーノルドネットワークを用いたGenAI職種分類</li>
+                            <li><strong>WEFグローバル分類法：</strong>2,800+スキルのAI影響度分析</li>
+                            <li><strong>5グループフレームワーク：</strong>置換・代替・補完・拡張・向上の5カテゴリ</li>
+                            <li><strong>説明可能AI：</strong>機械学習による解釈可能な労働市場分類</li>
+                        </ul>
+                    </div>
+                    <div class="trend-card">
+                        <h4>GenAIスキルの特徴</h4>
+                        <ul>
+                            <li><strong>プロンプトエンジニアリング：</strong>GenAI職種の中核能力</li>
+                            <li><strong>LLM統合：</strong>大規模言語モデルの業務統合スキル</li>
+                            <li><strong>従来型AI：</strong>統計モデリング、レガシーツールキット</li>
+                            <li><strong>ヒューマンスキル：</strong>批判的思考、問題解決、コミュニケーション</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.jff.org/idea/skills-and-talent-development-in-the-age-of-ai/" target="_blank">JFF AI Skills Report</a> |
+                    <a href="https://www.brookings.edu/articles/the-future-of-hiring-advantages-of-a-skill-based-ai-powered-hybrid-approach/" target="_blank">Brookings AI Hiring</a>
+                </div>
+
+                <p><strong>展望：</strong>AI駆動の動的分類システムが主流となり、政府標準とプライベートプラットフォームの協働により、リアルタイムで進化する労働市場に対応したスキル管理が実現します。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">スキル分類市場は、公共標準からAI駆動エンタープライズソリューションまで、明確な4層構造を形成しています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>階層</th>
+                            <th>プラットフォーム</th>
+                            <th>特徴</th>
+                            <th>対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tier 1</strong><br>公共標準</td>
+                            <td>O*NET（米国）<br>ESCO（EU）<br>Canada NOC</td>
+                            <td>政府主導、無料、統計的サンプリング<br>35-3,000スキル、定期更新</td>
+                            <td>政策立案者、教育機関、公共セクター</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 2</strong><br>労働市場データ</td>
+                            <td>Lightcast<br>LinkedIn Talent Insights<br>Burning Glass</td>
+                            <td>リアルタイムデータ、33,000+スキル<br>2週間ごと更新、地域別分析</td>
+                            <td>人材アナリスト、リクルーター、市場調査</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 3</strong><br>スキルインテリジェンス</td>
+                            <td>Gloat<br>Fuel50<br>Eightfold AI<br>iMocha</td>
+                            <td>AI駆動オントロジー、動的更新<br>スキル関係性マッピング、タレントマッチング</td>
+                            <td>大企業HR、タレント戦略チーム</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 4</strong><br>エンタープライズ実装</td>
+                            <td>Accenture<br>RChilli<br>365Talents<br>Disprz</td>
+                            <td>カスタマイズソリューション、全社導入<br>評価・採用・昇進統合、スキル通貨化</td>
+                            <td>グローバル企業、組織変革リーダー</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場トレンド（5つの重要なシフト）</h3>
+                <ul class="key-findings">
+                    <li><strong>静的から動的へ：</strong>O*NET・ESCOの定期更新モデルから、Lightcast・Gloatのリアルタイム更新モデルへの移行が加速</li>
+                    <li><strong>分類法からオントロジーへ：</strong>単純なスキルリストから、スキル間の関係性・依存性を捉える複雑なオントロジーへ進化</li>
+                    <li><strong>公共と民間の協働：</strong>政府標準（O*NET、ESCO）とプライベートプラットフォーム（Lightcast、LinkedIn）のデータ統合が進展</li>
+                    <li><strong>GenAIスキルの台頭：</strong>プロンプトエンジニアリング、LLM統合などの新カテゴリが急速に重要性を増す</li>
+                    <li><strong>グローバル標準化：</strong>WEFグローバルスキル分類法（2,800+スキル）が国際的なベンチマークとして確立</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>ハイブリッド分類システム構築</strong> - O*NET（政府標準）とLightcast（リアルタイムデータ）を組み合わせたデュアルレイヤー分類法を導入し、政策準拠と市場適応性を同時達成</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>スキルオントロジーパイロット</strong> - Gloat・Fuel50などのAIプラットフォームで小規模部門（IT、マーケティング等）の動的スキルマッピングを試行し、従来の職務記述書からの移行可能性を検証</p>
+                    <p style="line-height: 1.6;">3. <strong>グローバルベンチマーキング</strong> - WEF・Courseraのグローバルスキルレポートを活用し、自社スキルポートフォリオを国際基準で評価。地域別・業界別のスキルギャップを特定し、戦略的育成計画を策定</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>スキル寿命の急激な短縮：</strong>25年前は26年だったスキル関連性が現在5年未満に短縮。動的分類システムの必要性が急増</li>
+                        <li><strong>3つの主要分類システム：</strong>O*NET（35スキル/923職業）、ESCO（3,008スキル/13,890職業）、Lightcast（33,000+スキル）が共存し、用途別に使い分けが必要</li>
+                        <li><strong>AI駆動オントロジーの台頭：</strong>Gloat、Fuel50、Eightfold AIなどがスキル関係性を動的にマッピング。スキルベース組織は63%高い成果達成率を実現</li>
+                        <li><strong>GenAIスキル需要：</strong>WEFが2,800+スキルのAI影響を分析。プロンプトエンジニアリング、LLM統合が新たな中核能力に</li>
+                        <li><strong>グローバルスキルギャップ：</strong>Skillsoft調査では HR/L&D専門家の10%のみが必要スキル保有。グリーンスキルは2030年まで2.41億件の空席予測</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選択ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>政策立案・教育カリキュラム設計 → O*NET / ESCO</strong><br>
+                        理由：政府認定標準、無料アクセス、国際比較可能、長期安定性<br><br>
+                        <strong>リアルタイム採用・市場分析 → Lightcast / LinkedIn</strong><br>
+                        理由：2週間ごと更新、33,000+スキル、地域別需給データ、求人トレンド反映<br><br>
+                        <strong>エンタープライズ人材戦略 → Gloat / Fuel50 / Eightfold AI</strong><br>
+                        理由：AI駆動オントロジー、スキル関係性マッピング、タレントマッチング、動的キャリアパス設計<br><br>
+                        <strong>組織全体のスキル変革 → Accentureモデル（カスタマイズ実装）</strong><br>
+                        理由：評価・採用・昇進統合、スキル通貨化、ワークフォースモビリティ向上、63%高い成果達成率
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（AI時代のスキル分類システムは急速に進化中。組織は公共標準とAIプラットフォームを組み合わせたハイブリッドアプローチで、政策準拠と市場適応性を同時達成できます）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキル分類法（Skills Taxonomy）</strong> - スキルを体系的に分類・整理する階層的フレームワーク。主に採用、人材計画、学習プログラムで使用
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキルオントロジー（Skills Ontology）</strong> - スキル間の複雑な関係性（依存関係、前提条件、類似性）を定義する構造化フレームワーク。AI駆動システムや高度なタレントマッチングに活用
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキルインテリジェンスプラットフォーム</strong> - AI・ビッグデータ分析を活用し、ワークフォース能力をリアルタイムで理解・追跡・管理するシステム。現在のスキル把握、将来ニーズ予測、ギャップマッピングを実現
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>O*NET（Occupational Information Network）</strong> - 米国労働省が運営する無料職業情報データベース。923職業、35の包括的スキルを定義。統計的サンプリングで定期更新
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ESCO（European Skills, Competences, Qualifications and Occupations）</strong> - EU労働市場向けの多言語職業分類システム。27言語対応、13,890職業プロファイル、3,008スキルを含む
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Lightcastスキル分類法</strong> - オープンソースの33,000+スキルライブラリ。10億件の求人情報、数億のプロフィールから収集し、2週間ごとに更新。地域別需給分析が特徴
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキルベース採用（Skills-Based Hiring）</strong> - 学歴・職歴より実際のスキル・能力を重視する採用アプローチ。IBM、Google、Microsoftが学位要件を撤廃し主流化
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>KANVAS（Kolmogorov-Arnold Network Versatile Algorithmic Solution）</strong> - コルモゴロフ-アーノルドネットワークを用いた労働市場分類システム。従来型AI職種とGenAI関連職種を区別し、説明可能な機械学習で分類
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2025年11月13日</p>
+                    <ul>
+                        <li>• <a href="https://lightcast.io/open-skills" target="_blank">Lightcast Skills Taxonomy - Open Skills Library</a></li>
+                        <li>• <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine - Occupational Information Network</a></li>
+                        <li>• <a href="https://esco.ec.europa.eu/" target="_blank">ESCO - European Skills, Competences, Qualifications and Occupations</a></li>
+                        <li>• <a href="https://gloat.com/blog/skills-ontology-framework/" target="_blank">Gloat - Skills Ontology Framework 2025</a></li>
+                        <li>• <a href="https://fuel50.com/2025/05/skills-mapping-software-solutions/" target="_blank">Fuel50 - Skills Mapping Software Solutions</a></li>
+                        <li>• <a href="https://www.weforum.org/publications/the-future-of-jobs-report-2025/" target="_blank">World Economic Forum - Future of Jobs Report 2025</a></li>
+                        <li>• <a href="https://www.coursera.org/skills-reports/global" target="_blank">Coursera - Global Skills Report 2025</a></li>
+                        <li>• <a href="https://www.skillsoft.com/blog/2025-global-skills-intelligence-survey" target="_blank">Skillsoft - 2025 Global Skills Intelligence Survey</a></li>
+                        <li>• <a href="https://www.aihr.com/blog/skills-taxonomy/" target="_blank">AIHR - Skills Taxonomy: Unlocking Benefits of Skills-Based Approach</a></li>
+                        <li>• <a href="https://www.jff.org/idea/skills-and-talent-development-in-the-age-of-ai/" target="_blank">Jobs for the Future - Skills and Talent Development in Age of AI</a></li>
+                        <li>• <a href="https://www.mdpi.com/1999-4893/18/9/554" target="_blank">MDPI - Future Skills in GenAI Era: KANVAS Classification System</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['スキル数', 'リアルタイム性', '多言語対応', 'AI統合', 'アクセス性'],
+                datasets: [
+                    {
+                        label: 'Lightcast',
+                        data: [95, 95, 60, 85, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'O*NET',
+                        data: [40, 30, 50, 20, 100],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ESCO',
+                        data: [60, 40, 100, 30, 90],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gloat',
+                        data: [80, 90, 70, 95, 50],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: '主要スキル分類プラットフォーム比較（2025年）',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

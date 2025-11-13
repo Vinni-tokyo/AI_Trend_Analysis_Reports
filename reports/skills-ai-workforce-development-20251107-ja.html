@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グローバルスキルデータとAI駆動の人材育成エコシステム</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.75rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='skills-ai-workforce-development-20251107-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='skills-ai-workforce-development-20251107-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='skills-ai-workforce-development-20251107-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>グローバルスキルデータとAI駆動の人材育成エコシステム</h1>
+            <div class="subtitle">スキル分類、人材マッチング、デジタル認証の統合トレンド分析</div>
+            <div class="meta">レポート作成日：2025年11月7日 | 標準版レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. グローバルスキル分類システムの統合化</h3>
+                <p><strong>現状：</strong>労働市場のグローバル化に伴い、統一されたスキル分類システムの必要性が高まっています。Lightcastの32,000以上のスキルを含むオープンソーステキソノミー、米国政府標準のO*NET（35スキル）、EU多言語システムのESCO（27言語対応）が、それぞれ異なるアプローチでスキル分類の標準化を推進しています。Lightcastは40,000以上のソースから毎日リアルタイムデータを収集し、2週間ごとに更新される動的な分類システムを提供しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Lightcast Open Skills</h4>
+                        <p>• <strong>規模：</strong>32,000以上のスキル、31カテゴリ<br>
+                        • <strong>データソース：</strong>10億以上の求人情報、リアルタイム更新<br>
+                        • <strong>更新頻度：</strong>2週間ごと、40,000ソースから収集<br>
+                        • <strong>グローバル職業分類：</strong>1,800専門職、800コア職業</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>O*NET & ESCO</h4>
+                        <p>• <strong>O*NET：</strong>米国政府標準、923職業タイトル、35スキル<br>
+                        • <strong>ESCO：</strong>EU公式分類、27言語対応<br>
+                        • <strong>国際標準：</strong>ISCO拡張版、5桁職業コード<br>
+                        • <strong>用途：</strong>公共職業紹介、政策立案、教育カリキュラム設計</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://lightcast.io/our-taxonomies" target="_blank">Lightcast Taxonomies</a> |
+                    <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine</a> |
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO Portal</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年4月にO*NET-SOC 2019分類が米国の求人データに適用され、データ分類の精度が向上しました。今後は、Lightcastのようなリアルタイムデータと、O*NET・ESCOのような公的標準の統合が進み、グローバルなスキルマッピングの相互運用性が高まると予想されます。</p>
+
+                <h3 class="subsection-title">2. AI人材マーケットプレイスの急成長</h3>
+                <p><strong>現状：</strong>人材マーケットプレイスプラットフォーム市場は、2024年の82億ドルから2032年には151億ドルに成長し、年平均成長率（CAGR）7.9%を記録すると予測されています。Gloat、Fuel50、Eightfold AIなどの主要プレイヤーは、それぞれ100万人以上のユーザーベースを持ち、AIを活用したスキルマッチングと内部人材流動性の促進で競争しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>市場規模と成長</h4>
+                        <p>• <strong>2024年市場規模：</strong>$8.2B<br>
+                        • <strong>2032年予測：</strong>$15.1B（CAGR 7.9%）<br>
+                        • <strong>主要プレイヤー：</strong>Gloat, Fuel50, Eightfold AI, SAP, Oracle<br>
+                        • <strong>ユーザー規模：</strong>各プラットフォーム100万人以上</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>主要機能</h4>
+                        <p>• <strong>スキル言語化：</strong>業務をスキル単位に翻訳・分析<br>
+                        • <strong>AIマッチング：</strong>ディープラーニングによる人材推薦<br>
+                        • <strong>内部流動性：</strong>社内異動、プロジェクト配置の最適化<br>
+                        • <strong>キャリアパス：</strong>個別化されたスキル開発提案</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://fuel50.com/" target="_blank">Fuel50</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a>
+                </div>
+
+                <p><strong>展望：</strong>GloatとFuel50は、G2データ（2025年）において使いやすさ、セットアップ体験、スキル管理能力で競合しています。今後は、AIエージェント統合やリアルタイムスキルインテリジェンスがプラットフォーム差別化要因となるでしょう。</p>
+
+                <h3 class="subsection-title">3. デジタルバッジ市場の爆発的成長</h3>
+                <p><strong>現状：</strong>デジタルバッジ市場は2024年の1億9,190万ドルから2032年には9億6,970万ドルに達し、年平均成長率17.6%で成長すると予測されています。Credly、Badgr（現Canvas Badges）、Accredibleなどのコアプラットフォームは、企業のスキル証明需要の高まりと、高等教育機関のマイクロクレデンシャルへのシフトにより急速に拡大しています。2024年5月に導入されたOpen Badges 3.0は、ベンダーにAPIと暗号署名メソッドの刷新を促しました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>市場データ</h4>
+                        <p>• <strong>2024年：</strong>$191.9M<br>
+                        • <strong>2032年予測：</strong>$969.7M（CAGR 17.6%）<br>
+                        • <strong>北米シェア：</strong>2024年40.3%<br>
+                        • <strong>アジア太平洋CAGR：</strong>21.4%（2025-2030）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>主要プラットフォーム</h4>
+                        <p>• <strong>Credly：</strong>企業向けデジタル認証のリーダー<br>
+                        • <strong>Canvas Badges：</strong>Instructure買収（2022年4月）<br>
+                        • <strong>Accredible：</strong>教育機関向け認証プラットフォーム<br>
+                        • <strong>Open Badges 3.0：</strong>2024年5月導入、API刷新</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.credly.com/" target="_blank">Credly</a> |
+                    <a href="https://www.instructure.com/canvas/resources/all/canvas-credentials" target="_blank">Canvas Badges</a> |
+                    <a href="https://www.accredible.com/" target="_blank">Accredible</a>
+                </div>
+
+                <p><strong>展望：</strong>雇用主の検証可能なスキル証拠への需要増加、政府主導のアップスキリング助成金、HR統合システムへのネイティブバッジ機能組み込みにより、市場は加速成長すると予想されます。特にアジア太平洋地域が最も高い成長率を示すでしょう。</p>
+
+                <h3 class="subsection-title">4. スキルファースト採用の主流化</h3>
+                <p><strong>現状：</strong>2025年には、スキルベース採用が主流の採用戦略となります。IBM、Google、Microsoftなどの大手企業は、多くのポジションで学位要件を撤廃し、スキルと能力を優先しています。IBMは2022年に米国の職種の50%で4年制大学の学位を不要とし、多様性向上、スキル適合性改善、長期定着率向上の成果を報告しています。米国企業の81%がスキルベース採用を導入しており、2023年の73%、2022年の57%から増加傾向にあります。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>企業事例</h4>
+                        <p>• <strong>IBM：</strong>50%の職種で学位不要、"New Collar"役職導入<br>
+                        • <strong>Google/Apple：</strong>コーディングブートキャンプ、GitHubポートフォリオ優先<br>
+                        • <strong>Microsoft：</strong>オープンソース貢献を重視<br>
+                        • <strong>Bank of America：</strong>スキルファースト公式宣言</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>市場動向</h4>
+                        <p>• <strong>導入率：</strong>米国企業の81%（2025年）<br>
+                        • <strong>学位要件撤廃：</strong>45%の企業が主要職種で実施予定<br>
+                        • <strong>技術職成功率：</strong>78%の企業が実装、多様性45%増<br>
+                        • <strong>定着率改善：</strong>35%向上（CompTIA調査）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.ibm.com/skills" target="_blank">IBM Skills</a> |
+                    <a href="https://grow.google/" target="_blank">Google Career Certificates</a> |
+                    <a href="https://www.microsoft.com/en-us/skills-initiative" target="_blank">Microsoft Skills Initiative</a>
+                </div>
+
+                <p><strong>展望：</strong>スキルベース採用は、正式な学位を持たないが能力を持つ数百万人の労働者に扉を開きます。2025年以降、さらに多くの企業がこのモデルに移行し、人材プールの拡大と職場の多様性向上が期待されます。</p>
+
+                <h3 class="subsection-title">5. AI統合LXPとスキルインテリジェンス</h3>
+                <p><strong>現状：</strong>学習体験プラットフォーム（LXP）市場は、2025年の28億ドルから2033年には289億ドルに急成長し、年平均成長率33.79%を記録すると予測されています。Degreed、EdCast（Cornerstone買収）などの主要プレイヤーは、AIを活用したパーソナライズ学習、スキルギャップ分析、キャリアモビリティの統合を提供しています。企業のアップスキリング需要、学習分析、62%のAI利用率がこの成長を牽引しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>市場成長</h4>
+                        <p>• <strong>2025年市場規模：</strong>$2.8B<br>
+                        • <strong>2033年予測：</strong>$28.9B（CAGR 33.79%）<br>
+                        • <strong>成長要因：</strong>AI利用62%、パーソナライズ学習54%<br>
+                        • <strong>主要プレイヤー：</strong>Degreed, EdCast, Fuse, Cornerstone</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AI統合機能</h4>
+                        <p>• <strong>Degreed：</strong>スキルパス、部門別アクセス制御<br>
+                        • <strong>EdCast：</strong>多言語対応（20言語）、Slack/Teams統合<br>
+                        • <strong>コンテンツキュレーション：</strong>AI推薦エンジン<br>
+                        • <strong>スキルギャップ分析：</strong>堅牢な分析ダッシュボード</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://degreed.com/" target="_blank">Degreed</a> |
+                    <a href="https://www.cornerstoneondemand.com/products/edcast/" target="_blank">EdCast by Cornerstone</a>
+                </div>
+
+                <p><strong>展望：</strong>LXPは、学習、スキル開発、キャリアモビリティを単一エコシステムに統合する方向に進化しています。AIナレッジクラウド、マイクロラーニング、ワークフロー学習の統合により、従業員体験の向上と組織の人材育成効率が大幅に改善されるでしょう。</p>
+
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">グローバルスキルと人材育成エコシステムは、スキル分類標準、人材マッチング、認証プラットフォーム、統合学習体験の4層に分類されます。それぞれの層は異なる対象と価値提案を持ち、相互に連携して包括的なエコシステムを形成しています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>プラットフォーム</th>
+                            <th>カテゴリ</th>
+                            <th>特徴</th>
+                            <th>対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lightcast</strong></td>
+                            <td>スキル分類標準</td>
+                            <td>32,000+スキル、リアルタイム更新</td>
+                            <td>企業、研究機関、政策立案者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>O*NET</strong></td>
+                            <td>スキル分類標準</td>
+                            <td>米国政府標準、35スキル、923職業</td>
+                            <td>公共職業紹介、教育機関</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ESCO</strong></td>
+                            <td>スキル分類標準</td>
+                            <td>EU公式、27言語対応</td>
+                            <td>EU加盟国、多国籍企業</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gloat</strong></td>
+                            <td>人材マーケットプレイス</td>
+                            <td>人材アジリティ、スキル言語化</td>
+                            <td>大企業、内部流動性重視組織</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fuel50</strong></td>
+                            <td>人材マーケットプレイス</td>
+                            <td>I/O心理学+AI、パーソナライズパス</td>
+                            <td>中堅〜大企業、人材定着重視</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Eightfold AI</strong></td>
+                            <td>人材マーケットプレイス</td>
+                            <td>ディープラーニング、採用+流動性統合</td>
+                            <td>エンタープライズ、多様性推進企業</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Credly</strong></td>
+                            <td>デジタル認証</td>
+                            <td>企業向けデジタルバッジリーダー</td>
+                            <td>大企業、認証プログラム提供者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Canvas Badges</strong></td>
+                            <td>デジタル認証</td>
+                            <td>教育機関向け、Instructure統合</td>
+                            <td>大学、オンライン教育プロバイダー</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Degreed</strong></td>
+                            <td>統合LXP</td>
+                            <td>スキルパス、複数ソース統合</td>
+                            <td>学習文化重視企業</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EdCast</strong></td>
+                            <td>統合LXP</td>
+                            <td>多言語、Slack/Teams統合</td>
+                            <td>グローバル企業、ワークフロー学習</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場トレンド</h3>
+                <ul style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>スキル標準の相互運用性：</strong>Lightcast、O*NET、ESCOの統合により、グローバルなスキルマッピングが容易に</li>
+                    <li><strong>AI駆動の人材マッチング：</strong>Gloat、Fuel50、Eightfold AIのディープラーニング技術により、精度の高いスキルマッチングが実現</li>
+                    <li><strong>デジタル認証の標準化：</strong>Open Badges 3.0導入により、認証の相互運用性と信頼性が向上</li>
+                    <li><strong>LXPとタレントマーケットプレイスの融合：</strong>Degreedのように、学習とキャリアモビリティを統合するプラットフォームが増加</li>
+                    <li><strong>スキルファースト文化の浸透：</strong>IBM、Google、Microsoftなどの大手企業主導で、学位よりスキルを重視する採用が主流化</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>スキル分類標準の導入パイロット</strong> - Lightcast APIを活用して既存の人事システムに32,000スキルのテキソノミーを統合し、社内スキルマッピングの精度を検証（3ヶ月試験運用）</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>内部人材マーケットプレイス構築</strong> - Fuel50またはGloatを導入し、社員のスキルプロファイルを可視化、部門横断プロジェクトや内部異動のマッチング効率化（6ヶ月展開）</p>
+                    <p style="line-height: 1.6;">3. <strong>デジタルバッジプログラム開始</strong> - CredlyまたはCanvas Badgesで社内研修修了証をデジタル化し、社員のスキル証明とモチベーション向上を図る（初期100名対象）</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>スキル分類の統一化が加速：</strong>Lightcast（32,000スキル）、O*NET（35スキル）、ESCO（27言語）により、グローバルなスキル標準の相互運用性が向上</li>
+                        <li><strong>人材マーケットプレイス市場急成長：</strong>$8.2B（2024）→ $15.1B（2032）、CAGR 7.9%。Gloat、Fuel50、Eightfold AIが100万人以上のユーザーベースで競争</li>
+                        <li><strong>デジタルバッジ市場爆発的成長：</strong>$191.9M（2024）→ $969.7M（2032）、CAGR 17.6%。Open Badges 3.0導入で標準化進む</li>
+                        <li><strong>スキルファースト採用の主流化：</strong>米国企業81%導入、IBM 50%学位不要、Google/Microsoft学位撤廃で人材プール拡大</li>
+                        <li><strong>LXP市場の急拡大：</strong>$2.8B（2025）→ $28.9B（2033）、CAGR 33.79%。AI統合により学習とキャリア開発が一体化</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選択ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>スキルマッピングから始めたい → Lightcast API</strong><br>
+                        理由：32,000スキルの包括的テキソノミーとリアルタイムデータで、既存システムに統合しやすい<br><br>
+                        <strong>内部流動性を促進したい → Fuel50またはGloat</strong><br>
+                        理由：I/O心理学ベース（Fuel50）またはスキル言語化（Gloat）で、社員の適材適所配置を最適化<br><br>
+                        <strong>スキル証明を可視化したい → Credly（企業向け）またはCanvas Badges（教育向け）</strong><br>
+                        理由：デジタルバッジで研修成果を検証可能にし、社員のモチベーション向上と外部共有が可能<br><br>
+                        <strong>学習とキャリア開発を統合したい → Degreed</strong><br>
+                        理由：スキルギャップ分析、複数ソースからのコンテンツ統合、キャリアパス提案で包括的学習体験を提供
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（スキルベース人材管理への移行が加速し、企業の競争力向上と労働者のキャリア機会拡大が期待される。AI統合により、精度の高いマッチングと個別化学習が実現）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキルテキソノミー（Skills Taxonomy）</strong> - スキルを体系的に分類・整理したデータベース。Lightcastは32,000スキル、O*NETは35スキルを定義し、職業とスキルの関係を標準化します。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>人材マーケットプレイス（Talent Marketplace）</strong> - AIを活用して社員のスキルと社内プロジェクトや職種をマッチングするプラットフォーム。内部流動性を促進し、適材適所の人材配置を実現します。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>デジタルバッジ（Digital Badges）</strong> - オンライン上で発行・共有できるデジタル認証。研修修了、スキル習得、資格取得を証明し、LinkedInなどのプロフィールに表示できます。Open Badges標準に準拠。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキルファースト採用（Skills-First Hiring）</strong> - 学位や学歴よりも、実際のスキルと能力を重視する採用手法。IBM、Google、Microsoftなどが導入し、人材プールの多様性を拡大しています。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>学習体験プラットフォーム（LXP: Learning Experience Platform）</strong> - AI駆動のパーソナライズ学習、複数ソースからのコンテンツ統合、スキルギャップ分析を提供する次世代学習管理システム。従来のLMSより柔軟で個別化されています。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Open Badges 3.0</strong> - 2024年5月に導入されたデジタルバッジの最新国際標準。APIの刷新と暗号署名メソッドの強化により、バッジの相互運用性と信頼性が向上しました。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スキルインテリジェンス（Skills Intelligence）</strong> - AIとビッグデータを活用して、労働市場のスキル需要、スキルギャップ、将来必要なスキルを分析・予測する技術。人材戦略立案に活用されます。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2025年11月7日</p>
+                    <ul>
+                        <li>• <a href="https://lightcast.io/our-taxonomies" target="_blank">Lightcast Taxonomies - Skills, Occupations, Titles</a></li>
+                        <li>• <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine - Occupational Information Network</a></li>
+                        <li>• <a href="https://esco.ec.europa.eu/" target="_blank">ESCO - European Skills, Competences, Qualifications and Occupations</a></li>
+                        <li>• <a href="https://www.gartner.com/reviews/market/internal-talent-marketplaces" target="_blank">Gartner Peer Insights - Internal Talent Marketplaces Reviews 2025</a></li>
+                        <li>• <a href="https://fuel50.com/" target="_blank">Fuel50 - Talent Intelligence Solution</a></li>
+                        <li>• <a href="https://www.fortunebusinessinsights.com/digital-badge-market-108605" target="_blank">Fortune Business Insights - Digital Badge Market Analysis [2032]</a></li>
+                        <li>• <a href="https://www.credly.com/" target="_blank">Credly - Digital Credentials Platform</a></li>
+                        <li>• <a href="https://www.index.dev/blog/skills-over-degrees-google-ibm-hiring" target="_blank">Index.dev - Skills Over Degrees: How Google & IBM Hire Top Talent</a></li>
+                        <li>• <a href="https://www.globalgrowthinsights.com/market-reports/learning-experience-platform-lxp-market-102110" target="_blank">Global Growth Insights - Learning Experience Platform Market Size & Trends 2033</a></li>
+                        <li>• <a href="https://degreed.com/" target="_blank">Degreed - Upskilling Platform</a></li>
+                        <li>• <a href="https://www.cornerstoneondemand.com/products/edcast/" target="_blank">EdCast by Cornerstone - AI-Powered Learning Experience Platform</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Competitive Landscape Radar Chart
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['データ範囲', 'リアルタイム性', 'グローバル対応', 'AI統合', 'アクセス性'],
+                datasets: [
+                    {
+                        label: 'Lightcast',
+                        data: [95, 90, 85, 80, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Gloat',
+                        data: [75, 85, 80, 95, 65],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Credly',
+                        data: [70, 80, 90, 75, 85],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'Degreed',
+                        data: [85, 75, 85, 90, 80],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

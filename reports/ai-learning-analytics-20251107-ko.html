@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 학습 분석: 예측 모델과 실시간 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ai-learning-analytics-20251107-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='ai-learning-analytics-20251107-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='ai-learning-analytics-20251107-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AI 학습 분석: 예측 모델과 실시간 대시보드</h1>
+            <div class="subtitle">학습 성과 예측, 위험 학생 조기 발견, 데이터 거버넌스</div>
+            <div class="meta">보고서 작성일: 2025년 11월 7일 | 표준 길이 보고서 (5-8페이지)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. 예측 분석 도구의 시장 지배 (사용률 57.8%)</h3>
+                <p><strong>현황:</strong> 예측 분석 도구는 2024년 학습 분석 시장에서 사용률 57.8%를 기록하며 가장 dominant한 카테고리가 되었습니다. 미국의 혁신적인 대학들은 파일럿 프로그램의 80% 이상에서 생성형 AI 요약 기능을 통합한 예측 도구를 사용하고 있습니다. 머신러닝 모델은 위험 학생 식별에서 85~95%의 예측 정확도를 달성하고 있으며, 랜덤 포레스트 및 그래디언트 부스팅 알고리즘은 중퇴 예측 작업에서 AUC 점수 0.92~0.96을 기록하고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 기능</h4>
+                        <p>• <strong>위험 학생 식별:</strong> 85~95% 정확도로 중퇴 위험 예측<br>
+                        • <strong>포괄적 모니터링:</strong> 800개 이상의 위험 요인 추적 (Georgia State University 사례)<br>
+                        • <strong>자동 개입:</strong> 연간 90,000건의 타겟 개입 생성</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>기술 접근법</h4>
+                        <p>• <strong>앙상블 학습:</strong> 랜덤 포레스트, 그래디언트 부스팅<br>
+                        • <strong>딥러닝:</strong> 기존 통계 방법을 능가하는 성능<br>
+                        • <strong>생성형 AI 통합:</strong> 파일럿 프로그램의 80% 이상 채택</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.civitaslearning.com/" target="_blank">Civitas Learning</a> |
+                    <a href="https://www.starfishsolutions.com/" target="_blank">Starfish</a> |
+                    <a href="https://hyperspace.mv/predictive-analytics-education/" target="_blank">Hyperspace MV</a>
+                </div>
+
+                <p><strong>전망:</strong> 처방적 분석 (prescriptive analytics)은 예측 분석의 다음 진화 단계로서 22.3%의 최고 CAGR 전망을 보이고 있습니다. 2025년은 단순한 위험 예측에서 데이터 기반의 구체적인 개입 전략 자동 추천으로 전환되는 전환점이 될 것입니다.</p>
+
+                <h3 class="subsection-title">2. 실시간 대시보드와 AI 통합의 진화</h3>
+                <p><strong>현황:</strong> Brightspace Insights는 AI를 활용하여 학생 성과에 대한 실시간 분석 및 예측을 제공하며, 실시간 대시보드, 위험 학생을 식별하는 예측 분석, 타겟 개입을 위한 맞춤형 보고서를 특징으로 합니다. Canvas (미국 대학 채택률 47%)와 Brightspace (19%)는 교수진의 87%가 LMS 분석 기능을 적극 활용하는 시장을 선도하고 있습니다. 많은 교육 플랫폼은 시간 경과에 따른 학생 진행 상황을 시각화하는 대시보드를 제공하며, 추세, 강점, 개선이 필요한 영역을 강조 표시합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Brightspace Insights</h4>
+                        <p>• <strong>고급 분석 스위트:</strong> 예측 모델링, 적응형 학습 경로, 역량 기반 진행 추적<br>
+                        • <strong>실시간 모니터링:</strong> 학생 활동 라이브 대시보드<br>
+                        • <strong>조기 개입:</strong> 선제적 지원을 가능케 하는 예측 알림</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Canvas Analytics</h4>
+                        <p>• <strong>시장 리더:</strong> 미국 대학의 47% 채택 (Brightspace 19%)<br>
+                        • <strong>교수진 참여:</strong> 미국 대학 교수진의 87%가 분석 기능 적극 활용<br>
+                        • <strong>학생 활동 시각화:</strong> 선제적 개입을 가능하게 하는 대시보드</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.d2l.com/brightspace/" target="_blank">Brightspace by D2L</a> |
+                    <a href="https://www.instructure.com/canvas" target="_blank">Canvas by Instructure</a> |
+                    <a href="https://www.digitallearninginstitute.com/blog/ai-driven-evolution-in-learning-analytics-for-digital-education" target="_blank">Digital Learning Institute</a>
+                </div>
+
+                <p><strong>전망:</strong> 교육자에게 실시간 피드백은 교육 실천을 개선하는 데 도움이 됩니다. 분석 대시보드는 교실 참여도를 추적하고 어떤 교육 방법이 가장 효과적인지에 대한 인사이트를 제공합니다. 2025년에는 AI가 산업 수요, 학생 성과, 사회적 트렌드를 기반으로 커리큘럼을 실시간으로 적응시키는 것을 지원합니다.</p>
+
+                <h3 class="subsection-title">3. CALIPER Analytics 표준 v1.2를 통한 상호운용성</h3>
+                <p><strong>현황:</strong> CALIPER는 1EdTech CALIPER Analytics 학습 측정 프레임워크로, 학습 활동에 의해 생성되고 준수하는 분석 저장소 또는 서비스에서 소비되도록 타겟팅된 메트릭을 표현, 캡처 및 마샬링하기 위한 표준을 제공합니다. CALIPER Analytics 사양은 학습 활동 데이터의 기술, 수집, 교환에 대한 구조화된 접근법을 제공하며, 학습 상호작용을 설명하기 위한 공통 어휘 확립을 중심 목표로 합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>기술 구성 요소</h4>
+                        <p>• <strong>Sensor API:</strong> 계측된 애플리케이션에서 이벤트 데이터를 마샬링·전송<br>
+                        • <strong>메트릭 프로파일:</strong> 각 학습 활동 유형별 표준 데이터 구조<br>
+                        • <strong>JSON-LD 형식:</strong> 링크드 데이터로 이벤트 및 엔티티 표현</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>업계 채택</h4>
+                        <p>• <strong>인증 획득 기업:</strong> Blackboard, D2L, Elsevier, McGraw-Hill, VitalSource<br>
+                        • <strong>데이터 상호운용성:</strong> 여러 도구, 시스템, LMS로부터 데이터 수집<br>
+                        • <strong>공통 어휘:</strong> 통일된 용어로 일관된 기술 실현</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.imsglobal.org/spec/caliper/v1p2" target="_blank">CALIPER v1.2 Specification</a> |
+                    <a href="https://www.imsglobal.org/hed-learning-data-and-caliper" target="_blank">Why CALIPER Matters</a> |
+                    <a href="https://www.magicedtech.com/blogs/caliper-analytics-everything-you-need-to-know/" target="_blank">CALIPER Guide</a>
+                </div>
+
+                <p><strong>전망:</strong> CALIPER 1.1은 Caliper 정보 모델을 확장·개선하고, Basic Profile, Forum Profile, ToolUse Profile의 3가지 새로운 프로파일을 추가했습니다. v1.2 사양은 추가적인 진화를 보여주며, 교육 대시보드, 학업 조기 경보 시스템, 어드바이징 도구에 대한 포괄적인 정보 제공을 가능하게 합니다.</p>
+
+                <h3 class="subsection-title">4. FERPA·GDPR 준수 자동화 및 데이터 거버넌스</h3>
+                <p><strong>현황:</strong> 2025년 AI가 EdTech에 필수적이 되면서 FERPA 준수는 그 어느 때보다 중요해졌습니다. 학습 분석은 인지 발달 및 학업 어려움에 관한 세밀한 정보를 드러내므로, 표준 프라이버시 준수를 넘어서는 특별한 보호가 필요합니다. K-12 학군 대부분은 100~300개의 교육 기술 벤더를 적극 사용하며, 대규모 학군은 500개 이상의 벤더 관계를 관리할 가능성이 있습니다. 지난 5년간 교육 기관의 62%가 데이터 침해를 경험했다고 보고했습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>규정 준수 요구사항</h4>
+                        <p>• <strong>FERPA 강화:</strong> 교육부의 새로운 지침으로 집행 강화<br>
+                        • <strong>COPPA 벌금:</strong> 영향을 받은 아동 1인당 최대 $51,744의 벌금<br>
+                        • <strong>GDPR 통합:</strong> 아동 데이터에 명시적 동의 필요, FERPA와의 상호작용이 과제</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>베스트 프랙티스 (2025년)</h4>
+                        <p>• <strong>자동 모니터링:</strong> 규정 준수 상태의 실시간 추적<br>
+                        • <strong>FERPA 계약 템플릿:</strong> 표준화된 계약으로 효율화<br>
+                        • <strong>AI 특화 DPIA:</strong> 학습 분석 플랫폼의 프라이버시 영향 평가</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://secureprivacy.ai/blog/school-data-governance-software-ferpa-coppa-k-12" target="_blank">School Data Governance Software 2025</a> |
+                    <a href="https://complydog.com/blog/edtech-saas-compliance-student-privacy-gdpr-implementation" target="_blank">EdTech SaaS Compliance Guide</a> |
+                    <a href="https://scrut.io/post/education-records-ferpa" target="_blank">FERPA Compliance</a>
+                </div>
+
+                <p><strong>전망:</strong> 학교 데이터 거버넌스 소프트웨어는 복잡한 프라이버시 규정을 탐색하는 K-12 기관에 필수적이 되었습니다. 자동화된 규정 준수 모니터링, 정기적인 보안 감사, 직원 교육 프로그램, AI 구현 전용 프라이버시 영향 평가가 2025년의 표준 실무가 됩니다.</p>
+
+                <h3 class="subsection-title">5. 교육 데이터 마이닝의 새로운 목표와 측정 (EDM 2025)</h3>
+                <p><strong>현황:</strong> 교육 데이터 마이닝 (EDM) 커뮤니티는 AI와 교육 과학 양쪽에 대한 전문성을 활용하여 학습 목표와 성과를 재정의할 독특한 기회를 가지고 있습니다. 2025년에는 대규모 언어 모델이 최소한의 프롬프트 엔지니어링으로 토론 게시물을 주제 내외로 쉽게 표시할 수 있으며, 챗봇이 방대한 양의 학생 작업을 분류하여 교육자가 신속하게 분석할 수 있는 숫자로 변환할 수 있습니다. 현대 학생 성공 분석 플랫폼은 단순한 성적 추적을 훨씬 넘어 진화하여, 수백 개의 데이터 포인트를 분석해 학생 성과를 예측하는 포괄적인 에코시스템 모니터가 되었습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>새로운 측정 접근법</h4>
+                        <p>• <strong>멀티모달 데이터 통합:</strong> 학업 성과, 참여도, 재정, 사회적 연결, 행동 패턴<br>
+                        • <strong>포괄적 위험 프로필:</strong> 단일 성적을 넘어선 전체적인 학생상<br>
+                        • <strong>실시간 분석:</strong> 문제가 심각해지기 전에 조기 포착</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>신흥 트렌드</h4>
+                        <p>• <strong>설명 가능한 AI:</strong> 알고리즘적 의사결정의 투명성 향상<br>
+                        • <strong>자동 개입 추천:</strong> 예측을 효과적인 액션으로 변환<br>
+                        • <strong>윤리적 고려사항:</strong> 알고리즘 편향 및 프라이버시 대응</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://educationaldatamining.org/edm2025/" target="_blank">EDM 2025 Conference</a> |
+                    <a href="https://openeducationanalytics.org/" target="_blank">Open Education Analytics</a> |
+                    <a href="https://learning-analytics.info/index.php/JLA/announcement/view/191" target="_blank">Journal of Learning Analytics</a>
+                </div>
+
+                <p><strong>전망:</strong> EDM 분야의 주요 과제는 데이터 품질과 통합, 모델 해석 가능성, 알고리즘적 의사결정을 둘러싼 윤리적 고려사항, 예측을 효과적인 개입으로 변환하는 것입니다. 2025년 이후 이러한 과제를 다루는 새로운 방법론과 베스트 프랙티스가 확립될 것입니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4계층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">학습 분석 시장은 분석 유형과 배포 규모에 따라 명확하게 4개 계층으로 구분됩니다.</p>
+
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><strong>Tier 1: 예측 분석 플랫폼 (사용률 57.8%)</strong><br>
+                • 주요 플레이어: Civitas Learning, Starfish, EAB Navigate<br>
+                • 가치 제안: 위험 학생 조기 식별, 개입 추천, 85~95% 예측 정확도<br>
+                • 실적: Georgia State University - 800개 이상 위험 요인 추적, 연간 90,000건 개입</p>
+
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><strong>Tier 2: LMS 통합형 대시보드 (채택률 99%)</strong><br>
+                • 주요 플레이어: Canvas (47% 점유율), Brightspace (19%), Blackboard (18%), Moodle (11%)<br>
+                • 가치 제안: 실시간 시각화, 교수진의 87% 적극 활용, 선제적 개입<br>
+                • 특징: 학생 활동 추적, 성과 메트릭, 맞춤형 보고서</p>
+
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><strong>Tier 3: 데이터 시각화·BI 도구</strong><br>
+                • 주요 플레이어: BrightBytes, Power BI for Education, Tableau<br>
+                • 가치 제안: 시간 경과 진행 상황 시각화, 추세 분석, 데이터 기반 의사결정<br>
+                • 강점: 강력한 분석 기능, 맞춤형 대시보드</p>
+
+                <p style="margin-bottom: 1rem; font-size: 0.95rem;"><strong>Tier 4: 데이터 거버넌스·컴플라이언스</strong><br>
+                • 주요 플레이어: SecurePrivacy, ComplyDog, Redactable<br>
+                • 가치 제안: FERPA/GDPR 자동 컴플라이언스, 100~500 벤더 관리, 위험 평가<br>
+                • 규제: COPPA 벌금 최대 $51,744/아동, 교육부 FERPA 집행 강화</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>플랫폼</th>
+                            <th>카테고리</th>
+                            <th>시장 점유율/채택률</th>
+                            <th>핵심 기능</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Canvas</strong></td>
+                            <td>LMS 통합 분석</td>
+                            <td>미국 대학 47%</td>
+                            <td>학생 활동 시각화, 선제적 개입</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Brightspace</strong></td>
+                            <td>LMS 통합 분석</td>
+                            <td>미국 대학 19%</td>
+                            <td>예측 모델링, 적응형 학습, 역량 추적</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Civitas Learning</strong></td>
+                            <td>예측 분석</td>
+                            <td>사용률 57.8% (예측 도구 전체)</td>
+                            <td>위험 예측, 개입 추천</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Starfish</strong></td>
+                            <td>조기 경보</td>
+                            <td>-</td>
+                            <td>실시간 알림, 케이스 관리</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Power BI</strong></td>
+                            <td>BI/시각화</td>
+                            <td>-</td>
+                            <td>맞춤형 대시보드, 데이터 통합</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SecurePrivacy</strong></td>
+                            <td>데이터 거버넌스</td>
+                            <td>-</td>
+                            <td>FERPA/GDPR 자동 모니터링, 벤더 관리</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 트렌드 (2025년)</h3>
+                <ul style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>예측에서 처방으로 전환:</strong> 처방적 분석이 22.3%의 최고 CAGR, 구체적인 개입 전략 자동 추천으로 진화</li>
+                    <li><strong>생성형 AI 통합 가속화:</strong> 파일럿 프로그램의 80% 이상에서 생성형 AI 요약 기능 채택</li>
+                    <li><strong>멀티모달 데이터 통합:</strong> 학업 성과, 참여도, 재정, 사회적 연결을 통합한 포괄적 위험 프로필</li>
+                    <li><strong>설명 가능한 AI 프레임워크:</strong> 알고리즘적 의사결정의 투명성과 편향 대응이 중요 과제</li>
+                    <li><strong>프라이버시 규제 강화:</strong> FERPA 집행 강화, COPPA 벌금 증액, GDPR 통합의 복잡성</li>
+                </ul>
+
+                <h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근법을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>예측 분석 파일럿 프로그램</strong> - 1학기 동안 위험 학생 식별 정확도 검증 (목표: 85~95% 예측 정확도 달성)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>기존 LMS 분석 기능 극대화</strong> - Canvas (47%) 또는 Brightspace (19%)의 내장 분석 대시보드로 교수진의 87% 적극 활용 실현</p>
+                    <p style="line-height: 1.6;">3. <strong>데이터 거버넌스 자동화 구현</strong> - 100~300 벤더 관리를 위한 FERPA/GDPR 자동 모니터링 도구 도입 (대규모 학군은 500개 이상)</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 인사이트</h3>
+                    <ul class="key-findings">
+                        <li><strong>예측 분석의 시장 지배:</strong> 사용률 57.8% (2024년)로 가장 dominant, 처방적 분석은 22.3%의 최고 CAGR 전망.</li>
+                        <li><strong>고정밀 예측 실현:</strong> 머신러닝 모델이 위험 학생 식별에서 85~95% 정확도, Georgia State University는 연간 90,000건 개입 생성.</li>
+                        <li><strong>LMS 분석 보급:</strong> 미국 대학의 99%가 LMS 분석 배포, 교수진의 87%가 적극 활용. Canvas 47%, Brightspace 19% 시장 점유율.</li>
+                        <li><strong>프라이버시 규제 강화:</strong> COPPA 벌금 최대 $51,744/아동, 교육 기관의 62%가 지난 5년간 데이터 침해 경험. 100~500 벤더 관리 필수.</li>
+                        <li><strong>시장의 급성장:</strong> 학습 분석 시장은 2025년 $14.05B에서 2030년 $37.21B로 CAGR 21.5% 확대.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>위험 학생 조기 식별을 중시하는 기관 → Civitas Learning / Starfish</strong><br>
+                        이유: 예측 분석 도구가 사용률 57.8%로 시장 선도. 85~95% 고정밀도로 위험 학생 식별, Georgia State University 실적 (800 위험 요인 추적, 연간 90,000 개입) 입증.<br>
+                        <strong>기존 LMS (Canvas, Brightspace) 활용 원하는 기관 → 내장 분석 대시보드</strong><br>
+                        이유: 미국 대학의 99%가 LMS 분석 이미 배포, 교수진의 87%가 적극 활용. Canvas 47%, Brightspace 19%의 높은 시장 점유율. 추가 시스템 도입 불필요하고 즉시 활용 가능.<br>
+                        <strong>100개 이상 벤더 관리하는 대규모 학군 → SecurePrivacy / ComplyDog</strong><br>
+                        이유: K-12 학군 대부분이 100~300 벤더 관리 (대규모 학군은 500개 이상). FERPA/GDPR 자동 모니터링, COPPA 벌금 위험 (최대 $51,744/아동) 경감 필수.<br>
+                        <strong>데이터 시각화와 의사결정 강화 원하는 기관 → Power BI / Tableau</strong><br>
+                        이유: 시간 경과 진행 상황 시각화, 맞춤형 대시보드, 강력한 BI 기능으로 데이터 기반 의사결정 지원.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (예측 분석 도구가 시장의 57.8% 차지, 85~95% 고정밀도 실현. LMS 분석 보급률 99%, 교수진 적극 활용률 87%로 성숙. 다만 프라이버시 규제 강화 (COPPA 벌금 증액, FERPA 집행 강화) 대응이 급선무.)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>학습 분석 (Learning Analytics)</strong> - 학습자와 그 맥락에 관한 데이터를 측정, 수집, 분석, 보고하여 학습과 학습 환경을 최적화하는 프로세스.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>예측 분석 (Predictive Analytics)</strong> - 과거 데이터로부터 머신러닝 모델을 구축하여 학생의 성공 확률, 위험도, 미래 성과를 예측하는 분석 기법. 시장 사용률 57.8% (2024년).
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>처방적 분석 (Prescriptive Analytics)</strong> - 예측을 넘어 구체적인 개입 전략을 자동으로 추천하는 차세대 분석. 22.3%의 최고 CAGR 전망.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CALIPER Analytics</strong> - IMS Global (1EdTech)이 개발한 학습 활동 데이터의 수집·교환을 위한 표준 사양 (v1.2). Sensor API, 메트릭 프로파일, JSON-LD 형식 포함.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>FERPA (Family Educational Rights and Privacy Act)</strong> - 미국의 학생 교육 기록 프라이버시를 보호하는 연방법. 2025년 교육부의 집행이 강화되고 있음.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>GDPR (General Data Protection Regulation)</strong> - EU 일반 데이터 보호 규정. 아동 데이터에 명시적 동의를 요구하며, FERPA와의 상호작용이 복잡한 과제가 되고 있음.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>교육 데이터 마이닝 (Educational Data Mining, EDM)</strong> - 교육 데이터로부터 새로운 패턴을 발견하여 학습 성과를 개선하기 위한 학제간 연구 분야. 2025년은 "새로운 목표, 새로운 측정"이 주제.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 11월 7일</p>
+                    <ul>
+                        <li>• <a href="https://www.mordorintelligence.com/industry-reports/learning-analytics-market" target="_blank">Mordor Intelligence: Learning Analytics Market 2025-2030</a></li>
+                        <li>• <a href="https://www.6wresearch.com/market-takeaways-view/how-big-is-the-learning-analytics-market" target="_blank">6Wresearch: Learning Analytics Market Trends 2031</a></li>
+                        <li>• <a href="https://www.digitallearninginstitute.com/blog/ai-driven-evolution-in-learning-analytics-for-digital-education" target="_blank">Digital Learning Institute: AI-Driven Evolution in Learning Analytics</a></li>
+                        <li>• <a href="https://www.imsglobal.org/spec/caliper/v1p2" target="_blank">IMS Global: CALIPER Analytics v1.2 Specification</a></li>
+                        <li>• <a href="https://secureprivacy.ai/blog/school-data-governance-software-ferpa-coppa-k-12" target="_blank">SecurePrivacy: School Data Governance Software 2025</a></li>
+                        <li>• <a href="https://mapademics.com/whitepapers/predicting-student-success-with-smart-analytics" target="_blank">Mapademics: Predictive Retention Analytics in Higher Ed 2025</a></li>
+                        <li>• <a href="https://educationaldatamining.org/edm2025/" target="_blank">Educational Data Mining 2025 Conference</a></li>
+                        <li>• <a href="https://www.edsurge.com/news/2024-12-06-how-are-new-ai-tools-changing-learning-analytics" target="_blank">EdSurge: How New AI Tools Are Changing Learning Analytics (Dec 2024)</a></li>
+                        <li>• <a href="https://www.rapidinnovation.io/post/ai-for-student-performance-analytics" target="_blank">Rapid Innovation: AI for Student Performance Analytics 2025</a></li>
+                        <li>• <a href="https://complydog.com/blog/edtech-saas-compliance-student-privacy-gdpr-implementation" target="_blank">ComplyDog: EdTech SaaS Compliance Guide</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Competitive Radar Chart
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['예측 정확도', '실시간성', '도입 용이성', 'AI 통합', '컴플라이언스'],
+                datasets: [
+                    {
+                        label: 'Canvas Analytics',
+                        data: [75, 90, 95, 85, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)'
+                    },
+                    {
+                        label: 'Brightspace Insights',
+                        data: [85, 85, 80, 90, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        pointBackgroundColor: 'rgb(34, 197, 94)'
+                    },
+                    {
+                        label: 'Civitas Learning',
+                        data: [95, 70, 65, 75, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)'
+                    },
+                    {
+                        label: 'Power BI for Education',
+                        data: [65, 80, 75, 70, 75],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        pointBackgroundColor: 'rgb(168, 85, 247)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 11
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
