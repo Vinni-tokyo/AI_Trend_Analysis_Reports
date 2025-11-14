@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>앤트로픽 MCP: 도구 호출에서 코드 실행으로의 패러다임 전환</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.75rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='anthropic-mcp-code-execution-20250114-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='anthropic-mcp-code-execution-20250114-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='anthropic-mcp-code-execution-20250114-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>앤트로픽 MCP: 도구 호출에서 코드 실행으로의<br>패러다임 전환</h1>
+            <div class="subtitle">Model Context Protocol의 코드 실행 혁신과 AI 에이전트 생태계 재편</div>
+            <div class="meta">리포트 작성일: 2025년 1월 14일 | 종합 분석 리포트 (10+ 페이지)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. 코드 실행 패러다임: 도구 호출의 근본적 재설계</h3>
+                <p><strong>현황:</strong> 앤트로픽이 2024년 11월 출시한 MCP(Model Context Protocol)는 2025년 11월 '코드 실행' 기능을 추가하며 AI 에이전트의 작동 방식을 근본적으로 변경했습니다. 전통적인 function calling은 모든 도구 정의를 컨텍스트에 미리 로드하고 모델이 직접 도구를 호출하지만, MCP 코드 실행 방식은 도구를 코드 레벨 API로 변환하여 모델이 코드를 작성하고 실행하도록 합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 혁신</h4>
+                        <p>• <strong>온디맨드 로딩:</strong> 필요한 도구만 실시간으로 로드하여 컨텍스트 효율성 극대화<br>
+                        • <strong>데이터 필터링:</strong> 모델 도달 전 실행 환경에서 데이터 필터링으로 토큰 절약<br>
+                        • <strong>복잡한 로직:</strong> 여러 도구 호출을 단일 코드 실행으로 통합</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>극적인 성능 개선</h4>
+                        <p>• <strong>토큰 절감:</strong> Google Drive 회의록 → Salesforce 업데이트 시나리오에서 수만 토큰 절감<br>
+                        • <strong>프라이버시 강화:</strong> 민감 데이터(이메일, 전화번호)를 실행 환경에서 토큰화, 모델은 플레이스홀더만 인식<br>
+                        • <strong>성능 범위:</strong> 사용 사례에 따라 100배 향상 또는 25배 저하 (작업 특성 의존)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.anthropic.com/engineering/code-execution-with-mcp" target="_blank">Anthropic MCP Code Execution</a> |
+                    <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol</a>
+                </div>
+
+                <p><strong>전망:</strong> 코드 실행 방식은 컨텍스트 윈도우 제약이 심한 복잡한 워크플로우(다중 도구 체인, 대용량 데이터 처리)에서 표준이 될 것으로 예상됩니다. 그러나 보안 샌드박스 환경 구축이라는 운영 오버헤드가 채택의 주요 장벽으로 작용할 전망입니다.</p>
+
+                <h3 class="subsection-title">2. MCP 아키텍처: JSON-RPC 2.0 기반 3계층 구조</h3>
+                <p><strong>현황:</strong> MCP는 Host(AI 애플리케이션), Client(1:1 서버 연결), Server(외부 시스템 브릿지)로 구성된 3계층 아키텍처를 채택했습니다. JSON-RPC 2.0 사양에 기반한 통신 프로토콜로 초기화 → 발견 → 활성 세션 → 종료의 구조화된 라이프사이클을 따릅니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>전송 메커니즘</h4>
+                        <p>• <strong>STDIO (로컬):</strong> 표준 입출력 스트림 활용, 마이크로초 수준 초저지연, OS 수준 보안<br>
+                        • <strong>HTTP + SSE (원격):</strong> 클라이언트→서버 HTTP 요청, 서버→클라이언트 Server-Sent Events 스트리밍<br>
+                        • <strong>선택 기준:</strong> 로컬 플러그인은 STDIO, 원격 API 통합은 HTTP+SSE</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>연결 라이프사이클</h4>
+                        <p>• <strong>초기화:</strong> 프로토콜 버전 협상 및 기능 교환<br>
+                        • <strong>발견:</strong> 서버가 제공하는 Tools, Resources, Prompts 목록 요청<br>
+                        • <strong>활성 세션:</strong> 양방향 통신, 도구 호출, 진행 상황 스트리밍<br>
+                        • <strong>종료:</strong> 리소스 정리 및 연결 종료</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://modelcontextprotocol.io/docs/concepts/architecture" target="_blank">MCP Architecture Docs</a> |
+                    <a href="https://www.jsonrpc.org/specification" target="_blank">JSON-RPC 2.0</a>
+                </div>
+
+                <p><strong>전망:</strong> MCP의 JSON-RPC 2.0 기반 구조는 언어 중립성과 확장성을 보장하여 Python, TypeScript, Java, Kotlin 등 다양한 SDK 생태계 형성을 촉진하고 있습니다. 특히 STDIO 전송의 초저지연 특성은 로컬 개발 환경에서 MCP 채택을 가속화할 것으로 예상됩니다.</p>
+
+                <h3 class="subsection-title">3. Claude Desktop 통합: 파일시스템, 데이터베이스, API 액세스</h3>
+                <p><strong>현황:</strong> Claude Desktop은 MCP를 통해 로컬 파일시스템 읽기/쓰기/검색, PostgreSQL 등 데이터베이스 쿼리, 다양한 API 호출을 지원합니다. Desktop Extensions를 통해 원클릭 MCP 서버 설치가 가능하며, JSON 설정 파일로 서버 연결을 관리합니다. 각 작업은 사용자의 명시적 승인이 필요합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>통합 능력</h4>
+                        <p>• <strong>파일시스템:</strong> 로컬 파일 읽기/쓰기, 폴더 정리, 파일 시스템 검색<br>
+                        • <strong>데이터베이스:</strong> PostgreSQL, MySQL 등 SQL 데이터베이스 쿼리 및 업데이트<br>
+                        • <strong>API 액세스:</strong> GitHub, Slack, Google Drive, Salesforce 등 외부 API 연동</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Desktop Extensions</h4>
+                        <p>• <strong>원클릭 설치:</strong> 수동 JSON 설정 및 의존성 관리 대신 단일 클릭으로 MCP 서버 설치<br>
+                        • <strong>설정 간소화:</strong> 복잡한 설정 파일 편집 불필요<br>
+                        • <strong>의존성 자동화:</strong> 필요한 라이브러리 및 환경 자동 설정</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.anthropic.com/engineering/desktop-extensions" target="_blank">Claude Desktop Extensions</a> |
+                    <a href="https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop" target="_blank">MCP Setup Guide</a>
+                </div>
+
+                <p><strong>전망:</strong> Desktop Extensions의 원클릭 설치는 개발자가 아닌 일반 사용자의 MCP 채택을 촉진할 핵심 요소입니다. 파일시스템 액세스는 개인 지식 관리, 데이터베이스 통합은 비즈니스 인텔리전스, API 연동은 워크플로우 자동화 영역에서 강력한 사용 사례를 창출할 전망입니다.</p>
+
+                <h3 class="subsection-title">4. 표준화 경쟁: OpenAI 채택 vs Google A2A 출시</h3>
+                <p><strong>현황:</strong> OpenAI는 2025년 4월 Agents SDK에 MCP를 공식 채택하여 "AI 모델을 다양한 데이터 소스와 도구에 연결하는 표준화된 방법"이라고 발표했습니다. 반면 Google은 2025년 4월 A2A(Agent-to-Agent) 프로토콜을 50개 이상의 파트너와 함께 출시하면서도 Gemini 모델 및 ADK(Agents Development Kit)에서 MCP 지원을 병행 발표했습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>프로토콜 역할 구분</h4>
+                        <p>• <strong>MCP:</strong> Agent-to-Tool 통신 표준화 (에이전트가 데이터 소스 및 도구에 연결)<br>
+                        • <strong>A2A:</strong> Agent-to-Agent 통신 표준화 (에이전트 간 협력 및 정보 교환)<br>
+                        • <strong>공식 입장:</strong> 보완적 관계 (MCP는 도구, A2A는 에이전트 간 통신)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>생태계 경쟁 구도</h4>
+                        <p>• <strong>MCP 진영:</strong> Anthropic(창시자), OpenAI(채택), Google(부분 지원)<br>
+                        • <strong>A2A 진영:</strong> Google(주도), 50+ 파트너 컨소시엄 (주요 엔터프라이즈 소프트웨어 기업)<br>
+                        • <strong>실제 경쟁:</strong> 이론적으로는 보완적이나 실무에서는 주도권 다툼 예상</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://openai.github.io/openai-agents-python/mcp/" target="_blank">OpenAI MCP Support</a> |
+                    <a href="https://www.koyeb.com/blog/a2a-and-mcp-start-of-the-ai-agent-protocol-wars" target="_blank">A2A vs MCP Analysis</a>
+                </div>
+
+                <p><strong>전망:</strong> MCP는 OpenAI의 공식 채택으로 사실상 agent-to-tool 표준으로 자리잡을 가능성이 높습니다. 그러나 Google의 A2A는 엔터프라이즈 파트너 컨소시엄을 통해 다른 영역(agent-to-agent)에서 표준화를 주도하려는 전략입니다. 장기적으로 MCP와 A2A는 각자의 영역에서 공존하되, 통합 에이전트 시스템 구축 시 두 프로토콜을 모두 지원해야 하는 복잡도가 발생할 수 있습니다.</p>
+
+                <h3 class="subsection-title">5. 보안 위험: 샌드박싱 부재와 임의 코드 실행</h3>
+                <p><strong>현황:</strong> MCP 서버 실행은 본질적으로 로컬 머신에서 임의 코드 실행을 의미하며, 현재 MCP 환경에 대한 네이티브 샌드박스는 지원되지 않습니다. 로컬 MCP 서버는 직접 시스템 액세스가 가능하며, 원격 서버도 다른 도구나 권한과 상호작용하여 원격 코드 실행, 자격 증명 도용, 무단 액세스로 이어질 수 있습니다. 보안 전문가들은 불충분한 샌드박싱이 보안 침해 가능성을 높인다고 경고합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 보안 위험</h4>
+                        <p>• <strong>임의 코드 실행:</strong> MCP 서버 설치 = 로컬 머신에서 신뢰할 수 없는 코드 실행<br>
+                        • <strong>샌드박싱 부재:</strong> MCP 네이티브 샌드박스 미지원, 격리 불충분<br>
+                        • <strong>권한 에스컬레이션:</strong> 악성 서버가 다른 서버 및 도구를 트리거하여 공격 확산</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>권장 완화 전략</h4>
+                        <p>• <strong>컨테이너화:</strong> Docker 컨테이너로 파일시스템, 프로세스, 네트워크 격리<br>
+                        • <strong>네트워크 제어:</strong> 송신(egress) 네트워크 제어 및 syscall 필터링<br>
+                        • <strong>신뢰하지 않는 코드:</strong> 모든 MCP 서버를 외부 코드로 간주하고 엄격히 샌드박스 처리<br>
+                        • <strong>OWASP 권장:</strong> 인증/권한 강제, 샌드박싱, 모니터링</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.prompt.security/blog/top-10-mcp-security-risks" target="_blank">Top 10 MCP Security Risks</a> |
+                    <a href="https://www.wiz.io/blog/mcp-security-research-briefing" target="_blank">Wiz MCP Security Research</a>
+                </div>
+
+                <p><strong>전망:</strong> MCP의 보안 문제는 엔터프라이즈 채택의 주요 장벽입니다. Docker/Kubernetes 기반 샌드박싱, 제로 트러스트 아키텍처, 런타임 보안 모니터링이 MCP 생태계의 필수 인프라로 부상할 전망입니다. Anthropic이 네이티브 샌드박싱 솔루션을 제공하거나, 서드파티 보안 플랫폼(Datadog, Palo Alto Networks 등)이 MCP 전용 보안 제품을 출시할 가능성이 높습니다.</p>
+
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경과 시장 포지셔닝 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">3계층 AI 에이전트 프로토콜 시장</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI 에이전트 프로토콜 시장은 통신 방식(Agent-to-Tool vs Agent-to-Agent)과 접근 방식(직접 호출 vs 코드 실행)을 기준으로 3개 계층으로 분류됩니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>프로토콜/방식</th>
+                            <th>계층</th>
+                            <th>통신 유형</th>
+                            <th>주요 특징</th>
+                            <th>대표 기업/표준</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MCP (Code Execution)</strong></td>
+                            <td>차세대 Agent-to-Tool</td>
+                            <td>코드 실행</td>
+                            <td>온디맨드 로딩, 토큰 절감, 프라이버시</td>
+                            <td>Anthropic, OpenAI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MCP (Direct Tool Calling)</strong></td>
+                            <td>Agent-to-Tool</td>
+                            <td>직접 도구 호출</td>
+                            <td>표준화된 도구 연결, JSON-RPC 2.0</td>
+                            <td>Anthropic, OpenAI, Google</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Function Calling</strong></td>
+                            <td>전통적 Agent-to-Tool</td>
+                            <td>직접 함수 호출</td>
+                            <td>단순 구현, 모든 정의 사전 로드</td>
+                            <td>OpenAI, Anthropic (레거시)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>A2A</strong></td>
+                            <td>Agent-to-Agent</td>
+                            <td>에이전트 간 협력</td>
+                            <td>멀티 에이전트 협업, 작업 위임</td>
+                            <td>Google, 50+ 파트너</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 트렌드 5가지</h3>
+                <ul class="key-findings" style="margin-top: 0.5rem;">
+                    <li><strong>코드 실행 우선 전환:</strong> 컨텍스트 효율성과 프라이버시 요구로 복잡한 워크플로우에서 코드 실행 방식이 표준화</li>
+                    <li><strong>OpenAI MCP 채택 충격:</strong> OpenAI의 공식 채택으로 MCP가 사실상 agent-to-tool 표준으로 자리잡음</li>
+                    <li><strong>Google 이중 전략:</strong> A2A 주도하면서도 MCP 지원, 두 프로토콜 모두 커버하는 포지셔닝</li>
+                    <li><strong>보안 솔루션 부상:</strong> MCP 샌드박싱 부재로 Docker/K8s 기반 보안 인프라 필수화</li>
+                    <li><strong>Desktop Extensions 혁신:</strong> 원클릭 설치로 일반 사용자 채택 가속화, 개발자 장벽 제거</li>
+                </ul>
+
+                <h3 class="subsection-title">주요 접근 방식 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">MCP 코드 실행을 실전에 적용할 수 있는 전략적 접근법을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;"><strong>1. 대용량 데이터 파이프라인</strong> - Google Drive 회의록 → Salesforce 업데이트처럼 수만 토큰 데이터를 실행 환경에서 필터링 후 요약만 모델에 전달</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;"><strong>2. 민감 데이터 처리</strong> - 이메일/전화번호를 실행 환경에서 토큰화, 모델은 플레이스홀더만 인식하여 프라이버시 보호</p>
+                    <p style="line-height: 1.6;"><strong>3. 멀티 도구 체인</strong> - 5-10개 도구 호출을 단일 코드 스크립트로 통합, 컨텍스트 소비 및 지연 시간 대폭 감소</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 인사이트</h3>
+                    <ul class="key-findings">
+                        <li><strong>패러다임 전환:</strong> MCP 코드 실행은 도구 호출의 근본적 재설계로, 100배 성능 향상 또는 25배 저하라는 극단적 결과 초래 (작업 특성 의존)</li>
+                        <li><strong>표준화 주도권:</strong> OpenAI MCP 채택으로 agent-to-tool 표준화 완료, Google A2A는 agent-to-agent 영역에서 경쟁</li>
+                        <li><strong>보안 딜레마:</strong> 샌드박싱 부재로 엔터프라이즈 채택 장벽 존재, Docker/K8s 기반 격리 솔루션 필수</li>
+                        <li><strong>채택 가속화:</strong> Desktop Extensions 원클릭 설치로 개발자 아닌 일반 사용자도 MCP 활용 가능</li>
+                        <li><strong>사용 사례 양극화:</strong> 대용량 데이터 파이프라인, 민감 정보 처리, 멀티 도구 체인에서 극적 효과, 단순 작업은 오버헤드 발생</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">도입 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>대용량 데이터 처리 워크플로우 → MCP 코드 실행</strong><br>
+                        이유: 수만 토큰 데이터를 실행 환경에서 필터링, 모델은 요약만 수신하여 비용/지연 대폭 절감<br><br>
+                        <strong>민감 정보 처리 (금융, 의료) → MCP 코드 실행 + 토큰화</strong><br>
+                        이유: 이메일/전화번호를 실행 환경에서 토큰화, 모델에 원본 노출 차단하여 규제 준수<br><br>
+                        <strong>단순 도구 호출 (1-2개) → 전통적 Function Calling</strong><br>
+                        이유: 코드 실행 오버헤드(샌드박스 설정, 보안 모니터링) 불필요, 직접 호출이 더 효율적<br><br>
+                        <strong>멀티 에이전트 협업 → Google A2A + MCP 병행</strong><br>
+                        이유: A2A로 에이전트 간 작업 위임, MCP로 각 에이전트가 도구 액세스<br><br>
+                        <strong>엔터프라이즈 도입 → Docker/K8s 샌드박싱 + MCP</strong><br>
+                        이유: 네이티브 샌드박스 부재로 컨테이너 격리 필수, 네트워크 제어 및 syscall 필터링 병행
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>총평:</strong> 긍정적 (MCP 코드 실행은 AI 에이전트의 작동 방식을 근본적으로 재설계하며, 복잡한 워크플로우에서 극적인 효율성 향상을 제공합니다. 그러나 보안 샌드박싱 부재는 엔터프라이즈 채택의 주요 장벽으로, Docker/K8s 기반 격리 솔루션이 필수입니다. OpenAI의 MCP 채택으로 표준화가 완료되어 생태계 성장이 가속화될 전망입니다.)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MCP (Model Context Protocol)</strong> - AI 모델과 데이터 소스/도구를 연결하는 개방형 표준 프로토콜. Anthropic이 2024년 11월 출시.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>코드 실행 (Code Execution)</strong> - 도구를 직접 호출하는 대신 모델이 코드를 작성하고 실행하여 도구를 사용하는 방식. 컨텍스트 효율성과 프라이버시 향상.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Function Calling</strong> - 모델이 사전 정의된 함수를 직접 호출하는 전통적 방식. 모든 함수 정의를 컨텍스트에 미리 로드.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>JSON-RPC 2.0</strong> - MCP가 사용하는 경량 원격 프로시저 호출 프로토콜. 언어 중립적이며 요청-응답 패턴 지원.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>STDIO (Standard Input/Output)</strong> - MCP의 로컬 전송 메커니즘. 마이크로초 수준 초저지연, 프로세스의 표준 입출력 스트림 활용.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>A2A (Agent-to-Agent)</strong> - Google이 2025년 4월 출시한 에이전트 간 통신 프로토콜. MCP와 보완적 관계 (MCP는 agent-to-tool).
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Desktop Extensions</strong> - Claude Desktop용 원클릭 MCP 서버 설치 패키지. JSON 설정 및 의존성 관리 자동화.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>샌드박싱 (Sandboxing)</strong> - 신뢰할 수 없는 코드를 격리된 환경에서 실행하는 보안 기법. MCP는 현재 네이티브 샌드박스 미지원.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 1월 14일</p>
+                    <ul>
+                        <li>• <a href="https://www.anthropic.com/engineering/code-execution-with-mcp" target="_blank">Code execution with MCP: building more efficient AI agents | Anthropic</a></li>
+                        <li>• <a href="https://medium.com/data-science-collective/mcp-new-superpower-how-mcp-code-execution-changes-the-game-for-ai-agents-45ed723cc73c" target="_blank">MCP New Superpower: How MCP Code Execution Changes the Game for AI Agents</a></li>
+                        <li>• <a href="https://modelcontextprotocol.io/docs/concepts/architecture" target="_blank">Core architecture - Model Context Protocol</a></li>
+                        <li>• <a href="https://www.anthropic.com/engineering/desktop-extensions" target="_blank">Claude Desktop Extensions: One-click MCP server installation | Anthropic</a></li>
+                        <li>• <a href="https://openai.github.io/openai-agents-python/mcp/" target="_blank">Model context protocol (MCP) - OpenAI Agents SDK</a></li>
+                        <li>• <a href="https://www.koyeb.com/blog/a2a-and-mcp-start-of-the-ai-agent-protocol-wars" target="_blank">A2A and MCP: Start of the AI Agent Protocol Wars? | Koyeb</a></li>
+                        <li>• <a href="https://www.prompt.security/blog/top-10-mcp-security-risks" target="_blank">Top 10 MCP Security Risks You Need to Know | Prompt Security</a></li>
+                        <li>• <a href="https://www.wiz.io/blog/mcp-security-research-briefing" target="_blank">MCP and LLM Security Research Briefing | Wiz Blog</a></li>
+                        <li>• <a href="https://zilliz.com/blog/function-calling-vs-mcp-vs-a2a-developers-guide-to-ai-agent-protocols" target="_blank">Function Calling vs. MCP vs. A2A: Developer's Guide to AI Agent Protocols | Zilliz</a></li>
+                        <li>• <a href="https://arxiv.org/html/2505.02279v1" target="_blank">A Survey of Agent Interoperability Protocols: MCP, ACP, A2A, and ANP | arXiv</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['컨텍스트 효율성', '구현 복잡도', '보안 위험', '성능', '채택 난이도'],
+                datasets: [
+                    {
+                        label: 'MCP 코드 실행',
+                        data: [95, 40, 75, 90, 55],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'MCP 직접 호출',
+                        data: [70, 60, 50, 75, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: '전통적 Function Calling',
+                        data: [50, 85, 40, 70, 90],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Google A2A',
+                        data: [60, 50, 60, 70, 65],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: { size: 10 }
+                        },
+                        pointLabels: {
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 10 },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
