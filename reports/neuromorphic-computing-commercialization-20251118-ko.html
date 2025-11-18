@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuromorphic Computing 상용화 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .maturity-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        .maturity-research { background: #fee; color: #c00; }
+        .maturity-pilot { background: #ffeaa7; color: #d63031; }
+        .maturity-production { background: #55efc4; color: #00b894; }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='neuromorphic-computing-commercialization-20251118-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='neuromorphic-computing-commercialization-20251118-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='neuromorphic-computing-commercialization-20251118-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>Neuromorphic Computing 상용화 심층 분석:<br>연구실에서 현장까지, 도입 준비도 평가</h1>
+            <div class="subtitle">Intel Loihi 2, IBM TrueNorth, BrainChip Akida 중심 분석</div>
+            <div class="meta">레포트 작성일: 2025년 11월 18일 | 표준판 레포트 (5-8페이지)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 상용화 현황 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 상용화 현황 Top 5</h2>
+
+                <h3 class="subsection-title">1. Intel Loihi 2 & Hala Point: 연구 프로토타입 단계 <span class="maturity-badge maturity-research">연구</span></h3>
+                <p><strong>현황:</strong> Intel의 Hala Point는 2024년 4월 출시된 세계 최대 neuromorphic 시스템으로, 11.5억 개의 뉴런과 1,280억 개의 시냅스를 탑재하고 있습니다. 그러나 상용 제품이 아닌 연구 프로토타입으로, Sandia National Laboratories에 배치되어 있습니다. Intel Loihi 및 Loihi 2 칩은 INRC(Intel Neuromorphic Research Community) 가입을 통해서만 접근 가능하며, 학술 커뮤니티에는 최대 1년간 무료 대여, 상업/정부 조직에는 구매 옵션이 제공됩니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>기술 사양</h4>
+                        <p>• <strong>규모:</strong> 1,152개 Loihi 2 프로세서, 11.5억 뉴런<br>
+                        • <strong>연구 프로젝트:</strong> 전세계 200+ 프로젝트 (칭화대 등 파트너십)<br>
+                        • <strong>에너지 효율:</strong> 기존 AI 시스템 대비 10배 이상 효율<br>
+                        • <strong>접근 방식:</strong> INRC 가입 필수 (비상용)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>도입 사례</h4>
+                        <p>• <strong>Ericsson Research:</strong> 텔레콤 인프라 최적화용 맞춤 AI 모델 개발<br>
+                        • <strong>NUS 로봇:</strong> 인공 피부 및 비전 센서 로봇 시스템<br>
+                        • <strong>2025년 계획:</strong> Edge AI 시장 15% 점유 목표로 소비자 기기 통합 추진<br>
+                        • <strong>상용화 전망:</strong> "향후 수년간" 상용 제품화 작업 중 (구체적 일정 미정)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.intel.com/content/www/us/en/research/neuromorphic-computing.html" target="_blank">Intel Neuromorphic Computing</a> |
+                    <a href="https://intel-ncl.atlassian.net/wiki/spaces/INRC/pages/1810432001/Access+Intel+Loihi+Hardware" target="_blank">INRC Access Guide</a>
+                </div>
+
+                <p><strong>전망:</strong> Intel은 Loihi 2를 2025년 소비자 기기에 통합할 계획이지만, Hala Point는 여전히 연구 플랫폼으로 남을 전망입니다. 상용 제품 출시 시기는 불확실하며, 현재는 선별된 기업 연구 협력만 가능합니다.</p>
+
+                <h3 class="subsection-title">2. 실제 적용 사례: Robotics & Edge AI <span class="maturity-badge maturity-pilot">파일럿</span></h3>
+                <p><strong>현황:</strong> Neuromorphic computing은 로보틱스와 Edge AI 분야에서 파일럿 단계의 실제 적용 사례를 보이고 있습니다. 전자 피부(E-skin)와 neuromorphic tactile processing의 통합으로 로봇 손이 인간 손처럼 섬세한 조작과 물체 handling이 가능해졌으며, 이는 고급 의수 및 정밀 조작이 필요한 산업에 특히 중요합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Robotics 적용</h4>
+                        <p>• <strong>실시간 학습:</strong> 로봇의 객체 인식, 복잡한 공장 레이아웃 탐색, 조립 라인 고속 작업<br>
+                        • <strong>E-skin 통합:</strong> 인간 손 수준의 섬세한 조작 (의수, 정밀 산업)<br>
+                        • <strong>응용 분야:</strong> 수색구조, 탐사, 산업 자동화<br>
+                        • <strong>특수 환경:</strong> 우주, 수중, 극한 환경 neuromorphic 로봇</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Edge AI/IoT 적용</h4>
+                        <p>• <strong>저전력 디바이스:</strong> 스마트폰, 웨어러블의 배터리 수명 문제 해결<br>
+                        • <strong>Event-driven:</strong> 원격 센서, 드론, IoT 디바이스의 정보 처리에 최적<br>
+                        • <strong>오프라인 작동:</strong> 클라우드 없이 로컬 "사고" 가능 (전장 로봇, 의료 웨어러블)<br>
+                        • <strong>SNN 활용:</strong> 스마트 카메라, 드론, IoT의 초저지연 고성능</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.nature.com/articles/s44172-025-00492-5" target="_blank">Neuromorphic Computing for Robotic Vision (Nature)</a> |
+                    <a href="https://www.cio.com/article/4052223/neuromorphic-computing-and-the-future-of-edge-ai.html" target="_blank">Edge AI Future (CIO)</a>
+                </div>
+
+                <p><strong>전망:</strong> 로보틱스와 Edge AI는 neuromorphic computing의 가장 유망한 초기 시장입니다. 2026-2027년 산업용 로봇과 IoT 디바이스에서 상용 배치가 확대될 것으로 예상되며, 특히 배터리 수명과 실시간 처리가 중요한 응용 분야에서 우선 도입될 것입니다.</p>
+
+                <h3 class="subsection-title">3. 산업별 도입 현황: Healthcare, Industrial, Telecom <span class="maturity-badge maturity-pilot">파일럿</span></h3>
+                <p><strong>현황:</strong> Healthcare는 CAGR 105.4%로 가장 빠르게 성장하는 수직 시장이며, Industrial IoT와 Telecom 분야에서도 파일럿 프로젝트가 진행 중입니다. Automotive ADAS는 현재 가장 큰 상용 볼륨을 차지하고 있으며, aerospace 응용도 수요 다양성을 제공하고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Healthcare (CAGR 105.4%)</h4>
+                        <p>• <strong>의료 영상:</strong> 기존 시스템 대비 50% 빠른 스캔 분석 (IBM Research)<br>
+                        • <strong>스마트 의수:</strong> 실시간 감각 피드백으로 mobility 30% 향상<br>
+                        • <strong>BCI 응용:</strong> 뇌-컴퓨터 인터페이스, 적응형 신경 자극기<br>
+                        • <strong>환자 모니터링:</strong> 저전력 neuromorphic 영상 칩으로 지속적 모니터링</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Industrial & Telecom</h4>
+                        <p>• <strong>예측 유지보수:</strong> downtime 25% 감소 (Intel 데이터)<br>
+                        • <strong>Logistics:</strong> 창고 로봇, JIT 재고 관리, 복합 운송 최적화<br>
+                        • <strong>Ericsson:</strong> 텔레콤 아키텍처 최적화용 맞춤 AI 모델<br>
+                        • <strong>Process Control:</strong> 전력망, 석유/가스, 제조의 폐쇄형 제어</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.ibm.com/think/topics/neuromorphic-computing" target="_blank">IBM Neuromorphic Computing</a>
+                </div>
+
+                <p><strong>전망:</strong> Healthcare는 sub-milliwatt 분류 능력을 필요로 하는 BCI, 적응형 신경 자극기, 휴대용 진단 장비로 인해 가장 빠른 성장세를 보일 것입니다. Industrial 분야는 ultra-low-latency와 불확실성 하의 견고한 의사결정이 필요한 폐쇄형 제어, 프로세스 최적화, 이상 탐지에서 명확한 이점을 제공합니다.</p>
+
+                <h3 class="subsection-title">4. 상용 제품 출시 현황: BrainChip Akida vs IBM NorthPole <span class="maturity-badge maturity-production">상용</span></h3>
+                <p><strong>현황:</strong> 2025년 neuromorphic 시장에서 BrainChip Akida, Intel Loihi, IBM TrueNorth 3개 플레이어가 주목받고 있습니다. BrainChip의 Akida 플랫폼은 상용 애플리케이션과 Edge AI 배치를 목표로 하며, IBM은 TrueNorth(2014 출시)에서 NorthPole 칩으로 전환하여 이미지 인식 및 머신러닝의 에너지 효율에 집중하고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>BrainChip Akida</h4>
+                        <p>• <strong>포지셔닝:</strong> 상용 애플리케이션 및 Edge AI 배치 타겟<br>
+                        • <strong>특징:</strong> 저전력 Edge AI에 최적화<br>
+                        • <strong>시장:</strong> 2025년 주요 상용 neuromorphic 플랫폼 중 하나<br>
+                        • <strong>응용:</strong> 스마트 카메라, 드론, IoT 디바이스</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>IBM TrueNorth → NorthPole</h4>
+                        <p>• <strong>TrueNorth:</strong> 2014 출시, 2025년에도 소프트웨어 개발로 relevance 유지<br>
+                        • <strong>DARPA 응용:</strong> 실시간 객체 탐지로 드론 네비게이션<br>
+                        • <strong>NorthPole:</strong> 이미지 인식 및 ML의 에너지 효율 강조<br>
+                        • <strong>전환:</strong> IBM은 neuromorphic 아키텍처에서 점차 이탈 중</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.elprocus.com/top-neuromorphic-chips-in-2025/" target="_blank">Top Neuromorphic Chips 2025</a>
+                </div>
+
+                <p><strong>전망:</strong> BrainChip Akida는 상용 Edge AI 시장에서 가장 빠르게 성장할 것으로 예상되며, Intel Loihi는 연구 및 선별된 기업 협력에 집중할 것입니다. IBM은 neuromorphic 아키텍처에서 이탈하며 NorthPole 칩으로 특정 응용(이미지 인식)에 집중하고 있습니다.</p>
+
+                <h3 class="subsection-title">5. 도입 장벽 및 성숙도 평가 <span class="maturity-badge maturity-research">전환기</span></h3>
+                <p><strong>현황:</strong> Neuromorphic computing은 2025년 연구에서 상용 배치로의 critical transition point에 있습니다. Gradient-based training of deep spiking neural networks가 이제 off-the-shelf 기술이 되었고, 오픈소스 도구와 이론적 결과로 뒷받침되고 있습니다. 그러나 여전히 프로그래밍 패러다임 전환, 표준화 부재, 높은 비용 등의 장벽이 존재합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 도입 장벽</h4>
+                        <p>• <strong>프로그래밍 패러다임:</strong> Event-driven, spike-based 인코딩, 비동기 타이밍 학습 곡선<br>
+                        • <strong>표준화 부재:</strong> Analog, digital, mixed-signal 중 de facto 표준 없음<br>
+                        • <strong>높은 비용:</strong> 상용화 속도 느림, 칩 가격 높음<br>
+                        • <strong>제조사 제한:</strong> OEM의 제품 통합 선택지 부족<br>
+                        • <strong>클라우드/데이터센터:</strong> NVIDIA GPU, hyperscaler ASIC의 기득권</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>성숙도 및 진전</h4>
+                        <p>• <strong>In-memory computing:</strong> 상용 성숙도에 근접<br>
+                        • <strong>일반 프로그래밍 모델:</strong> 최초로 neuromorphic 프로세서에 임의 태스크 매핑 가능<br>
+                        • <strong>2026년 전망:</strong> 100억 뉴런 이상 시스템 예상<br>
+                        • <strong>2010년대 프로젝트:</strong> 여러 대기업이 neuromorphic 프로젝트 중단 또는 비공개로 전환</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.nature.com/articles/s41467-025-57352-1" target="_blank">Road to Commercial Success (Nature)</a> |
+                    <a href="https://arxiv.org/html/2407.02353v1" target="_blank">Roadmap to Neuromorphic Computing (arXiv)</a>
+                </div>
+
+                <p><strong>전망:</strong> 2025-2026년은 neuromorphic computing의 "make or break" 시기입니다. 일반 프로그래밍 모델의 등장으로 개발자가 과거 어느 때보다 빠르고 편리하게 태스크를 매핑할 수 있게 되었지만, 표준화 및 비용 문제가 해결되지 않으면 niche 시장에 머물 위험이 있습니다.</p>
+
+            </section>
+
+            <!-- SECTION 2: 시장 포지셔닝 및 성숙도 매트릭스 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">시장 포지셔닝 및 성숙도 매트릭스</h2>
+
+                <h3 class="subsection-title">주요 플랫폼 비교</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>플랫폼</th>
+                            <th>성숙도</th>
+                            <th>상용 가용성</th>
+                            <th>주요 응용</th>
+                            <th>에너지 효율</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Intel Loihi 2</strong></td>
+                            <td>연구 프로토타입</td>
+                            <td>INRC 회원만 (비상용)</td>
+                            <td>Telecom, Robotics</td>
+                            <td>GPU 대비 10배+</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Intel Hala Point</strong></td>
+                            <td>연구 시스템</td>
+                            <td>Sandia Labs 전용</td>
+                            <td>대규모 연구</td>
+                            <td>최고 수준</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BrainChip Akida</strong></td>
+                            <td>상용 제품</td>
+                            <td>상용 판매 중</td>
+                            <td>Edge AI, IoT</td>
+                            <td>Ultra-low power</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IBM TrueNorth</strong></td>
+                            <td>레거시 (2014)</td>
+                            <td>신규 프로젝트 없음</td>
+                            <td>Drone, Defense</td>
+                            <td>고효율</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IBM NorthPole</strong></td>
+                            <td>차세대 개발</td>
+                            <td>개발 중</td>
+                            <td>Image Recognition</td>
+                            <td>특화 최적화</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Frontgrade GRAIN</strong></td>
+                            <td>특수 응용</td>
+                            <td>우주 계약 (2025.04)</td>
+                            <td>Space Applications</td>
+                            <td>우주 환경 최적</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TU Munich AI Pro</strong></td>
+                            <td>프로토타입</td>
+                            <td>2025.05 출시</td>
+                            <td>Decentralized AI</td>
+                            <td>10배 효율</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">응용 분야별 성숙도 차트</h3>
+                <div class="chart-container">
+                    <canvas id="maturityChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">시장 성장 동력 (5가지)</h3>
+                <ul class="key-findings">
+                    <li><strong>Healthcare 폭발적 성장:</strong> CAGR 105.4%로 BCI, 적응형 신경 자극기, 휴대용 진단 장비 수요 증가</li>
+                    <li><strong>ADAS 주도:</strong> Automotive ADAS가 현재 가장 큰 상용 볼륨 차지, 안전 기준 강화로 수요 확대</li>
+                    <li><strong>Edge AI 보편화:</strong> 클라우드 의존도 감소, 로컬 처리로 프라이버시 및 지연시간 개선</li>
+                    <li><strong>프로그래밍 도구 성숙:</strong> Gradient-based training of SNNs가 off-the-shelf로 전환, 개발 장벽 낮아짐</li>
+                    <li><strong>우주/극한 환경:</strong> Frontgrade GRAIN 등 특수 환경 neuromorphic 칩 상용화 시작</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 도입 전략 및 권장사항 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">도입 전략 및 권장사항</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">기업의 상황별 neuromorphic computing 도입 접근법을 제시합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>연구 및 탐색 단계</strong> - Intel INRC 가입을 통해 Loihi 2 무료 대여(학술) 또는 구매(기업)로 PoC 진행 (예: Edge AI 디바이스 프로토타입)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>상용 배치 준비</strong> - BrainChip Akida 등 상용 제품으로 IoT/Edge AI 파일럿 프로젝트 시작 (예: 스마트 카메라, 웨어러블)</p>
+                    <p style="line-height: 1.6;">3. <strong>특수 응용 개발</strong> - Healthcare(BCI), Robotics(E-skin), Industrial IoT(예측 유지보수) 등 ultra-low latency 필요 분야에서 점진적 도입</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 주요 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">주요 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 발견</h3>
+                    <ul class="key-findings">
+                        <li><strong>상용화 수준:</strong> Intel Loihi 2는 연구 프로토타입, BrainChip Akida는 상용 제품으로 Edge AI 시장에서 가장 빠르게 성장 중</li>
+                        <li><strong>실제 적용:</strong> Robotics(E-skin, 실시간 학습), Healthcare(50% 빠른 영상 분석), Industrial(25% downtime 감소)에서 파일럿 단계 성과 입증</li>
+                        <li><strong>시장 성장:</strong> USD 47.8M (2025) → USD 1,325.2M (2030), CAGR 89.7%. Healthcare는 CAGR 105.4%로 최고 성장</li>
+                        <li><strong>도입 장벽:</strong> 프로그래밍 패러다임 전환, 표준화 부재, 높은 비용이 주요 장벽. 일반 프로그래밍 모델 등장으로 개선 중</li>
+                        <li><strong>2026년 전망:</strong> 100억 뉴런 이상 시스템 등장, Edge AI 15% 점유율 목표, ADAS/Healthcare 중심 상용 배치 확대</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">도입 준비도 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>연구 및 PoC 단계 → Intel Loihi 2 (INRC)</strong><br>
+                        이유: 200+ 연구 프로젝트 실적, 1년 무료 대여(학술), 최첨단 neuromorphic 기술 접근<br><br>
+                        <strong>상용 Edge AI 배치 → BrainChip Akida</strong><br>
+                        이유: 상용 제품으로 즉시 구매 가능, Edge AI/IoT 최적화, 저전력 디바이스 특화<br><br>
+                        <strong>Healthcare/BCI 응용 → 특수 파트너십</strong><br>
+                        이유: CAGR 105.4% 성장, sub-milliwatt 분류 능력, BCI/적응형 신경 자극기 수요 증가<br><br>
+                        <strong>클라우드/대규모 AI → 아직 비권장</strong><br>
+                        이유: NVIDIA GPU, hyperscaler ASIC의 기득권, 비동기 하드웨어 작업 복잡도, 표준화 부재
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 신중한 낙관 (Neuromorphic computing은 연구에서 상용으로 전환 중이나, Edge AI/Healthcare/Robotics 등 특정 분야에서만 2026-2027년 본격 도입 가능. 범용 상용화는 2028-2030년 예상)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fef3c7; padding: 0.5rem 0.75rem; border-radius: 4px;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>INRC (Intel Neuromorphic Research Community):</strong> Intel의 neuromorphic 연구 커뮤니티. Loihi 칩 접근을 위한 필수 가입 프로그램. 학술 기관은 1년 무료 대여, 상업/정부 조직은 구매 가능.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Spiking Neural Networks (SNN):</strong> 시간에 따라 이산적으로 발화하는 스파이크로 정보를 전달하는 신경망. 생물학적 뉴런의 동작을 모방하며 event-driven 방식으로 에너지 효율이 매우 높음.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>E-skin (Electronic Skin):</strong> 전자 피부. 로봇 손에 촉각 센서를 통합하여 인간 손처럼 섬세한 물체 조작이 가능하게 함. Neuromorphic tactile processing과 결합하여 실시간 감각 피드백 제공.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Event-driven Computing:</strong> 이벤트가 발생할 때만 연산을 수행하는 방식. 기존의 clock-driven 방식과 달리 필요할 때만 전력을 사용하여 에너지 효율이 높음.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ADAS (Advanced Driver-Assistance Systems):</strong> 첨단 운전자 보조 시스템. 현재 neuromorphic chip의 가장 큰 상용 시장으로, 실시간 객체 탐지 및 충돌 방지에 활용.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>In-memory Computing:</strong> 메모리 내부에서 직접 연산을 수행하는 방식. 데이터 이동 없이 처리하여 에너지 효율과 속도를 크게 향상. Neuromorphic 아키텍처의 핵심 기술.
+                    </div>
+                    <div>
+                        <strong>BCI (Brain-Computer Interface):</strong> 뇌-컴퓨터 인터페이스. 뇌 신호를 직접 읽어 컴퓨터나 의수를 제어. Neuromorphic computing의 저전력 특성으로 휴대용 BCI 디바이스 실현 가능.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 11월 18일</p>
+                    <ul>
+                        <li>• <a href="https://www.intel.com/content/www/us/en/research/neuromorphic-computing.html" target="_blank">Intel Neuromorphic Computing and Engineering with AI</a></li>
+                        <li>• <a href="https://www.nature.com/articles/s41467-025-57352-1" target="_blank">The road to commercial success for neuromorphic technologies (Nature Communications)</a></li>
+                        <li>• <a href="https://www.marketsandmarkets.com/Market-Reports/neuromorphic-chip-market-227703024.html" target="_blank">Neuromorphic Computing Market Size & Share Report 2030 (MarketsandMarkets)</a></li>
+                        <li>• <a href="https://www.nature.com/articles/s44172-025-00492-5" target="_blank">Neuromorphic computing for robotic vision: algorithms to hardware advances (Nature)</a></li>
+                        <li>• <a href="https://www.cio.com/article/4052223/neuromorphic-computing-and-the-future-of-edge-ai.html" target="_blank">Neuromorphic computing and the future of edge AI (CIO)</a></li>
+                        <li>• <a href="https://www.elprocus.com/top-neuromorphic-chips-in-2025/" target="_blank">Top Neuromorphic Chips in 2025: Akida, Loihi & TrueNorth</a></li>
+                        <li>• <a href="https://arxiv.org/html/2407.02353v1" target="_blank">Roadmap to Neuromorphic Computing with Emerging Technologies (arXiv)</a></li>
+                        <li>• <a href="https://intel-ncl.atlassian.net/wiki/spaces/INRC/pages/1810432001/Access+Intel+Loihi+Hardware" target="_blank">Access Intel Loihi Hardware - INRC Guide</a></li>
+                        <li>• <a href="https://www.ibm.com/think/topics/neuromorphic-computing" target="_blank">What Is Neuromorphic Computing? (IBM)</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Application Maturity Radar Chart
+        const ctx = document.getElementById('maturityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['상용 가용성', '기술 성숙도', '시장 수요', '비용 효율성', '개발자 도구'],
+                datasets: [
+                    {
+                        label: 'Robotics',
+                        data: [60, 75, 85, 70, 65],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Edge AI/IoT',
+                        data: [70, 70, 90, 80, 60],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Healthcare',
+                        data: [50, 65, 95, 60, 55],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Industrial',
+                        data: [55, 70, 75, 65, 50],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Automotive (ADAS)',
+                        data: [80, 80, 85, 75, 70],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 11
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 11
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
