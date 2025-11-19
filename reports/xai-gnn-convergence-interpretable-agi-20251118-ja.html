@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAIとGNNの融合：解釈可能なAGIへの道</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 2.5rem; }
+        .section { margin-bottom: 2.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; color: #1a1a1a; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.3rem 0; }
+        .sources a { color: var(--primary-navy); text-decoration: none; font-weight: 500; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: #1a1a1a; font-weight: 600; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; color: #4a4a4a; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+            .content { padding: 1.5rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='xai-gnn-convergence-interpretable-agi-20251118-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='xai-gnn-convergence-interpretable-agi-20251118-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='xai-gnn-convergence-interpretable-agi-20251118-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>XAIとGNNの融合：解釈可能なAGIへの道</h1>
+            <div class="subtitle">規制義務化とGraphXAI革新が牽引する透明なAIの未来</div>
+            <div class="meta">レポート作成日：2025年11月18日 | 標準詳細分析レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. XAI市場の爆発的成長：規制が牽引する必須要件化</h3>
+                <p><strong>現状：</strong>グローバルXAI市場は2024年の$7.79Bから2030年$21.06Bまで成長し、年平均18-21% CAGRを記録しています。EU AI Actが2025年2月から段階的に施行され、違反時には最大€35Mまたはグローバル売上の7%の罰金が科されます。これはXAIを「技術的向上」から「展開必須要件」へと転換させる決定的な契機となっています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>市場成長の原動力</h4>
+                        <p>• <strong>規制義務化：</strong>EU AI Act (2025-2026)、NIST AI RMF標準化<br>
+                        • <strong>産業別採用：</strong>Healthcare (37.3%)、Financial Services (CAGR 41.4%)<br>
+                        • <strong>地域別リード：</strong>North America 40.7%市場シェア<br>
+                        • <strong>企業投資：</strong>IBM、Microsoft、Google、AWSの全社的XAI統合</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>主要応用分野</h4>
+                        <p>• <strong>医療：</strong>IBMの全ヘルスケア製品にXAI統合計画<br>
+                        • <strong>金融：</strong>JPMorganのリアルタイム説明可能性実装目標<br>
+                        • <strong>消費者技術：</strong>Spotifyのレコメンドアルゴリズム透明化<br>
+                        • <strong>自動運転：</strong>高リスク環境でアカウンタビリティ確保</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.nist.gov/artificial-intelligence" target="_blank">NIST AI Standards</a> |
+                    <a href="https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai" target="_blank">EU AI Act</a> |
+                    <a href="https://www.jpmorgan.com/technology/artificial-intelligence/initiatives/explainable-ai-center-of-excellence" target="_blank">JPMorgan XAI COE</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年を境にXAIはCausal AIと統合され、単純な相関関係の説明を超えて因果関係推論が可能な次世代説明システムへと進化します。Autonomous Agentsの透明性確保と個別化された説明提供が核心差別化要素となる見込みです。</p>
+
+                <h3 class="subsection-title">2. GNN産業適用の加速化：学界から実戦展開へ</h3>
+                <p><strong>現状：</strong>GNN市場は2024年$320Mから2030年$1.65Bまで成長し、CAGR 31.2%を記録中です。Uber、Google、Alibaba、Pinterest、Twitterなどグローバル企業が中核製品にGNNベースアプローチを導入し、実質的な性能向上を実証しました。特にUber EatsはGNN導入で20%性能改善、AUC 78%→87%向上を達成しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要フレームワーク</h4>
+                        <p>• <strong>PyTorch Geometric (PyG):</strong>13K+ GitHub stars、PyTorch使いやすいAPI<br>
+                        • <strong>Deep Graph Library (DGL):</strong>柔軟なバックエンド (PyTorch/TensorFlow/MXNet)<br>
+                        • <strong>Spektral (TensorFlow):</strong>Keras APIベース、使用利便性優先<br>
+                        • <strong>MLPerf v5.0:</strong>RGATベンチマークでGNN標準化推進</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>実際の産業事例</h4>
+                        <p>• <strong>Uber Eats:</strong>320Kレストラン、500+都市、20%性能向上<br>
+                        • <strong>Pinterest:</strong>2B pins、1B boards、18B edges処理<br>
+                        • <strong>Healthcare:</strong>脳接続性研究、病理画像分析<br>
+                        • <strong>金融:</strong>取引ネットワーク分析、詐欺検出システム</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://pytorch-geometric.readthedocs.io/" target="_blank">PyTorch Geometric</a> |
+                    <a href="https://www.dgl.ai/" target="_blank">Deep Graph Library</a> |
+                    <a href="https://graphneural.network/" target="_blank">Spektral</a> |
+                    <a href="https://mlcommons.org/" target="_blank">MLPerf Benchmark</a>
+                </div>
+
+                <p><strong>展望：</strong>GNNはHierarchical GNN、Adaptive Graph Structure Learning、Multimodal GNN、Higher-order GNNなど4大新興アーキテクチャへ進化し、スケーラビリティと解釈可能性改善に集中します。NVIDIAのcuGraph加速化により大規模データセット(~1B edges)処理性能が4倍以上向上しています。</p>
+
+                <h3 class="subsection-title">3. GraphXAI分野の急成長：GNNのブラックボックスを開く</h3>
+                <p><strong>現状：</strong>GNNの最大課題である解釈可能性を解決するため、GraphXAI分野が2025年急成長しています。HarvardのGraphXAIライブラリが8つの説明方法論(gradient-based、perturbation-based、surrogate-based)を統合提供し、SubgraphXは既存方法より145.95%正確な説明を生成します。GraphXAINはLLMを活用してGNN予測を自然言語narrativeに変換する革新を達成しました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要説明方法論</h4>
+                        <p>• <strong>GNNExplainer:</strong>Perturbationベース、FORGE適用時最高性能<br>
+                        • <strong>SubgraphX:</strong>145.95%より正確、64.80%より忠実な説明<br>
+                        • <strong>PGExplainer:</strong>35.35%より安定した説明生成<br>
+                        • <strong>GraphXAIN:</strong>LLMベース自然言語説明、xAI 2025発表</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>応用分野</h4>
+                        <p>• <strong>詐欺検出:</strong>取引パターン説明でFalse Positive削減<br>
+                        • <strong>創薬:</strong>分子構造-効能関係解釈<br>
+                        • <strong>ネットワークセキュリティ:</strong>攻撃経路可視化および説明<br>
+                        • <strong>医療診断:</strong>脳接続性異常パターン説明</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://github.com/mims-harvard/graphXAI" target="_blank">GraphXAI Library</a> |
+                    <a href="https://zitniklab.hms.harvard.edu/projects/GraphXAI/" target="_blank">Harvard Zitnik Lab</a> |
+                    <a href="https://arxiv.org/html/2411.02540v1" target="_blank">GraphXAIN Paper</a>
+                </div>
+
+                <p><strong>展望：</strong>Causal integrationがGraphXAIの中核発展方向です。Causality-enhanced GNNが従来GNNより一貫して優れた性能を示し、多様なデータセットでgeneralizabilityが向上しています。Federated learningとの統合および学際協力が加速化する見込みです。</p>
+
+                <h3 class="subsection-title">4. Causal AI市場の爆発：相関関係を超えて因果関係へ</h3>
+                <p><strong>現状：</strong>Causal AI市場は2024年$40.55Bから2033年$757.74Bまで成長し、CAGR 39.4%を記録する見込みです。MicrosoftがDoWhy、EconML、Azuaなどのオープンソースツール提供でリードし、AWS、Azure、Google CloudがプラットフォームにCausal AI機能を統合しています。Healthcareが37.3%シェアで最大市場、Financial ServicesがCAGR 41.4%で最も速く成長中です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>核心技術</h4>
+                        <p>• <strong>Counterfactual Reasoning:</strong>「What if?」質問に答える能力<br>
+                        • <strong>Causal Inference:</strong>観察データから因果関係抽出<br>
+                        • <strong>Do-Calculus:</strong>介入(intervention)効果予測<br>
+                        • <strong>Structural Causal Models:</strong>システムメカニズムモデリング</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>主要プラットフォーム</h4>
+                        <p>• <strong>Microsoft DoWhy:</strong>因果推論ライブラリ、Python統合<br>
+                        • <strong>EconML:</strong>経済学ベース機械学習因果推定<br>
+                        • <strong>Azua:</strong>エンタープライズ級Causal AIプラットフォーム<br>
+                        • <strong>Cloud Providers:</strong>AWS、Azure、Google Cloudネイティブサポート</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://github.com/py-why/dowhy" target="_blank">Microsoft DoWhy</a> |
+                    <a href="https://github.com/py-why/EconML" target="_blank">EconML</a> |
+                    <a href="https://www.microsoft.com/en-us/research/project/project_azua/" target="_blank">Azua</a>
+                </div>
+
+                <p><strong>展望：</strong>Causal AIはAGI開発の中核要素として浮上しています。現在のAIの決定的欠陥である人間レベルの因果的意思決定能力を補完し、XAIと統合されて「なぜそう決定したのか?」という真の答えを提供します。ただし、現在のcounterfactualアルゴリズムの因果的理論的基盤不足問題を解決する必要があります。</p>
+
+                <h3 class="subsection-title">5. XAIツール生態系の成熟：SHAPとLIMEから専門化ソリューションへ</h3>
+                <p><strong>現状：</strong>XAIツール生態系が汎用ソリューション(SHAP、LIME)から特化したフレームワークへ進化しています。SHAPはゲーム理論ベースでglobal/local説明を両方提供し、Captum(PyTorch)はIntegrated GradientsとSaliency Mapsを統合しました。Alibiはblack-box/white-box方法論を両方サポートし、最も包括的な機能を提供しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要ツール比較</h4>
+                        <p>• <strong>SHAP:</strong>Global/local説明、非線形関係検出可能<br>
+                        • <strong>LIME:</strong>Local説明専用、線形モデル限界<br>
+                        • <strong>Captum:</strong>PyTorch統合、gradientベース方法論<br>
+                        • <strong>Alibi:</strong>最大機能範囲、優れたドキュメント</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>使用事例別推奨</h4>
+                        <p>• <strong>スタートアップ/中小企業:</strong>SHAP、LIME、Alibi (オープンソース、無料)<br>
+                        • <strong>データサイエンティスト:</strong>SHAP、Alibi (モデル非依存)<br>
+                        • <strong>PyTorchユーザー:</strong>Captum (ネイティブ統合)<br>
+                        • <strong>研究者:</strong>Alibi (広範な方法論、実験容易)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://github.com/shap/shap" target="_blank">SHAP</a> |
+                    <a href="https://github.com/marcotcr/lime" target="_blank">LIME</a> |
+                    <a href="https://captum.ai/" target="_blank">Captum</a> |
+                    <a href="https://github.com/SeldonIO/alibi" target="_blank">Alibi</a>
+                </div>
+
+                <p><strong>展望：</strong>XAIツールはMLOpsパイプラインに統合され、リアルタイム公正性モニタリングと継続的accountability追跡が標準化されます。2025年以降は産業別特化XAIツール(医療用SHAP-Medical、金融用LIME-Financeなど)が登場し、ドメイン専門性が結合された説明システムが主流となる見込みです。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境および市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境および市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4階層市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">XAIとGNN市場は汎用オープンソースツールからエンタープライズ級プラットフォームまで明確な4階層構造を形成しています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">階層</th>
+                            <th style="width: 25%;">プラットフォーム/ツール</th>
+                            <th style="width: 35%;">特徴</th>
+                            <th style="width: 20%;">対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tier 1:<br>汎用XAIツール</strong></td>
+                            <td>SHAP、LIME、Alibi</td>
+                            <td>モデル非依存、オープンソース、Python統合、広範なコミュニティ</td>
+                            <td>データサイエンティスト、研究者、スタートアップ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 2:<br>フレームワーク統合</strong></td>
+                            <td>Captum (PyTorch)、TensorFlow Explainability</td>
+                            <td>ネイティブ統合、gradientベース、高性能、フレームワーク依存</td>
+                            <td>MLエンジニア、PyTorch/TFユーザー</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 3:<br>GraphXAI専門</strong></td>
+                            <td>GraphXAI Library、GNNExplainer、SubgraphX</td>
+                            <td>GNN特化、8つの説明方法論、ベンチマーク含む、研究中心</td>
+                            <td>GNN研究者、グラフ専門家</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 4:<br>エンタープライズプラットフォーム</strong></td>
+                            <td>IBM watsonx.governance、AWS AI Services、Azure AI</td>
+                            <td>完全マネージド、規制準拠、セキュリティ/ガバナンス、エンタープライズサポート</td>
+                            <td>大企業、金融/医療/公共機関</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場トレンド</h3>
+                <ul class="key-findings">
+                    <li><strong>規制主導成長:</strong>EU AI ActとNIST AI RMFがXAIを選択ではなく必須に転換し、市場成長を加速化</li>
+                    <li><strong>オープンソース生態系強化:</strong>MicrosoftのDoWhy/EconML、HarvardのGraphXAIなど学界-産業界協力で高品質オープンソース拡散</li>
+                    <li><strong>Cloud Provider参入:</strong>AWS、Azure、Google CloudがネイティブXAI/Causal AI機能提供で参入障壁低下</li>
+                    <li><strong>GNN実戦展開増加:</strong>Uber、Pinterestなど大規模プロダクション環境でGNN性能実証により産業採用加速化</li>
+                    <li><strong>融合加速化:</strong>GraphXAIとCausal AI統合により「解釈可能なグラフAI」市場形成</li>
+                </ul>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>規制準拠評価</strong> - EU AI Act施行前に自社AIシステムの説明可能性レベルをSHAP/LIMEで評価し、ギャップ分析後改善ロードマップ策定</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>GraphXAIパイロット</strong> - レコメンドシステムや詐欺検出などグラフデータ活用部署でPyTorch Geometric + GNNExplainer組み合わせでPoC進行</p>
+                    <p style="line-height: 1.6;">3. <strong>Causal AI実験</strong> - Microsoft DoWhy活用で既存予測モデルに因果推論レイヤー追加、A/Bテスト結果比較分析</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: #1a1a1a;">核心インサイト</h3>
+                    <ul class="key-findings">
+                        <li><strong>XAIは選択ではなく必須:</strong>EU AI Actなどグローバル規制がXAIを義務化し、2025-2026年高リスクAIシステムの透明性基準が強化。未準拠時最大€35M罰金</li>
+                        <li><strong>GNNの解釈可能性が最大課題:</strong>産業採用が加速化する一方、ブラックボックス問題で規制産業(金融、医療)導入遅延。GraphXAIが解決策として浮上</li>
+                        <li><strong>Causal AIがゲームチェンジャー:</strong>相関関係説明を超えて因果関係推論可能な次世代XAIへ進化。CAGR 39.4%で最も速く成長中</li>
+                        <li><strong>LLM + Graph融合:</strong>GraphXAINのように自然言語で複雑なグラフ関係を説明するハイブリッドアプローチが新標準として定着する見込み</li>
+                        <li><strong>AGIへの必須経路:</strong>Counterfactual reasoning + Causal understandingが人間が信頼し理解できるAGI開発の土台</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1a1a1a;">導入ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>規制準拠が優先 → SHAP + Alibi</strong><br>
+                        EU/米国規制対応が急務の組織はモデル非依存で広範な方法論をサポートするSHAPとAlibi組み合わせで開始。オープンソースで初期コストなく迅速なPoC可能。<br><br>
+                        <strong>グラフデータ活用中 → PyTorch Geometric + GraphXAI</strong><br>
+                        レコメンドシステム、ソーシャルネットワーク、ナレッジグラフなどグラフデータを扱うチームはPyTorch GeometricでGNN構築後GraphXAI Libraryで説明追加。Harvardベンチマークで検証された方法論活用。<br><br>
+                        <strong>因果推論必要 → Microsoft DoWhy + EconML</strong><br>
+                        単純予測を超えて「なぜ?」に答える必要がある意思決定システムはCausal AI導入。Microsoftのオープンソースツールで既存MLパイプラインに因果推論レイヤー追加可能。<br><br>
+                        <strong>エンタープライズ規模展開 → IBM watsonx.governance / AWS Bedrock</strong><br>
+                        大規模組織、規制産業、厳格なガバナンス要求事項がある場合は完全マネージドエンタープライズプラットフォーム選択。セキュリティ、コンプライアンス、サポート含む。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1.5rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価:</strong>ポジティブ (規制義務化と技術成熟度が同時進行し、XAI/GNN市場が2025-2030年爆発的成長予想。オープンソース生態系強化で参入障壁低下、Cloud Providerサポートで大衆化加速化。ただし、Causal AIの理論的基盤補完必要)</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.75rem;">主要用語説明</h2>
+                <div style="background: #fef3c7; padding: 0.75rem 1rem; border-radius: 4px;">
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>説明可能AI (Explainable AI, XAI):</strong>AIシステムの意思決定プロセスを人間が理解できるように説明する技術。「ブラックボックス」を透明にして信頼性と責任性を確保
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>グラフニューラルネットワーク (Graph Neural Networks, GNN):</strong>グラフ構造データ(ソーシャルネットワーク、分子構造、ナレッジグラフなど)を処理するニューラルネットワーク。ノードとエッジ関係を学習して予測
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>GraphXAI:</strong>GNNの予測結果を説明する特化したXAI分野。GNNExplainer、SubgraphXなど多様な方法論を含む
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>因果AI (Causal AI):</strong>相関関係を超えて因果関係を理解し推論するAI。「XがYを引き起こした」という因果的説明を提供
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>反事実推論 (Counterfactual Reasoning):</strong>「もしXでなければYはどうなっていたか?」のような反事実的質問に答える能力。人間レベルの意思決定に必須
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>SHAP (SHapley Additive exPlanations):</strong>ゲーム理論ベースXAI方法論。各特性が予測に寄与した程度を数値化してglobal/local説明提供
+                    </div>
+                    <div>
+                        <strong>EU AI Act:</strong>欧州連合のAI規制法案。2025年から段階的施行され、高リスクAIシステムに透明性と説明可能性を義務化
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">参考資料</h3>
+                    <p style="margin-bottom: 1rem;"><strong>データ収集:</strong>2025年11月18日</p>
+                    <ul>
+                        <li>• <a href="https://www.grandviewresearch.com/industry-analysis/explainable-ai-market-report" target="_blank">Grand View Research - Explainable AI Market Report</a></li>
+                        <li>• <a href="https://www.assemblyai.com/blog/ai-trends-graph-neural-networks" target="_blank">AssemblyAI - AI Trends: Graph Neural Networks (2025)</a></li>
+                        <li>• <a href="https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai" target="_blank">European Commission - EU AI Act Regulatory Framework</a></li>
+                        <li>• <a href="https://github.com/mims-harvard/graphXAI" target="_blank">Harvard University - GraphXAI Library (GitHub)</a></li>
+                        <li>• <a href="https://www.thebusinessresearchcompany.com/report/causal-ai-global-market-report" target="_blank">The Business Research Company - Causal AI Global Market Report</a></li>
+                        <li>• <a href="https://www.nist.gov/artificial-intelligence/ai-standards" target="_blank">NIST - AI Standards and Risk Management Framework</a></li>
+                        <li>• <a href="https://pytorch-geometric.readthedocs.io/" target="_blank">PyTorch Geometric Documentation</a></li>
+                        <li>• <a href="https://github.com/shap/shap" target="_blank">SHAP - SHapley Additive exPlanations (GitHub)</a></li>
+                        <li>• <a href="https://github.com/py-why/dowhy" target="_blank">Microsoft Research - DoWhy Causal Inference Library</a></li>
+                        <li>• <a href="https://www.jpmorgan.com/technology/artificial-intelligence/initiatives/explainable-ai-center-of-excellence" target="_blank">JPMorgan Chase - Explainable AI Center of Excellence</a></li>
+                        <li>• <a href="https://link.springer.com/article/10.1007/s00521-025-11054-3" target="_blank">Neural Computing and Applications - GraphXAI Survey (2025)</a></li>
+                        <li>• <a href="https://mlcommons.org/2025/04/rgat-inference-v5/" target="_blank">MLCommons - Graph Neural Network Benchmark MLPerf v5.0</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Competitive Landscape Radar Chart
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['説明精度', 'モデルカバレッジ', '使いやすさ', 'エンタープライズ機能', 'コミュニティサポート'],
+                datasets: [
+                    {
+                        label: 'SHAP',
+                        data: [90, 95, 75, 60, 90],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'GraphXAI',
+                        data: [95, 70, 65, 50, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Alibi',
+                        data: [85, 90, 80, 70, 80],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'IBM watsonx',
+                        data: [80, 85, 85, 95, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
