@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로컬 LLM + GraphRAG 통합 가이드: 기업형 프라이빗 AI 구축 전략</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='local-llm-graphrag-enterprise-guide-20251125-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='local-llm-graphrag-enterprise-guide-20251125-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='local-llm-graphrag-enterprise-guide-20251125-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>로컬 LLM + GraphRAG 통합 가이드<br>기업형 프라이빗 AI 구축 전략</h1>
+            <div class="subtitle">데이터 주권과 비용 효율을 동시에 확보하는 온프레미스 AI 솔루션</div>
+            <div class="meta">보고서 작성일: 2025년 11월 25일 | 표준 보고서</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. 로컬 LLM 배포 도구의 삼극화: Ollama vs vLLM vs llama.cpp</h3>
+                <p><strong>현황:</strong> 기업용 로컬 LLM 배포 시장은 사용 목적에 따라 3개의 주요 프레임워크로 수렴하고 있습니다. 각각 설계 철학이 다르며, 개발 단계부터 운영 환경까지 서로 다른 요구사항을 충족합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 프레임워크 특성</h4>
+                        <p>• <strong>Ollama:</strong> 가장 간편한 설정, 프로토타이핑에 최적<br>
+                        • <strong>vLLM:</strong> PagedAttention 기술, 운영 환경에서 35배 이상 고처리량<br>
+                        • <strong>llama.cpp:</strong> C/C++ 구현, 최고의 이식성과 엣지 디바이스 지원</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시장 데이터</h4>
+                        <p>• <strong>LLM 시장 규모:</strong> 2024년 64억 달러 → 2030년 361억 달러 (CAGR 33%)<br>
+                        • <strong>GPU A100 비용:</strong> $10,000-15,000/대, 클라우드 월 $2,000-3,000<br>
+                        • <strong>93%의 AI 엔지니어가 최적 도구 선정에 어려움</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://ollama.ai/" target="_blank">Ollama</a> |
+                    <a href="https://docs.vllm.ai/" target="_blank">vLLM</a> |
+                    <a href="https://github.com/ggerganov/llama.cpp" target="_blank">llama.cpp</a>
+                </div>
+
+                <p><strong>전망:</strong> Red Hat의 분석에 따르면, 개발 단계에서는 Ollama, 운영 환경 전환 시에는 vLLM 또는 TGI로의 마이그레이션이 권장됩니다.</p>
+
+                <h3 class="subsection-title">2. Microsoft GraphRAG: 로컬 LLM 통합으로 지식 그래프 RAG의 대중화</h3>
+                <p><strong>현황:</strong> Microsoft Research의 GraphRAG는 LLM을 활용해 지식 그래프를 자동 구축하고, 기존 RAG보다 우수한 질의응답 성능을 구현합니다. 특히 graphrag-local-ollama 프로젝트로 OpenAI API 없이 로컬 실행이 가능해졌습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>GraphRAG 핵심 기능</h4>
+                        <p>• <strong>Global Search:</strong> 커뮤니티 요약을 활용한 전체적 질문 응답<br>
+                        • <strong>Local Search:</strong> 특정 엔티티의 이웃 탐색<br>
+                        • <strong>DRIFT Search:</strong> 커뮤니티 정보를 추가한 맥락 이해<br>
+                        • <strong>Basic Search:</strong> 표준 Top-k 벡터 검색</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>로컬 LLM 통합</h4>
+                        <p>• <strong>graphrag-local-ollama:</strong> Llama3, Mistral, Phi3 지원<br>
+                        • <strong>LLM 엔드포인트:</strong> http://localhost:11434/v1<br>
+                        • <strong>임베딩 모델:</strong> nomic-embed-text, mxbai-embed-large<br>
+                        • <strong>과제:</strong> GPT-4-turbo 최적화로 프롬프트 조정 필요</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://microsoft.github.io/graphrag/" target="_blank">Microsoft GraphRAG</a> |
+                    <a href="https://github.com/microsoft/graphrag" target="_blank">GitHub</a> |
+                    <a href="https://github.com/TheAiSingularity/graphrag-local-ollama" target="_blank">graphrag-local-ollama</a>
+                </div>
+
+                <p><strong>전망:</strong> Microsoft Discovery 플랫폼에서 GraphRAG와 LazyGraphRAG 기술을 활용할 수 있게 되었으며, 과학 연구용 에이전트 플랫폼으로 확장 중입니다.</p>
+
+                <h3 class="subsection-title">3. GGUF 양자화 기술의 진화: Q4/Q3로 70B 모델도 32GB VRAM에서 실행 가능</h3>
+                <p><strong>현황:</strong> GGUF 형식의 양자화 기술이 성숙해지면서, Q4_K_M 양자화로 전체 정밀도의 97-99% 성능을 유지하며 메모리를 대폭 절약할 수 있게 되었습니다. 70B급 모델도 고성능 GPU에서 실행 가능합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>양자화 레벨별 성능</h4>
+                        <p>• <strong>Q5_K_M/Q6_K:</strong> 97-99% 정확도 유지, 운영 환경 권장<br>
+                        • <strong>Q4_K_M:</strong> 95% 정확도, 균형잡힌 최적 선택<br>
+                        • <strong>Q3_K_M:</strong> 90% 정확도, 추가 오류 발생 가능성<br>
+                        • <strong>IQ3_M:</strong> 최신 I-Quant, Q3 동등 품질에 더 작은 크기</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>권장 모델 (32GB VRAM)</h4>
+                        <p>• <strong>Qwen3 32B (Q4_K_M):</strong> ~20GB, 72B급 성능<br>
+                        • <strong>Llama 3.3 70B (Q3_K_M):</strong> ~28-32GB<br>
+                        • <strong>Qwen2.5 Coder 32B:</strong> 코드 생성 특화<br>
+                        • <strong>선정 기준:</strong> GPU VRAM - 1-2GB = 권장 양자화 크기</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF" target="_blank">Llama 3.3 70B GGUF</a> |
+                    <a href="https://huggingface.co/bartowski/Qwen_Qwen3-32B-GGUF" target="_blank">Qwen3 32B GGUF</a> |
+                    <a href="https://docs.unsloth.ai/basics/unsloth-dynamic-2.0-ggufs" target="_blank">Unsloth Dynamic GGUFs</a>
+                </div>
+
+                <p><strong>전망:</strong> Q4 양자화가 엔터프라이즈 배포의 표준이 되어가고 있으며, Q3 이하는 품질 저하가 뚜렷해 VRAM 부족 시 최후의 수단으로 위치합니다.</p>
+
+                <h3 class="subsection-title">4. 기업용 프라이빗 LLM: 컴플라이언스와 보안의 새로운 기준</h3>
+                <p><strong>현황:</strong> 2025년 GDPR, HIPAA, EU AI Act 대응이 필수가 되면서, 기업들은 데이터 주권을 확보하는 프라이빗 LLM 배포로 전환하고 있습니다. 섀도우 AI 대응도 주요 과제로 부상했습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>보안 요구사항</h4>
+                        <p>• <strong>에어갭 배포:</strong> 외부 API 통신 없는 완전 격리<br>
+                        • <strong>AI-SPM:</strong> AI 보안 태세 관리 도입<br>
+                        • <strong>OWASP LLM01:2025:</strong> 프롬프트 인젝션 대응<br>
+                        • <strong>가드레일:</strong> 독성, 톤, 데이터 프라이버시 모니터링</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>도입 타임라인</h4>
+                        <p>• <strong>PoC:</strong> 2-4주<br>
+                        • <strong>운영 배포:</strong> 8-12주<br>
+                        • <strong>완전 최적화:</strong> 16-20주<br>
+                        • <strong>대상:</strong> 월 100만 요청 이상, 민감 데이터 처리 기업</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://futureagi.com/blogs/ai-compliance-guardrails-enterprise-llms-2025" target="_blank">Enterprise AI Compliance 2025</a> |
+                    <a href="https://www.wiz.io/academy/llm-security" target="_blank">LLM Security (Wiz)</a> |
+                    <a href="https://llm.co/" target="_blank">Private LLM</a>
+                </div>
+
+                <p><strong>전망:</strong> 섀도우 AI(직원의 비승인 AI 도구 사용) 대응이 2025년 주요 과제로, 특히 중국산 AI 도구의 비공식 도입 리스크 대응이 필요합니다.</p>
+
+                <h3 class="subsection-title">5. Neo4j + LangChain/LlamaIndex: 지식 그래프 통합의 표준화</h3>
+                <p><strong>현황:</strong> Neo4j를 중심으로 한 지식 그래프와 LLM의 통합 생태계가 확립되었습니다. LangChain의 GraphCypherQAChain과 LlamaIndex의 PropertyGraphIndex로 자연어를 통한 그래프 조작이 가능해졌습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LangChain 통합</h4>
+                        <p>• <strong>CypherQAChain:</strong> 자연어 → Cypher 변환 → 응답 생성<br>
+                        • <strong>Neo4j Vector Index:</strong> RAG 앱에서 정형/비정형 데이터 처리<br>
+                        • <strong>GraphCypherQAChain:</strong> Mistral-7b 조합 실적<br>
+                        • <strong>LLMGraphTransformer:</strong> 텍스트에서 KG 자동 구축</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>LlamaIndex 통합</h4>
+                        <p>• <strong>PropertyGraphIndex:</strong> kg_extractors로 엔티티 추출<br>
+                        • <strong>Knowledge Graph Index:</strong> 텍스트에서 그래프 표현 추출<br>
+                        • <strong>Neo4j Graph Store:</strong> 프로퍼티 그래프 스토어로 활용<br>
+                        • <strong>LLM Graph Builder:</strong> PDF, DOC, YouTube 지원</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://neo4j.com/labs/genai-ecosystem/langchain/" target="_blank">Neo4j LangChain</a> |
+                    <a href="https://neo4j.com/labs/genai-ecosystem/llamaindex/" target="_blank">Neo4j LlamaIndex</a> |
+                    <a href="https://github.com/neo4j-labs/llm-graph-builder" target="_blank">LLM Graph Builder</a> |
+                    <a href="https://python.langchain.com/docs/tutorials/graph/" target="_blank">LangChain Graph Tutorial</a>
+                </div>
+
+                <p><strong>전망:</strong> Neo4j의 LLM Knowledge Graph Builder가 2025년 초 출시되면서, 비정형 데이터로부터의 지식 그래프 구축이 더욱 간소화되었습니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경과 시장 포지셔닝 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">로컬 LLM + GraphRAG 시장은 사용자의 기술 수준과 용도에 따라 4개 층으로 분류됩니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>층</th>
+                            <th>도구</th>
+                            <th>대상 사용자</th>
+                            <th>특징</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tier 1: 간편 배포</strong></td>
+                            <td>Ollama, LM Studio</td>
+                            <td>개발자, 프로토타이핑</td>
+                            <td>원커맨드 실행, GUI 조작</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 2: 운영 환경</strong></td>
+                            <td>vLLM, TGI</td>
+                            <td>MLOps팀, 운영</td>
+                            <td>고처리량, 분산 추론</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 3: KG 통합</strong></td>
+                            <td>GraphRAG, Neo4j</td>
+                            <td>데이터 사이언티스트</td>
+                            <td>지식 그래프 구축, 고정밀 RAG</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 4: 엔터프라이즈</strong></td>
+                            <td>Azure AI, Bedrock</td>
+                            <td>대기업, 규제 산업</td>
+                            <td>컴플라이언스, SLA 보장</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">주요 LLM 배포 도구 비교</h3>
+                <div class="chart-container">
+                    <canvas id="deploymentChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">시장 트렌드 (5가지 변화)</h3>
+                <ul style="margin: 1rem 0; padding-left: 1.5rem; font-size: 0.95rem;">
+                    <li><strong>API에서 온프레미스로:</strong> 데이터 주권과 비용 절감을 위해 월 100만 요청 이상 기업이 프라이빗 배포 선택</li>
+                    <li><strong>단일 모델에서 멀티 모델로:</strong> 용도별 여러 모델을 혼용하는 아키텍처가 주류화</li>
+                    <li><strong>벡터 검색에서 그래프 RAG로:</strong> 기존 RAG로 부족한 복잡한 질의응답에 GraphRAG 채택</li>
+                    <li><strong>GPU 중심에서 CPU/NPU 병용으로:</strong> llama.cpp로 엣지 디바이스 추론이 실용화</li>
+                    <li><strong>오픈소스의 성숙:</strong> Qwen3, Llama 3.3이 상용 모델에 필적하는 성능 달성</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 방안을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>사내 문서 GraphRAG 시스템</strong> - 기존 사내 문서(매뉴얼, FAQ, 회의록)를 GraphRAG로 인덱싱하고, Ollama로 로컬 실행하는 Q&A 시스템 구축</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>코드 지식 베이스 구축</strong> - Qwen2.5 Coder 32B + Neo4j로 사내 리포지토리의 코드 구조를 지식 그래프화하여 신입 엔지니어 온보딩 지원</p>
+                    <p style="line-height: 1.6;">3. <strong>컴플라이언스 문서 분석</strong> - 프라이빗 LLM + GraphRAG로 규제 문서(GDPR, 내부 규정)를 분석하고 해당 조항의 근거가 포함된 응답 생성</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 핵심 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">핵심 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>배포 도구 선정:</strong> 개발 단계는 Ollama, 운영 환경은 vLLM (35배 이상 고처리량), 엣지는 llama.cpp</li>
+                        <li><strong>GraphRAG 대중화:</strong> graphrag-local-ollama로 OpenAI API 없이 Microsoft GraphRAG 로컬 실행 가능</li>
+                        <li><strong>양자화 최적해:</strong> Q4_K_M으로 95% 정확도 유지, 32GB VRAM에서 Llama 3.3 70B (Q3)까지 실행 가능</li>
+                        <li><strong>컴플라이언스 필수:</strong> GDPR/HIPAA 대응 기업은 월 100만 요청 이상에서 프라이빗 배포가 비용 효율적</li>
+                        <li><strong>KG 통합 표준화:</strong> Neo4j + LangChain/LlamaIndex가 지식 그래프 LLM 통합의 사실상 표준</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선정 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>프로토타이핑/실험 → Ollama + Qwen3 32B + graphrag-local-ollama</strong><br>
+                        이유: 30분 이내 GraphRAG 환경 구축 가능, API 과금 없음<br><br>
+                        <strong>운영 환경/고트래픽 → vLLM + Llama 3.3 70B (Q3) + Neo4j + LangChain</strong><br>
+                        이유: PagedAttention으로 고처리량, 분산 추론 지원, 기존 시스템 통합 용이<br><br>
+                        <strong>코드 분석 특화 → Ollama + Qwen2.5 Coder 32B + LlamaIndex</strong><br>
+                        이유: 코드 생성/이해 특화 모델, PropertyGraphIndex로 코드 구조를 KG화
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (오픈소스 LLM과 GraphRAG 기술의 성숙으로 기업용 프라이빗 AI 구축 실현 가능성이 대폭 향상)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>로컬 LLM</strong> - 클라우드 API를 사용하지 않고 자사 인프라 내에서 실행하는 대규모 언어 모델. 데이터 주권과 비용 절감 실현.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GraphRAG</strong> - 지식 그래프를 활용한 RAG 기법. 기존 벡터 검색보다 복잡한 질의응답에 우수.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GGUF 양자화</strong> - 모델 메모리 사용량을 줄이는 기술. Q4_K_M으로 약 95% 정확도를 유지하며 크기 대폭 절감.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>PagedAttention</strong> - vLLM의 핵심 기술. 메모리 관리를 효율화하여 처리량을 대폭 향상.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>지식 그래프 (Knowledge Graph)</strong> - 엔티티와 관계를 그래프 구조로 표현한 데이터 모델. Neo4j가 대표적인 데이터베이스.
+                    </div>
+                    <div>
+                        <strong>CypherQAChain</strong> - LangChain의 컴포넌트. 자연어를 Cypher 쿼리로 변환하여 Neo4j와 대화.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 11월 25일</p>
+                    <ul>
+                        <li>• <a href="https://www.houseoffoss.com/post/ollama-vs-llama-cpp-vs-vllm-local-llm-deployment-in-2025" target="_blank">Ollama vs llama.cpp vs vLLM: Local LLM Deployment in 2025</a></li>
+                        <li>• <a href="https://developers.redhat.com/articles/2025/07/08/ollama-or-vllm-how-choose-right-llm-serving-tool-your-use-case" target="_blank">Red Hat: Ollama or vLLM? How to choose</a></li>
+                        <li>• <a href="https://microsoft.github.io/graphrag/" target="_blank">Microsoft GraphRAG Official Documentation</a></li>
+                        <li>• <a href="https://github.com/TheAiSingularity/graphrag-local-ollama" target="_blank">graphrag-local-ollama GitHub</a></li>
+                        <li>• <a href="https://huggingface.co/blog/wolfram/llm-comparison-test-llama-3" target="_blank">LLM Comparison Test: Llama 3 Quantization</a></li>
+                        <li>• <a href="https://futureagi.com/blogs/ai-compliance-guardrails-enterprise-llms-2025" target="_blank">Enterprise AI Compliance and LLM Security in 2025</a></li>
+                        <li>• <a href="https://neo4j.com/labs/genai-ecosystem/langchain/" target="_blank">Neo4j LangChain Integration</a></li>
+                        <li>• <a href="https://python.langchain.com/docs/tutorials/graph/" target="_blank">LangChain Graph Database Tutorial</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('deploymentChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['설정 용이성', '처리량', '메모리 효율', '엣지 지원', '엔터프라이즈 기능'],
+                datasets: [
+                    {
+                        label: 'Ollama',
+                        data: [95, 50, 70, 60, 40],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'vLLM',
+                        data: [60, 95, 90, 30, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'llama.cpp',
+                        data: [70, 75, 95, 95, 50],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'TGI',
+                        data: [55, 90, 85, 25, 80],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

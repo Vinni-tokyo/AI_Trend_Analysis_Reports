@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI時代の知識表現：オントロジーと知識グラフ技術動向分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.65rem;
+            opacity: 0.8;
+        }
+        .content { padding: 2rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.3rem;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.05rem;
+            color: #1a1a1a;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.75rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.85rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='knowledge-graph-ontology-ai-trends-20251125-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='knowledge-graph-ontology-ai-trends-20251125-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='knowledge-graph-ontology-ai-trends-20251125-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AI時代の知識表現：<br>オントロジーと知識グラフ技術動向分析</h1>
+            <div class="subtitle">次世代AIのためのグラフ基盤知識表現技術研究</div>
+            <div class="meta">レポート作成日：2025年11月25日 | 標準版レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. GraphRAG：LLMと知識グラフの融合</h3>
+                <p><strong>現状：</strong>GraphRAGは、従来のベクトルベースRAGの限界を克服し、LLM（大規模言語モデル）に高度な推論能力を提供する革新的なアプローチとして急速に普及しています。Microsoftの研究によると、GraphRAGはクエリ速度を従来のRAGと比較して最大5倍向上させ、インフラコストを40%削減しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術的特徴</h4>
+                        <p>• <strong>文脈理解：</strong>エンティティ間の関係性を明確化し、文脈に応じた正確な応答を生成<br>
+                        • <strong>証拠追跡：</strong>回答の根拠となるデータソースを明確に追跡可能<br>
+                        • <strong>スケーラビリティ：</strong>数十億ノードを持つ大規模グラフでも高効率動作</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>ビジネス価値</h4>
+                        <p>• <strong>ROI 300-320%：</strong>金融・医療・製造業で実証済み<br>
+                        • <strong>ハルシネーション低減：</strong>構造化知識によりLLMの幻覚を大幅削減<br>
+                        • <strong>リアルタイム更新：</strong>動的情報の即時反映が可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/" target="_blank">Microsoft GraphRAG</a> |
+                    <a href="https://neo4j.com/blog/developer/llm-knowledge-graph-builder-release/" target="_blank">Neo4j LLM Knowledge Graph Builder</a> |
+                    <a href="https://www.mongodb.com/company/blog/graphrag-mongodb-atlas-integrating-knowledge-graphs-with-llms" target="_blank">MongoDB Atlas GraphRAG</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年以降、GraphRAGは企業AIシステムの標準アーキテクチャとして定着し、特にプライベートデータ分析において不可欠な技術となる見込みです。</p>
+
+                <h3 class="subsection-title">2. ニューロシンボリックAI：オントロジーによる信頼性向上</h3>
+                <p><strong>現状：</strong>ニューロシンボリックAIは、深層学習の柔軟性とシンボリック推論の厳密性を統合し、AIシステムの信頼性と説明可能性を向上させています。2025年の研究では、OWLオントロジーとHermiTなどの推論エンジンを組み合わせることで、LLMの出力一貫性を大幅に改善しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>オントロジーの役割</h4>
+                        <p>• <strong>参照モデリング：</strong>ドメイン知識の形式的表現<br>
+                        • <strong>常識推論：</strong>暗黙知を明示的ルールとして定義<br>
+                        • <strong>知識精緻化：</strong>複雑な概念関係の管理と簡素化</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>研究成果</h4>
+                        <p>• <strong>予測品質向上：</strong>オントロジーベースNNで精度向上を実証<br>
+                        • <strong>説明可能性：</strong>AIの意思決定プロセスを人間が理解可能に<br>
+                        • <strong>データ効率：</strong>少量データでも高精度学習を実現</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://arxiv.org/html/2504.07640v1" target="_blank">Neuro-Symbolic Integration研究</a> |
+                    <a href="https://www.w3.org/OWL/" target="_blank">W3C OWL標準</a>
+                </div>
+
+                <p><strong>展望：</strong>説明可能性と信頼性への需要が高まる中、ニューロシンボリックAIは規制産業（医療・金融）での採用が加速すると予想されます。</p>
+
+                <h3 class="subsection-title">3. 知識グラフ市場の急成長</h3>
+                <p><strong>現状：</strong>知識グラフ市場は2024年の10.7億ドルから2030年には69.4億ドルへ、年平均成長率（CAGR）36.6%で急拡大しています。生成AIとの統合需要、データ複雑性の増大、セマンティック検索への需要が主要な成長要因です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>市場データ</h4>
+                        <p>• <strong>2024年市場規模：</strong>10.68億ドル<br>
+                        • <strong>2030年予測：</strong>69.38億ドル<br>
+                        • <strong>CAGR：</strong>36.6%（2024-2030）<br>
+                        • <strong>北米市場：</strong>2030年に19.85億ドル（CAGR 34.4%）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>主要ベンダー</h4>
+                        <p>• <strong>グローバル：</strong>IBM, Oracle, Microsoft, AWS<br>
+                        • <strong>専門ベンダー：</strong>Neo4j, TigerGraph, Stardog<br>
+                        • <strong>欧州勢：</strong>Ontotext, Franz Inc<br>
+                        • <strong>成長市場：</strong>アジア太平洋が最高成長率</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.marketsandmarkets.com/Market-Reports/knowledge-graph-market-217920811.html" target="_blank">MarketsandMarkets レポート</a> |
+                    <a href="https://neo4j.com/" target="_blank">Neo4j</a> |
+                    <a href="https://www.tigergraph.com/" target="_blank">TigerGraph</a>
+                </div>
+
+                <p><strong>展望：</strong>Gartnerは、2025年までに主要クラウドプラットフォームがスケーラブルな知識グラフサービスを標準提供すると予測しています。</p>
+
+                <h3 class="subsection-title">4. グラフ可視化ツールの進化</h3>
+                <p><strong>現状：</strong>グラフ可視化技術は、専門家向けツールから業務ユーザー向けの直感的ツールへと進化しています。Neo4j Bloom、Cytoscape.js、D3.jsなど、用途に応じた多様なツールが利用可能です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>ツールカテゴリ</h4>
+                        <p>• <strong>ビジネス向け：</strong>Neo4j Bloom（Cypher不要で探索可能）<br>
+                        • <strong>研究・分析：</strong>Cytoscape（生物学・ネットワーク分析）<br>
+                        • <strong>開発者向け：</strong>D3.js、Cytoscape.js（高度なカスタマイズ）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>2025年の新技術</h4>
+                        <p>• <strong>Cosmograph：</strong>WebGL加速で数十万ノードを高速描画<br>
+                        • <strong>NVL：</strong>Neo4j公式ビジュアライゼーションライブラリ<br>
+                        • <strong>react-force-graph：</strong>React統合の力学シミュレーション</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://neo4j.com/docs/bloom-user-guide/current/" target="_blank">Neo4j Bloom</a> |
+                    <a href="https://js.cytoscape.org/" target="_blank">Cytoscape.js</a> |
+                    <a href="https://d3js.org/" target="_blank">D3.js</a> |
+                    <a href="https://cosmograph.app/" target="_blank">Cosmograph</a>
+                </div>
+
+                <p><strong>展望：</strong>WebGL/GPU加速技術の普及により、ブラウザ上での大規模グラフのリアルタイム可視化が標準となり、意思決定支援ツールとしての活用が広がる見込みです。</p>
+
+                <h3 class="subsection-title">5. GNN（グラフニューラルネットワーク）による知識グラフ埋め込み</h3>
+                <p><strong>現状：</strong>GNNは知識グラフの構造情報を深層学習モデルに効果的に統合する技術として注目されています。GCN、GAT、RGCNなど、多様なアーキテクチャが開発され、推薦システムや創薬研究で実用化が進んでいます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要アーキテクチャ</h4>
+                        <p>• <strong>GCN：</strong>畳み込み演算で近傍情報を集約<br>
+                        • <strong>GAT：</strong>注意機構で重要な関係を動的に重み付け<br>
+                        • <strong>RGCN：</strong>多関係グラフに特化した効率的処理</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>応用分野</h4>
+                        <p>• <strong>推薦システム：</strong>ユーザー・商品関係の高精度予測<br>
+                        • <strong>創薬：</strong>薬物-標的タンパク質相互作用予測<br>
+                        • <strong>不正検知：</strong>金融取引パターンの異常検出</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.dgl.ai/" target="_blank">Deep Graph Library (DGL)</a> |
+                    <a href="https://pytorch-geometric.readthedocs.io/" target="_blank">PyTorch Geometric</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年の研究（KSG-GNN）では、知識グラフを同質グラフに変換することで既存GNNの直接適用を可能にするアプローチが提案され、実用化のハードルが大幅に低下しています。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.9rem;">知識グラフ・オントロジー市場は、オープン標準からエンタープライズプラットフォームまで4つの層に分類されます。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>層</th>
+                            <th>プラットフォーム</th>
+                            <th>特徴</th>
+                            <th>対象ユーザー</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>オープン標準</strong></td>
+                            <td>RDF, OWL, SPARQL, Schema.org</td>
+                            <td>W3C標準、相互運用性</td>
+                            <td>全ユーザー</td>
+                        </tr>
+                        <tr>
+                            <td><strong>オープンKG</strong></td>
+                            <td>Wikidata, DBpedia, YAGO</td>
+                            <td>オープンデータ、コミュニティ</td>
+                            <td>研究者、開発者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>グラフDB</strong></td>
+                            <td>Neo4j, TigerGraph, Amazon Neptune</td>
+                            <td>スケーラビリティ、クエリ性能</td>
+                            <td>開発チーム</td>
+                        </tr>
+                        <tr>
+                            <td><strong>エンタープライズ</strong></td>
+                            <td>IBM, Oracle, Microsoft, Stardog</td>
+                            <td>統合、セキュリティ、サポート</td>
+                            <td>大企業</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要技術スタック比較</h3>
+                <div class="chart-container">
+                    <canvas id="techStackChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場動向（5つのポイント）</h3>
+                <ul style="font-size: 0.9rem; line-height: 1.8; padding-left: 1.5rem;">
+                    <li><strong>LLM統合の加速：</strong>GraphRAGがRAGアーキテクチャの新標準として台頭</li>
+                    <li><strong>クラウドネイティブ化：</strong>AWS Neptune、Azure Cosmos DB、GCP向けマネージドサービス拡充</li>
+                    <li><strong>産業特化：</strong>医療（SNOMED CT）、金融（FIBO）向け特化オントロジーの普及</li>
+                    <li><strong>可視化の民主化：</strong>非技術者向けノーコード可視化ツールの台頭</li>
+                    <li><strong>リアルタイム処理：</strong>ストリーミング知識グラフ更新への需要増加</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>GraphRAGパイロット</strong> - 社内ドキュメント検索にNeo4j + LLM統合を試験導入し、検索精度とハルシネーション低減効果を検証</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>業界オントロジー活用</strong> - FIBO（金融）やSNOMED CT（医療）など業界標準オントロジーを活用した知識ベース構築の検討</p>
+                    <p style="line-height: 1.6;">3. <strong>可視化ツール評価</strong> - Neo4j Bloom（業務向け）とCytoscape.js（開発向け）を比較評価し、組織に適したツールを選定</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>市場急成長：</strong>知識グラフ市場は2030年までに69億ドル規模へ（CAGR 36.6%）、AI統合需要が牽引</li>
+                        <li><strong>GraphRAGの台頭：</strong>従来RAGと比較してクエリ速度5倍向上、インフラコスト40%削減を実現</li>
+                        <li><strong>信頼性重視：</strong>ニューロシンボリックAIによるオントロジー統合でLLMの説明可能性が向上</li>
+                        <li><strong>可視化の進化：</strong>WebGL技術により、ブラウザ上で数十万ノードのリアルタイム可視化が可能に</li>
+                        <li><strong>産業適用拡大：</strong>医療（診断支援）、金融（不正検知）、製造（サプライチェーン）での導入が加速</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選定ガイド</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.8;">
+                        <strong>LLMの精度向上が優先 → GraphRAG（Neo4j + LangChain）</strong><br>
+                        理由：構造化知識によるハルシネーション低減、証拠追跡可能<br><br>
+                        <strong>説明可能性・コンプライアンス重視 → ニューロシンボリックAI（OWL + 推論エンジン）</strong><br>
+                        理由：規制産業での監査対応、意思決定プロセスの透明化<br><br>
+                        <strong>大規模データ分析 → グラフDB（Neo4j, TigerGraph）</strong><br>
+                        理由：数十億ノード対応、高速クエリ、スケーラブルなインフラ
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：ポジティブ</strong>（知識グラフ技術はLLM時代の基盤インフラとして急速に重要性を増しており、早期導入による競争優位性確保の機会）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.85rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>知識グラフ（Knowledge Graph）</strong> - エンティティ（人、場所、概念など）とその関係性をグラフ構造で表現したデータベース。Googleが2012年に導入した用語。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>オントロジー（Ontology）</strong> - 特定ドメインの概念、プロパティ、関係、制約を形式的に定義した知識体系。OWL（Web Ontology Language）が標準言語。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GraphRAG</strong> - LLMの検索拡張生成（RAG）に知識グラフを統合したアーキテクチャ。エンティティ関係の理解により高精度な回答生成を実現。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ニューロシンボリックAI（Neuro-Symbolic AI）</strong> - ニューラルネットワークの学習能力とシンボリック推論の厳密性を統合したAIアプローチ。第3波AIとも呼ばれる。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GNN（Graph Neural Network）</strong> - グラフ構造データを直接処理可能なニューラルネットワーク。ノードの特徴量と隣接関係を学習。
+                    </div>
+                    <div>
+                        <strong>RDF/SPARQL</strong> - RDFは主語-述語-目的語のトリプルでデータを表現するW3C標準。SPARQLはRDFグラフをクエリするための言語。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集日：</strong>2025年11月25日</p>
+                    <ul>
+                        <li>• <a href="https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/" target="_blank">Microsoft Research - GraphRAG: Unlocking LLM Discovery on Narrative Private Data</a></li>
+                        <li>• <a href="https://www.marketsandmarkets.com/Market-Reports/knowledge-graph-market-217920811.html" target="_blank">MarketsandMarkets - Knowledge Graph Market Report 2025-2030</a></li>
+                        <li>• <a href="https://arxiv.org/html/2504.07640v1" target="_blank">arXiv - Enhancing LLMs through Neuro-Symbolic Integration and Ontological Reasoning</a></li>
+                        <li>• <a href="https://neo4j.com/blog/developer/llm-knowledge-graph-builder-release/" target="_blank">Neo4j - LLM Knowledge Graph Builder Release 2025</a></li>
+                        <li>• <a href="https://developer.nvidia.com/blog/insights-techniques-and-evaluation-for-llm-driven-knowledge-graphs/" target="_blank">NVIDIA - Insights, Techniques, and Evaluation for LLM-Driven Knowledge Graphs</a></li>
+                        <li>• <a href="https://neo4j.com/blog/graph-visualization/neo4j-graph-visualization-tools/" target="_blank">Neo4j - 15 Best Graph Visualization Tools</a></li>
+                        <li>• <a href="https://www.pingcap.com/article/knowledge-graph-use-cases-2025/" target="_blank">PingCAP - Knowledge Graph Use Cases Driving Innovation in 2025</a></li>
+                        <li>• <a href="https://www.dgl.ai/" target="_blank">Deep Graph Library (DGL) - Official Documentation</a></li>
+                        <li>• <a href="https://www.w3.org/OWL/" target="_blank">W3C - Web Ontology Language (OWL)</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('techStackChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['スケーラビリティ', 'LLM統合', 'クエリ性能', '可視化', 'エコシステム'],
+                datasets: [
+                    {
+                        label: 'Neo4j',
+                        data: [90, 95, 85, 90, 95],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'TigerGraph',
+                        data: [95, 80, 95, 70, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Stardog',
+                        data: [75, 85, 80, 75, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Amazon Neptune',
+                        data: [90, 75, 80, 65, 85],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: { size: 10 }
+                        },
+                        pointLabels: {
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 11 },
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
