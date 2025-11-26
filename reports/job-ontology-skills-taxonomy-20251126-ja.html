@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職業オントロジーとスキル分類体系：グローバル標準と主要プラットフォーム比較</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='job-ontology-skills-taxonomy-20251126-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='job-ontology-skills-taxonomy-20251126-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='job-ontology-skills-taxonomy-20251126-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>職業オントロジーとスキル分類体系：<br>グローバル標準と主要プラットフォーム比較</h1>
+            <div class="subtitle">O*NET、ESCO、ISCO、Lightcast、LinkedIn Skills Graph、Workday Skills Cloud</div>
+            <div class="meta">レポート作成日：2025年11月26日 | 標準版レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. O*NET-SOC：米国標準職業分類システム</h3>
+                <p><strong>現状：</strong>O*NETは米国労働省が管理する職業情報データベースであり、2018年SOC（Standard Occupational Classification）をベースに構築されています。1,016の職業タイトルと55,000以上の職務を網羅し、各職業のスキル、知識、能力、タスクに関する詳細データを提供しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>構造と規模</h4>
+                        <p>• <strong>職業数：</strong>1,016タイトル（923がデータレベル職業）<br>
+                        • <strong>職務数：</strong>55,000以上<br>
+                        • <strong>コード体系：</strong>8桁（SOC 6桁 + O*NET 2桁）<br>
+                        • <strong>最新版：</strong>O*NET-SOC 2019（2020年11月更新）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>データ要素</h4>
+                        <p>• <strong>Knowledge（知識）：</strong>33カテゴリ<br>
+                        • <strong>Skills（スキル）：</strong>35カテゴリ<br>
+                        • <strong>Abilities（能力）：</strong>52カテゴリ<br>
+                        • <strong>Work Activities（業務活動）：</strong>41カテゴリ</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.onetcenter.org/taxonomy.html" target="_blank">O*NET-SOC Taxonomy</a> |
+                    <a href="https://www.onetcodeconnector.org/" target="_blank">O*NET Code Connector</a> |
+                    <a href="https://github.com/Occupation-Ontology/OccO" target="_blank">OccO (Occupation Ontology)</a>
+                </div>
+
+                <p><strong>展望：</strong>OccO（Occupation Ontology）プロジェクトが2023年12月にOBO Foundryで公式リリースされ、O*NETデータのオントロジー表現が進んでいます。</p>
+
+                <h3 class="subsection-title">2. ESCO：欧州スキル・能力・資格・職業分類</h3>
+                <p><strong>現状：</strong>ESCOは欧州委員会が2010年から開発している多言語分類システムです。3,039の職業と13,939のスキルを28言語（EU全公用語+アイスランド語、ノルウェー語、ウクライナ語、アラビア語）で提供しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>3つの柱</h4>
+                        <p>• <strong>Occupations（職業）：</strong>3,039職種<br>
+                        • <strong>Skills/Competences（スキル/能力）：</strong>13,939スキル<br>
+                        • <strong>Qualifications（資格）：</strong>国別資格との連携<br>
+                        • <strong>最新版：</strong>ESCO v.1.2.0（2024年5月）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>技術仕様</h4>
+                        <p>• <strong>オントロジー形式：</strong>OWL（Web Ontology Language）<br>
+                        • <strong>外部連携：</strong>ISCO-08、ISCED-FoETとマッピング<br>
+                        • <strong>ダウンロード形式：</strong>SKOS-RDF、ODS、CSV<br>
+                        • <strong>API：</strong>無料公開</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO Portal</a> |
+                    <a href="https://esco.ec.europa.eu/en/use-esco/download" target="_blank">ESCO Download</a> |
+                    <a href="https://data.europa.eu/esco/model" target="_blank">ESCO Ontology</a>
+                </div>
+
+                <p><strong>展望：</strong>ESCOは欧州労働市場の共通言語として機能し、求職者と求人のスキルベースマッチングを支援しています。</p>
+
+                <h3 class="subsection-title">3. Lightcast Skills Taxonomy：リアルタイムスキルデータ</h3>
+                <p><strong>現状：</strong>Lightcast（旧EMSI + Burning Glass）は、世界最大の統合労働市場データプロバイダーです。毎日40,000以上のソースからリアルタイムデータを収集し、33,000以上のスキルと75,000以上の職種タイトルを提供しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>スキル分類</h4>
+                        <p>• <strong>スキル数：</strong>33,000+（2週間ごとに更新）<br>
+                        • <strong>3階層構造：</strong>カテゴリ → サブカテゴリ → スキル<br>
+                        • <strong>スキルタイプ：</strong>専門スキル、共通スキル、ソフトウェアスキル<br>
+                        • <strong>カテゴリ数：</strong>31（2025年3月時点）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>データ基盤</h4>
+                        <p>• <strong>求人データ：</strong>10億件以上<br>
+                        • <strong>職種タイトル：</strong>75,000+<br>
+                        • <strong>データソース：</strong>40,000以上/日<br>
+                        • <strong>API：</strong>オープンアクセス可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://lightcast.io/open-skills" target="_blank">Lightcast Skills Taxonomy</a> |
+                    <a href="https://lightcast.io/open-titles" target="_blank">Lightcast Titles Taxonomy</a> |
+                    <a href="https://docs.lightcast.dev/apis/skills" target="_blank">Skills API</a>
+                </div>
+
+                <p><strong>展望：</strong>Josh Bersin氏は「Lightcastはグローバルスキルテック市場のスイス」と評価しており、中立的なデータプロバイダーとしての地位を確立しています。</p>
+
+                <h3 class="subsection-title">4. LinkedIn Skills Graph：39,000スキルの関係性マップ</h3>
+                <p><strong>現状：</strong>LinkedInのSkills Graphは、39,000のスキル、8.75億人のユーザー、5,900万社の企業間の関係性を動的にマッピングしています。KGBertなどの機械学習モデルを活用し、スキル間の関係性を自動予測しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>規模と構造</h4>
+                        <p>• <strong>スキル数：</strong>39,000<br>
+                        • <strong>ユーザー数：</strong>8.75億人<br>
+                        • <strong>企業数：</strong>5,900万社<br>
+                        • <strong>関係タイプ：</strong>Knowledge Lineages（親子関係等）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AI活用</h4>
+                        <p>• <strong>KGBert：</strong>スキル関係性の深層学習予測<br>
+                        • <strong>自動スケーリング：</strong>39,000スキルを機械学習で管理<br>
+                        • <strong>Skills Match：</strong>求職者・求人マッチング<br>
+                        • <strong>Talent Insights：</strong>人材インテリジェンス</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.linkedin.com/blog/engineering/skills-graph/building-linkedin-s-skills-graph-to-power-a-skills-first-world" target="_blank">LinkedIn Skills Graph</a> |
+                    <a href="https://www.linkedin.com/blog/engineering/data/building-maintaining-the-skills-taxonomy-that-powers-linkedins-skills-graph" target="_blank">Skills Taxonomy Engineering</a>
+                </div>
+
+                <p><strong>展望：</strong>2015年以降、職種に必要なスキルセットは25%変化しており、2027年までに倍増すると予測されています。LinkedInはスキルベースの労働市場を推進しています。</p>
+
+                <h3 class="subsection-title">5. 商用スキルインテリジェンスプラットフォーム</h3>
+                <p><strong>現状：</strong>スキルインテリジェンスプラットフォーム市場は2024年に24億ドル規模に達し、2033年までにCAGR 18-22%で成長し、116-167億ドルに達すると予測されています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Workday Skills Cloud</h4>
+                        <p>• <strong>導入企業：</strong>Fortune 500の30%以上<br>
+                        • <strong>顧客数：</strong>2,100+社、15万ユーザー<br>
+                        • <strong>スキルDB：</strong>20万+スキル、4,500万労働者データ<br>
+                        • <strong>特徴：</strong>機械学習+グラフ技術</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Eightfold AI / Gloat</h4>
+                        <p>• <strong>Eightfold：</strong>16億キャリアプロファイル、160万スキル<br>
+                        • <strong>Gloat Skills Foundation：</strong>ベクトル空間でスキル意味理解<br>
+                        • <strong>Novartis事例：</strong>4年分を2ヶ月で達成<br>
+                        • <strong>市場予測：</strong>2033年に116-167億ドル</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://gloat.com/" target="_blank">Gloat</a>
+                </div>
+
+                <p><strong>展望：</strong>WEFによると2030年までに労働者のコアスキルの40%が変化するとされ、動的に進化するオントロジーへの需要が高まっています。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">職業オントロジー・スキル分類市場は、国際標準、国家標準、商用データプロバイダー、エンタープライズプラットフォームの4層で構成されています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>カテゴリ</th>
+                            <th>主要プレイヤー</th>
+                            <th>スキル/職業数</th>
+                            <th>特徴</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>国際標準</strong></td>
+                            <td>ISCO-08 (ILO)</td>
+                            <td>436職業（4桁）</td>
+                            <td>グローバル統計比較の基盤</td>
+                        </tr>
+                        <tr>
+                            <td><strong>地域標準</strong></td>
+                            <td>ESCO (EU), O*NET (US)</td>
+                            <td>3,039職業/1,016職業</td>
+                            <td>多言語対応、詳細スキルデータ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>商用データ</strong></td>
+                            <td>Lightcast, LinkedIn</td>
+                            <td>33,000+/39,000スキル</td>
+                            <td>リアルタイム更新、AI活用</td>
+                        </tr>
+                        <tr>
+                            <td><strong>エンタープライズ</strong></td>
+                            <td>Workday, Eightfold, Gloat</td>
+                            <td>20万+スキル、4,500万+労働者</td>
+                            <td>タレントマーケットプレイス統合</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="platformComparisonChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場動向（5つのキーポイント）</h3>
+                <ul style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>市場規模急成長：</strong>スキルインテリジェンスプラットフォーム市場は2024年24億ドル→2033年116-167億ドル（CAGR 18-22%）</li>
+                    <li><strong>スキル寿命の短縮：</strong>25年前はスキルが26年間有効だったが、現在は5年未満</li>
+                    <li><strong>スキルギャップの深刻化：</strong>87%の企業がスキルギャップを実感、HR責任者の60%が最優先課題と回答</li>
+                    <li><strong>AI駆動オントロジー：</strong>静的タクソノミーから動的・自己進化型オントロジーへ移行</li>
+                    <li><strong>アジア太平洋急成長：</strong>APAC市場は2024年4.8億ドル、CAGR 21.5%で最速成長</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>ESCO/O*NETマッピング</strong> - 自社の職務記述書をESCOまたはO*NETにマッピングし、標準化されたスキル言語で人材管理を改善</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Lightcast API統合</strong> - リアルタイム労働市場データを活用し、採用戦略やスキルギャップ分析を高度化</p>
+                    <p style="line-height: 1.6;">3. <strong>スキルオントロジー構築</strong> - Gloat/Workday等のプラットフォームを導入し、社内タレントマーケットプレイスを実現</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>グローバル標準の並立：</strong>ISCO（国際）、ESCO（欧州）、O*NET（米国）が地域標準として機能</li>
+                        <li><strong>商用データの台頭：</strong>Lightcast 33,000+スキル、LinkedIn 39,000スキルがリアルタイム更新</li>
+                        <li><strong>市場急成長：</strong>スキルインテリジェンス市場は2024年24億ドル→2033年116-167億ドル</li>
+                        <li><strong>AI駆動進化：</strong>静的タクソノミーから動的オントロジーへ、KGBertなどの機械学習活用</li>
+                        <li><strong>スキルベース経済：</strong>2027年までに職種スキルセットの50%が変化、スキルファースト採用が加速</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">導入ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>国際比較や統計が必要な場合 → ISCO-08 / ESCO</strong><br>
+                        理由：ILO/EU標準として多言語対応、無料利用可能<br><br>
+                        <strong>米国市場や詳細職業データが必要な場合 → O*NET</strong><br>
+                        理由：1,016職業の詳細スキル・能力データ、無料公開<br><br>
+                        <strong>リアルタイム労働市場分析が必要な場合 → Lightcast</strong><br>
+                        理由：33,000スキル、2週間更新、API利用可能<br><br>
+                        <strong>エンタープライズ人材管理が必要な場合 → Workday / Eightfold / Gloat</strong><br>
+                        理由：タレントマーケットプレイス統合、AI駆動マッチング
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（スキルベース経済への移行加速、AI駆動オントロジーの進化、市場急成長により、職業・スキル分類体系は人材戦略の中核インフラに）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>スキルタクソノミー（Skills Taxonomy）</strong> - スキルを階層的に分類・整理するフレームワーク。グループとサブグループに基づく構造化アプローチ
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>スキルオントロジー（Skills Ontology）</strong> - スキル間の関係性と相互依存性をマッピングする高度なモデル。タクソノミーより複雑で動的
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>O*NET-SOC</strong> - 米国労働省の職業情報ネットワーク。1,016職業の詳細データを提供する米国標準
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ESCO</strong> - European Skills, Competences, Qualifications and Occupations。欧州委員会が開発した28言語対応の職業・スキル分類
+                    </div>
+                    <div>
+                        <strong>タレントマーケットプレイス</strong> - 社内の人材とプロジェクト/ポジションをスキルベースでマッチングするプラットフォーム（例：Workday、Gloat）
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2025年11月26日</p>
+                    <ul>
+                        <li>• <a href="https://www.onetcenter.org/taxonomy.html" target="_blank">O*NET Resource Center - O*NET-SOC Taxonomy</a></li>
+                        <li>• <a href="https://esco.ec.europa.eu/en/about-esco/what-esco" target="_blank">European Commission - What is ESCO?</a></li>
+                        <li>• <a href="https://ilostat.ilo.org/methods/concepts-and-definitions/classification-occupation/" target="_blank">ILO - International Standard Classification of Occupations</a></li>
+                        <li>• <a href="https://lightcast.io/open-skills" target="_blank">Lightcast - Open Skills Taxonomy</a></li>
+                        <li>• <a href="https://www.linkedin.com/blog/engineering/skills-graph/building-linkedin-s-skills-graph-to-power-a-skills-first-world" target="_blank">LinkedIn Engineering - Building LinkedIn's Skills Graph</a></li>
+                        <li>• <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday - Skills Cloud</a></li>
+                        <li>• <a href="https://gloat.com/blog/skills-ontology-framework/" target="_blank">Gloat - Skills Ontology Framework</a></li>
+                        <li>• <a href="https://eightfold.ai/" target="_blank">Eightfold AI - Talent Intelligence Platform</a></li>
+                        <li>• <a href="https://cloud.google.com/blog/products/gcp/cloud-jobs-api-machine-learning-goes-to-work-on-job-search-and-discovery" target="_blank">Google Cloud - Cloud Jobs API</a></li>
+                        <li>• <a href="https://joshbersin.com/2023/05/lightcast-the-switzerland-of-the-global-skillstech-market/" target="_blank">Josh Bersin - Lightcast Analysis</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('platformComparisonChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['スキル網羅性', 'リアルタイム更新', '多言語対応', 'API/統合性', '無料アクセス'],
+                datasets: [
+                    {
+                        label: 'O*NET',
+                        data: [85, 50, 30, 70, 100],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ESCO',
+                        data: [80, 60, 100, 85, 100],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Lightcast',
+                        data: [95, 100, 60, 90, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'LinkedIn Skills Graph',
+                        data: [90, 95, 70, 60, 40],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Workday Skills Cloud',
+                        data: [85, 90, 50, 95, 20],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { display: true },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

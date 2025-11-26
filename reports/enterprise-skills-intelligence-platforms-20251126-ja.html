@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>エンタープライズスキルインテリジェンスプラットフォーム徹底分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.65rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.3rem;
+            color: #1a1a1a;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.05rem;
+            color: #1a1a1a;
+            margin-top: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.85rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover { text-decoration: underline; }
+        .highlight-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+        }
+        .highlight-box h4 {
+            color: var(--primary-navy);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+        }
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            margin-top: 0.25rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='enterprise-skills-intelligence-platforms-20251126-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='enterprise-skills-intelligence-platforms-20251126-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='enterprise-skills-intelligence-platforms-20251126-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>エンタープライズスキルインテリジェンスプラットフォーム徹底分析<br>Workday・Eightfold・Gloat</h1>
+            <div class="subtitle">20万+スキル・16億キャリアプロファイル・AIワークフォースグラフの技術解剖</div>
+            <div class="meta">レポート作成日：2025年11月26日 | 標準レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- Market Overview Stats -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="value">$2.4B</div>
+                    <div class="label">2024年市場規模</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">$16.7B</div>
+                    <div class="label">2033年予測</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">21.6%</div>
+                    <div class="label">CAGR成長率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">4,500万+</div>
+                    <div class="label">Workday労働者データ</div>
+                </div>
+            </div>
+
+            <!-- SECTION 1: 主要トレンド -->
+            <section id="trends" class="section">
+                <h2 class="section-title">プラットフォーム詳細分析</h2>
+
+                <h3 class="subsection-title">1. Workday Skills Cloud：20万+スキルのユニバーサルオントロジー</h3>
+                <p><strong>現状：</strong>Workday Skills Cloudは2018年にリリースされた機械学習ベースのスキルオントロジーです。当初2,500万のスキルインスタンスから始まり、現在は50億以上のスキルデータポイントを処理しています。重要なのは「20万以上のスキル」がデータベースに登録されており、機械学習により5万5,000の検証済みスキルに統合・正規化されている点です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術アーキテクチャ</h4>
+                        <p>• <strong>グラフ技術：</strong>スキル間の関連性をマッピング<br>
+                        • <strong>機械学習：</strong>スキル推論と自動分類<br>
+                        • <strong>LLMベースサービス：</strong>職種名からスキル推論（2024年導入）<br>
+                        • <strong>OOV対応：</strong>新規・未知の職種タイトルにも対応</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>スケールとデータ</h4>
+                        <p>• <strong>スキルDB：</strong>20万+スキル（正規化後5.5万）<br>
+                        • <strong>労働者データ：</strong>4,500万人以上<br>
+                        • <strong>顧客数：</strong>2,100社以上<br>
+                        • <strong>Fortune 500：</strong>30%以上が導入</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>LLMベーススキル推論（2024-2025年の革新）</h4>
+                    <p style="font-size: 0.9rem; line-height: 1.7;">Workdayは大規模言語モデル（LLM）を活用した「Skill Inference」サービスを開発。職種タイトルから関連スキルを自動推論し、Workday Skill Ontologyに接続します。従来のアプローチでは対応困難だった「Out of Vocabulary（OOV）」問題（新規・未知の職種）を解決。合成データとヒューマンアノテーターによる評価ベンチマークを実装し、継続的なモデル改善を実現しています。</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud</a> |
+                    <a href="https://medium.com/workday-engineering/skill-inference-building-an-llm-based-service-in-the-workday-skills-cloud-47c9cce9f7bd" target="_blank">LLM Skill Inference技術ブログ</a> |
+                    <a href="https://blog.workday.com/en-us/2020/foundation-workday-skills-cloud.html" target="_blank">Skills Cloud基盤解説</a>
+                </div>
+
+                <p><strong>展望：</strong>Workday Illuminate（次世代AI）との統合により、スキル理解と人材配置の自動化がさらに進化。HCMエコシステム内でのシームレスな統合が最大の強みです。</p>
+
+                <h3 class="subsection-title">2. Eightfold AI：16億キャリアプロファイルの深層学習</h3>
+                <p><strong>現状：</strong>Eightfoldは16億以上のキャリアプロファイルと160万以上のユニークスキル<sup>[1]</sup>を基盤とする深層学習ベースのタレントインテリジェンスプラットフォームです。過去の経験だけでなく「ポテンシャル」を予測するAIマッチングが特徴で、採用から育成、内部モビリティまで全タレントライフサイクルをカバーします。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>深層学習アーキテクチャ</h4>
+                        <p>• <strong>ニューラルネットワーク：</strong>10億+プロファイルから学習<br>
+                        • <strong>スキルオントロジー：</strong>160万+ユニークスキル<sup>[1]</sup><br>
+                        • <strong>マッチング変数：</strong>50+の変数でスコアリング<br>
+                        • <strong>バイアス軽減：</strong>公平性を重視した設計</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>導入成果（顧客事例）</h4>
+                        <p>• <strong>Bayer：</strong>スクリーニング時間90%削減<br>
+                        • <strong>Vodafone：</strong>採用コスト50%削減<br>
+                        • <strong>Cloudflare：</strong>ソーシング生産性30%向上<br>
+                        • <strong>Activision：</strong>47%がタレント再発見から採用</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>ポテンシャルベースマッチングの仕組み</h4>
+                    <p style="font-size: 0.9rem; line-height: 1.7;">Eightfoldの独自性は「スキル隣接性（Skill Adjacency）」の予測にあります。現在持っていないスキルでも、キャリア軌道から習得可能性を算出。例えば、Pythonエンジニアがデータサイエンティストに転身するポテンシャルを、類似キャリアパス分析から予測します。これにより、従来のキーワードマッチングでは見つからない「隠れた人材」を発掘できます。</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://eightfold.ai/talent-intelligence-platform/" target="_blank">Talent Intelligence Platform</a> |
+                    <a href="https://eightfold.ai/why-eightfold/talent-intelligence-platform/" target="_blank">プラットフォーム詳細</a>
+                </div>
+
+                <p><strong>展望：</strong>企業価値20億ドル超のユニコーン企業として、政府機関向け認証（FedRAMP）も取得。エージェント型AIの導入により、さらなる自動化が期待されます。</p>
+
+                <h3 class="subsection-title">3. Gloat Skills Foundation：Workforce Graphによるリアルタイム適応</h3>
+                <p><strong>現状：</strong>Gloatは2023年4月にSkills Foundationを発表し、AI駆動のスキルインフラストラクチャを提供しています。独自の「Workforce Graph」は数十億のデータポイントから学習し、オープンウェブ、政府データベース、パートナーデータ、匿名化されたユーザーデータを統合。市場の変化に応じて動的に進化するスキルオントロジーが特徴です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Workforce Graph技術</h4>
+                        <p>• <strong>グラフベースAI：</strong>仕事・スキル・役割の関係性を深層学習<br>
+                        • <strong>データソース：</strong>オープンウェブ、政府DB、パートナー<br>
+                        • <strong>リアルタイム更新：</strong>市場動向に応じた自動進化<br>
+                        • <strong>HRシステム統合：</strong>既存データとの調和</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>導入成果（顧客事例）</h4>
+                        <p>• <strong>Seagate：</strong>内部異動成功率50%、退職コスト2,000万ドル削減<br>
+                        • <strong>Standard Chartered：</strong>新規役職の60%を内部候補でマッチング<br>
+                        • <strong>エンゲージメント：</strong>従業員エンゲージメント25%向上<br>
+                        • <strong>導入企業：</strong>Schneider Electric、PepsiCo、Nestlé、HSBC</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>タレントマーケットプレイスの革新</h4>
+                    <p style="font-size: 0.9rem; line-height: 1.7;">Gloatのタレントマーケットプレイスは、従業員のスキル・志向・目標に基づいて内部機会（プロジェクト、メンターシップ、キャリアシフト、一時的アサインメント）をマッチング。静的な職務記述書ベースではなく、スキルベースの動的マッチングにより「仕事が人を見つける」体験を実現。Work Orchestration Platformとして、スキル・仕事・テクノロジーを統合的にオーケストレーションします。</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://gloat.com/platform/skills-foundation/" target="_blank">Skills Foundation</a> |
+                    <a href="https://gloat.com/platform/the-talent-marketplace/" target="_blank">Talent Marketplace</a>
+                </div>
+
+                <p><strong>展望：</strong>2024年Work Tech Vendor Top 25に選出。内部モビリティとスキルベース組織への移行を支援する主要プレイヤーとして成長中。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と技術比較</h2>
+
+                <h3 class="subsection-title">プラットフォーム機能比較</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>機能</th>
+                            <th>Workday Skills Cloud</th>
+                            <th>Eightfold AI</th>
+                            <th>Gloat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>スキルDB規模</strong></td>
+                            <td>20万+ (正規化5.5万)</td>
+                            <td>160万ユニークスキル<sup>[1]</sup></td>
+                            <td>市場連動型（非公開）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>データ基盤</strong></td>
+                            <td>4,500万労働者</td>
+                            <td>16億キャリアプロファイル</td>
+                            <td>数十億データポイント</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI技術</strong></td>
+                            <td>ML + LLM推論</td>
+                            <td>深層学習ニューラルネット</td>
+                            <td>グラフベースAI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>主な強み</strong></td>
+                            <td>HCMエコシステム統合</td>
+                            <td>ポテンシャル予測</td>
+                            <td>内部モビリティ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>対象企業</strong></td>
+                            <td>Workday導入企業</td>
+                            <td>大企業・政府機関</td>
+                            <td>Fortune 500</td>
+                        </tr>
+                        <tr>
+                            <td><strong>導入の容易さ</strong></td>
+                            <td>73%（Workday環境内）</td>
+                            <td>エンタープライズ規模</td>
+                            <td>19%が3ヶ月以内に稼働</td>
+                        </tr>
+                        <tr>
+                            <td><strong>価格</strong></td>
+                            <td>ヘッドカウント+モジュール</td>
+                            <td>カスタム見積もり</td>
+                            <td>カスタム見積もり</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">5次元プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">選定ガイド</h3>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Workday Skills Cloudが最適なケース</h4>
+                        <p>• 既にWorkday HCMを導入済み<br>
+                        • 単一プラットフォームでの一貫性を重視<br>
+                        • 段階的なスキル戦略で十分<br>
+                        • 追加コストを最小化したい</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Eightfold AIが最適なケース</h4>
+                        <p>• 最先端AI技術を求める<br>
+                        • 採用から退職まで統一ビューが必要<br>
+                        • ポテンシャルベース採用を実現したい<br>
+                        • 大規模な人材発掘が課題</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>Gloat Skills Foundationが最適なケース</h4>
+                    <p style="font-size: 0.9rem;">• 内部モビリティと従業員エンゲージメントを優先<br>
+                    • ギグワーク・プロジェクトベースの機会提供を重視<br>
+                    • 市場変化に連動したスキルオントロジーが必要<br>
+                    • タレントマーケットプレイス構築を目指す</p>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.9rem;">これらのプラットフォームを活用する際の主要なアプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.7; font-size: 0.9rem;">1. <strong>スキルギャップ分析パイロット</strong> - 特定部門（例：IT部門）でスキルギャップを可視化し、リスキリング計画の根拠データを収集</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.7; font-size: 0.9rem;">2. <strong>内部モビリティ促進</strong> - タレントマーケットプレイスを導入し、社内プロジェクトへのスキルベースマッチングを実施</p>
+                    <p style="line-height: 1.7; font-size: 0.9rem;">3. <strong>採用効率化</strong> - ポテンシャルベースマッチングにより、従来のキーワード検索では見つからない候補者を発掘</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>市場急成長：</strong>スキルインテリジェンスプラットフォーム市場は2024年$24億から2033年$167億へ（CAGR 21.6%）</li>
+                        <li><strong>Workdayの革新：</strong>LLMベーススキル推論により、未知の職種タイトルからも関連スキルを自動抽出可能に</li>
+                        <li><strong>Eightfoldの優位性：</strong>16億プロファイルからの深層学習により、「ポテンシャル」を予測する唯一のプラットフォーム</li>
+                        <li><strong>Gloatの差別化：</strong>市場連動型スキルオントロジーと内部モビリティ特化により、従業員エンゲージメント向上を実現</li>
+                        <li><strong>導入効果：</strong>採用コスト50%削減、スクリーニング時間90%短縮など、ROIが明確に実証済み</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（市場成長率21.6% CAGRと導入企業の明確なROI実績から、スキルインテリジェンスプラットフォームはHR Tech必須インフラへ）</p>
+            </section>
+
+            <!-- SECTION 5: 用語解説 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 1rem; border-left: 3px solid #e5e5e5; font-size: 0.85rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>スキルオントロジー</strong> - スキルの構成要素とスキル間の関係性を定義した知識体系。単なる分類（タクソノミー）より複雑な関連性をマッピング
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>スキル推論（Skill Inference）</strong> - 職種タイトルや経歴から関連スキルをAIが自動的に推測・抽出する技術
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>タレントマーケットプレイス</strong> - 社内の人材と機会（プロジェクト、ポジション）をスキルベースでマッチングする内部プラットフォーム
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ポテンシャルベースマッチング</strong> - 現在のスキルだけでなく、習得可能性や成長軌道を予測してマッチングするAI手法
+                    </div>
+                    <div>
+                        <strong>Workforce Graph</strong> - 仕事、スキル、役割の関係性を深層学習でモデル化したGloat独自のAIアーキテクチャ
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2025年11月26日</p>
+                    <ul>
+                        <li>• <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud公式</a></li>
+                        <li>• <a href="https://medium.com/workday-engineering/skill-inference-building-an-llm-based-service-in-the-workday-skills-cloud-47c9cce9f7bd" target="_blank">Workday Engineering Blog - LLM Skill Inference</a></li>
+                        <li>• <a href="https://blog.workday.com/en-us/2020/foundation-workday-skills-cloud.html" target="_blank">The Foundation of the Workday Skills Cloud</a></li>
+                        <li>• <a href="https://eightfold.ai/talent-intelligence-platform/" target="_blank">Eightfold Talent Intelligence Platform</a></li>
+                        <li>• <a href="https://gloat.com/platform/skills-foundation/" target="_blank">Gloat Skills Foundation</a></li>
+                        <li>• <a href="https://growthmarketreports.com/report/skills-intelligence-platform-market" target="_blank">Skills Intelligence Platform Market Report 2033</a></li>
+                        <li>• <a href="https://joshbersin.com/2020/01/workday-skills-cloud-a-big-idea-with-much-more-to-come/" target="_blank">Josh Bersin - Workday Skills Cloud Analysis</a></li>
+                        <li>• <a href="https://www.peerspot.com/products/comparisons/eightfold-talent-intelligence-platform_vs_gloat" target="_blank">PeerSpot - Eightfold vs Gloat Comparison</a></li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 1.5rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b;">
+                    <h4 style="color: #92400e;">注釈</h4>
+                    <p style="font-size: 0.9rem; line-height: 1.8; color: #78350f; margin: 0;">
+                        <strong>[1]</strong> Eightfold AIの「160万ユニークスキル」は<a href="https://eightfold.ai/" target="_blank" style="color: #b45309;">公式サイト</a>の自己申告データです。独立した第三者検証は未確認。参考：O*NET約2,400、ESCO約14,000、Lightcast約33,000、LinkedIn約39,000、Workday（正規化）約55,000スキル。160万という数値は非正規化のバリエーション（例：「Python」「Python 3」「Pythonプログラミング」を個別カウント）を含む可能性があります。
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Radar Chart
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['スキルDB規模', 'AI技術力', 'エコシステム統合', '内部モビリティ', 'コスト効率'],
+                datasets: [
+                    {
+                        label: 'Workday Skills Cloud',
+                        data: [75, 80, 95, 65, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Eightfold AI',
+                        data: [95, 95, 70, 80, 55],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gloat',
+                        data: [70, 85, 75, 95, 60],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

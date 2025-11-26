@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャンパスライフを向上させる位置情報技術</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.65rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.3rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.05rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.85rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #0284c7;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .highlight-box h4 {
+            color: #0369a1;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .highlight-box p {
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='campus-location-technology-20251126-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='campus-location-technology-20251126-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='campus-location-technology-20251126-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>キャンパスライフを向上させる位置情報技術<br>GPS・WiFi・BLE・UWB・LiDAR・IMU完全ガイド</h1>
+            <div class="subtitle">7つの位置情報技術の比較分析とスマートキャンパス活用事例</div>
+            <div class="meta">レポート作成日：2025年11月26日 | 標準版レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要位置情報技術 Top 5</h2>
+
+                <h3 class="subsection-title">1. BLE（Bluetooth Low Energy）：コストパフォーマンス最優秀</h3>
+                <p><strong>現状：</strong>BLEは低コストで広範囲の展開が可能な位置情報技術として、教育機関で最も採用されています。スマートフォンの慣性センサーと組み合わせることで、キャリブレーションなしで2〜3メートルの精度を実現。高出力BLEビーコンは屋内でも100メートル以上の範囲をカバーできます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術仕様</h4>
+                        <p>• <strong>精度：</strong>2〜5メートル（RSSI方式）<br>
+                        • <strong>範囲：</strong>最大100メートル以上（高出力）<br>
+                        • <strong>消費電力：</strong>極めて低い（コイン電池で数年稼働）<br>
+                        • <strong>コスト：</strong>ビーコン1台あたり数千円</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>キャンパス活用</h4>
+                        <p>• <strong>屋内ナビゲーション：</strong>図書館・教室への経路案内<br>
+                        • <strong>出席管理：</strong>自動チェックイン・チェックアウト<br>
+                        • <strong>緊急通知：</strong>位置に応じたプッシュ通知<br>
+                        • <strong>混雑状況：</strong>施設の利用率リアルタイム表示</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>Bluetooth 6.0の新機能（2024年発表）</h4>
+                    <p>Bluetooth 6.0では「Channel Sounding」機能が追加され、位相ベース測距（PBR）とラウンドトリップタイム（RTT）により、デバイス間の距離をより正確に測定できるようになりました。これにより、従来のRSSI方式よりも安定した位置推定が可能になります。</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.bluetooth.com/" target="_blank">Bluetooth SIG</a> |
+                    <a href="https://navigine.com/industries/universities/" target="_blank">Navigine Campus Solutions</a>
+                </div>
+
+                <p><strong>展望：</strong>BLEは学校・病院・オフィス環境で最適な技術として認知されており、LoRaWANとの組み合わせでキャンパス全体をカバーする安全ネットワークの構築が進んでいます。</p>
+
+                <h3 class="subsection-title">2. UWB（Ultra-Wideband）：センチメートル級の高精度</h3>
+                <p><strong>現状：</strong>UWBは10〜30センチメートルという、他のどの技術よりも高い精度を提供します。超短パルスを広帯域で送信し、サブナノ秒の時間分解能で真の飛行時間（ToF）を測定。FiRa Certification 2.0（2025年1月）により、セキュア測距プロファイルの標準化が進んでいます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術仕様</h4>
+                        <p>• <strong>精度：</strong>10〜30センチメートル<br>
+                        • <strong>範囲：</strong>屋内10〜50m、オープンスペース最大100m<br>
+                        • <strong>測定方式：</strong>ToF（飛行時間）、AoA（到来角）<br>
+                        • <strong>干渉耐性：</strong>非常に高い</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>キャンパス活用</h4>
+                        <p>• <strong>研究機器追跡：</strong>高価な実験機器の所在管理<br>
+                        • <strong>スマートアクセス：</strong>デジタルキーによる入退室<br>
+                        • <strong>緊急対応：</strong>正確な位置での救急サービス<br>
+                        • <strong>AR/VRナビ：</strong>拡張現実での高精度案内</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.firaconsortium.org/" target="_blank">FiRa Consortium</a> |
+                    <a href="https://www.pozyx.io/" target="_blank">Pozyx UWB Solutions</a> |
+                    <a href="https://www.qorvo.com/" target="_blank">Qorvo UWB</a>
+                </div>
+
+                <p><strong>展望：</strong>UWB市場は2025年の約20億ドルから2028年には33億ドルへ成長予測（CAGR 18.9%）。ただし、ハードウェアコストとインフラ要件が普及の障壁となっており、現時点では高価値アセット追跡や近接検出に最適です。</p>
+
+                <h3 class="subsection-title">3. WiFi測位：既存インフラの活用</h3>
+                <p><strong>現状：</strong>WiFi RTT（Round Trip Time）は802.11mcで標準化され、アクセスポイントまでの距離をサブメートル精度で測定可能。ただし、対応はAndroidユーザーの約30%のみで、iOSは非対応。Android 12からは片側RTTにより、AP側の対応が不要になりました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術仕様</h4>
+                        <p>• <strong>精度：</strong>5〜15メートル（RSSI）、1〜3メートル（RTT）<br>
+                        • <strong>範囲：</strong>既存WiFiインフラに依存<br>
+                        • <strong>消費電力：</strong>比較的高い<br>
+                        • <strong>追加コスト：</strong>低い（既存AP活用時）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>キャンパス活用</h4>
+                        <p>• <strong>ゾーンベース位置：</strong>建物・フロア・エリア特定<br>
+                        • <strong>人流分析：</strong>キャンパス内の移動パターン<br>
+                        • <strong>スペース最適化：</strong>教室・図書館の利用分析<br>
+                        • <strong>ハイブリッド連携：</strong>BLE/GPSとの組み合わせ</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.wi-fi.org/" target="_blank">Wi-Fi Alliance</a> |
+                    <a href="https://www.cisco.com/c/en/us/solutions/enterprise-networks/connected-mobile-experiences/index.html" target="_blank">Cisco CMX</a>
+                </div>
+
+                <p><strong>展望：</strong>WiFiはデータ転送用に設計されているため、位置精度には限界があります。壁や金属、他のネットワークからの干渉を受けやすく、ウェアラブルデバイスには消費電力が課題です。</p>
+
+                <h3 class="subsection-title">4. ジオフェンス：仮想境界による自動化</h3>
+                <p><strong>現状：</strong>ジオフェンスは物理的な場所の周りに仮想的な境界を作成し、デバイスが入退出する際に自動でアクションを実行します。出席管理、デバイス保護、緊急アラートなど、キャンパスセキュリティの重要な要素となっています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術仕様</h4>
+                        <p>• <strong>境界設定：</strong>GPS/WiFi/BLEベースで柔軟に設定<br>
+                        • <strong>精度：</strong>設定技術に依存（数m〜数百m）<br>
+                        • <strong>トリガー：</strong>入域・退域・滞在時間<br>
+                        • <strong>連携：</strong>プッシュ通知・メール・システム連携</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>キャンパス活用</h4>
+                        <p>• <strong>自動出席：</strong>教室エリア入域で出席記録<br>
+                        • <strong>デバイス管理：</strong>学内外でのPC保護設定切替<br>
+                        • <strong>緊急対応：</strong>危険エリア接近時の警告<br>
+                        • <strong>イベント案内：</strong>施設近接時のお知らせ配信</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>プライバシーとコンプライアンスの考慮事項</h4>
+                    <p>ジオフェンスの実装には、FERPA（米国）やGDPR（EU）などの規制への準拠が必要です。位置データへのアクセス制限、監査ログの作成、スタッフへの教育が重要。「パッシブ」と称されるジオフェンスでも、GPS権限が有効な場合は学校時間外や学外でも位置データを記録し続ける可能性があることに注意が必要です。</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://preyproject.com/" target="_blank">Prey Project</a> |
+                    <a href="https://sweedu.com/" target="_blank">Sweedu Attendance</a>
+                </div>
+
+                <p><strong>展望：</strong>ベストプラクティスとして、オプトイン方式の採用、高リスクエリアでの段階的導入、学生・教職員・当局との協議が推奨されます。</p>
+
+                <h3 class="subsection-title">5. LiDAR・IMU：次世代の精密マッピング</h3>
+                <p><strong>現状：</strong>LiDAR（Light Detection And Ranging）は赤外線パルスを放射し、反射時間を測定してミリメートル級の3D空間マップを作成。iPhone Pro/iPad ProにはLiDARセンサーが搭載され、RoomPlan APIによる室内スキャンが消費者レベルで可能に。IMU（慣性計測装置）はスマートフォン内蔵のジャイロスコープと加速度計を使用し、歩行者デッドレコニング（PDR）による自律的な位置推定を実現します。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LiDAR技術</h4>
+                        <p>• <strong>精度：</strong>1〜2センチメートル（静的測定）<br>
+                        • <strong>用途：</strong>3Dフロアプラン、BIM統合<br>
+                        • <strong>消費者向け：</strong>iPhone/iPad Pro搭載<br>
+                        • <strong>コスト：</strong>TLSの約2.5%（スマホ利用時）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>IMU・PDR技術</h4>
+                        <p>• <strong>精度：</strong>移動距離の約5.76%誤差（20m時）<br>
+                        • <strong>構成：</strong>歩数検出・進行方向・位置推定<br>
+                        • <strong>補正：</strong>ZUPT/ZARU、マップマッチング<br>
+                        • <strong>利点：</strong>追加ハードウェア不要</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://developer.apple.com/augmented-reality/roomplan/" target="_blank">Apple RoomPlan API</a> |
+                    <a href="https://goodmaps.com/" target="_blank">GoodMaps</a> |
+                    <a href="https://www.mappedin.com/" target="_blank">Mappedin</a>
+                </div>
+
+                <p><strong>展望：</strong>LiDARは大規模施設での3Dマッピングとバリアフリーナビゲーションに最適。IMU/PDRは他の技術との組み合わせで、信号が届かないエリアでも継続的な位置推定を可能にします。研究では、ORB-SLAMカメラとPDRの組み合わせで位置誤差を62%削減した事例も報告されています。</p>
+            </section>
+
+            <!-- SECTION 2: 技術比較 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">技術比較と選定ガイド</h2>
+
+                <h3 class="subsection-title">位置情報技術の比較表</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>技術</th>
+                            <th>精度</th>
+                            <th>範囲</th>
+                            <th>消費電力</th>
+                            <th>コスト</th>
+                            <th>最適用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>GPS</strong></td>
+                            <td>3〜5m</td>
+                            <td>屋外グローバル</td>
+                            <td>高</td>
+                            <td>低</td>
+                            <td>屋外ナビゲーション</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BLE</strong></td>
+                            <td>2〜5m</td>
+                            <td>最大100m+</td>
+                            <td>極低</td>
+                            <td>低</td>
+                            <td>屋内全般・出席管理</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UWB</strong></td>
+                            <td>10〜30cm</td>
+                            <td>10〜50m</td>
+                            <td>中</td>
+                            <td>高</td>
+                            <td>高価値アセット・精密追跡</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WiFi</strong></td>
+                            <td>5〜15m</td>
+                            <td>インフラ依存</td>
+                            <td>高</td>
+                            <td>低</td>
+                            <td>ゾーンベース・人流分析</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ジオフェンス</strong></td>
+                            <td>設定依存</td>
+                            <td>設定依存</td>
+                            <td>中</td>
+                            <td>低</td>
+                            <td>自動化・出席・セキュリティ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LiDAR</strong></td>
+                            <td>1〜2cm</td>
+                            <td>スキャン距離依存</td>
+                            <td>高</td>
+                            <td>中〜高</td>
+                            <td>3Dマッピング・BIM</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IMU/PDR</strong></td>
+                            <td>〜5.76%誤差</td>
+                            <td>累積誤差あり</td>
+                            <td>低</td>
+                            <td>無料</td>
+                            <td>補助測位・信号途絶エリア</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">技術特性レーダーチャート</h3>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">ハイブリッドアプローチの推奨</h3>
+                <p style="margin-bottom: 1rem; font-size: 0.9rem;">実際の大学キャンパスでは、単一技術ではなく複数技術の組み合わせが推奨されます。研究事例では、GPSとBLEのハイブリッドシステムで屋内精度1〜2メートルを達成し、GPS単独システムより高い満足度を得ています。</p>
+
+                <div class="highlight-box">
+                    <h4>推奨ハイブリッド構成</h4>
+                    <p style="font-size: 0.85rem; line-height: 1.8;">
+                        <strong>基本構成：</strong>GPS（屋外）+ BLE（屋内）+ ジオフェンス（自動化）<br>
+                        <strong>高精度構成：</strong>上記 + UWB（重要エリア）+ WiFi（人流分析）<br>
+                        <strong>先進構成：</strong>上記 + LiDAR（3Dマッピング）+ IMU（シームレス移行）
+                    </p>
+                </div>
+            </section>
+
+            <!-- SECTION 3: ベストプラクティス -->
+            <section id="best-practices" class="section">
+                <h2 class="section-title">導入ベストプラクティス</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">世界の大学での導入事例から抽出された成功要因をご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.7; font-size: 0.9rem;"><strong>1. 段階的導入アプローチ</strong> - 高リスクエリアや特定建物でパイロット実施後、問題点を特定してから全面展開。CSULB（カリフォルニア州立大学ロングビーチ）は2016年にパイロット4案件から開始し成功。</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.7; font-size: 0.9rem;"><strong>2. プライバシーファースト設計</strong> - FERPA/GDPR準拠、オプトイン方式の採用、データアクセス制限、監査ログの整備。学生・教職員との対話で透明性を確保し、データは必要最小限のみ収集。</p>
+                    <p style="line-height: 1.7; font-size: 0.9rem;"><strong>3. ステークホルダー協働</strong> - 学生、教職員、地域当局を巻き込んだ導入プロセス。MIT iCampusのようにフィードバックシステムを組み込み、継続的な改善サイクルを確立。</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>BLEが最もバランスの取れた選択：</strong>低コスト、低消費電力、2〜5m精度で学校・オフィス環境に最適</li>
+                        <li><strong>UWBは高精度が必要な場面で：</strong>10〜30cm精度だが、コストとインフラ要件が高い。市場は2028年に33億ドル規模へ成長予測</li>
+                        <li><strong>ハイブリッドが現実的解：</strong>単一技術ではなく、GPS+BLE+ジオフェンスの組み合わせで屋内外シームレスな体験を実現</li>
+                        <li><strong>プライバシーが最重要課題：</strong>位置追跡は学外・時間外にも及ぶ可能性があり、規制準拠と透明性が必須</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">用途別推奨技術</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.8;">
+                        <strong>屋内ナビゲーション → BLE + IMU</strong><br>
+                        理由：コストパフォーマンスと継続性のバランス<br>
+                        <strong>出席管理 → ジオフェンス + BLE</strong><br>
+                        理由：自動化と適度な精度の両立<br>
+                        <strong>高価値アセット管理 → UWB</strong><br>
+                        理由：センチメートル級精度が必要な場面に<br>
+                        <strong>施設3Dマッピング → LiDAR</strong><br>
+                        理由：BIM統合とバリアフリー設計に最適
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（位置情報技術はキャンパス体験を大幅に向上させる可能性がある。ただし、プライバシーへの配慮と段階的導入が成功の鍵）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem; border-left: 3px solid #e5e5e5; font-size: 0.8rem;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>BLE（Bluetooth Low Energy）</strong> - 低消費電力の近距離無線通信規格。ビーコンとスマートフォン間で位置情報を交換
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>UWB（Ultra-Wideband）</strong> - 超広帯域無線技術。センチメートル精度の位置測定が可能
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ジオフェンス</strong> - 仮想的な地理的境界。デバイスの入退出を検知して自動アクションを実行
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LiDAR</strong> - レーザー光を使用した距離測定技術。3D空間マップの作成に使用
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>IMU（Inertial Measurement Unit）</strong> - 加速度計とジャイロスコープを組み合わせた慣性計測装置
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>PDR（Pedestrian Dead Reckoning）</strong> - 歩行者デッドレコニング。歩数と方向から位置を推定する手法
+                    </div>
+                    <div>
+                        <strong>RTLS（Real-Time Location System）</strong> - リアルタイム位置システム。資産や人の位置をリアルタイムで追跡
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2025年11月26日</p>
+                    <ul>
+                        <li>• <a href="https://www.crowdconnected.com/blog/indoor-positioning-tech-update-2025/" target="_blank">Indoor Positioning Technology Review 2025 - Crowd Connected</a></li>
+                        <li>• <a href="https://www.seeedstudio.com/blog/2025/11/13/ble-vs-uwb-vs-gps-vs-wifi-which-is-the-best-indoor-positioning-technology-for-personal-safety/" target="_blank">BLE vs UWB vs GPS vs WiFi Comparison - Seeed Studio</a></li>
+                        <li>• <a href="https://navigine.com/industries/universities/" target="_blank">Campus Navigation System - Navigine</a></li>
+                        <li>• <a href="https://www.pozyx.io/newsroom/uwb-versus-other-technologies" target="_blank">UWB versus Other Technologies - Pozyx</a></li>
+                        <li>• <a href="https://peachyessay.com/blogs/university-leverage-benefits-geofencing-campus-improve-student-life-safety/" target="_blank">Geofencing on Campus - Peachy Essay Research</a></li>
+                        <li>• <a href="https://www.adci.com/blog/geolocation-for-college-campus-safety" target="_blank">Geolocation for Campus Safety - ADCI</a></li>
+                        <li>• <a href="https://goodmaps.com/newsroom/lidar-mapping-for-precise-indoor-navigation/" target="_blank">LiDAR Mapping for Indoor Navigation - GoodMaps</a></li>
+                        <li>• <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5982656/" target="_blank">Robust PDR Based on MEMS-IMU - PMC/MDPI</a></li>
+                        <li>• <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7374396/" target="_blank">IoT for Smart Spaces University Case Study - PMC</a></li>
+                        <li>• <a href="https://www.csulb.edu/information-technology/smart-campus-initiative" target="_blank">Smart Campus Initiative - CSULB</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['精度', '範囲', '低消費電力', '低コスト', '導入容易性'],
+                datasets: [
+                    {
+                        label: 'BLE',
+                        data: [60, 70, 95, 90, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'UWB',
+                        data: [95, 50, 70, 40, 45],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'WiFi',
+                        data: [50, 75, 40, 85, 80],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'GPS',
+                        data: [55, 100, 30, 95, 90],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

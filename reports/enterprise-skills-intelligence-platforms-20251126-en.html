@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Skills Intelligence Platforms Deep Dive</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.25rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover { text-decoration: underline; }
+        .highlight-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+        }
+        .highlight-box h4 {
+            color: var(--primary-navy);
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+        }
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            margin-top: 0.25rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='enterprise-skills-intelligence-platforms-20251126-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='enterprise-skills-intelligence-platforms-20251126-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='enterprise-skills-intelligence-platforms-20251126-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>Enterprise Skills Intelligence Platforms Deep Dive<br>Workday · Eightfold · Gloat</h1>
+            <div class="subtitle">200K+ Skills · 1.6B Career Profiles · AI Workforce Graph Technical Analysis</div>
+            <div class="meta">Report Date: November 26, 2025 | Standard Report</div>
+        </div>
+
+        <div class="content">
+            <!-- Market Overview Stats -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="value">$2.4B</div>
+                    <div class="label">2024 Market Size</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">$16.7B</div>
+                    <div class="label">2033 Projection</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">21.6%</div>
+                    <div class="label">CAGR Growth</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">45M+</div>
+                    <div class="label">Workday Worker Data</div>
+                </div>
+            </div>
+
+            <!-- SECTION 1: Platform Analysis -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Platform Deep Dive Analysis</h2>
+
+                <h3 class="subsection-title">1. Workday Skills Cloud: Universal Ontology of 200K+ Skills</h3>
+                <p><strong>Current State:</strong> Workday Skills Cloud is a machine learning-based skill ontology launched in 2018. Starting with 25 million skill instances, it now processes over 5 billion skill data points. The key insight is that "200,000+ skills" are registered in the database, which are consolidated and normalized into 55,000 verified skills through machine learning.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Technical Architecture</h4>
+                        <p>• <strong>Graph Technology:</strong> Maps relationships between skills<br>
+                        • <strong>Machine Learning:</strong> Skill inference and auto-classification<br>
+                        • <strong>LLM-Based Service:</strong> Infers skills from job titles (2024)<br>
+                        • <strong>OOV Handling:</strong> Addresses new/unknown job titles</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Scale and Data</h4>
+                        <p>• <strong>Skills DB:</strong> 200K+ skills (55K normalized)<br>
+                        • <strong>Worker Data:</strong> 45+ million workers<br>
+                        • <strong>Customers:</strong> 2,100+ companies<br>
+                        • <strong>Fortune 500:</strong> 30%+ adoption</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>LLM-Based Skill Inference (2024-2025 Innovation)</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">Workday developed a "Skill Inference" service powered by Large Language Models (LLMs). It automatically infers relevant skills from job titles and connects them to the Workday Skill Ontology. This solves the "Out of Vocabulary (OOV)" problem—handling new and unknown job titles that traditional approaches couldn't address. They implemented evaluation benchmarks using synthetic data verified by human annotators, enabling continuous model improvement.</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud</a> |
+                    <a href="https://medium.com/workday-engineering/skill-inference-building-an-llm-based-service-in-the-workday-skills-cloud-47c9cce9f7bd" target="_blank">LLM Skill Inference Blog</a> |
+                    <a href="https://blog.workday.com/en-us/2020/foundation-workday-skills-cloud.html" target="_blank">Skills Cloud Foundation</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Integration with Workday Illuminate (next-gen AI) will further advance skill understanding and talent deployment automation. Seamless integration within the HCM ecosystem remains its greatest strength.</p>
+
+                <h3 class="subsection-title">2. Eightfold AI: Deep Learning on 1.6 Billion Career Profiles</h3>
+                <p><strong>Current State:</strong> Eightfold is a deep learning-based talent intelligence platform built on 1.6+ billion career profiles and 1.6+ million unique skills<sup>[1]</sup>. Its defining feature is AI matching that predicts "potential," not just past experience, covering the entire talent lifecycle from recruitment through development and internal mobility.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Deep Learning Architecture</h4>
+                        <p>• <strong>Neural Networks:</strong> Trained on 1B+ profiles<br>
+                        • <strong>Skills Ontology:</strong> 1.6M unique skills<sup>[1]</sup><br>
+                        • <strong>Matching Variables:</strong> 50+ variables for scoring<br>
+                        • <strong>Bias Mitigation:</strong> Designed for fairness</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Customer Results</h4>
+                        <p>• <strong>Bayer:</strong> 90% reduction in screening time<br>
+                        • <strong>Vodafone:</strong> 50% reduction in cost per hire<br>
+                        • <strong>Cloudflare:</strong> 30% improvement in sourcing productivity<br>
+                        • <strong>Activision:</strong> 47% of hires from talent rediscovery</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>How Potential-Based Matching Works</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">Eightfold's unique strength lies in predicting "Skill Adjacency." Even for skills candidates don't currently possess, the system calculates acquisition probability based on career trajectory. For example, it predicts a Python engineer's potential to transition to Data Scientist by analyzing similar career paths. This enables discovery of "hidden talent" that traditional keyword matching would miss.</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://eightfold.ai/talent-intelligence-platform/" target="_blank">Talent Intelligence Platform</a> |
+                    <a href="https://eightfold.ai/why-eightfold/talent-intelligence-platform/" target="_blank">Platform Details</a>
+                </div>
+
+                <p><strong>Outlook:</strong> As a unicorn valued at $2B+, Eightfold has also achieved government certification (FedRAMP). Further automation is expected with the introduction of agentic AI capabilities.</p>
+
+                <h3 class="subsection-title">3. Gloat Skills Foundation: Real-Time Adaptation via Workforce Graph</h3>
+                <p><strong>Current State:</strong> Gloat unveiled Skills Foundation in April 2023, providing AI-powered skills infrastructure. Their proprietary "Workforce Graph" learns from billions of data points, integrating open web sources, government databases, partner data, and anonymized user data. The key differentiator is a skill ontology that dynamically evolves with market changes.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Workforce Graph Technology</h4>
+                        <p>• <strong>Graph-Based AI:</strong> Deep learning on work-skill-role relationships<br>
+                        • <strong>Data Sources:</strong> Open web, government DBs, partners<br>
+                        • <strong>Real-Time Updates:</strong> Auto-evolves with market trends<br>
+                        • <strong>HR System Integration:</strong> Harmonizes with existing data</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Customer Results</h4>
+                        <p>• <strong>Seagate:</strong> 50% internal mobility success, $20M saved<br>
+                        • <strong>Standard Chartered:</strong> 60% of new roles filled internally<br>
+                        • <strong>Engagement:</strong> 25% increase in employee engagement<br>
+                        • <strong>Clients:</strong> Schneider Electric, PepsiCo, Nestlé, HSBC</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>Talent Marketplace Innovation</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">Gloat's Talent Marketplace matches employees with internal opportunities (projects, mentorships, career shifts, temporary assignments) based on their skills, aspirations, and goals. Rather than static job descriptions, dynamic skill-based matching creates an experience where "work finds people." As a Work Orchestration Platform, it orchestrates skills, work, and technology holistically.</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://gloat.com/platform/skills-foundation/" target="_blank">Skills Foundation</a> |
+                    <a href="https://gloat.com/platform/the-talent-marketplace/" target="_blank">Talent Marketplace</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Named to the 2024 Work Tech Vendor Top 25. Growing as a key player supporting internal mobility and the transition to skills-based organizations.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape & Technical Comparison</h2>
+
+                <h3 class="subsection-title">Platform Feature Comparison</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Workday Skills Cloud</th>
+                            <th>Eightfold AI</th>
+                            <th>Gloat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Skills DB Size</strong></td>
+                            <td>200K+ (55K normalized)</td>
+                            <td>1.6M unique skills<sup>[1]</sup></td>
+                            <td>Market-adaptive (undisclosed)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data Foundation</strong></td>
+                            <td>45M workers</td>
+                            <td>1.6B career profiles</td>
+                            <td>Billions of data points</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI Technology</strong></td>
+                            <td>ML + LLM inference</td>
+                            <td>Deep learning neural nets</td>
+                            <td>Graph-based AI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Key Strength</strong></td>
+                            <td>HCM ecosystem integration</td>
+                            <td>Potential prediction</td>
+                            <td>Internal mobility</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Target Customers</strong></td>
+                            <td>Workday customers</td>
+                            <td>Enterprises, government</td>
+                            <td>Fortune 500</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ease of Deployment</strong></td>
+                            <td>73% (within Workday)</td>
+                            <td>Enterprise-scale</td>
+                            <td>19% go-live in &lt;3 months</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pricing</strong></td>
+                            <td>Headcount + modules</td>
+                            <td>Custom quote</td>
+                            <td>Custom quote</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">5-Dimension Platform Comparison Chart</h3>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">Selection Guide</h3>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>When Workday Skills Cloud is Optimal</h4>
+                        <p>• Already using Workday HCM<br>
+                        • Consistency within single platform is priority<br>
+                        • Gradual skills strategy is sufficient<br>
+                        • Need to minimize additional costs</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>When Eightfold AI is Optimal</h4>
+                        <p>• Seeking cutting-edge AI technology<br>
+                        • Need unified view from hire to retire<br>
+                        • Want to enable potential-based hiring<br>
+                        • Large-scale talent discovery is a challenge</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>When Gloat Skills Foundation is Optimal</h4>
+                    <p style="font-size: 0.95rem;">• Internal mobility and employee engagement are priorities<br>
+                    • Emphasis on gig work and project-based opportunities<br>
+                    • Need market-adaptive skill ontology<br>
+                    • Goal is to build a talent marketplace</p>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">Key approaches for leveraging these platforms effectively.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.7; font-size: 0.95rem;">1. <strong>Skills Gap Analysis Pilot</strong> - Visualize skills gaps in a specific department (e.g., IT) and collect data to support reskilling initiatives</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.7; font-size: 0.95rem;">2. <strong>Internal Mobility Acceleration</strong> - Deploy a talent marketplace for skills-based matching to internal projects</p>
+                    <p style="line-height: 1.7; font-size: 0.95rem;">3. <strong>Recruitment Optimization</strong> - Use potential-based matching to discover candidates that traditional keyword searches would miss</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: #1a1a1a;">Key Takeaways</h3>
+                    <ul class="key-findings">
+                        <li><strong>Rapid Market Growth:</strong> Skills intelligence platform market expanding from $2.4B (2024) to $16.7B (2033) at 21.6% CAGR</li>
+                        <li><strong>Workday Innovation:</strong> LLM-based skill inference now extracts relevant skills even from unknown job titles</li>
+                        <li><strong>Eightfold Advantage:</strong> Only platform predicting "potential" through deep learning on 1.6B profiles</li>
+                        <li><strong>Gloat Differentiation:</strong> Market-adaptive skill ontology and internal mobility focus drive employee engagement</li>
+                        <li><strong>Proven ROI:</strong> 50% reduction in hiring costs, 90% reduction in screening time—clear ROI demonstrated</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Positive (With 21.6% CAGR market growth and clear ROI from adopters, skills intelligence platforms are becoming essential HR tech infrastructure)</p>
+            </section>
+
+            <!-- SECTION 5: Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1.05rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Skills Ontology</strong> - A knowledge system defining skill components and relationships between skills. Maps more complex relationships than simple taxonomy
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Skill Inference</strong> - Technology where AI automatically deduces and extracts relevant skills from job titles or career history
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Talent Marketplace</strong> - Internal platform matching employees with opportunities (projects, positions) based on skills
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Potential-Based Matching</strong> - AI technique that matches based not just on current skills, but predicted acquisition likelihood and growth trajectory
+                    </div>
+                    <div>
+                        <strong>Workforce Graph</strong> - Gloat's proprietary AI architecture that models relationships between work, skills, and roles using deep learning
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> November 26, 2025</p>
+                    <ul>
+                        <li>• <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud Official</a></li>
+                        <li>• <a href="https://medium.com/workday-engineering/skill-inference-building-an-llm-based-service-in-the-workday-skills-cloud-47c9cce9f7bd" target="_blank">Workday Engineering Blog - LLM Skill Inference</a></li>
+                        <li>• <a href="https://blog.workday.com/en-us/2020/foundation-workday-skills-cloud.html" target="_blank">The Foundation of the Workday Skills Cloud</a></li>
+                        <li>• <a href="https://eightfold.ai/talent-intelligence-platform/" target="_blank">Eightfold Talent Intelligence Platform</a></li>
+                        <li>• <a href="https://gloat.com/platform/skills-foundation/" target="_blank">Gloat Skills Foundation</a></li>
+                        <li>• <a href="https://growthmarketreports.com/report/skills-intelligence-platform-market" target="_blank">Skills Intelligence Platform Market Report 2033</a></li>
+                        <li>• <a href="https://joshbersin.com/2020/01/workday-skills-cloud-a-big-idea-with-much-more-to-come/" target="_blank">Josh Bersin - Workday Skills Cloud Analysis</a></li>
+                        <li>• <a href="https://www.peerspot.com/products/comparisons/eightfold-talent-intelligence-platform_vs_gloat" target="_blank">PeerSpot - Eightfold vs Gloat Comparison</a></li>
+                    </ul>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 1.5rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b;">
+                    <h4 style="color: #92400e;">Notes</h4>
+                    <p style="font-size: 0.9rem; line-height: 1.8; color: #78350f; margin: 0;">
+                        <strong>[1]</strong> Eightfold AI's "1.6M unique skills" is self-reported data from their <a href="https://eightfold.ai/" target="_blank" style="color: #b45309;">official website</a>. Independent third-party verification is unconfirmed. Reference: O*NET ~2,400, ESCO ~14,000, Lightcast ~33,000, LinkedIn ~39,000, Workday (normalized) ~55,000 skills. The 1.6M figure may include non-normalized variations (e.g., counting "Python," "Python 3," "Python programming" as separate entries).
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Radar Chart
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Skills DB Scale', 'AI Capability', 'Ecosystem Integration', 'Internal Mobility', 'Cost Efficiency'],
+                datasets: [
+                    {
+                        label: 'Workday Skills Cloud',
+                        data: [75, 80, 95, 65, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Eightfold AI',
+                        data: [95, 95, 70, 80, 55],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gloat',
+                        data: [70, 85, 75, 95, 60],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
