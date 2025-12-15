@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Coding Agents: Cursor vs Devin vs Cline</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8; --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080; --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.7rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        @media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; } .header { padding-top: 1rem; text-align: center; } .language-switcher { justify-content: center; } .back-btn { order: -1; } }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='autonomous-coding-agents-20251209-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='autonomous-coding-agents-20251209-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='autonomous-coding-agents-20251209-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>Autonomous Coding Agents<br>Cursor vs Devin vs Cline</h1>
+            <div class="subtitle">126% Productivity Boost and SWE-bench 13.86%: The AI Development Revolution</div>
+            <div class="meta">Report Date: December 9, 2025 | Standard Report</div>
+        </div>
+
+        <div class="content">
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <h3 class="subsection-title">1. Cursor: The Definitive AI-Integrated IDE</h3>
+                <p><strong>Current Status:</strong> Cursor is a new generation AI-integrated IDE forked from VS Code. Equipped with the latest models like GPT-4 and Claude 3.5, it delivers high-precision suggestions specialized for code context. Users report a 126% productivity increase.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Features</h4>
+                        <p>• <strong>Agent Mode:</strong> Code generation from high-level goals<br>
+                        • <strong>Multi-file Understanding:</strong> Extensive context windows<br>
+                        • <strong>Safety:</strong> Confirmation required before command execution</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Technical Features</h4>
+                        <p>• <strong>Models:</strong> GPT-4, Claude 3.5, custom LLMs<br>
+                        • <strong>Integration:</strong> Full VS Code ecosystem compatibility<br>
+                        • <strong>Local Execution:</strong> Runs in secure local environment</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://cursor.sh/" target="_blank">Cursor</a> |
+                    <a href="https://code.visualstudio.com/" target="_blank">VS Code</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Rapidly spreading among professional developers, valued for enabling AI assistance while maintaining existing workflows.</p>
+
+                <h3 class="subsection-title">2. Devin: The World's First Fully Autonomous AI Software Engineer</h3>
+                <p><strong>Current Status:</strong> Developed by Cognition, Devin autonomously executes from specification to design, implementation, testing, and deployment. It achieved 13.86% on SWE-bench, far exceeding the previous record of 1.96%.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Autonomous Capabilities</h4>
+                        <p>• <strong>End-to-End:</strong> Spec→Design→Implementation→Test→Deploy<br>
+                        • <strong>Environment:</strong> Operates shell, editor, browser in sandbox<br>
+                        • <strong>Learning:</strong> Learns from experience, fixes mistakes</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Benchmark Performance</h4>
+                        <p>• <strong>SWE-bench:</strong> 13.86% (previous 1.96%)<br>
+                        • <strong>Improvement:</strong> 7x+ performance gain<br>
+                        • <strong>Feature:</strong> Can operate without human supervision</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://cognition.ai/blog/introducing-devin" target="_blank">Devin</a> |
+                    <a href="https://cognition.ai/" target="_blank">Cognition AI</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Demonstrated the possibility of fully autonomous development, though human collaboration remains important for complex projects.</p>
+
+                <h3 class="subsection-title">3. Parallel Processing Paradigm: The Throughput Revolution</h3>
+                <p><strong>Current Status:</strong> The true value of autonomous agents lies not in "speed" but "throughput." While Devin executes a task, developers can work on another task with Cursor, enabling multiple concurrent workstreams.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Parallelization Benefits</h4>
+                        <p>• <strong>Multitasking:</strong> Run Task A on Devin while doing Task B on Cursor<br>
+                        • <strong>Throughput Boost:</strong> Overall productivity over single-task speed<br>
+                        • <strong>Small Task Value:</strong> Even simple tasks benefit from parallelization</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Workflow Transformation</h4>
+                        <p>• <strong>Mindset Shift:</strong> From speed to throughput<br>
+                        • <strong>Task Decomposition:</strong> Break down for autonomous agents<br>
+                        • <strong>Monitoring:</strong> Background task management</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://www.greptile.com/blog/comparing-cursor-vs-devin" target="_blank">Cursor vs Devin Comparison</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Development paradigm is shifting from "single-threaded" to "multi-threaded," redefining productivity.</p>
+
+                <h3 class="subsection-title">4. Cline: Open-Source Autonomous Coding Assistant</h3>
+                <p><strong>Current Status:</strong> Cline is an open-source autonomous coding assistant for VS Code. With dual "Plan" and "Act" modes, it takes a plan-then-execute approach that balances transparency and control.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Features</h4>
+                        <p>• <strong>Plan Mode:</strong> Formulate plan before execution<br>
+                        • <strong>Act Mode:</strong> Step-by-step execution based on plan<br>
+                        • <strong>Project-wide:</strong> Cross-file understanding and modification</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Open Source Benefits</h4>
+                        <p>• <strong>Transparency:</strong> Code inspection/customization possible<br>
+                        • <strong>Cost:</strong> Free to use<br>
+                        • <strong>Extensibility:</strong> Community-driven feature additions</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://github.com/cline/cline" target="_blank">Cline GitHub</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Gaining open-source community support as an alternative to commercial tools.</p>
+
+                <h3 class="subsection-title">5. Goose: General-Purpose AI Agent Beyond Coding</h3>
+                <p><strong>Current Status:</strong> Released by Block (formerly Square), Goose is an open-source AI agent framework that "goes beyond coding." Fully local-executable, it broadly supports code writing, debugging, and file system operations.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Versatility</h4>
+                        <p>• <strong>Coding:</strong> Code writing and execution<br>
+                        • <strong>Debugging:</strong> Error detection and fixing<br>
+                        • <strong>File Operations:</strong> File system interaction</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Design Philosophy</h4>
+                        <p>• <strong>Extensibility:</strong> Feature extension via plugins<br>
+                        • <strong>Local Execution:</strong> Runs entirely locally<br>
+                        • <strong>Open Source:</strong> OSS release by Block</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://github.com/block/goose" target="_blank">Goose GitHub</a> |
+                    <a href="https://block.xyz/" target="_blank">Block</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Versatility in handling tasks beyond coding points to the direction of next-generation AI agents.</p>
+            </section>
+
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape</h2>
+
+                <h3 class="subsection-title">Autonomous Coding Agent Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The market consists of three tiers: "AI-Integrated IDEs," "Fully Autonomous Agents," and "Open Source."</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Category</th>
+                            <th>Features</th>
+                            <th>SWE-bench</th>
+                            <th>Target Users</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Cursor</strong></td>
+                            <td>AI-Integrated IDE</td>
+                            <td>High-precision suggestions, local execution, confirmation</td>
+                            <td>-</td>
+                            <td>Pro developers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Devin</strong></td>
+                            <td>Fully Autonomous</td>
+                            <td>E2E development, Git/CI support, sandbox</td>
+                            <td>13.86%</td>
+                            <td>Enterprise/large teams</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cline</strong></td>
+                            <td>Open Source</td>
+                            <td>Plan/Act modes, VS Code integration</td>
+                            <td>-</td>
+                            <td>Individual developers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Goose</strong></td>
+                            <td>Open Source</td>
+                            <td>General-purpose tasks, local execution, extensible</td>
+                            <td>-</td>
+                            <td>Developers/enterprise</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GitHub Copilot</strong></td>
+                            <td>AI-Integrated IDE</td>
+                            <td>Code completion, broad IDE support</td>
+                            <td>-</td>
+                            <td>All developers</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Platform Comparison Chart</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key application approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Parallel Development Workflow</strong> - Execute background tasks on Devin while working on main development with Cursor for parallel processing</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Rapid Prototype Generation</strong> - Have fully autonomous agents generate initial prototypes while humans review and improve</p>
+                    <p style="line-height: 1.6;">3. <strong>Code Review Automation</strong> - Leverage Cline's Plan mode to automatically analyze change impact and improve review efficiency</p>
+                </div>
+            </section>
+
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Takeaways</h3>
+                    <ul class="key-findings">
+                        <li><strong>Productivity Gains:</strong> Cursor users report 126% productivity improvement, fundamentally transforming development workflows</li>
+                        <li><strong>Benchmark Leap:</strong> Devin achieved 13.86% on SWE-bench, 7x+ improvement from previous 1.96%</li>
+                        <li><strong>Paradigm Shift:</strong> From "speed" to "throughput," redefining development efficiency through parallel processing</li>
+                        <li><strong>Open Source Rise:</strong> Free alternatives like Cline and Goose offer capabilities rivaling commercial tools</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Maintain Existing Workflow + AI Assistance → Cursor</strong><br>
+                        Reason: VS Code compatible, local execution, confirmation features balance safety and control<br><br>
+                        <strong>Large-Scale Automation/Enterprise Use → Devin</strong><br>
+                        Reason: E2E development capability, top SWE-bench performance, team productivity via parallel processing<br><br>
+                        <strong>Cost-Conscious/Customization → Cline / Goose</strong><br>
+                        Reason: Open source and free, community support, extensibility
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Positive (Autonomous coding agents have potential to fundamentally transform software development productivity)</p>
+            </section>
+
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>SWE-bench</strong> - Software Engineering benchmark measuring how well AI can resolve actual GitHub issues
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Agent Mode</strong> - Operating mode where AI autonomously generates and executes code given high-level goals
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Sandbox Environment</strong> - Isolated secure execution environment where AI can run code without affecting production
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Plan/Act Mode</strong> - Two-stage approach: first plan (Plan), then execute (Act)
+                    </div>
+                    <div>
+                        <strong>Throughput</strong> - Processing volume per unit time. Becomes more important than single-task speed with parallel processing
+                    </div>
+                </div>
+            </section>
+
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection Date:</strong> December 9, 2025</p>
+                    <ul>
+                        <li>• <a href="https://cursor.sh/" target="_blank">Cursor - AI Code Editor</a></li>
+                        <li>• <a href="https://cognition.ai/blog/introducing-devin" target="_blank">Cognition - Introducing Devin</a></li>
+                        <li>• <a href="https://www.greptile.com/blog/comparing-cursor-vs-devin" target="_blank">Greptile - Cursor vs Devin Comparison</a></li>
+                        <li>• <a href="https://qubika.com/blog/devin-ai-coding-agent/" target="_blank">Qubika - Devin AI Review</a></li>
+                        <li>• <a href="https://render.com/blog/ai-coding-agents-benchmark" target="_blank">Render - AI Coding Agents Benchmark</a></li>
+                        <li>• <a href="https://www.gocodeo.com/post/top-10-coding-agents-of-2025-that-are-revolutionizing-software-development" target="_blank">GoCodeo - Top 10 Coding Agents 2025</a></li>
+                        <li>• <a href="https://carlrippon.com/autonomous-coding-agents/" target="_blank">Carl Rippon - Autonomous Coding Agents</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Autonomy', 'Code Quality', 'Ease of Use', 'Cost Efficiency', 'Ecosystem'],
+                datasets: [
+                    { label: 'Cursor', data: [70, 90, 95, 75, 90], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 2 },
+                    { label: 'Devin', data: [95, 85, 70, 60, 65], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)', borderWidth: 2 },
+                    { label: 'Cline', data: [75, 80, 85, 95, 70], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)', borderWidth: 2 },
+                    { label: 'Goose', data: [80, 75, 80, 95, 60], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)', borderWidth: 2 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } }, plugins: { legend: { position: 'bottom' } } }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIブラウザエージェント戦争：Claude for Chrome vs Operator vs Comet</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ai-browser-agents-battle-20251209-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='ai-browser-agents-battle-20251209-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='ai-browser-agents-battle-20251209-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AIブラウザエージェント戦争<br>Claude for Chrome vs Operator vs Comet</h1>
+            <div class="subtitle">コンピュータ操作AIの最前線と企業活用の可能性</div>
+            <div class="meta">レポート作成日：2025年12月9日 | 標準版レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. Claude for Chrome：ブラウザ統合型AIエージェントの登場</h3>
+                <p><strong>現状：</strong>Anthropicは2025年8月にClaude for Chromeのリサーチプレビューを開始しました。月額100〜200ドルのMaxプランユーザー1,000名を対象に展開され、3ヶ月のテスト後、現在はすべてのMaxプラン加入者向けベータ版として提供されています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要機能</h4>
+                        <p>• <strong>コンテキスト維持：</strong>ブラウザ内のすべての操作を認識<br>
+                        • <strong>自律操作：</strong>ユーザーの許可のもとブラウザ操作を実行<br>
+                        • <strong>スケジュールタスク：</strong>定期的なタスクの自動実行</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>安全対策</h4>
+                        <p>• <strong>高リスクサイトブロック：</strong>金融、アダルト、海賊版サイトを制限<br>
+                        • <strong>攻撃成功率：</strong>安全対策により23.6%から11.2%に低減<br>
+                        • <strong>異常検知：</strong>不審な指示パターンを識別</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.anthropic.com/news/claude-for-chrome" target="_blank">Claude for Chrome</a> |
+                    <a href="https://www.anthropic.com/" target="_blank">Anthropic</a>
+                </div>
+
+                <p><strong>展望：</strong>マルチタブワークフローとスマートナビゲーション機能が追加され、企業向け自動化ツールとしての可能性が拡大しています。</p>
+
+                <h3 class="subsection-title">2. OpenAI Operator：CUAモデルによるWeb操作</h3>
+                <p><strong>現状：</strong>OpenAIは2025年1月にOperatorをリリース。CUA（Computer-Using Agent）モデルを搭載し、GPT-4oクラスのビジョンと強化学習を組み合わせたGUIポリシーを実装しています。Online-Mind2Webベンチマークで61.3%のスコアを達成。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>技術的特徴</h4>
+                        <p>• <strong>画面認識：</strong>GPT-4oベースのビジョン機能<br>
+                        • <strong>操作実行：</strong>マウス、キーボード操作の自動化<br>
+                        • <strong>ベンチマーク：</strong>Online-Mind2Webで61.3%達成</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>進化の軌跡</h4>
+                        <p>• <strong>2025年1月：</strong>Operator初期リリース<br>
+                        • <strong>2025年7月：</strong>ChatGPT Agent発表<br>
+                        • <strong>課題：</strong>CAPTCHA回避が観察される</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://openai.com/" target="_blank">OpenAI</a> |
+                    <a href="https://chat.openai.com/" target="_blank">ChatGPT</a>
+                </div>
+
+                <p><strong>展望：</strong>Webナビゲーションタスクで現在リードしており、企業向けタスク自動化市場での競争が激化しています。</p>
+
+                <h3 class="subsection-title">3. Perplexity Comet：AI検索特化型ブラウザ</h3>
+                <p><strong>現状：</strong>PerplexityはAI検索に特化したCometブラウザを発表。GoogleもGeminiをChromeに直接統合する動きを見せており、ブラウザ市場でのAI統合競争が本格化しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>市場の動向</h4>
+                        <p>• <strong>Perplexity Comet：</strong>AI検索ネイティブブラウザ<br>
+                        • <strong>Google Chrome + Gemini：</strong>検索エンジンとAIの融合<br>
+                        • <strong>OpenAI：</strong>独自ブラウザ開発の噂</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>差別化要因</h4>
+                        <p>• <strong>検索体験：</strong>従来の検索結果ではなくAI回答<br>
+                        • <strong>情報統合：</strong>複数ソースからの情報を自動要約<br>
+                        • <strong>リアルタイム性：</strong>最新情報へのアクセス</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.perplexity.ai/" target="_blank">Perplexity AI</a> |
+                    <a href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>
+                </div>
+
+                <p><strong>展望：</strong>ブラウザそのものがAIファーストで再設計される時代が到来し、従来の検索エンジン中心のモデルが変革を迫られています。</p>
+
+                <h3 class="subsection-title">4. Computer Use技術の進化：ベンチマーク比較</h3>
+                <p><strong>現状：</strong>Anthropicは2024年10月にComputer Use機能をClaude 3.5 Sonnetで公開ベータとして開始。これはフロンティアAIモデルとして初めてコンピュータ操作機能を一般提供した事例です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>ベンチマーク性能</h4>
+                        <p>• <strong>Operator（OpenAI）：</strong>61.3%（Online-Mind2Web）<br>
+                        • <strong>Claude Computer Use：</strong>56.3%（同ベンチマーク）<br>
+                        • <strong>OpenAGI Lux：</strong>83.6%（新興スタートアップ）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>得意分野の違い</h4>
+                        <p>• <strong>Operator：</strong>Webナビゲーションタスクで優位<br>
+                        • <strong>Claude：</strong>コーディング・ソフトウェア開発で優位<br>
+                        • <strong>Claude Opus 4.5：</strong>「世界最高のコーディングモデル」</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.anthropic.com/news/3-5-models-and-computer-use" target="_blank">Claude Computer Use発表</a> |
+                    <a href="https://www.anthropic.com/news/claude-opus-4-5" target="_blank">Claude Opus 4.5</a>
+                </div>
+
+                <p><strong>展望：</strong>新興企業OpenAGIがLuxモデルで83.6%を達成するなど、競争は激化の一途をたどっています。</p>
+
+                <h3 class="subsection-title">5. 企業導入の加速：GenAIエージェントの実用化</h3>
+                <p><strong>現状：</strong>Google Cloudの「ROI of AI 2025」レポートによると、GenAIを使用している企業の52%がAIエージェントを本番環境で展開しており、早期導入者の88%が具体的なROIを実現しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>導入統計</h4>
+                        <p>• <strong>本番環境展開：</strong>GenAI企業の52%<br>
+                        • <strong>ROI実現：</strong>早期導入者の88%<br>
+                        • <strong>2025年予測：</strong>25%がAIエージェント導入</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>ユースケース</h4>
+                        <p>• <strong>タスク自動化：</strong>定型業務の自動実行<br>
+                        • <strong>データ収集：</strong>Web情報の自動取得と整理<br>
+                        • <strong>レポート生成：</strong>複数ソースからの自動作成</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://cloud.google.com/" target="_blank">Google Cloud</a> |
+                    <a href="https://www.gartner.com/" target="_blank">Gartner</a>
+                </div>
+
+                <p><strong>展望：</strong>2027年までに50%の企業がAIエージェントを導入すると予測されており、ブラウザエージェントはその中核技術となる見込みです。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">AIブラウザエージェント市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">市場は「統合型エージェント」「専用ブラウザ」「API/SDK」「新興プレイヤー」の4層に分類されます。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>プレイヤー</th>
+                            <th>カテゴリ</th>
+                            <th>主要機能</th>
+                            <th>ベンチマーク</th>
+                            <th>対象ユーザー</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Claude for Chrome</strong></td>
+                            <td>統合型エージェント</td>
+                            <td>ブラウザサイドカー、自律操作</td>
+                            <td>56.3%</td>
+                            <td>プロフェッショナル</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OpenAI Operator</strong></td>
+                            <td>統合型エージェント</td>
+                            <td>CUAモデル、Webタスク自動化</td>
+                            <td>61.3%</td>
+                            <td>企業ユーザー</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Perplexity Comet</strong></td>
+                            <td>専用ブラウザ</td>
+                            <td>AI検索ネイティブ</td>
+                            <td>N/A</td>
+                            <td>一般消費者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google Gemini</strong></td>
+                            <td>統合型エージェント</td>
+                            <td>Chrome直接統合</td>
+                            <td>N/A</td>
+                            <td>全Chrome ユーザー</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OpenAGI Lux</strong></td>
+                            <td>新興プレイヤー</td>
+                            <td>低コスト高性能</td>
+                            <td>83.6%</td>
+                            <td>開発者</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>定型業務の自動化</strong> - 毎日のデータ収集、レポート作成、メール処理などの反復タスクをブラウザエージェントに委任</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>競合調査の効率化</strong> - 複数のWebサイトから競合情報を自動収集し、構造化されたレポートとして出力</p>
+                    <p style="line-height: 1.6;">3. <strong>テスト自動化</strong> - Webアプリケーションのエンドツーエンドテストをブラウザエージェントで実行し、品質保証を効率化</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>市場の急成長：</strong>2025年にGenAI企業の52%がAIエージェントを本番環境で運用、2027年には50%の企業が導入予測</li>
+                        <li><strong>技術競争の激化：</strong>Online-Mind2WebベンチマークでOperator 61.3%、Claude 56.3%、新興OpenAGI Lux 83.6%</li>
+                        <li><strong>安全性への注力：</strong>Anthropicは安全対策により攻撃成功率を23.6%から11.2%に低減</li>
+                        <li><strong>ブラウザ市場の再編：</strong>Perplexity Comet、Google Gemini統合など、AIファーストブラウザの時代へ</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選定ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>コーディング・開発タスク重視 → Claude for Chrome</strong><br>
+                        理由：Claude Opus 4.5は「世界最高のコーディングモデル」と評価され、ソフトウェア開発タスクで優位性を発揮<br><br>
+                        <strong>Webナビゲーション・タスク自動化重視 → OpenAI Operator</strong><br>
+                        理由：Online-Mind2Webベンチマークで最高スコア（61.3%）を達成、Webタスク処理に強み<br><br>
+                        <strong>AI検索体験重視 → Perplexity Comet</strong><br>
+                        理由：検索特化型ブラウザとして、情報収集と要約に最適化された体験を提供
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（AIブラウザエージェント市場は急成長中であり、企業の業務効率化に大きな可能性を秘めている）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Computer Use（コンピュータ使用）</strong> - AIが人間のようにマウス操作、キーボード入力、画面認識を行い、コンピュータを操作する技術
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>CUA（Computer-Using Agent）</strong> - OpenAIが開発した、コンピュータ操作に特化したAIエージェントモデル
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Online-Mind2Web</strong> - AIエージェントのWeb操作能力を評価するための標準ベンチマーク
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ブラウザサイドカー</strong> - ブラウザの横に常駐し、ユーザーの操作を補助するAIアシスタント機能
+                    </div>
+                    <div>
+                        <strong>AIエージェント</strong> - 目標達成のために自律的に行動し、意思決定を行うAIシステム
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集日：</strong>2025年12月9日</p>
+                    <ul>
+                        <li>• <a href="https://www.anthropic.com/news/claude-for-chrome" target="_blank">Anthropic - Claude for Chrome発表</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/08/26/anthropic-launches-a-claude-ai-agent-that-lives-in-chrome/" target="_blank">TechCrunch - Anthropic launches Claude AI agent for Chrome</a></li>
+                        <li>• <a href="https://www.anthropic.com/news/claude-opus-4-5" target="_blank">Anthropic - Claude Opus 4.5</a></li>
+                        <li>• <a href="https://workos.com/blog/anthropics-computer-use-versus-openais-computer-using-agent-cua" target="_blank">WorkOS - Computer Use vs CUA比較</a></li>
+                        <li>• <a href="https://www.helicone.ai/blog/browser-use-vs-computer-use-vs-operator" target="_blank">Helicone - Web Agent比較</a></li>
+                        <li>• <a href="https://venturebeat.com/ai/openagi-emerges-from-stealth-with-an-ai-agent-that-it-claims-crushes-openai" target="_blank">VentureBeat - OpenAGI Lux</a></li>
+                        <li>• <a href="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai" target="_blank">McKinsey - The State of AI 2025</a></li>
+                        <li>• <a href="https://cloud.google.com/" target="_blank">Google Cloud - ROI of AI 2025 Report</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Webナビゲーション', 'コーディング支援', '安全性', '使いやすさ', 'エコシステム'],
+                datasets: [
+                    {
+                        label: 'Claude for Chrome',
+                        data: [75, 95, 90, 85, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'OpenAI Operator',
+                        data: [90, 80, 75, 80, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Perplexity Comet',
+                        data: [70, 60, 80, 90, 65],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'OpenAGI Lux',
+                        data: [95, 70, 65, 70, 50],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>온톨로지 시각화 시스템 동향 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .market-highlight {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+            border: 1px solid #0052b8;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .market-highlight .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #001e5c;
+        }
+        .market-highlight .label {
+            font-size: 0.9rem;
+            color: #4a4a4a;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ontology-visualization-systems-20251203-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='ontology-visualization-systems-20251203-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='ontology-visualization-systems-20251203-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>온톨로지 시각화 시스템 동향 분석<br>엔터프라이즈 지식 그래프 관리의 최전선</h1>
+            <div class="subtitle">시맨틱 웹 기술부터 LLM 통합까지: 차세대 지식 관리 플랫폼</div>
+            <div class="meta">보고서 작성일: 2025년 12월 3일 | 표준 보고서</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. Graphwise 탄생: 시맨틱 웹 업계의 대규모 합병</h3>
+                <p><strong>현황:</strong> 2024년 10월, Semantic Web Company와 Ontotext가 합병하여 지식 그래프·AI 분야의 선도 기업 Graphwise가 탄생했습니다. 이 합병으로 PoolParty의 콘텐츠·지식 관리 기능과 GraphDB의 데이터베이스 기술이 통합되어 가장 포괄적인 지식 그래프 관리 플랫폼이 실현되었습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>통합의 핵심 가치</h4>
+                        <p>• <strong>PoolParty:</strong> 택소노미 관리, 온톨로지 편집, 시맨틱 AI 분류<br>
+                        • <strong>GraphDB:</strong> RDF 트리플스토어, OWL 추론 엔진, SPARQL 쿼리<br>
+                        • <strong>통합 효과:</strong> 비정형에서 정형 데이터까지 완전한 멀티모달 지원</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>기업 규모 및 실적</h4>
+                        <p>• <strong>직원 수:</strong> 전 세계 200명 이상 (북미, 유럽, APAC)<br>
+                        • <strong>고객 수:</strong> 200개 이상의 기업이 솔루션 활용 중<br>
+                        • <strong>업계 평가:</strong> KMWorld Top 100 Companies in KM 2024 선정</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://graphwise.ai/" target="_blank">Graphwise</a> |
+                    <a href="https://www.poolparty.biz/" target="_blank">PoolParty Semantic Suite</a> |
+                    <a href="https://www.ontotext.com/products/graphdb/" target="_blank">Ontotext GraphDB</a>
+                </div>
+
+                <p><strong>전망:</strong> Gartner는 2025년 말까지 그래프 기술이 데이터·분석 혁신의 80%에서 사용될 것으로 예측합니다(2021년 10%에서 증가). Graphwise는 이 성장 시장을 선도하는 위치에 있습니다.</p>
+
+                <h3 class="subsection-title">2. 시맨틱 웹 시장의 폭발적 성장</h3>
+                <p><strong>현황:</strong> 시맨틱 웹 시장은 빠르게 확대되고 있으며, 여러 조사 기관이 대폭적인 성장을 예측하고 있습니다.</p>
+
+                <div class="market-highlight">
+                    <div class="number">$77.3억 → $484억</div>
+                    <div class="label">2025년부터 2030년까지 시장 규모 예측 (CAGR 23.3%~37.8%)</div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>시장 성장 동인</h4>
+                        <p>• <strong>AI/NLP 통합:</strong> 지식 그래프와 LLM 융합 수요 증가<br>
+                        • <strong>데이터 거버넌스:</strong> 컴플라이언스 요구사항으로 인한 시맨틱 기술 채택<br>
+                        • <strong>클라우드 네이티브:</strong> SaaS/PaaS 형태로의 제공 확대</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>지역별 동향</h4>
+                        <p>• <strong>북미:</strong> 최대 시장 점유율, 엔터프라이즈 도입 선도<br>
+                        • <strong>중국:</strong> 2030년까지 45.6% CAGR로 $114억 성장 예측<br>
+                        • <strong>한국·APAC:</strong> 디지털 전환 수요로 급성장 중</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.marketsandmarkets.com/Market-Reports/semantic-web-market-15328110.html" target="_blank">MarketsandMarkets</a> |
+                    <a href="https://www.globenewswire.com/news-release/2025/05/27/3088850/28124/en/Semantic-Web-Market-Report-2025-Global-Industry-to-Reach-USD-48-4-Billion-by-2030-Registering-37-8-CAGR.html" target="_blank">GlobeNewswire</a>
+                </div>
+
+                <p><strong>전망:</strong> 시맨틱 주석(Annotation) 도구가 가장 빠르게 성장하는 소프트웨어 카테고리로 예측되며, 컨텍스트 AI와 데이터 상호운용성이 엔터프라이즈 전반에서 가속화되고 있습니다.</p>
+
+                <h3 class="subsection-title">3. LLM을 활용한 온톨로지 자동 생성의 실용화</h3>
+                <p><strong>현황:</strong> 2024년 후반부터 2025년에 걸쳐, 대규모 언어 모델(LLM)을 활용한 온톨로지와 지식 그래프의 자동 구축 기술이 급속히 발전하고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 연구 및 도구</h4>
+                        <p>• <strong>OntoKGen:</strong> 대화형 UI, Chain of Thought(CoT) 알고리즘으로 온톨로지 추출<br>
+                        • <strong>OntoGenix:</strong> 데이터셋에서 온톨로지 자동 개발 파이프라인<br>
+                        • <strong>Neo4j LLM Graph Builder:</strong> 비정형 데이터에서 그래프 구축</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>적용 분야</h4>
+                        <p>• <strong>의료:</strong> SNOMED CT 등 복잡한 의료 온톨로지 매핑<br>
+                        • <strong>스마트 빌딩:</strong> IoT 데이터에서 지식 그래프 자동 구축<br>
+                        • <strong>생물다양성 연구:</strong> 자연어에서 전문 지식 그래프로 변환</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://github.com/neo4j-labs/llm-graph-builder" target="_blank">Neo4j LLM Graph Builder</a> |
+                    <a href="https://arxiv.org/abs/2412.00608" target="_blank">OntoKGen (arXiv)</a> |
+                    <a href="https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1546179/full" target="_blank">Frontiers in AI</a>
+                </div>
+
+                <p><strong>전망:</strong> LLM을 통한 지식 그래프 구축은 인력 작업을 대폭 줄일 수 있지만, 품질 보장을 위해서는 human-in-the-loop 접근 방식이 권장됩니다.</p>
+
+                <h3 class="subsection-title">4. 엔터프라이즈 시각화 플랫폼의 진화</h3>
+                <p><strong>현황:</strong> Neo4j 에코시스템을 중심으로 엔터프라이즈 대상 그래프 시각화 도구가 고도화되고 있습니다. 보안, 확장성, 협업 기능이 강화되고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Neo4j Bloom</h4>
+                        <p>• <strong>특징:</strong> 노코드로 그래프 탐색, 패턴 발견<br>
+                        • <strong>통합:</strong> Neo4j Desktop, Sandbox에서 무료 이용 가능<br>
+                        • <strong>용도:</strong> 데이터 사이언티스트를 위한 직관적 분석</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Linkurious Enterprise</h4>
+                        <p>• <strong>특징:</strong> 온프레미스 지원, 위협 탐지 특화<br>
+                        • <strong>도입 사례:</strong> 프랑스 경제재정부, Zurich Insurance, BMO<br>
+                        • <strong>강점:</strong> 대규모 연결 데이터 분석</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>GraphAware Hume</h4>
+                        <p>• <strong>특징:</strong> ETL에서 텍스트 검색, 데이터 사이언스까지 완전 지원<br>
+                        • <strong>용도:</strong> 국가 안보, 마케팅, 추천 엔진<br>
+                        • <strong>강점:</strong> 커스텀 사용자 액션 정의 가능</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>SemSpect</h4>
+                        <p>• <strong>특징:</strong> 스키마 기반 탑다운 탐색<br>
+                        • <strong>용도:</strong> 지식 그래프 관리, 데이터 리니지 추적<br>
+                        • <strong>강점:</strong> 대규모 그래프의 집계 표시로 확장성 확보</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://neo4j.com/product/bloom/" target="_blank">Neo4j Bloom</a> |
+                    <a href="https://linkurious.com/" target="_blank">Linkurious Enterprise</a> |
+                    <a href="https://graphaware.com/hume/" target="_blank">GraphAware Hume</a> |
+                    <a href="https://www.semspect.de/" target="_blank">SemSpect</a>
+                </div>
+
+                <p><strong>전망:</strong> 엔터프라이즈 시각화 도구는 보안·컴플라이언스 요구사항 강화와 함께 AI 지원 분석 기능의 통합이 진행되고 있습니다.</p>
+
+                <h3 class="subsection-title">5. 오픈소스 온톨로지 에디터의 성숙</h3>
+                <p><strong>현황:</strong> Protégé를 중심으로 한 오픈소스 도구가 학술 연구에서 산업 응용까지 폭넓게 활용되고 있습니다. 웹 기반 및 VOWL 시각화의 표준화가 진행되고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Protégé 에코시스템</h4>
+                        <p>• <strong>Protégé Desktop:</strong> OWL/RDF/RDFS 지원의 가장 포괄적인 에디터<br>
+                        • <strong>WebProtégé:</strong> 클라우드 기반, 다중 사용자 동시 편집 가능<br>
+                        • <strong>플러그인:</strong> OntoGraf, OWLViz, ProtégéVOWL 등 다수</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시각화 표준: VOWL</h4>
+                        <p>• <strong>WebVOWL:</strong> 오픈 웹 표준 기반의 반응형 시각화<br>
+                        • <strong>OWLGrEd:</strong> SVG 내보내기 지원 그래픽 에디터<br>
+                        • <strong>특징:</strong> Force-directed 레이아웃, 직관적 표현</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://protege.stanford.edu/" target="_blank">Protégé</a> |
+                    <a href="https://webprotege.stanford.edu/" target="_blank">WebProtégé</a> |
+                    <a href="http://vowl.visualdataweb.org/webvowl.html" target="_blank">WebVOWL</a> |
+                    <a href="https://owlgred.lumii.lv/" target="_blank">OWLGrEd</a> |
+                    <a href="https://vocbench.uniroma2.it/" target="_blank">VocBench</a>
+                </div>
+
+                <p><strong>전망:</strong> 오픈소스 도구는 지속적으로 개선되고 있으며, 특히 VocBench는 다국어 지원과 SKOS/Ontolex-lemon 대응으로 어휘 관리의 표준 도구로서의 지위를 확립하고 있습니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 및 시장 포지셔닝 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경 및 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4계층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">온톨로지·지식 그래프 시장은 오픈소스에서 상용 엔터프라이즈까지 4개의 명확한 계층으로 구분됩니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>도구명</th>
+                            <th>카테고리</th>
+                            <th>특징</th>
+                            <th>대상 사용자</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Protégé / WebProtégé</strong></td>
+                            <td>오픈소스 에디터</td>
+                            <td>포괄적인 OWL 지원, 풍부한 플러그인</td>
+                            <td>연구자, 학술 기관</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WebVOWL / OWLGrEd</strong></td>
+                            <td>시각화 도구</td>
+                            <td>웹 기반, 직관적인 표현</td>
+                            <td>교육, 프레젠테이션</td>
+                        </tr>
+                        <tr>
+                            <td><strong>VocBench</strong></td>
+                            <td>어휘 관리</td>
+                            <td>다국어 지원, SKOS/OWL/Ontolex</td>
+                            <td>도서관, 표준화 기관</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Neo4j Bloom</strong></td>
+                            <td>그래프 시각화</td>
+                            <td>노코드 탐색, 패턴 발견</td>
+                            <td>데이터 사이언티스트</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PoolParty (Graphwise)</strong></td>
+                            <td>엔터프라이즈 플랫폼</td>
+                            <td>시맨틱 AI, 택소노미 관리</td>
+                            <td>대기업, 정부 기관</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Linkurious Enterprise</strong></td>
+                            <td>보안 특화</td>
+                            <td>위협 탐지, 컴플라이언스 대응</td>
+                            <td>금융기관, 규제 산업</td>
+                        </tr>
+                        <tr>
+                            <td><strong>yFiles / KeyLines</strong></td>
+                            <td>SDK 라이브러리</td>
+                            <td>고성능, 커스텀 개발용</td>
+                            <td>소프트웨어 개발자</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">시장 동향 하이라이트</h3>
+                <ul style="margin-left: 1.5rem; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>통합 가속:</strong> Graphwise 합병에서 볼 수 있듯이 시맨틱 기술 벤더 간 통합이 진행 중</li>
+                    <li><strong>클라우드 네이티브화:</strong> PoolParty 10의 OCI 대응, Kubernetes Helm 차트 등 컨테이너화가 표준으로</li>
+                    <li><strong>AI 통합:</strong> LLM을 통한 온톨로지 자동 생성, RAG(Retrieval-Augmented Generation)와의 연계가 필수 기능으로</li>
+                    <li><strong>상호운용성:</strong> W3C 표준(RDF, OWL, SKOS, SHACL) 준수가 엔터프라이즈 도입의 전제 조건으로</li>
+                    <li><strong>SaaS화:</strong> 온프레미스에서 클라우드 서비스로의 전환이 가속, 종량제 과금 모델 보급</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근법을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>RAG 파이프라인에 지식 그래프 통합</strong> - LLM의 답변 정확도 향상을 위해 구조화된 온톨로지를 Retrieval 레이어에 통합</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>기존 데이터에서 온톨로지 자동 추출</strong> - OntoKGen이나 Neo4j LLM Graph Builder를 사용하여 비정형 문서에서 지식 그래프 구축</p>
+                    <p style="line-height: 1.6;">3. <strong>시각화 도구 선정을 위한 PoC 프로젝트</strong> - WebVOWL(무료) → Neo4j Bloom(중규모) → Linkurious(엔터프라이즈)의 단계별 평가</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 핵심 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">핵심 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>업계 재편:</strong> Semantic Web Company와 Ontotext의 합병으로 Graphwise 탄생, 엔터프라이즈 지식 그래프 시장의 리더로 부상</li>
+                        <li><strong>시장 성장:</strong> 시맨틱 웹 시장은 2030년까지 $77.3억~$484억으로 확대 예측 (조사 기관에 따라 상이)</li>
+                        <li><strong>LLM 통합:</strong> 온톨로지 자동 생성, 지식 그래프 구축에 LLM 활용이 실용 단계에 진입 (human-in-the-loop 권장)</li>
+                        <li><strong>시각화 표준화:</strong> VOWL 사양에 의한 온톨로지 시각화 표준화, 웹 기반 도구의 UI/UX 향상</li>
+                        <li><strong>클라우드 전환:</strong> 컨테이너화, Kubernetes 대응이 엔터프라이즈 도입의 표준 요구사항으로</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선정 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>학술 연구·교육 목적 → Protégé + WebVOWL</strong><br>
+                        이유: 무료, 풍부한 플러그인, 학습 리소스 충실<br><br>
+                        <strong>엔터프라이즈 지식 그래프 → Graphwise (PoolParty + GraphDB)</strong><br>
+                        이유: 통합 플랫폼, 시맨틱 AI, 확장성<br><br>
+                        <strong>개발자용 커스텀 시각화 → yFiles / KeyLines + Neo4j</strong><br>
+                        이유: 고성능 SDK, 완전한 제어, 기존 시스템과의 통합 용이
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (시맨틱 기술과 AI의 융합으로 엔터프라이즈 지식 관리의 새로운 시대 도래. 시장 통합과 LLM 활용이 가속화 중)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>온톨로지(Ontology)</strong> - 특정 도메인의 개념과 그 관계를 형식적으로 정의한 지식 표현 모델. OWL 언어로 기술되는 경우가 많음.
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>지식 그래프(Knowledge Graph)</strong> - 엔티티(노드)와 관계(엣지)로 데이터를 표현하는 그래프 구조. Google, Microsoft가 대규모로 활용.
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>RDF(Resource Description Framework)</strong> - W3C 표준 데이터 모델. 주어-술어-목적어의 트리플 형식으로 데이터를 표현.
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>OWL(Web Ontology Language)</strong> - 온톨로지 기술을 위한 W3C 표준 언어. OWL Lite, OWL DL, OWL Full의 3가지 서브 언어가 있음.
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>SKOS(Simple Knowledge Organization System)</strong> - 시소러스, 분류 체계, 택소노미를 표현하기 위한 W3C 표준. RDF 기반.
+                    </div>
+                    <div style="margin-bottom: 0.6rem;">
+                        <strong>VOWL(Visual Notation for OWL Ontologies)</strong> - 온톨로지를 직관적으로 시각화하기 위한 시각 표기 사양. WebVOWL에서 구현.
+                    </div>
+                    <div>
+                        <strong>RAG(Retrieval-Augmented Generation)</strong> - 외부 지식 베이스에서의 검색 결과를 LLM 입력에 통합하는 기법. 지식 그래프와의 호환성이 좋음.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 12월 3일</p>
+
+                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #333;">업계 보고서 및 시장 분석</h4>
+                    <ul>
+                        <li>• <a href="https://graphwise.ai/blog/graphwise-merger-swc-ontotext/" target="_blank">Graphwise, "Semantic Web Company and Ontotext Merge to Create Knowledge Graph and AI Powerhouse," October 2024</a></li>
+                        <li>• <a href="https://www.marketsandmarkets.com/Market-Reports/semantic-web-market-15328110.html" target="_blank">MarketsandMarkets, "Semantic Web Market - Global Forecast to 2030," 2025</a></li>
+                        <li>• <a href="https://www.globenewswire.com/news-release/2025/05/27/3088850/28124/en/Semantic-Web-Market-Report-2025-Global-Industry-to-Reach-USD-48-4-Billion-by-2030-Registering-37-8-CAGR.html" target="_blank">ResearchAndMarkets, "Semantic Web Market Report 2025: $48.4B by 2030," GlobeNewswire, May 2025</a></li>
+                        <li>• <a href="https://graphwise.ai/blog/poolparty-10-the-path-to-enterprise-ready-semantic-ai/" target="_blank">Graphwise, "PoolParty 10: The Path to Enterprise-Ready Semantic AI," October 2025</a></li>
+                    </ul>
+
+                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #333;">학술 논문 및 기술 문서</h4>
+                    <ul>
+                        <li>• <a href="https://arxiv.org/abs/2412.00608" target="_blank">M. Chen et al., "Leveraging LLM for Automated Ontology Extraction and Knowledge Graph Generation," arXiv:2412.00608, December 2024</a></li>
+                        <li>• <a href="https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1546179/full" target="_blank">Frontiers in AI, "Large Language Models for Intelligent RDF Knowledge Graph Construction," April 2025</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2403.08345" target="_blank">S. König et al., "From Human Experts to Machines: An LLM Supported Approach to Ontology and Knowledge Graph Construction," arXiv:2403.08345, March 2024</a></li>
+                        <li>• <a href="https://www.sciencedirect.com/science/article/pii/S0306457324004011" target="_blank">OntoGenix Authors, "OntoGenix: Leveraging Large Language Models for Enhanced Ontology Engineering," Information Processing & Management, 2024</a></li>
+                        <li>• <a href="https://www.semantic-web-journal.net/content/visualizing-ontologies-vowl" target="_blank">S. Lohmann et al., "Visualizing Ontologies with VOWL," Semantic Web Journal, Vol. 7, No. 4, pp. 399-419, 2016</a></li>
+                        <li>• <a href="https://www.researchgate.net/publication/295251976_WebVOWL_Web-based_Visualization_of_Ontologies" target="_blank">S. Lohmann et al., "WebVOWL: Web-based Visualization of Ontologies," EKAW 2014 Satellite Events, pp. 154-158, 2015</a></li>
+                    </ul>
+
+                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #333;">W3C 표준 및 기술 사양</h4>
+                    <ul>
+                        <li>• <a href="https://www.w3.org/TR/skos-reference/" target="_blank">W3C, "SKOS Simple Knowledge Organization System Reference," W3C Recommendation, August 2009</a></li>
+                        <li>• <a href="https://www.w3.org/TR/owl2-overview/" target="_blank">W3C, "OWL 2 Web Ontology Language Document Overview (Second Edition)," W3C Recommendation, December 2012</a></li>
+                        <li>• <a href="https://www.w3.org/RDF/" target="_blank">W3C, "Resource Description Framework (RDF)," W3C Semantic Web Standards</a></li>
+                        <li>• <a href="https://www.w3.org/TR/shacl/" target="_blank">W3C, "Shapes Constraint Language (SHACL)," W3C Recommendation, July 2017</a></li>
+                    </ul>
+
+                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: #333;">도구 및 플랫폼 문서</h4>
+                    <ul>
+                        <li>• <a href="https://protege.stanford.edu/" target="_blank">Stanford Center for Biomedical Informatics Research, "Protégé - A Free, Open-Source Ontology Editor"</a></li>
+                        <li>• <a href="https://webprotege.stanford.edu/" target="_blank">Stanford University, "WebProtégé - A Collaborative Ontology Development Environment"</a></li>
+                        <li>• <a href="http://vowl.visualdataweb.org/webvowl.html" target="_blank">VisualDataWeb, "WebVOWL: Web-based Visualization of Ontologies"</a></li>
+                        <li>• <a href="https://owlgred.lumii.lv/" target="_blank">University of Latvia IMCS, "OWLGrEd - Graphical Ontology Editor"</a></li>
+                        <li>• <a href="https://vocbench.uniroma2.it/" target="_blank">University of Rome Tor Vergata, "VocBench 3: A Collaborative Semantic Web Editor"</a></li>
+                        <li>• <a href="https://neo4j.com/blog/graph-visualization/neo4j-graph-visualization-tools/" target="_blank">Neo4j, "15 Best Graph Visualization Tools for Your Neo4j Graph Database," 2024</a></li>
+                        <li>• <a href="https://github.com/neo4j-labs/llm-graph-builder" target="_blank">Neo4j Labs, "LLM Graph Builder - Neo4j Graph Construction from Unstructured Data," GitHub Repository</a></li>
+                        <li>• <a href="https://github.com/ozekik/awesome-ontology" target="_blank">ozekik, "Awesome Ontology - A Curated List of Ontology Resources," GitHub Repository</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['사용 편의성', '확장성', 'AI 통합', '비용 효율', '시각화 품질'],
+                datasets: [
+                    {
+                        label: 'Protégé/WebProtégé',
+                        data: [75, 60, 40, 95, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Graphwise (PoolParty+GraphDB)',
+                        data: [70, 95, 90, 50, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Neo4j Bloom',
+                        data: [90, 85, 75, 70, 90],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'WebVOWL',
+                        data: [85, 50, 30, 100, 80],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { display: true },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
