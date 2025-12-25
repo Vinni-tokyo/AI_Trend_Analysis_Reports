@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추천 시스템 평가 지표와 품질 측정: 학술 연구와 최신 기술</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .tech-badge {
+            display: inline-block;
+            background: #e8f4fd;
+            color: #0052b8;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            margin-right: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='recsys-evaluation-metrics-research-20251215-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='recsys-evaluation-metrics-research-20251215-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='recsys-evaluation-metrics-research-20251215-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>추천 시스템 평가 지표와 품질 측정<br>학술 연구와 최신 기술 분석</h1>
+            <div class="subtitle">NDCG·다양성·공평성부터 LLM 평가자까지</div>
+            <div class="meta">보고서 작성일: 2025년 12월 15일 | 학술 연구·기술 분석</div>
+        </div>
+
+        <div class="content">
+            <!-- 기술 개관 -->
+            <section class="section">
+                <h2 class="section-title">기술 개관</h2>
+                <p style="font-size: 0.9rem; color: #4a4a4a; margin-bottom: 1rem;">
+                    추천 시스템 평가는 단순한 정확도 지표를 넘어 다면적 접근법으로 진화하고 있습니다. 기존의 NDCG, Precision, Recall에 더해 다양성, 신규성, 공평성 같은 'Beyond-Accuracy' 지표가 중요해졌습니다. 나아가 오프라인 평가와 온라인 평가의 격차를 해소하는 반사실적 평가, LLM을 평가자로 활용하는 새로운 패러다임이 등장했습니다.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">
+                    <span class="tech-badge">NDCG</span>
+                    <span class="tech-badge">Precision@K</span>
+                    <span class="tech-badge">MRR</span>
+                    <span class="tech-badge">Diversity</span>
+                    <span class="tech-badge">Serendipity</span>
+                    <span class="tech-badge">Fairness</span>
+                    <span class="tech-badge">Counterfactual</span>
+                    <span class="tech-badge">LLM-as-Judge</span>
+                </div>
+            </section>
+
+            <!-- SECTION 1: 주목 기술 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주목 기술 Top 5</h2>
+
+                <!-- Trend 1: 랭킹 평가 지표 -->
+                <h3 class="subsection-title">1. 랭킹 평가 지표의 진화 (NDCG·MRR·MAP)</h3>
+                <p style="font-size: 0.9rem;"><strong>개요:</strong> NDCG(Normalized Discounted Cumulative Gain)는 2024-2025년에도 추천·검색 시스템의 주요 평가 지표로 자리잡고 있습니다. 다만 정규화로 인한 비교 왜곡 가능성에 대한 연구가 진행 중이며, 사용 시 주의가 필요합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 지표 특징</h4>
+                        <p>• <strong>NDCG@K:</strong> 단계적 관련성 고려, 상위에 관련 아이템을 배치할수록 고득점<br>
+                        • <strong>MRR:</strong> 첫 번째 정답 아이템 순위의 역수 평균, 해석이 용이<br>
+                        • <strong>MAP@K:</strong> 추천 시스템에서 가장 인기, 검색에선 NDCG가 주류</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>2025년 연구 동향</h4>
+                        <p>• <strong>Jeunen et al. (2024):</strong> NDCG 정규화가 실제 온라인 보상과의 상관을 역전시킬 수 있음<br>
+                        • <strong>RecBole 검증:</strong> 동일 알고리즘도 프레임워크 간 상이한 결과 도출<br>
+                        • <strong>복합 지표:</strong> 단일 지표보다 다각적 평가 권장</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://arxiv.org/html/2312.16015v2" target="_blank">Comprehensive Survey of Evaluation Techniques</a> |
+                    <a href="https://www.shaped.ai/blog/evaluating-recommendation-systems-map-mmr-ndcg" target="_blank">Shaped: Evaluation Metrics Guide</a>
+                </div>
+
+                <p style="font-size: 0.9rem;"><strong>활용 가이드:</strong> 단계적 관련성이 있는 경우 NDCG, 단일 정답을 찾는 경우 MRR, 추천 시스템 전반에는 MAP@K 권장.</p>
+
+                <!-- Trend 2: Beyond-Accuracy 지표 -->
+                <h3 class="subsection-title">2. Beyond-Accuracy 지표 (다양성·신규성·공평성)</h3>
+                <p style="font-size: 0.9rem;"><strong>개요:</strong> 정확도만이 아닌 다양성(Diversity), 세렌디피티(Serendipity), 공평성(Fairness) 같은 '정확도를 넘어선' 지표가 사용자 참여도와 만족도에 큰 영향을 미친다는 것이 밝혀졌습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 개념</h4>
+                        <p>• <strong>다양성:</strong> 추천 목록 내 아이템 간 비유사성, Gini 지수나 엔트로피로 측정<br>
+                        • <strong>신규성:</strong> 사용자가 미지의 아이템을 발견할 가능성<br>
+                        • <strong>세렌디피티:</strong> 예상치 못했으나 유용한 아이템의 발견</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>공평성 관점</h4>
+                        <p>• <strong>사용자 공평성:</strong> 특정 사용자 그룹에 대한 편향 배제<br>
+                        • <strong>아이템 공평성:</strong> 인기 편향에 대응해 모든 아이템에 균등한 노출 기회<br>
+                        • <strong>GNN 연구:</strong> 개인화된 다양성이 새로운 연구 방향으로 부상</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2023.1251072/full" target="_blank">Beyond-Accuracy Review (Frontiers)</a> |
+                    <a href="https://arxiv.org/abs/2310.02294" target="_blank">GNN-based RecSys Beyond-Accuracy Survey</a>
+                </div>
+
+                <p style="font-size: 0.9rem;"><strong>전망:</strong> 2025년 연구에서는 생성 모델이 훈련 데이터의 편향을 증폭시킬 가능성과 개인화된 다양성(사용자별 다양성 수준 조정)이 새로운 과제로 부상.</p>
+
+                <!-- Trend 3: 오프라인·온라인 평가와 반사실적 평가 -->
+                <h3 class="subsection-title">3. 반사실적 평가와 A/B 테스트 효율화</h3>
+                <p style="font-size: 0.9rem;"><strong>개요:</strong> 오프라인 평가와 온라인 A/B 테스트 간의 격차를 해소하기 위해 반사실적(Counterfactual) 평가 기법이 주목받고 있습니다. Airbnb는 2025년에 인터리빙과 반사실적 평가를 결합해 A/B 테스트 대비 100배 빠른 평가를 달성했습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>반사실적 평가 핵심</h4>
+                        <p>• <strong>IPS(역경향 점수):</strong> 로그 데이터의 편향을 보정<br>
+                        • <strong>SNIPS:</strong> 자기 정규화 IPS, 가장 안정적인 성능<br>
+                        • <strong>Direct Method:</strong> 데이터 증가 시 IPS에 열세</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Airbnb 성과 (KDD 2025)</h4>
+                        <p>• <strong>인터리빙:</strong> A/B 테스트 대비 50배 고속화<br>
+                        • <strong>반사실적 평가:</strong> 추가 민감도 향상, 100배 고속화 달성<br>
+                        • <strong>실용화:</strong> A/B 테스트 후보 선정에 활용</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://arxiv.org/html/2508.00751v1" target="_blank">Airbnb Counterfactual Evaluation (KDD 2025)</a> |
+                    <a href="https://eugeneyan.com/writing/counterfactual-evaluation/" target="_blank">Eugene Yan: Counterfactual Evaluation Guide</a>
+                </div>
+
+                <p style="font-size: 0.9rem;"><strong>학술 동향:</strong> 2025년 ACM 논문으로 Off-Policy Evaluation for Matching Markets, Counterfactual Inference under Thompson Sampling, Bayesian Perspectives on Offline Evaluation 등 발표.</p>
+
+                <!-- Trend 4: LLM-as-Judge -->
+                <h3 class="subsection-title">4. LLM 평가자 (LLM-as-Judge)의 부상</h3>
+                <p style="font-size: 0.9rem;"><strong>개요:</strong> GPT-4 같은 대규모 언어 모델을 평가자로 활용하는 LLM-as-Judge 패러다임이 급속히 확산되고 있습니다. 인간 평가자와 약 80% 일치율을 달성하며, 확장성과 효율성에서 큰 이점을 보여줍니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 프레임워크</h4>
+                        <p>• <strong>G-Eval:</strong> NLG 평가용, GPT-4로 인간과 높은 일치<br>
+                        • <strong>추천 시스템 적용:</strong> K-means+CBF+GPT-4로 추천 정확도 향상<br>
+                        • <strong>평가 기준:</strong> 설득력, 명확성, 정확성, 의사결정에 대한 영향</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>과제와 주의점</h4>
+                        <p>• <strong>편향:</strong> 장황함 편향, 위치 편향 존재<br>
+                        • <strong>자기 스타일 선호:</strong> GPT-4는 자신의 문체를 선호하는 경향<br>
+                        • <strong>RecSys 2023:</strong> ChatGPT의 공평성 평가 관련 연구</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.evidentlyai.com/llm-guide/llm-as-a-judge" target="_blank">Evidently AI: LLM-as-Judge Guide</a> |
+                    <a href="https://www.mdpi.com/2674-113X/3/1/4" target="_blank">GPT-4 for Recommendation Evaluation (MDPI)</a>
+                </div>
+
+                <p style="font-size: 0.9rem;"><strong>실용적 가치:</strong> 인간 평가 대비 비용 효율이 대폭 향상. 에이전트, RAG, 챗봇 평가에 광범위하게 적용. 0-1 점수를 출력해 단위 테스트에 최적.</p>
+
+                <!-- Trend 5: 설명 가능성 평가 -->
+                <h3 class="subsection-title">5. 설명 가능성 평가 (XAI 지표)</h3>
+                <p style="font-size: 0.9rem;"><strong>개요:</strong> 추천 시스템의 설명 가능성(Explainability)을 정량적으로 평가하는 지표가 연구되고 있습니다. 충실도(Fidelity), 단순성(Simplicity), 일관성(Consistency) 등 다면적 평가가 요구됩니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 평가 지표</h4>
+                        <p>• <strong>충실도:</strong> 설명이 모델 동작을 정확히 기술하는지<br>
+                        • <strong>단순성:</strong> 필요충분한 특성만 선택<br>
+                        • <strong>견고성:</strong> 미세한 변화에 대한 안정성</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>추천 시스템 특화 지표</h4>
+                        <p>• <strong>Max Explainability Score:</strong> 규칙 수, 경로 확률, 엔트로피, 보상 통합<br>
+                        • <strong>Co-12 속성:</strong> 완전성, 정확성, 간결성<br>
+                        • <strong>LLM 평가:</strong> 설득력, 명확성, 의사결정에 대한 영향</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.sciencedirect.com/science/article/abs/pii/S0045790624001186" target="_blank">Max Explainability Score (ScienceDirect)</a> |
+                    <a href="https://www.mdpi.com/2076-3417/14/23/11288" target="_blank">Empirical XAI Evaluation Overview</a>
+                </div>
+
+                <p style="font-size: 0.9rem;"><strong>과제:</strong> 설명의 주관성, 컨텍스트 의존성, 사용자 의존성으로 인해 범용적인 계산 지표 개발이 어려움. 정성적 사용자 피드백과 병용 권장.</p>
+            </section>
+
+            <!-- SECTION 2: 벤치마크와 프레임워크 비교 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">벤치마크와 프레임워크 비교</h2>
+
+                <h3 class="subsection-title">주요 벤치마크 데이터셋</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>데이터셋</th>
+                            <th>규모</th>
+                            <th>특징</th>
+                            <th>용도</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MovieLens 32M</strong></td>
+                            <td>3,200만 평가, 20만 사용자</td>
+                            <td>2024년 5월 릴리스, 태그 게놈 포함</td>
+                            <td>협업 필터링, 대규모 연구</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Amazon Reviews</strong></td>
+                            <td>수억 건 암묵적 피드백</td>
+                            <td>상품 인터랙션, 카테고리 다양</td>
+                            <td>이커머스 추천</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MIND</strong></td>
+                            <td>1,500만 임프레션</td>
+                            <td>Microsoft News, 16만 기사</td>
+                            <td>뉴스 추천</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Yelp</strong></td>
+                            <td>리뷰+암묵적 피드백</td>
+                            <td>비즈니스 메타데이터 포함</td>
+                            <td>POI 추천, 리뷰 분석</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">평가 프레임워크 비교</h3>
+                <div class="chart-container">
+                    <canvas id="frameworkChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">평가 지표 활용 가이드</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>지표 카테고리</th>
+                            <th>대표 지표</th>
+                            <th>최적 유스케이스</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>정확도 지표</strong></td>
+                            <td>NDCG, MAP, MRR, Precision@K</td>
+                            <td>관련성 중시, 검색·추천 기본 평가</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Beyond-Accuracy</strong></td>
+                            <td>Diversity, Novelty, Serendipity</td>
+                            <td>사용자 경험, 장기 참여도</td>
+                        </tr>
+                        <tr>
+                            <td><strong>공평성</strong></td>
+                            <td>Gini Index, Entropy, Coverage</td>
+                            <td>아이템 노출 균등성, 편향 탐지</td>
+                        </tr>
+                        <tr>
+                            <td><strong>오프라인 평가</strong></td>
+                            <td>IPS, SNIPS, Counterfactual</td>
+                            <td>A/B 테스트 전 후보 선정</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">연구와 실무에서 관찰되는 주요 활용 접근법을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>RecBole을 활용한 다중 지표 평가</strong> - 통합 프레임워크로 NDCG, Diversity, Fairness를 동시 측정하고 트레이드오프 가시화</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>LLM-as-Judge 도입</strong> - GPT-4로 추천 설명 품질을 자동 평가, 인간 평가 비용 절감과 일관성 향상</p>
+                    <p style="line-height: 1.6;">3. <strong>반사실적 평가 파일럿</strong> - IPS 기반 평가를 A/B 테스트 전에 실시해 후보 시스템 선별 고속화</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 핵심 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">핵심 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>NDCG 여전히 주류이나 주의 필요:</strong> 정규화로 인한 비교 왜곡 연구 진행 중, 복합 지표 사용 권장</li>
+                        <li><strong>Beyond-Accuracy 지표의 중요성:</strong> 다양성·공평성이 사용자 만족도와 참여도에 강한 영향</li>
+                        <li><strong>반사실적 평가의 실용화:</strong> Airbnb가 100배 고속화 달성, A/B 테스트 효율화에 기여</li>
+                        <li><strong>LLM-as-Judge의 부상:</strong> GPT-4가 인간 평가와 80% 일치, 비용 효율과 확장성 우수</li>
+                        <li><strong>설명 가능성 평가의 과제:</strong> 주관성·컨텍스트 의존성으로 범용 지표 개발 어려움</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">평가 지표 선택 가이드</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.8;">
+                        <strong>관련성 중심 기본 평가 → NDCG + MAP@K</strong><br>
+                        검색·추천 표준, 단계적 관련성이 있는 경우 NDCG<br><br>
+                        <strong>사용자 경험·장기 참여도 → Diversity + Novelty</strong><br>
+                        과도한 전문화 방지, 발견 경험 촉진<br><br>
+                        <strong>A/B 테스트 효율화 → IPS/SNIPS + 인터리빙</strong><br>
+                        오프라인 평가로 후보를 선별하고 온라인 테스트 효율화<br><br>
+                        <strong>설명 품질 평가 → LLM-as-Judge + 사용자 스터디</strong><br>
+                        정량 평가와 정성 피드백 병용
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (추천 시스템 평가는 정확도 편중에서 다면적 평가로 성숙해가고 있으며, LLM 활용과 반사실적 평가 등 신기술의 실용화가 진행 중)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem; border-left: 3px solid #e5e5e5; font-size: 0.85rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>NDCG (Normalized Discounted Cumulative Gain)</strong> - 랭킹의 품질을 측정하는 지표. 상위에 관련도 높은 아이템이 배치될수록 고득점
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>MRR (Mean Reciprocal Rank)</strong> - 첫 번째 정답 아이템 순위의 역수 평균. 해석이 쉽지만 다중 정답에는 부적합
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>IPS (Inverse Propensity Score)</strong> - 로그 데이터의 선택 편향을 보정하는 반사실적 평가 기법
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>LLM-as-Judge</strong> - GPT-4 같은 대규모 언어 모델을 평가자로 사용하는 패러다임
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>세렌디피티 (Serendipity)</strong> - 예상치 못했으나 유용한 아이템을 발견하는 것. 우연한 행운의 발견
+                    </div>
+                    <div>
+                        <strong>RecBole</strong> - PyTorch 기반 통합 추천 시스템 라이브러리. 다양한 추천 패러다임과 벤치마크 제공
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2025년 12월 15일</p>
+                    <ul>
+                        <li>• <a href="https://arxiv.org/html/2312.16015v2" target="_blank">A Comprehensive Survey of Evaluation Techniques for Recommendation Systems (arXiv 2024)</a></li>
+                        <li>• <a href="https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2023.1251072/full" target="_blank">Beyond-Accuracy: Diversity, Serendipity, Fairness in GNN RecSys (Frontiers 2023)</a></li>
+                        <li>• <a href="https://arxiv.org/html/2508.00751v1" target="_blank">Airbnb: Interleaving and Counterfactual Evaluation (KDD 2025)</a></li>
+                        <li>• <a href="https://www.mdpi.com/2674-113X/3/1/4" target="_blank">GPT-4 LLM for Enhanced Recommender Systems (MDPI 2024)</a></li>
+                        <li>• <a href="https://dl.acm.org/doi/10.1145/3556536" target="_blank">Evaluating Recommender Systems: Survey and Framework (ACM Computing Surveys 2022)</a></li>
+                        <li>• <a href="https://recbole.io/dataset_list.html" target="_blank">RecBole Dataset List</a></li>
+                        <li>• <a href="https://grouplens.org/datasets/movielens/" target="_blank">MovieLens Datasets (GroupLens)</a></li>
+                        <li>• <a href="https://www.evidentlyai.com/llm-guide/llm-as-a-judge" target="_blank">Evidently AI: LLM-as-a-Judge Complete Guide</a></li>
+                        <li>• <a href="https://www.sciencedirect.com/science/article/abs/pii/S0045790624001186" target="_blank">Max Explainability Score for KG Recommendations (ScienceDirect 2024)</a></li>
+                        <li>• <a href="https://link.springer.com/article/10.1007/s11042-024-20262-3" target="_blank">Deep Learning for Cold Start and Long Tail (Springer 2025)</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('frameworkChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['정확도 지표', 'Beyond-Accuracy', '오프라인 평가', '설명 가능성', '확장성'],
+                datasets: [
+                    {
+                        label: 'RecBole',
+                        data: [95, 80, 85, 60, 90],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)'
+                    },
+                    {
+                        label: 'Elliot',
+                        data: [90, 85, 75, 70, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        pointBackgroundColor: 'rgb(34, 197, 94)'
+                    },
+                    {
+                        label: 'Cornac',
+                        data: [85, 75, 70, 65, 80],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)'
+                    },
+                    {
+                        label: 'LensKit',
+                        data: [80, 70, 80, 55, 85],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        pointBackgroundColor: 'rgb(168, 85, 247)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 11 },
+                            padding: 15
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: { size: 10 }
+                        },
+                        pointLabels: {
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
