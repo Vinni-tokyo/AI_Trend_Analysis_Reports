@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVIDIA Blackwell·RTX 50 시리즈 심층 분석: GPU의 미래</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --nvidia-green: #76b900;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--nvidia-green); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .market-highlight { background: linear-gradient(135deg, #76b900 0%, #5a8f00 100%); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; text-align: center; color: white; }
+        .market-highlight .big-number { font-size: 2.5rem; font-weight: 700; }
+        .market-highlight .label { font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.95; }
+        .spec-table { font-size: 0.75rem; }
+        .spec-table th { background: #001e5c; color: white; }
+        .spec-highlight { background: #f0fff0; font-weight: 600; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='nvidia-blackwell-rtx50-gpu-analysis-20260109-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='nvidia-blackwell-rtx50-gpu-analysis-20260109-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='nvidia-blackwell-rtx50-gpu-analysis-20260109-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>NVIDIA Blackwell·RTX 50 시리즈 심층 분석<br>GPU의 미래와 AI 시대의 패권</h1>
+            <div class="subtitle">시장 점유율 92% 독점, RTX 5090부터 Rubin 아키텍처까지</div>
+            <div class="meta">보고서 작성일: 2026년 1월 9일 | 표준 리포트</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. RTX 5090: 역대 최강 게이밍 GPU</h3>
+                <p><strong>현황:</strong> 2025년 1월 30일 출시된 GeForce RTX 5090은 Blackwell 아키텍처를 탑재하고 21,760 CUDA 코어, 32GB GDDR7 메모리를 갖춘 사상 최초의 2만 코어 돌파 GeForce GPU입니다. RTX 4090 대비 27~35% 성능 향상을 실현했으며, 가격은 $1,999(25% 인상)입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 스펙</h4>
+                        <p>• <strong>CUDA 코어:</strong> 21,760 (33% 증가)<br>
+                        • <strong>RT 코어:</strong> 170 (4세대)<br>
+                        • <strong>Tensor 코어:</strong> 680 (5세대)<br>
+                        • <strong>메모리:</strong> 32GB GDDR7 @ 1,792GB/s</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>성능과 전력</h4>
+                        <p>• <strong>부스트 클럭:</strong> 2.41GHz<br>
+                        • <strong>TGP:</strong> 575W (권장 PSU 1,000W)<br>
+                        • <strong>RTX 4090 대비:</strong> 27-35% 빠름<br>
+                        • <strong>FP4 성능:</strong> 최대 3배 향상</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/" target="_blank">RTX 5090 공식</a> |
+                    <a href="https://www.tomshardware.com/pc-components/gpus/nvidia-geforce-rtx-5090-review" target="_blank">Tom's Hardware 리뷰</a>
+                </div>
+
+                <p><strong>전망:</strong> 심각한 재고 부족 상황이 지속되고 있지만, RTX 5090은 AI 워크로드에서 FP4 포맷으로 4090의 최대 3배 성능을 발휘하여 크리에이터와 연구자에게도 매력적인 선택지가 되고 있습니다.</p>
+
+                <h3 class="subsection-title">2. DLSS 4 Multi-Frame Generation: AI 렌더링 혁명</h3>
+                <p><strong>현황:</strong> RTX 50 시리즈 전용 DLSS 4 Multi-Frame Generation은 기존 프레임 1장에 대해 최대 3장의 추가 프레임을 생성하여 프레임레이트를 최대 4배 향상시키는 획기적인 기술입니다. 5세대 Tensor 코어로 가속되며, 뉴럴 렌더링의 새 시대를 열고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>DLSS 4의 혁신</h4>
+                        <p>• <strong>Multi-Frame Gen:</strong> 1프레임에서 최대 4프레임 생성<br>
+                        • <strong>RTX Neural Shaders:</strong> 텍스처 압축 고도화<br>
+                        • <strong>RTX Neural Faces:</strong> 사실적인 피부·머리카락·얼굴 표현<br>
+                        • <strong>필요 조건:</strong> 베이스 40fps 이상 권장</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>지원 출력</h4>
+                        <p>• <strong>4K HDR:</strong> 480Hz (DP 2.1b + DSC)<br>
+                        • <strong>8K HDR:</strong> 165Hz (DP 2.1b + DSC)<br>
+                        • <strong>8K HDR:</strong> 120Hz (HDMI 2.1b + DSC)<br>
+                        • <strong>RTX 50 전용:</strong> 구세대 미지원</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/" target="_blank">GeForce RTX 50 시리즈</a> |
+                    <a href="https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf" target="_blank">Blackwell 아키텍처 (PDF)</a>
+                </div>
+
+                <p><strong>전망:</strong> DLSS 4 지원 게임 확대로 RTX 50 시리즈의 진가가 발휘되어, 차세대 게이밍 경험의 표준이 될 것으로 기대됩니다.</p>
+
+                <h3 class="subsection-title">3. Blackwell 데이터센터: B200·GB200으로 AI 패권</h3>
+                <p><strong>현황:</strong> 2024년 3월 GTC 발표 이후 Blackwell 데이터센터 제품은 폭발적인 수요를 기록하고 있습니다. GB200 Grace Blackwell Superchip은 2개의 B200 GPU와 1개의 Grace CPU를 통합하며, GB200 NVL72는 72개의 Blackwell GPU로 구성된 랙 규모 시스템입니다. B200/GB200은 2026년 중반까지 완판 상태가 지속됩니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>B200/GB200 스펙</h4>
+                        <p>• <strong>GB200 NVL72:</strong> 72 GPU + 36 Grace CPU<br>
+                        • <strong>연결 대역폭:</strong> 900GB/s NVLink<br>
+                        • <strong>학습 성능:</strong> 전세대 대비 3배<br>
+                        • <strong>추론 성능:</strong> 전세대 대비 15배</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시장 상황</h4>
+                        <p>• <strong>수주 잔량:</strong> 360만 유닛<br>
+                        • <strong>제조 비용:</strong> $5,700-7,300/GPU<br>
+                        • <strong>주요 고객:</strong> Microsoft ($350억/분기 투자)<br>
+                        • <strong>제조:</strong> TSMC Arizona 3nm</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/" target="_blank">Blackwell 아키텍처</a> |
+                    <a href="https://www.nvidia.com/en-us/data-center/dgx-b200/" target="_blank">DGX B200</a>
+                </div>
+
+                <p><strong>전망:</strong> Microsoft를 필두로 하이퍼스케일러 간의 수십억 달러 규모 'Blackwell 쟁탈전'이 격화되고 있으며, AI 기반 인프라로서 NVIDIA 의존도는 더욱 높아질 것으로 예측됩니다.</p>
+
+                <h3 class="subsection-title">4. NVIDIA 시장 점유율 92%: 압도적 독점</h3>
+                <p><strong>현황:</strong> 2025년 상반기 NVIDIA는 디스크리트 GPU 시장에서 92%의 점유율을 유지하고 있습니다. AMD는 약 7-8%, Intel은 1%에 그치고 있습니다. AI 모델 학습용 GPU로 한정하면 NVIDIA의 점유율은 80~95%에 달하며, 뉴럴 네트워크 학습의 90% 이상이 NVIDIA GPU에서 실행되고 있습니다.</p>
+
+                <div class="market-highlight">
+                    <div class="big-number">92%</div>
+                    <div class="label">NVIDIA 디스크리트 GPU 시장 점유율 (2025년)<br>AMD 7% | Intel 1%</div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>경쟁 상황</h4>
+                        <p>• <strong>AMD:</strong> Instinct MI300 시리즈로 추격<br>
+                        • <strong>Intel:</strong> Gaudi, Arc Battlemage로 진입<br>
+                        • <strong>Q3 2025:</strong> NVIDIA -1.2% (94%→92%)<br>
+                        • <strong>과제:</strong> CUDA 의존도 심화</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AMD Radeon 9000의 반격</h4>
+                        <p>• <strong>레이트레이싱:</strong> NVIDIA에 추격<br>
+                        • <strong>VRAM:</strong> 더 큰 용량으로 우위<br>
+                        • <strong>Radeon 9070 XT:</strong> $600+로 5080에 근접<br>
+                        • <strong>Azure/Oracle:</strong> AMD 채택 확대</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://techresearchonline.com/blog/nvidia-vs-amd-the-gpu-battle-for-ai-dominance/" target="_blank">NVIDIA vs AMD 비교</a> |
+                    <a href="https://www.tomshardware.com/pc-components/gpus/latest-gpu-market-analysis-shows-nvidia-losing-ground-to-amd-and-intel-cracks-the-1-percent-share-milestone-for-the-first-time" target="_blank">시장 점유율 분석</a>
+                </div>
+
+                <p><strong>전망:</strong> 단기적으로는 NVIDIA의 독점이 지속되겠지만, AMD의 MI300 시리즈와 Radeon 9000 시리즈의 진화, Intel의 참여로 중장기적으로는 경쟁이 격화될 가능성이 있습니다.</p>
+
+                <h3 class="subsection-title">5. Rubin 아키텍처: 2026년 차세대 GPU 로드맵</h3>
+                <p><strong>현황:</strong> 2026년 1월 CES에서 NVIDIA의 Jensen Huang CEO는 차세대 'Rubin' 아키텍처를 발표했습니다. 2025년 후반의 Blackwell Ultra(B300)를 거쳐 2026년 후반에 Vera Rubin 세대가 등장 예정입니다. Rubin은 HBM4 메모리를 채택하여 B300 NVL72 대비 3.3배의 성능 향상을 실현합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Rubin 스펙</h4>
+                        <p>• <strong>메모리:</strong> 288GB HBM4 (13TB/s 대역폭)<br>
+                        • <strong>FP4 추론:</strong> 50 PFLOPS/GPU<br>
+                        • <strong>NVL144:</strong> 3.6 EFLOPS (FP4)<br>
+                        • <strong>제조:</strong> TSMC N3P (3nm 강화)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>로드맵</h4>
+                        <p>• <strong>2025년 후반:</strong> Blackwell Ultra (B300)<br>
+                        • <strong>2026년 후반:</strong> Vera Rubin (R100)<br>
+                        • <strong>2027년 후반:</strong> Rubin Ultra (100 PFLOPS)<br>
+                        • <strong>2028년:</strong> Feynman 아키텍처</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.tomshardware.com/pc-components/gpus/nvidia-announces-rubin-gpus-in-2026-rubin-ultra-in-2027-feynam-after" target="_blank">Rubin 로드맵</a> |
+                    <a href="https://www.storagereview.com/news/nvidia-unveils-roadmap-at-ai-infra-summit-from-blackwell-ultra-to-vera-rubin-cpx-architecture" target="_blank">AI Infra Summit 보고서</a>
+                </div>
+
+                <p><strong>전망:</strong> Rubin 플랫폼은 'Agentic AI'—인간의 개입 없이 복잡한 작업을 수행할 수 있는 자율 시스템—을 위해 설계되었으며, 2026년 AI 인프라 투자 총액은 $5,270억에 달할 것으로 예측됩니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 제품 라인업</h2>
+
+                <h3 class="subsection-title">RTX 50 시리즈 제품 비교</h3>
+                <table class="spec-table">
+                    <thead>
+                        <tr>
+                            <th>모델</th>
+                            <th>CUDA 코어</th>
+                            <th>VRAM</th>
+                            <th>TGP</th>
+                            <th>가격</th>
+                            <th>출시일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="spec-highlight">
+                            <td><strong>RTX 5090</strong></td>
+                            <td>21,760</td>
+                            <td>32GB GDDR7</td>
+                            <td>575W</td>
+                            <td>$1,999</td>
+                            <td>2025/1/30</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RTX 5080</strong></td>
+                            <td>10,752</td>
+                            <td>16GB GDDR7</td>
+                            <td>360W</td>
+                            <td>$999</td>
+                            <td>2025/1/30</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RTX 5070 Ti</strong></td>
+                            <td>8,960</td>
+                            <td>16GB GDDR7</td>
+                            <td>300W</td>
+                            <td>$749</td>
+                            <td>2025/2/20</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RTX 5070</strong></td>
+                            <td>6,144</td>
+                            <td>12GB GDDR7</td>
+                            <td>250W</td>
+                            <td>$549</td>
+                            <td>2025/2</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">데이터센터 GPU 비교</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">시장 트렌드</h3>
+                <ul style="font-size: 0.95rem; line-height: 1.8; padding-left: 1.5rem;">
+                    <li><strong>CUDA 의존 심화:</strong> NVIDIA의 소프트웨어 에코시스템이 경쟁 장벽으로 작용</li>
+                    <li><strong>AI 수요 폭발:</strong> 데이터센터 GPU 수요가 공급을 크게 상회하는 상황 지속</li>
+                    <li><strong>가격 상승 추세:</strong> RTX 5090은 4090 대비 25% 인상, 향후 지속 상승 예측</li>
+                    <li><strong>전력 효율 중시:</strong> B200의 30배 성능·25배 효율로 와트당 성능 혁신</li>
+                    <li><strong>AMD 추격:</strong> MI300X가 Azure/Oracle 채택, Radeon 9000이 레이트레이싱에서 추격</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>로컬 LLM 추론 환경</strong> - RTX 5090의 32GB VRAM과 FP4 성능을 활용하여 70B급 모델의 로컬 추론 환경 구축</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>AI 학습 클러스터</strong> - B200/GB200으로 프라이빗 AI 기반을 구축하여 자체 모델 개발 가속화</p>
+                    <p style="line-height: 1.6;">3. <strong>크리에이티브 워크스테이션</strong> - DLSS 4와 Neural Rendering으로 4K/8K 실시간 렌더링 실현</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 에그제큐티브 서머리 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">에그제큐티브 서머리</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>RTX 5090:</strong> 21,760 코어, 32GB GDDR7, $1,999로 역대 최강 게이밍 GPU</li>
+                        <li><strong>시장 독점:</strong> NVIDIA가 디스크리트 GPU 시장 92%, AI 학습 시장 90% 이상 지배</li>
+                        <li><strong>Blackwell DC:</strong> B200/GB200은 학습 3배·추론 15배로 2026년 중반까지 완판</li>
+                        <li><strong>DLSS 4:</strong> Multi-Frame Generation으로 최대 4배 프레임레이트 향상</li>
+                        <li><strong>Rubin 2026:</strong> HBM4 채택, 3.6 EFLOPS, Agentic AI 설계</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>최고 성능 게이밍 → RTX 5090 ($1,999)</strong><br>
+                        이유: 32GB VRAM, DLSS 4, 4K/8K HDR 지원, 로컬 AI 추론에도 최적<br><br>
+                        <strong>가성비 중시 → RTX 5070 Ti ($749)</strong><br>
+                        이유: RTX 4080 상당 성능, 16GB GDDR7, $50 인하로 높은 가성비<br><br>
+                        <strong>엔터프라이즈 AI → GB200 NVL72</strong><br>
+                        이유: 15배 추론 성능, 조 단위 파라미터 모델 대응, Azure/AWS 통합
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (NVIDIA의 Blackwell 플랫폼은 AI 시대의 기반 인프라로 필수적인 존재로 자리매김)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Blackwell</strong> - NVIDIA의 최신 GPU 아키텍처. 통계학자 David Blackwell의 이름에서 유래. Ada Lovelace/Hopper의 후속.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>DLSS 4</strong> - Deep Learning Super Sampling 4세대. Multi-Frame Generation으로 최대 4배 프레임 생성.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GDDR7</strong> - 최신 그래픽 메모리 규격. GDDR6 대비 대폭적인 대역폭 향상 (최대 32Gbps).
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>HBM4</strong> - High Bandwidth Memory 4세대. 데이터센터 GPU용 초고대역 메모리 (13TB/s).
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>NVLink</strong> - NVIDIA 고유의 GPU 간 고속 인터커넥트. 5세대에서 900GB/s 실현.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 1월 9일</p>
+                    <ul>
+                        <li>• <a href="https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/" target="_blank">NVIDIA GeForce RTX 5090 공식</a></li>
+                        <li>• <a href="https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/" target="_blank">NVIDIA Blackwell 아키텍처</a></li>
+                        <li>• <a href="https://www.tomshardware.com/pc-components/gpus/nvidia-geforce-rtx-5090-review" target="_blank">Tom's Hardware RTX 5090 리뷰</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Blackwell_(microarchitecture)" target="_blank">Blackwell Wikipedia</a></li>
+                        <li>• <a href="https://www.tomshardware.com/pc-components/gpus/nvidia-announces-rubin-gpus-in-2026-rubin-ultra-in-2027-feynam-after" target="_blank">Rubin 로드맵 (Tom's Hardware)</a></li>
+                        <li>• <a href="https://techresearchonline.com/blog/nvidia-vs-amd-the-gpu-battle-for-ai-dominance/" target="_blank">NVIDIA vs AMD 시장 분석</a></li>
+                        <li>• <a href="https://wccftech.com/roundup/nvidia-geforce-rtx-5090/" target="_blank">Wccftech RTX 5090 정리</a></li>
+                        <li>• <a href="https://www.storagereview.com/news/nvidia-unveils-roadmap-at-ai-infra-summit-from-blackwell-ultra-to-vera-rubin-cpx-architecture" target="_blank">AI Infra Summit 보고서</a></li>
+                        <li>• <a href="https://intuitionlabs.ai/articles/nvidia-gb200-supply-chain" target="_blank">GB200 공급망 분석</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['B200', 'GB200 NVL72', 'AMD MI300X', 'Intel Gaudi 3'],
+                datasets: [
+                    {
+                        label: 'AI 추론 성능 (상대값)',
+                        data: [100, 720, 45, 30],
+                        backgroundColor: 'rgba(118, 185, 0, 0.8)',
+                        borderColor: 'rgb(118, 185, 0)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'HBM 용량 (GB)',
+                        data: [192, 288, 192, 128],
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    </script>
+</body>
+</html>

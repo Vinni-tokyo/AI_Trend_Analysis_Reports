@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DGL (Deep Graph Library) Deep Dive: The Future of Graph Neural Networks</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .market-highlight {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+            border: 1px solid #0052b8;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .market-highlight .big-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #001e5c;
+        }
+        .market-highlight .label {
+            font-size: 0.9rem;
+            color: #4a4a4a;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='dgl-deep-graph-library-analysis-20260109-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='dgl-deep-graph-library-analysis-20260109-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='dgl-deep-graph-library-analysis-20260109-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>DGL (Deep Graph Library) Deep Dive<br>The Future of Graph Neural Networks</h1>
+            <div class="subtitle">GNN Market Growth from $320M to $1.65B and DGL's Technical Advantages</div>
+            <div class="meta">Report Date: January 9, 2026 | Standard Report</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Top 5 Key Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Key Trends</h2>
+
+                <h3 class="subsection-title">1. DGL 2.0 and GraphBolt: Data Pipeline Revolution</h3>
+                <p><strong>Current State:</strong> Released in January 2024, DGL 2.0 introduced GraphBolt, a new data loading framework that dramatically improves GNN training efficiency. The new fCSC (fused Compressed Sparse Column) graph structure representation can reduce memory costs for heterogeneous graphs by up to 56%.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Core Features</h4>
+                        <p>• <strong>fCSC Format:</strong> Up to 56% memory reduction<br>
+                        • <strong>Multi-threaded:</strong> High-speed sampling operators<br>
+                        • <strong>Out-of-Core:</strong> Large feature storage outside CPU memory</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Performance Improvements</h4>
+                        <p>• <strong>Inference Speed:</strong> 3.6x faster<br>
+                        • <strong>Training Speed:</strong> 1.4x faster per epoch<br>
+                        • <strong>GPU Utilization:</strong> Maximized by eliminating synchronizations</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://www.dgl.ai/" target="_blank">DGL Official Site</a> |
+                    <a href="https://github.com/dmlc/dgl" target="_blank">GitHub</a> |
+                    <a href="https://www.dgl.ai/release/2024/01/26/release.html" target="_blank">DGL 2.0 Release Notes</a>
+                </div>
+
+                <p><strong>Outlook:</strong> With continuous improvements to GraphBolt, enterprises handling terabyte-scale graph data will be able to train GNN models on smaller, more cost-efficient instances.</p>
+
+                <h3 class="subsection-title">2. NVIDIA cuGraph-DGL: A New Era of GPU Acceleration</h3>
+                <p><strong>Current State:</strong> cuGraph-DGL is an extension of NVIDIA cuGraph that leverages GPU power for DGL-based GNN workflows, achieving unprecedented speeds. It provides optimized models like CuGraphSAGEConv, CuGraphGATConv, and CuGraphRelGraphConv that offer immediate performance gains when replacing default models.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>GPU-Optimized Models</h4>
+                        <p>• <strong>CuGraphSAGEConv:</strong> GPU-optimized GraphSAGE<br>
+                        • <strong>CuGraphGATConv:</strong> GPU Graph Attention Network<br>
+                        • <strong>CuGraphRelGraphConv:</strong> Relational graph convolution</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Ecosystem Integration</h4>
+                        <p>• <strong>NVIDIA NGC:</strong> Pre-optimized containers<br>
+                        • <strong>RAPIDS:</strong> Data science ecosystem integration<br>
+                        • <strong>PyTorch 2.x:</strong> Full compatibility with latest versions</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://developer.nvidia.com/blog/introduction-to-graph-neural-networks-with-nvidia-cugraph-dgl/" target="_blank">NVIDIA cuGraph-DGL</a> |
+                    <a href="https://catalog.ngc.nvidia.com/orgs/nvidia/containers/dgl" target="_blank">DGL NGC Container</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The integration of NVIDIA's GPU technology with DGL will enable real-time processing of large-scale graph analysis, significantly expanding applications in financial fraud detection and social network analysis.</p>
+
+                <h3 class="subsection-title">3. DGL-LifeSci: Expanding Drug Discovery and Life Science Applications</h3>
+                <p><strong>Current State:</strong> DGL-LifeSci is an open-source toolkit for deep learning on graphs in life science, built on DGL. It supports three main tasks: molecular property prediction (QSAR), molecule generation, and chemical reaction prediction, achieving up to 6x speedup compared to previous implementations on the MoleculeNet benchmark.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Supported Tasks</h4>
+                        <p>• <strong>Molecular Property Prediction:</strong> QSAR, toxicity, solubility<br>
+                        • <strong>Molecule Generation:</strong> De novo compound design<br>
+                        • <strong>Reaction Prediction:</strong> Chemical reaction product prediction</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Performance & Benchmarks</h4>
+                        <p>• <strong>12 Datasets:</strong> Full MoleculeNet support<br>
+                        • <strong>7 Models:</strong> Pre-trained for molecular property prediction<br>
+                        • <strong>6x Speedup:</strong> Compared to previous implementations</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://github.com/awslabs/dgl-lifesci" target="_blank">DGL-LifeSci GitHub</a> |
+                    <a href="https://pubs.acs.org/doi/10.1021/acsomega.1c04017" target="_blank">DGL-LifeSci Paper (ACS Omega)</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Just as the SE3-Transformer that influenced AlphaFold was developed using DGL, adoption of DGL in drug discovery and protein structure prediction will continue to accelerate.</p>
+
+                <h3 class="subsection-title">4. GraphStorm: Enterprise-Scale Distributed Training</h3>
+                <p><strong>Current State:</strong> GraphStorm is an enterprise-grade GML framework designed for graphs with billions of nodes and edges. GraphStorm v0.4 introduced GraphBolt support, enabling distributed processing of massive graphs (1 billion nodes × 512 features × 10 billion edges) that require over 4TB of memory.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Scalability</h4>
+                        <p>• <strong>Billion-Scale:</strong> Processing massive nodes and edges<br>
+                        • <strong>Multi-TB:</strong> Distributed storage support<br>
+                        • <strong>GSPartition:</strong> GraphBolt-compatible partitioning</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Enterprise Features</h4>
+                        <p>• <strong>Amazon SageMaker:</strong> Cloud integration<br>
+                        • <strong>Pre-built Containers:</strong> Ready for immediate deployment<br>
+                        • <strong>Distributed Inference:</strong> Production-ready</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://graphstorm.readthedocs.io/" target="_blank">GraphStorm Documentation</a> |
+                    <a href="https://aws.amazon.com/blogs/machine-learning/faster-distributed-graph-neural-network-training-with-graphstorm-v0-4/" target="_blank">GraphStorm v0.4 Announcement</a>
+                </div>
+
+                <p><strong>Outlook:</strong> As more enterprises adopt cloud-first strategies, distributed GNN frameworks like GraphStorm will become essential tools for companies wanting to adopt graph-based AI without specialized infrastructure.</p>
+
+                <h3 class="subsection-title">5. Rapid GNN Market Growth: $1.65B Market by 2030</h3>
+                <p><strong>Current State:</strong> The global GNN market is projected to grow from $320 million in 2024 to $1.65 billion by 2030, representing a CAGR of 31.2%. GNN adoption is accelerating in fraud detection, drug discovery, and recommendation systems.</p>
+
+                <div class="market-highlight">
+                    <div class="big-number">31.2% CAGR</div>
+                    <div class="label">GNN Market Growth Rate (2024-2030)<br>$320M → $1.65B</div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Application Areas</h4>
+                        <p>• <strong>Fraud Detection:</strong> Financial transaction network analysis<br>
+                        • <strong>Drug Discovery:</strong> Molecular property prediction, protein structures<br>
+                        • <strong>Recommendations:</strong> Large-scale adoption by Uber Eats and others</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Regional Growth</h4>
+                        <p>• <strong>North America:</strong> 38% market share (2024)<br>
+                        • <strong>Asia-Pacific:</strong> 35.7% CAGR (highest growth rate)<br>
+                        • <strong>Growth Drivers:</strong> AI investments in China, Japan, South Korea</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://mobilityforesights.com/product/graph-neural-network-market" target="_blank">GNN Market Report</a> |
+                    <a href="https://www.assemblyai.com/blog/ai-trends-graph-neural-networks" target="_blank">AI Trends: GNN</a>
+                </div>
+
+                <p><strong>Outlook:</strong> As major cloud providers integrate GNN capabilities into their AI/ML toolkits, the market will democratize, enabling GNN adoption without specialized infrastructure.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape & Market Positioning</h2>
+
+                <h3 class="subsection-title">GNN Framework 4-Tier Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The GNN framework market can be classified into four tiers based on target users and technical approach.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Framework</th>
+                            <th>Category</th>
+                            <th>Features</th>
+                            <th>Target Users</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DGL</strong></td>
+                            <td>Framework-Agnostic</td>
+                            <td>PyTorch/TensorFlow/MXNet support, low-level API, flexibility-focused</td>
+                            <td>Researchers, complex model developers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PyTorch Geometric</strong></td>
+                            <td>PyTorch-Only</td>
+                            <td>High-level API, ease-of-use focused, rich model implementations</td>
+                            <td>Rapid prototyping, researchers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jraph</strong></td>
+                            <td>JAX-Based</td>
+                            <td>Functional programming, JIT optimization, Python-friendly</td>
+                            <td>JAX ecosystem users</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NetworkX</strong></td>
+                            <td>General Graph Analysis</td>
+                            <td>Graph manipulation, classical algorithms, no deep learning</td>
+                            <td>Graph analysis, preprocessing</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GraphStorm</strong></td>
+                            <td>Enterprise</td>
+                            <td>Distributed training, billion-scale support, AWS integration</td>
+                            <td>Large enterprises, production environments</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Platform Comparison Chart</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">Market Trends</h3>
+                <ul style="font-size: 0.95rem; line-height: 1.8; padding-left: 1.5rem;">
+                    <li><strong>Framework Convergence:</strong> PyG 2.0's evolution is narrowing the feature gap between DGL and PyG</li>
+                    <li><strong>GPU Optimization Race:</strong> NVIDIA cuGraph integration is making GPU acceleration the de facto standard</li>
+                    <li><strong>Enterprise Entry:</strong> Major cloud players like AWS GraphStorm and Azure AI are accelerating market entry</li>
+                    <li><strong>Domain Specialization:</strong> Specialized toolkits like DGL-LifeSci and DGL-KE are increasing</li>
+                    <li><strong>Asian Market Expansion:</strong> National AI strategies in China, Japan, and South Korea are driving GNN investment</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Here are key application approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Fraud Detection Pilot</strong> - Apply DGL to financial transaction networks for real-time anomaly pattern detection (e.g., credit card fraud)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Drug Discovery Project</strong> - Build molecular property prediction models with DGL-LifeSci to streamline candidate compound screening</p>
+                    <p style="line-height: 1.6;">3. <strong>Recommendation System Enhancement</strong> - Apply GraphSAGE to user-item relationship graphs to improve personalization accuracy</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Takeaways</h3>
+                    <ul class="key-findings">
+                        <li><strong>Rapid Market Growth:</strong> GNN market projected to grow from $320M (2024) to $1.65B (2030) at 31.2% CAGR</li>
+                        <li><strong>DGL 2.0 Innovation:</strong> GraphBolt delivers 56% memory reduction and 3.6x faster inference</li>
+                        <li><strong>Enterprise Ready:</strong> GraphStorm enables distributed training at billion-node scale</li>
+                        <li><strong>GPU Acceleration Standard:</strong> NVIDIA cuGraph-DGL integration making GPU optimization the default</li>
+                        <li><strong>Domain Specialization:</strong> DGL-LifeSci contributing to AlphaFold and drug discovery research</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Research & Rapid Prototyping → PyTorch Geometric</strong><br>
+                        Reason: Easy-to-use API, rich examples, Stanford research community<br><br>
+                        <strong>Complex Models & Framework Flexibility → DGL</strong><br>
+                        Reason: Low-level API, support for non-message-passing models like Tree-LSTM<br><br>
+                        <strong>Enterprise & Large-Scale Graphs → GraphStorm + DGL</strong><br>
+                        Reason: Billion-node support, AWS integration, production-ready features
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Positive (Rapid GNN market growth and DGL ecosystem maturity are accelerating the democratization of graph-based AI)</p>
+            </section>
+
+            <!-- SECTION 5: Key Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GNN (Graph Neural Network)</strong> - Deep learning methods for graph-structured data. Learns relationships between nodes for classification and prediction tasks.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GraphBolt</strong> - New data loading framework introduced in DGL 2.0. Significantly improves memory efficiency with the fCSC format.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Message Passing</strong> - The fundamental computation paradigm in GNNs. Updates node representations by propagating information between neighboring nodes.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>GraphSAGE</strong> - A sampling-based GNN approach. Enables scalable learning on large graphs.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>QSAR (Quantitative Structure-Activity Relationship)</strong> - Models that predict quantitative relationships between molecular structure and biological activity. Widely used in drug discovery.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> January 9, 2026</p>
+                    <ul>
+                        <li>• <a href="https://www.dgl.ai/" target="_blank">DGL Official Site - Deep Graph Library</a></li>
+                        <li>• <a href="https://github.com/dmlc/dgl" target="_blank">DGL GitHub Repository</a></li>
+                        <li>• <a href="https://www.dgl.ai/release/2024/01/26/release.html" target="_blank">DGL 2.0 Release Notes</a></li>
+                        <li>• <a href="https://developer.nvidia.com/blog/introduction-to-graph-neural-networks-with-nvidia-cugraph-dgl/" target="_blank">NVIDIA cuGraph-DGL Technical Blog</a></li>
+                        <li>• <a href="https://github.com/awslabs/dgl-lifesci" target="_blank">DGL-LifeSci GitHub</a></li>
+                        <li>• <a href="https://pubs.acs.org/doi/10.1021/acsomega.1c04017" target="_blank">DGL-LifeSci Paper (ACS Omega)</a></li>
+                        <li>• <a href="https://graphstorm.readthedocs.io/" target="_blank">GraphStorm Documentation</a></li>
+                        <li>• <a href="https://mobilityforesights.com/product/graph-neural-network-market" target="_blank">GNN Market Report (Mobility Foresights)</a></li>
+                        <li>• <a href="https://www.exxactcorp.com/blog/Deep-Learning/pytorch-geometric-vs-deep-graph-library" target="_blank">PyG vs DGL Comparison (Exxact)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/1909.01315" target="_blank">DGL Paper (arXiv)</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Ease of Use', 'Scalability', 'GPU Optimization', 'Domain Support', 'Community'],
+                datasets: [
+                    {
+                        label: 'DGL',
+                        data: [75, 95, 95, 90, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'PyTorch Geometric',
+                        data: [95, 80, 85, 75, 95],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'GraphStorm',
+                        data: [70, 100, 90, 70, 60],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Jraph',
+                        data: [80, 75, 80, 60, 50],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

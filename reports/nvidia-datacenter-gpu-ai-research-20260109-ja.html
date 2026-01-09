@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI研究用NVIDIAデータセンターGPU徹底分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #0284c7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .highlight-box h4 {
+            color: #0369a1;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='nvidia-datacenter-gpu-ai-research-20260109-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='nvidia-datacenter-gpu-ai-research-20260109-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='nvidia-datacenter-gpu-ai-research-20260109-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AI研究用NVIDIAデータセンターGPU徹底分析<br>H100・H200・B200・GB200の現状と展望</h1>
+            <div class="subtitle">大規模言語モデル学習・推論インフラの技術動向</div>
+            <div class="meta">レポート作成日：2026年1月9日 | 標準版レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. NVIDIA H100：AI学習の現行標準GPU</h3>
+                <p><strong>現状：</strong>NVIDIA H100はHopperアーキテクチャを採用し、2022年の発表以来、大規模AI学習の業界標準として確立されています。OpenAI、Meta、Google、Microsoftなど主要AI企業が数十万台規模で導入しており、GPT-4やLlama 2などの大規模言語モデル学習に使用されています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要スペック</h4>
+                        <p>• <strong>メモリ：</strong>80GB HBM3（業界標準構成）<br>
+                        • <strong>帯域幅：</strong>3.35 TB/s（A100比67%向上）<br>
+                        • <strong>FP8性能：</strong>約4 petaFLOPS<br>
+                        • <strong>TDP：</strong>700W（SXM版）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>導入実績</h4>
+                        <p>• <strong>Meta：</strong>35万台のH100を保有<br>
+                        • <strong>xAI（Colossus）：</strong>10万台クラスター<br>
+                        • <strong>Microsoft/OpenAI：</strong>推定50万台以上<br>
+                        • <strong>価格：</strong>$25,000〜$45,000/台</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.nvidia.com/en-us/data-center/h100/" target="_blank">NVIDIA H100</a> |
+                    <a href="https://www.nvidia.com/en-us/data-center/dgx-h100/" target="_blank">DGX H100</a>
+                </div>
+
+                <p><strong>展望：</strong>H100は2025年末まで主力製品として継続供給予定。Blackwell世代への移行が進む中、価格低下とクラウド可用性向上により、中小規模AI研究機関への普及が加速する見込みです。</p>
+
+                <h3 class="subsection-title">2. NVIDIA H200：推論特化型Hopper GPU</h3>
+                <p><strong>現状：</strong>H200は2023年末に発表されたH100の改良版で、計算アーキテクチャはそのままにメモリを大幅強化しました。141GB HBM3eメモリと4.8 TB/sの帯域幅により、大規模モデルの推論ワークロードで顕著な性能向上を実現しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>H100比較での改善点</h4>
+                        <p>• <strong>メモリ容量：</strong>80GB → 141GB（+76%）<br>
+                        • <strong>帯域幅：</strong>3.35 → 4.8 TB/s（+43%）<br>
+                        • <strong>推論性能：</strong>最大1.9倍高速化<br>
+                        • <strong>Llama2-70B：</strong>31,712 tok/s（H100: 21,806）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>最適ユースケース</h4>
+                        <p>• <strong>100B+パラメータモデル：</strong>メモリ制約解消<br>
+                        • <strong>長コンテキスト推論：</strong>KVキャッシュ拡大<br>
+                        • <strong>リアルタイムサービス：</strong>低レイテンシ要件<br>
+                        • <strong>推奨：</strong>「H100で学習、H200で推論」</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.nvidia.com/en-us/data-center/h200/" target="_blank">NVIDIA H200</a> |
+                    <a href="https://nvidianews.nvidia.com/news/nvidia-h200-tensor-core-gpus-supercharge-ai-with-largest-memory-and-bandwidth-ever" target="_blank">H200発表ニュース</a>
+                </div>
+
+                <p><strong>展望：</strong>xAIのColossusクラスターは5万台のH200を追加導入予定。Azure、AWS、GCPでのH200インスタンス提供が2025年に本格化し、推論コスト最適化の選択肢として普及が進んでいます。</p>
+
+                <h3 class="subsection-title">3. NVIDIA B200：Blackwellアーキテクチャの次世代GPU</h3>
+                <p><strong>現状：</strong>B200はNVIDIAのBlackwellアーキテクチャを採用した最新データセンターGPUです。TSMC 4NPプロセスで製造された2080億トランジスタのデュアルダイ設計により、H100比で最大5倍の推論性能を実現しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>革新的スペック</h4>
+                        <p>• <strong>トランジスタ：</strong>2,080億個（デュアルダイ）<br>
+                        • <strong>メモリ：</strong>192GB HBM3e（H100の2.4倍）<br>
+                        • <strong>帯域幅：</strong>8 TB/s（Hopper比2倍）<br>
+                        • <strong>FP4性能：</strong>20 PFLOPS（スパース時）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>新機能</h4>
+                        <p>• <strong>第6世代Tensor Core：</strong>FP4/FP6サポート<br>
+                        • <strong>NVLink 5：</strong>1.8 TB/s双方向<br>
+                        • <strong>チップ間接続：</strong>10 TB/s（ダイ間）<br>
+                        • <strong>推定価格：</strong>約$30,000/台</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/" target="_blank">Blackwellアーキテクチャ</a> |
+                    <a href="https://www.nvidia.com/en-us/data-center/dgx-b200/" target="_blank">DGX B200</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年にはAmazon、Google、Meta、Microsoft、OpenAI、Teslaなど主要企業がBlackwellを採用予定。DGX B200（8基搭載、約$515,000）は学習性能3倍、推論性能15倍の向上を実現します。</p>
+
+                <h3 class="subsection-title">4. GB200 NVL72：ラックスケールAIスーパーコンピュータ</h3>
+                <p><strong>現状：</strong>GB200 NVL72は36基のGrace CPUと72基のBlackwell GPUを液冷ラックに統合した、NVIDIAの最高峰AI計算システムです。史上最大のNVLinkドメインにより、130 TB/sの低レイテンシGPU間通信を実現しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>システムスペック</h4>
+                        <p>• <strong>構成：</strong>36 Grace CPU + 72 B200 GPU<br>
+                        • <strong>FP4性能：</strong>1.44 ExaFLOPS<br>
+                        • <strong>FP32性能：</strong>5,760 TFLOPS<br>
+                        • <strong>メモリ：</strong>13.5 TB HBM3e/ラック</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>性能向上</h4>
+                        <p>• <strong>LLM推論：</strong>H100比30倍高速<br>
+                        • <strong>コスト効率：</strong>25倍改善<br>
+                        • <strong>エネルギー効率：</strong>25倍改善<br>
+                        • <strong>帯域幅合計：</strong>576 TB/s</p>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h4>GB200スーパーチップ構成</h4>
+                    <p>GB200スーパーチップは1基のGrace CPUと2基のB200 GPUを900GB/sのNVLink接続で統合。単体で20 PFLOPSのFP4演算能力を提供し、価格は$60,000〜$70,000と推定されています。</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.nvidia.com/en-us/data-center/gb200-nvl72/" target="_blank">GB200 NVL72</a> |
+                    <a href="https://nvidianews.nvidia.com/news/nvidia-blackwell-platform-arrives-to-power-a-new-era-of-computing" target="_blank">Blackwellプラットフォーム発表</a>
+                </div>
+
+                <p><strong>展望：</strong>Microsoftは2025年後半にAzure ND GB200 V6 VMシリーズを一般提供開始予定。OpenAIへは2025年末までに30万台のGB200が供給される見込みで、「Star Gate」データセンター計画（$1,150億規模）の中核を担います。</p>
+
+                <h3 class="subsection-title">5. 主要AI企業のGPUインフラ競争</h3>
+                <p><strong>現状：</strong>OpenAI、Google、Meta、Microsoft、xAIなど主要AI企業は10万台規模のGPUクラスター構築競争を展開しています。単一クラスターの構築コストは40億ドル以上、消費電力は150MW以上に達し、AIインフラの大規模化が加速しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>企業別GPU保有状況（推定）</h4>
+                        <p>• <strong>Microsoft：</strong>約50万台（H100相当）<br>
+                        • <strong>Meta：</strong>35万台H100 + 追加60万台相当<br>
+                        • <strong>Google：</strong>100万台以上（TPU含む）<br>
+                        • <strong>xAI：</strong>10万台H100 + 5万台H200</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>インフラ投資規模</h4>
+                        <p>• <strong>Star Gate計画：</strong>$1,150億（MS/OpenAI）<br>
+                        • <strong>Colossus拡張：</strong>20万台GPU規模<br>
+                        • <strong>年間電力消費：</strong>1.59 TWh/10万台<br>
+                        • <strong>電力コスト：</strong>$1.24億/年/10万台</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://engineering.fb.com/2024/03/12/data-center-engineering/building-metas-genai-infrastructure/" target="_blank">MetaのGenAIインフラ</a> |
+                    <a href="https://azure.microsoft.com/en-us/blog/microsoft-and-nvidia-accelerate-ai-development-and-performance/" target="_blank">Microsoft-NVIDIA協業</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年のGPU出荷量は650〜700万台（Hopper 200万台、Blackwell 500万台）と予測。データセンター投資は2030年までに年間$3〜4兆規模に拡大し、AI計算能力の需要は継続的に増加する見込みです。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">データセンターGPU市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">2024年のAI学習用GPU市場はNVIDIAが92〜93%のシェアを独占。AMDが7〜11%、Intelが約1%で続きますが、GoogleのTPUなどカスタムASICも急成長しています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>GPU</th>
+                            <th>アーキテクチャ</th>
+                            <th>メモリ</th>
+                            <th>帯域幅</th>
+                            <th>主要用途</th>
+                            <th>価格帯</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>A100</strong></td>
+                            <td>Ampere</td>
+                            <td>80GB HBM2e</td>
+                            <td>2.0 TB/s</td>
+                            <td>学習・推論（旧世代）</td>
+                            <td>$10,000〜$15,000</td>
+                        </tr>
+                        <tr>
+                            <td><strong>H100</strong></td>
+                            <td>Hopper</td>
+                            <td>80GB HBM3</td>
+                            <td>3.35 TB/s</td>
+                            <td>大規模学習（現行主力）</td>
+                            <td>$25,000〜$45,000</td>
+                        </tr>
+                        <tr>
+                            <td><strong>H200</strong></td>
+                            <td>Hopper（強化版）</td>
+                            <td>141GB HBM3e</td>
+                            <td>4.8 TB/s</td>
+                            <td>大規模推論・長コンテキスト</td>
+                            <td>$30,000〜$50,000</td>
+                        </tr>
+                        <tr>
+                            <td><strong>B200</strong></td>
+                            <td>Blackwell</td>
+                            <td>192GB HBM3e</td>
+                            <td>8.0 TB/s</td>
+                            <td>次世代学習・推論</td>
+                            <td>約$30,000</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GB200</strong></td>
+                            <td>Blackwell+Grace</td>
+                            <td>384GB（2×B200）</td>
+                            <td>16.0 TB/s</td>
+                            <td>統合型スーパーチップ</td>
+                            <td>$60,000〜$70,000</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AMD MI300X</strong></td>
+                            <td>CDNA 3</td>
+                            <td>192GB HBM3</td>
+                            <td>5.3 TB/s</td>
+                            <td>H100競合製品</td>
+                            <td>$10,000〜$15,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">世代別性能比較</h3>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場シェアと収益</h3>
+                <div class="chart-container">
+                    <canvas id="marketShareChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場動向（5つのポイント）</h3>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><strong>NVIDIA独占継続：</strong>データセンターGPU市場で92%以上のシェアを維持、2024年Q3収益は$510億超</li>
+                    <li><strong>メモリ帯域幅競争：</strong>HBM3e採用が加速、H200の141GBがLLM推論の新基準に</li>
+                    <li><strong>Blackwell移行：</strong>2025年は500万台のBlackwell GPU出荷予測、Hopper世代は価格低下へ</li>
+                    <li><strong>カスタムASIC台頭：</strong>Google TPU、Amazon Trainium、Tesla Dojoなど自社チップ開発が活発化</li>
+                    <li><strong>電力効率重視：</strong>GB200 NVL72は同等H100比でエネルギー効率25倍、持続可能性が重要指標に</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">AI研究・開発組織で観察される主要なGPUインフラ活用パターンをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>ハイブリッド構成</strong> - 「H100で学習、H200で推論」の役割分担により、コストと性能を最適化</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>クラウド活用戦略</strong> - Azure/AWS/GCPのH100/H200インスタンスで初期投資を抑えつつスケーラビリティ確保</p>
+                    <p style="line-height: 1.6;">3. <strong>Blackwell移行計画</strong> - 2025年後半のGB200可用性に向けた評価・検証環境の準備</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>H100が現行標準：</strong>主要AI企業は数十万台規模で導入、80GB HBM3がLLM学習の業界基準</li>
+                        <li><strong>H200は推論最適化：</strong>141GB HBM3eで100B+モデルの推論性能が最大1.9倍向上</li>
+                        <li><strong>B200/GB200が次世代：</strong>192GB HBM3e、8 TB/s帯域幅でH100比5倍の推論性能</li>
+                        <li><strong>GB200 NVL72は最高峰：</strong>1.44 ExaFLOPSでLLM推論30倍高速、エネルギー効率25倍</li>
+                        <li><strong>市場は急成長：</strong>データセンターGPU市場は2024年$1,000億から2030年$2,000億超へ</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選定ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>70Bパラメータ以下の学習 → H100</strong><br>
+                        理由：成熟したエコシステム、十分なメモリ、最適なコスト効率<br><br>
+                        <strong>100B+モデルの推論・長コンテキスト → H200</strong><br>
+                        理由：141GBメモリでKVキャッシュ制約解消、推論特化の性能向上<br><br>
+                        <strong>次世代AI開発・最高性能要件 → B200/GB200</strong><br>
+                        理由：5倍の推論性能、FP4/FP6サポート、2025年後半から本格供給<br><br>
+                        <strong>エクサスケールAIファクトリー → GB200 NVL72</strong><br>
+                        理由：1.44 ExaFLOPS、30倍の推論性能、液冷統合ラックシステム
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（NVIDIAの技術リーダーシップは継続、Blackwell世代で性能・効率が大幅向上。ただし供給制約と高価格が課題）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>HBM3e（High Bandwidth Memory 3e）</strong> - 第3世代高帯域幅メモリの拡張版。H200で141GB、B200で192GBを搭載し、従来比40〜76%の帯域幅向上を実現
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Tensor Core</strong> - 行列演算に特化したNVIDIAの専用演算ユニット。第6世代（Blackwell）ではFP4/FP6精度をサポートし、AI推論を高速化
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>NVLink</strong> - GPU間高速接続技術。NVLink 5（Blackwell）は1.8 TB/sの双方向帯域幅を提供し、マルチGPU学習を効率化
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>FP4/FP8精度</strong> - 4ビット/8ビット浮動小数点形式。精度を抑えつつ演算効率を最大化し、推論ワークロードで活用
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>KVキャッシュ</strong> - Transformerモデルの推論時に過去のKey-Value計算結果を保持するメモリ領域。長コンテキスト処理に大容量メモリが必要
+                    </div>
+                    <div>
+                        <strong>ExaFLOPS</strong> - 毎秒10^18回の浮動小数点演算。GB200 NVL72は1.44 ExaFLOPS（FP4）を達成し、スーパーコンピュータ級の演算能力を提供
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年1月9日</p>
+                    <ul>
+                        <li>• <a href="https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/" target="_blank">NVIDIA Blackwell Architecture</a></li>
+                        <li>• <a href="https://www.nvidia.com/en-us/data-center/gb200-nvl72/" target="_blank">NVIDIA GB200 NVL72</a></li>
+                        <li>• <a href="https://nvidianews.nvidia.com/news/nvidia-blackwell-platform-arrives-to-power-a-new-era-of-computing" target="_blank">NVIDIA Newsroom - Blackwell Platform</a></li>
+                        <li>• <a href="https://greennode.ai/blog/compare-h100-vs-h200" target="_blank">GreenNode - H100 vs H200 Comparison</a></li>
+                        <li>• <a href="https://www.whitefiber.com/blog/choosing-gpu-infrastructure" target="_blank">WhiteFiber - GPU Infrastructure Guide</a></li>
+                        <li>• <a href="https://epoch.ai/data-insights/computing-capacity" target="_blank">Epoch AI - Computing Capacity Analysis</a></li>
+                        <li>• <a href="https://engineering.fb.com/2024/03/12/data-center-engineering/building-metas-genai-infrastructure/" target="_blank">Meta Engineering - GenAI Infrastructure</a></li>
+                        <li>• <a href="https://modal.com/blog/h200-vs-h100-vs-a100" target="_blank">Modal - A100 vs H100 vs H200 Showdown</a></li>
+                        <li>• <a href="https://www.statista.com/statistics/1425087/data-center-segment-revenue-nvidia-amd-intel/" target="_blank">Statista - Data Center GPU Revenue</a></li>
+                        <li>• <a href="https://www.yolegroup.com/press-release/data-center-semiconductor-trends-2025/" target="_blank">Yole Group - Data Center Semiconductor Trends 2025</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Performance Comparison Chart
+        const perfCtx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(perfCtx, {
+            type: 'bar',
+            data: {
+                labels: ['A100', 'H100', 'H200', 'B200', 'GB200'],
+                datasets: [
+                    {
+                        label: 'メモリ容量 (GB)',
+                        data: [80, 80, 141, 192, 384],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '帯域幅 (TB/s)',
+                        data: [2.0, 3.35, 4.8, 8.0, 16.0],
+                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                        borderColor: 'rgb(34, 197, 94)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'NVIDIA データセンターGPU 性能比較'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Market Share Chart
+        const marketCtx = document.getElementById('marketShareChart').getContext('2d');
+        new Chart(marketCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['NVIDIA (92%)', 'AMD (7%)', 'Intel (1%)'],
+                datasets: [{
+                    data: [92, 7, 1],
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(59, 130, 246, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(34, 197, 94)',
+                        'rgb(239, 68, 68)',
+                        'rgb(59, 130, 246)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'データセンターGPU市場シェア (2024)'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
