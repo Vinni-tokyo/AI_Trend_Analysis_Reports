@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Badge Wallet Recommendation Systems Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.75rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1rem 0; }
+        .stat-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem; text-align: center; }
+        .stat-card .number { font-size: 1.4rem; font-weight: 700; color: var(--primary-navy); }
+        .stat-card .label { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
+        .tier-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; margin-right: 0.5rem; }
+        .tier-1 { background: #e8f5e9; color: #2e7d32; }
+        .tier-2 { background: #e3f2fd; color: #1565c0; }
+        .tier-3 { background: #fff3e0; color: #ef6c00; }
+        .tier-4 { background: #fce4ec; color: #c2185b; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='open-badge-wallet-recommendation-systems-20250121-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='open-badge-wallet-recommendation-systems-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='open-badge-wallet-recommendation-systems-20250121-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>Open Badge Wallet Recommendation Systems Analysis<br>17 Platform Comparative Study</h1>
+            <div class="subtitle">From AI Skills Matching to Career Path Recommendations: Evolution of Digital Credentials</div>
+            <div class="meta">Report Date: January 21, 2025 | Standard Report (5-8 pages)</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="number">17</div>
+                    <div class="label">Wallets Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">5</div>
+                    <div class="label">AI Recommendation Capable</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">$292M</div>
+                    <div class="label">2025 Market Size</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">74.7M</div>
+                    <div class="label">Badges Issued (2023)</div>
+                </div>
+            </div>
+
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Key Trends</h2>
+
+                <h3 class="subsection-title">1. Credly Wallet: AI-Powered Smart Recommendations</h3>
+                <p><strong>Current State:</strong> Credly, a Pearson subsidiary, is the world's largest digital badge platform, offering an AI-powered smart recommendation system. It provides personalized recommendations for badges and learning paths based on users' career goals.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Recommendation System Features</h4>
+                        <p>• <strong>Smart Badge Recommendations:</strong> AI suggestions based on current skills and career goals<br>
+                        • <strong>Skills Wallet:</strong> Dynamic display of verified skills<br>
+                        • <strong>Badge Saving:</strong> Track badges you want to earn in the future</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Business Impact</h4>
+                        <p>• <strong>Interview Invites:</strong> 18% increase for badge holders<br>
+                        • <strong>Referral Rate:</strong> 40% increase with wallet integration<br>
+                        • <strong>Skills Gap Analysis:</strong> Enterprise feature</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://www.credly.com/" target="_blank">Credly</a> |
+                    <a href="https://apps.apple.com/us/app/credly/id1630234370" target="_blank">Credly App</a> |
+                    <a href="https://learn.credly.com/" target="_blank">Credly Learn</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Credly's global network continues to strengthen AI-based career path recommendations. Integration with enterprise talent development programs is accelerating.</p>
+
+                <h3 class="subsection-title">2. Territorium LifeJourney: Labor Market Data-Integrated Recommendations</h3>
+                <p><strong>Current State:</strong> LifeJourney, developed by Territorium, is an advanced digital wallet that leverages the latest labor market data for career path recommendations. It integrates with Comprehensive Learner Records (CLR) to achieve optimal matching between job seekers and job openings.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Recommendation Engine Features</h4>
+                        <p>• <strong>AI-Generated Pathways:</strong> Identifies 5 critical skills for specific positions<br>
+                        • <strong>Opportunity Fit Score:</strong> Quantifies skill match with job listings<br>
+                        • <strong>Learning Experience Recommendations:</strong> Suggests paths to achieve career goals</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Interoperability</h4>
+                        <p>• <strong>Digital Credential Management:</strong> Unified management of badges, microcredentials, CLRs<br>
+                        • <strong>Multi-Protocol Support:</strong> Import/export capabilities<br>
+                        • <strong>Up to 5 Pathways:</strong> Track multiple career paths</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://territorium.com/product/lifejourney/" target="_blank">LifeJourney</a> |
+                    <a href="https://territorium.com/" target="_blank">Territorium</a>
+                </div>
+
+                <p><strong>Outlook:</strong> LifeJourney is expanding partnerships with higher education institutions. Multiple universities including Kean University have adopted it as a skills-focused solution.</p>
+
+                <h3 class="subsection-title">3. LearnCard Wallet: Open Standard Recommendation Foundation</h3>
+                <p><strong>Current State:</strong> LearnCard, developed by Learning Economy Foundation, is an open-source wallet based on W3C Verifiable Credentials and DIDs. Through Skills Bridge, it enables connection to decentralized Learning and Employment Record (LER) networks.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Skills Bridge Functions</h4>
+                        <p>• <strong>Store:</strong> Secure storage of skills text<br>
+                        • <strong>Discover:</strong> Find and explore related skills<br>
+                        • <strong>Map:</strong> Link skills to career paths</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Ecosystem Integration</h4>
+                        <p>• <strong>Credential Engine Partnership:</strong> Leverages Linked Open Data<br>
+                        • <strong>ScoutPass:</strong> Official World Scouting wallet (250K+ badges issued)<br>
+                        • <strong>SuperSkills!:</strong> Children's game with LEGO Foundation</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://www.learncard.com/" target="_blank">LearnCard</a> |
+                    <a href="https://www.learningeconomy.io/" target="_blank">Learning Economy Foundation</a> |
+                    <a href="https://docs.learncard.com/" target="_blank">Documentation</a>
+                </div>
+
+                <p><strong>Outlook:</strong> LearnCard, as a nonprofit organization, aims to achieve skills equity. Its open standards-based approach has the potential to become the foundation of the global LER ecosystem.</p>
+
+                <h3 class="subsection-title">4. Workday WayTo: Enterprise Skills Cloud Integration</h3>
+                <p><strong>Current State:</strong> WayTo by Workday is an enterprise solution that achieves blockchain-based credential management and integration with Skills Cloud, used by over 30% of Fortune 500 companies.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Skills Cloud Recommendation Features</h4>
+                        <p>• <strong>AI Skills Extraction:</strong> Auto-extract skills from resumes and experiences<br>
+                        • <strong>Personalized Suggestions:</strong> Discover skill connections and recommend<br>
+                        • <strong>Talent Pool Expansion:</strong> AI job recommendations for candidate discovery</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Talent Marketplace</h4>
+                        <p>• <strong>Skills Matching:</strong> Place talent in projects, gigs, opportunities<br>
+                        • <strong>Career Hub:</strong> Skills-based role suggestions<br>
+                        • <strong>Blockchain Verification:</strong> Instant credential verification</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Skills Cloud</a> |
+                    <a href="https://credentials.workday.com/" target="_blank">Workday Credentials</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Powered by Workday Illuminate™ AI, skills recommendation accuracy is improving. Real-world effectiveness is proven, such as reducing nurse onboarding at hospitals from weeks to days.</p>
+
+                <h3 class="subsection-title">5. TalentPass: AI Conversational Skills Discovery</h3>
+                <p><strong>Current State:</strong> TalentPass, developed by Gobekli, features Pythia, a conversational AI assistant that helps users discover and articulate their skills. The Talent Tree provides a visual skills map representing the full scope of one's potential.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Pythia AI Assistant</h4>
+                        <p>• <strong>Conversational Data Collection:</strong> Gather skills info through conversation<br>
+                        • <strong>Skills Quantification:</strong> Help quantify possessed skills<br>
+                        • <strong>Goal Discovery:</strong> Support career goal clarification</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Passport Pages</h4>
+                        <p>• <strong>School Integration:</strong> Data exchange with educational institutions<br>
+                        • <strong>Employer Integration:</strong> Credential sharing with companies<br>
+                        • <strong>Cross-Wallet Connection:</strong> Interoperability of verifiable talent data</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://gobekli.io/talentpass/" target="_blank">TalentPass</a> |
+                    <a href="https://gobekli.io/" target="_blank">Gobekli</a>
+                </div>
+
+                <p><strong>Outlook:</strong> A successful pilot project with University of Phoenix is accelerating efforts toward realizing an AI-driven LER ecosystem.</p>
+            </section>
+
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape & Market Positioning</h2>
+
+                <h3 class="subsection-title">4-Tier Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The digital badge wallet market is classified into 4 tiers based on the maturity of recommendation system capabilities.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tier</th>
+                            <th>Wallet Name</th>
+                            <th>Developer</th>
+                            <th>Recommendation Features</th>
+                            <th>Characteristics</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="tier-badge tier-1">Tier 1</span></td>
+                            <td><strong>Credly Wallet</strong></td>
+                            <td>Pearson</td>
+                            <td>AI Recommendation & Skills Matching</td>
+                            <td>Global largest platform</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-1">Tier 1</span></td>
+                            <td><strong>Territorium LifeJourney</strong></td>
+                            <td>Territorium</td>
+                            <td>Labor Market Data Integration</td>
+                            <td>CLR/LER support, AI pathways</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-1">Tier 1</span></td>
+                            <td><strong>WayTo Wallet</strong></td>
+                            <td>Workday</td>
+                            <td>Skills Cloud Integration</td>
+                            <td>30%+ Fortune 500 usage</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-2">Tier 2</span></td>
+                            <td><strong>TalentPass</strong></td>
+                            <td>Gobekli</td>
+                            <td>AI Conversational Discovery</td>
+                            <td>Pythia AI Assistant</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-2">Tier 2</span></td>
+                            <td><strong>LearnCard</strong></td>
+                            <td>Learning Economy</td>
+                            <td>Skills Bridge</td>
+                            <td>Open source, DID support</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-2">Tier 2</span></td>
+                            <td><strong>Velocity Career Wallet</strong></td>
+                            <td>Velocity Network</td>
+                            <td>Blockchain Verification</td>
+                            <td>Founded by Oracle, SAP, Randstad</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-3">Tier 3</span></td>
+                            <td><strong>Accredible Wallet</strong></td>
+                            <td>Accredible</td>
+                            <td>Basic Recommendations</td>
+                            <td>Apple/Android Wallet integration</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-3">Tier 3</span></td>
+                            <td><strong>Canvas Badges</strong></td>
+                            <td>Instructure</td>
+                            <td>Pathway Progress</td>
+                            <td>Canvas LMS integration</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-3">Tier 3</span></td>
+                            <td><strong>Sertifier Wallet</strong></td>
+                            <td>Sertifier</td>
+                            <td>Velocity Integration</td>
+                            <td>ISO 27001 certified</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>Open Badge Passport</strong></td>
+                            <td>Open Badge Factory</td>
+                            <td>Meta-badges/Learning Paths</td>
+                            <td>100K+ users, multilingual</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>Learner Credential Wallet</strong></td>
+                            <td>MIT DCC</td>
+                            <td>Storage & Sharing Focus</td>
+                            <td>Open source, OpenWallet transfer</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>Blockcerts Wallet</strong></td>
+                            <td>MIT/Hyland</td>
+                            <td>Storage & Verification Focus</td>
+                            <td>Blockchain pioneer</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>ASU Pocket</strong></td>
+                            <td>Arizona State U.</td>
+                            <td>Storage & Sharing Focus</td>
+                            <td>SSI support, privacy-focused</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>CertifyMe Wallet</strong></td>
+                            <td>CertifyMe</td>
+                            <td>Storage & Sharing Focus</td>
+                            <td>30+ social shares, blockchain</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>K-OpenBadge</strong></td>
+                            <td>SoftEmpire (Korea)</td>
+                            <td>e-Portfolio</td>
+                            <td>All OB versions certified, DID</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">Tier 4</span></td>
+                            <td><strong>LecoS Wallet</strong></td>
+                            <td>LecoS (Korea)</td>
+                            <td>Storage & Sharing Focus</td>
+                            <td>Asia's first OB certified, 1.5M+ issued</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Recommendation System Maturity Comparison</h3>
+                <div class="chart-container">
+                    <canvas id="recommendationChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">Market Trends (2025)</h3>
+                <ul style="font-size: 0.95rem; line-height: 1.8; padding-left: 1.5rem;">
+                    <li><strong>AI Integration Acceleration:</strong> Credly, Territorium, and Workday are strengthening skills matching by combining labor market data with AI</li>
+                    <li><strong>Open Standards Proliferation:</strong> Adoption of Open Badges 3.0 and W3C VC is expanding, improving cross-wallet interoperability</li>
+                    <li><strong>Enterprise Demand Growth:</strong> Increasing investment in enterprise solutions like Skills Cloud and Velocity Network</li>
+                    <li><strong>Korean Market Growth:</strong> K-OpenBadge and LecoS lead the domestic market and accelerate Asian expansion</li>
+                    <li><strong>Privacy Focus:</strong> Emergence of Self-Sovereign Identity (SSI) supporting wallets like ASU Pocket and Blockcerts</li>
+                </ul>
+            </section>
+
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key application approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Enterprise Skills Matching Adoption</strong> - Leverage Workday Skills Cloud or Credly to optimize internal talent placement and conduct skills gap analysis</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Educational Institution CLR/LER Implementation</strong> - Deploy Territorium LifeJourney or LearnCard to visualize learning outcomes and strengthen career support integration</p>
+                    <p style="line-height: 1.6;">3. <strong>Open Standards Adoption Strategy</strong> - Build an international standards-compliant badge ecosystem with OB 3.0 supporting wallets like K-OpenBadge or LecoS</p>
+                </div>
+            </section>
+
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Recommendation Feature Gap:</strong> Only 5 of 17 wallets have full AI recommendation capabilities (Credly, Territorium, Workday, TalentPass, LearnCard)</li>
+                        <li><strong>Labor Market Data Integration:</strong> Territorium and Workday achieve real-time job data and skills matching</li>
+                        <li><strong>Open Source Rise:</strong> LearnCard and MIT LCW promote decentralized ecosystems based on W3C VC standards</li>
+                        <li><strong>Korean Market's Unique Development:</strong> K-OpenBadge is the world's first to obtain all OB version certifications and integrates DID technology</li>
+                        <li><strong>Evolution Beyond Storage:</strong> Many wallets are exploring transition from simple storage/sharing to recommendation/analytics functions</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Enterprise Skills Management → Workday WayTo + Skills Cloud</strong><br>
+                        Reason: Proven with Fortune 500 companies, robust talent marketplace features<br><br>
+                        <strong>Higher Education Learning Records → Territorium LifeJourney</strong><br>
+                        Reason: CLR/LER support, university partnership track record, optimal for student career support<br><br>
+                        <strong>Open Ecosystem Priority → LearnCard</strong><br>
+                        Reason: Open source, DID support, neutrality from nonprofit operation<br><br>
+                        <strong>Korean Domestic Use → K-OpenBadge / LecoS</strong><br>
+                        Reason: International standard certifications obtained, Japanese language support, Asian market deployment ready
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Positive (The digital badge market reaches $292M in 2025 with full-scale AI recommendation feature competition. However, many wallets remain storage-focused, leaving significant room for recommendation feature differentiation)</p>
+            </section>
+
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>CLR (Comprehensive Learner Record)</strong> - A format that comprehensively records a learner's entire history, including grades, credentials, skills, and activities.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>LER (Learning and Employment Record)</strong> - A digital format integrating learning and employment records, accumulated throughout one's career.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>W3C VC (Verifiable Credentials)</strong> - An international standard for digital credentials established by W3C. Uses cryptographic technology to prevent tampering.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>DID (Decentralized Identifier)</strong> - Decentralized identifier. Technology enabling individuals to manage their own IDs without a central authority.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>SSI (Self-Sovereign Identity)</strong> - Self-sovereign identity. The concept where individuals have complete control over their own data.
+                    </div>
+                    <div>
+                        <strong>Open Badges 3.0</strong> - The latest version of digital badge specification established by 1EdTech. Compatible with W3C VC.
+                    </div>
+                </div>
+            </section>
+
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> January 21, 2025</p>
+                    <ul>
+                        <li>• <a href="https://www.credly.com/" target="_blank">Credly - Digital Credential Platform</a></li>
+                        <li>• <a href="https://territorium.com/product/lifejourney/" target="_blank">Territorium LifeJourney Product Overview</a></li>
+                        <li>• <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud</a></li>
+                        <li>• <a href="https://www.learncard.com/" target="_blank">LearnCard - The Lifelong Learning Passport</a></li>
+                        <li>• <a href="https://gobekli.io/talentpass/" target="_blank">TalentPass by Gobekli</a></li>
+                        <li>• <a href="https://www.velocitynetwork.foundation/" target="_blank">Velocity Network Foundation</a></li>
+                        <li>• <a href="https://openbadgepassport.com/" target="_blank">Open Badge Passport</a></li>
+                        <li>• <a href="https://lcw.app/" target="_blank">MIT Learner Credential Wallet</a></li>
+                        <li>• <a href="https://www.blockcerts.org/" target="_blank">Blockcerts - Open Standard for Blockchain Credentials</a></li>
+                        <li>• <a href="https://pocket.asu.edu/" target="_blank">ASU Pocket</a></li>
+                        <li>• <a href="https://www.kopenbadge.com/" target="_blank">K-OpenBadge</a></li>
+                        <li>• <a href="https://www.lecos.co.kr/kor/openbadge/" target="_blank">LecoS Open Badge Platform</a></li>
+                        <li>• <a href="https://www.verifyed.io/blog/badge-wallet-solutions" target="_blank">Badge and Wallet Solutions 2025 - VerifyEd</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('recommendationChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['AI Recommendation', 'Skills Matching', 'Labor Market Integration', 'Pathway Recommendation', 'Interoperability'],
+                datasets: [
+                    {
+                        label: 'Credly',
+                        data: [95, 90, 70, 85, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)'
+                    },
+                    {
+                        label: 'Territorium LifeJourney',
+                        data: [85, 95, 95, 90, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        pointBackgroundColor: 'rgb(34, 197, 94)'
+                    },
+                    {
+                        label: 'Workday WayTo',
+                        data: [90, 95, 85, 80, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)'
+                    },
+                    {
+                        label: 'LearnCard',
+                        data: [70, 75, 60, 80, 95],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        pointBackgroundColor: 'rgb(168, 85, 247)'
+                    },
+                    {
+                        label: 'TalentPass',
+                        data: [80, 70, 65, 75, 80],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        pointBackgroundColor: 'rgb(239, 68, 68)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 }, padding: 15 }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
