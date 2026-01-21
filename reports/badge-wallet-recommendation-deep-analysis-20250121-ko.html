@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배지 지갑 추천 시스템 심층 분석 - 5대 플랫폼</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.75rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 350px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1rem 0; }
+        .stat-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem; text-align: center; }
+        .stat-card .number { font-size: 1.4rem; font-weight: 700; color: var(--primary-navy); }
+        .stat-card .label { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
+        .platform-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; margin-right: 0.5rem; }
+        .credly { background: #ff6b35; color: white; }
+        .territorium { background: #4caf50; color: white; }
+        .workday { background: #0073cf; color: white; }
+        .talentpass { background: #9c27b0; color: white; }
+        .learncard { background: #00bcd4; color: white; }
+        .tech-spec-table { font-size: 0.8rem; }
+        .tech-spec-table td { vertical-align: top; }
+        .feature-highlight { background: #e8f5e9; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.75rem; }
+        .platform-section { border: 2px solid #e5e5e5; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+        .platform-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .platform-logo { width: 60px; height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 0.8rem; }
+        .algorithm-box { background: #f5f5f5; padding: 1rem; border-radius: 4px; margin: 0.5rem 0; font-family: monospace; font-size: 0.85rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='badge-wallet-recommendation-deep-analysis-20250121-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='badge-wallet-recommendation-deep-analysis-20250121-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='badge-wallet-recommendation-deep-analysis-20250121-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>배지 지갑 추천 시스템 심층 분석<br>5대 AI 기반 플랫폼 기술 비교</h1>
+            <div class="subtitle">Credly · Territorium · Workday · TalentPass · LearnCard의 추천 알고리즘과 기술 아키텍처</div>
+            <div class="meta">보고서 작성일: 2025년 1월 21일 | 심층 기술 분석 보고서</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="number">5</div>
+                    <div class="label">분석 대상 플랫폼</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">200M+</div>
+                    <div class="label">Workday 스킬 데이터</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">93M</div>
+                    <div class="label">Credly 발행 배지</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">5B+</div>
+                    <div class="label">스킬 클라우드 사용량</div>
+                </div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">Executive Summary</h2>
+                <div class="executive-summary">
+                    <p>본 보고서는 AI 기반 추천 시스템을 탑재한 5대 디지털 배지/자격증명 지갑 플랫폼의 기술 아키텍처와 알고리즘을 심층 분석합니다. 각 플랫폼은 고유한 접근 방식으로 스킬 매칭과 커리어 패스 추천을 구현하고 있으며, 그래프 기술, 머신러닝, 자연어 처리 등 다양한 기술을 활용합니다.</p>
+                    <ul class="key-findings">
+                        <li><strong>Credly:</strong> Pearson Ontology 기반 지식 그래프와 NLP를 활용한 5,000+ 직업군, 200,000+ 직무 타이틀 매핑</li>
+                        <li><strong>Territorium:</strong> CLR/LER 통합형 AI 커리어 패스웨이로 Top 5 필수 스킬 자동 매칭</li>
+                        <li><strong>Workday:</strong> 5B+ 스킬 데이터 기반 그래프 기술과 ML로 실시간 추천 적응</li>
+                        <li><strong>TalentPass:</strong> LER 표준 기반 검증 가능한 자격증명의 상호운용성 중심 설계</li>
+                        <li><strong>LearnCard:</strong> 오픈소스 분산형 지갑으로 Skills Bridge를 통한 스킬 네트워크 연결</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">플랫폼별 기술 아키텍처 비교</h2>
+
+                <table class="tech-spec-table">
+                    <thead>
+                        <tr>
+                            <th>플랫폼</th>
+                            <th>핵심 기술</th>
+                            <th>스킬 온톨로지</th>
+                            <th>추천 알고리즘</th>
+                            <th>데이터 규모</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="platform-badge credly">Credly</span></td>
+                            <td>Knowledge Graph + NLP</td>
+                            <td>Pearson Ontology (독점)</td>
+                            <td>ML 기반 스킬 추론</td>
+                            <td>93M 배지, 46M 사용자</td>
+                        </tr>
+                        <tr>
+                            <td><span class="platform-badge territorium">Territorium</span></td>
+                            <td>CLR + AI Pathways</td>
+                            <td>1EdTech CLR 표준</td>
+                            <td>AI 기반 5스킬 매칭</td>
+                            <td>LMS 통합 데이터</td>
+                        </tr>
+                        <tr>
+                            <td><span class="platform-badge workday">Workday</span></td>
+                            <td>Graph DB + ML</td>
+                            <td>Skills Cloud (55K 스킬)</td>
+                            <td>실시간 적응형 추천</td>
+                            <td>5B+ 스킬 사용량</td>
+                        </tr>
+                        <tr>
+                            <td><span class="platform-badge talentpass">TalentPass</span></td>
+                            <td>VC + DID</td>
+                            <td>LER 표준</td>
+                            <td>상호운용성 기반</td>
+                            <td>파일럿 단계</td>
+                        </tr>
+                        <tr>
+                            <td><span class="platform-badge learncard">LearnCard</span></td>
+                            <td>Web3 + Open Source</td>
+                            <td>Skills Bridge (OSN)</td>
+                            <td>분산형 스킬 네트워크</td>
+                            <td>오픈 에코시스템</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">1. Credly (Pearson) 추천 시스템 심층 분석</h2>
+
+                <div class="platform-section" style="border-color: #ff6b35;">
+                    <div class="platform-header">
+                        <div class="platform-logo" style="background: #ff6b35;">Credly</div>
+                        <div>
+                            <h3 style="margin: 0;">Pearson Ontology 기반 지식 그래프</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #666;">세계 최대 디지털 배지 플랫폼의 AI 추천 엔진</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">1.1 기술 아키텍처</h4>
+                    <div class="trend-grid">
+                        <div class="trend-card">
+                            <h4>Pearson Ontology 구조</h4>
+                            <p>• <strong>지식 그래프:</strong> 스킬-직업-자격증의 관계 매핑<br>
+                            • <strong>5,000+ 직업군:</strong> 글로벌 직업 분류 체계<br>
+                            • <strong>200,000+ 직무 타이틀:</strong> 정규화된 직무명<br>
+                            • <strong>실시간 업데이트:</strong> 수백만 채용공고 기반</p>
+                        </div>
+                        <div class="trend-card">
+                            <h4>머신러닝 파이프라인</h4>
+                            <p>• <strong>NLP 처리:</strong> 채용공고 텍스트 분석<br>
+                            • <strong>스킬 추론:</strong> 유사/암시적 스킬 연결<br>
+                            • <strong>중복 해소:</strong> 자동 스킬 정규화<br>
+                            • <strong>트렌드 감지:</strong> 스킬 수요 변화 추적</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">1.2 추천 알고리즘 상세</h4>
+                    <div class="algorithm-box">
+                        <strong>Credly 추천 로직 흐름:</strong><br>
+                        1. 사용자 보유 배지/스킬 프로파일 분석<br>
+                        2. Pearson Ontology에서 관련 스킬 클러스터 식별<br>
+                        3. NLP로 노동시장 트렌드와 매칭<br>
+                        4. 스킬 갭 분석 → 추천 배지 우선순위 산출<br>
+                        5. 커리어 목표 기반 개인화 경로 제시
+                    </div>
+
+                    <h4 class="subsection-title">1.3 주요 기능</h4>
+                    <table>
+                        <tr>
+                            <td><strong>Labor Market Insights</strong></td>
+                            <td>특정 스킬/직업의 수요 트렌드, 급여 데이터, 지역별 분포 제공</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Credential Recommendations</strong></td>
+                            <td>보유 스킬 기반 다음 취득 추천 배지/자격증 제안</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Strategic Workforce Planning</strong></td>
+                            <td>조직 단위 스킬 갭 분석 및 인재 육성 경로 설계 (B2B)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Talent Directory</strong></td>
+                            <td>배지 보유자와 채용 기회의 양방향 매칭</td>
+                        </tr>
+                    </table>
+
+                    <div class="related-links">
+                        <strong>기술 문서 및 참고 자료:</strong>
+                        <a href="https://info.credly.com/product/workforce/data-quality" target="_blank">Skills Ontology</a> |
+                        <a href="https://support.credly.com/hc/en-us/articles/33349982949403-What-s-the-Pearson-Ontology" target="_blank">Pearson Ontology FAQ</a> |
+                        <a href="https://info.credly.com/product/analytics" target="_blank">Analytics</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">2. Territorium LifeJourney 추천 시스템 심층 분석</h2>
+
+                <div class="platform-section" style="border-color: #4caf50;">
+                    <div class="platform-header">
+                        <div class="platform-logo" style="background: #4caf50;">Territorium</div>
+                        <div>
+                            <h3 style="margin: 0;">AI-Powered CLR/LER 통합 플랫폼</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #666;">교육-고용 연계를 위한 포괄적 학습 기록 기반 추천</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">2.1 기술 아키텍처</h4>
+                    <div class="trend-grid">
+                        <div class="trend-card">
+                            <h4>CLR (Comprehensive Learner Record)</h4>
+                            <p>• <strong>1EdTech 인증:</strong> 표준 준수 검증 완료<br>
+                            • <strong>역량 매핑:</strong> 학습 경험→스킬 자동 변환<br>
+                            • <strong>LMS 통합:</strong> Canvas, Blackboard, Moodle 연동<br>
+                            • <strong>성적 이상 기록:</strong> 비정규 학습 포함</p>
+                        </div>
+                        <div class="trend-card">
+                            <h4>AI Career Pathways</h4>
+                            <p>• <strong>Top 5 스킬 매칭:</strong> 직무별 필수 역량 추출<br>
+                            • <strong>갭 분석:</strong> 보유 vs 필요 스킬 비교<br>
+                            • <strong>경로 생성:</strong> AI 기반 학습 경로 추천<br>
+                            • <strong>실시간 매칭:</strong> LinkedIn, Indeed 연동</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">2.2 추천 알고리즘 상세</h4>
+                    <div class="algorithm-box">
+                        <strong>LifeJourney AI 매칭 프로세스:</strong><br>
+                        1. CLR 데이터에서 검증된 역량/스킬 추출<br>
+                        2. 목표 직무의 요구 스킬 프로파일 분석<br>
+                        3. ML 모델로 Top 5 핵심 스킬 우선순위 산출<br>
+                        4. 학습자 프로파일과 직무 요건 매칭 점수 계산<br>
+                        5. 스킬 갭 기반 학습 경험 추천 (배지, 과정, 자격증)
+                    </div>
+
+                    <h4 class="subsection-title">2.3 차별화 요소</h4>
+                    <table>
+                        <tr>
+                            <td><strong>Skills Digital Wallet</strong></td>
+                            <td>CLR/LER 통합 디지털 지갑으로 평생학습 기록 관리</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Stackable Credentials</strong></td>
+                            <td>마이크로크리덴셜의 누적 및 상위 자격으로 연계</td>
+                        </tr>
+                        <tr>
+                            <td><strong>K-12 to Workforce</strong></td>
+                            <td>초중등부터 취업까지 전 생애 경로 지원</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Assessment Integration</strong></td>
+                            <td>역량 평가 결과의 자동 스킬 변환</td>
+                        </tr>
+                    </table>
+
+                    <div class="related-links">
+                        <strong>기술 문서 및 참고 자료:</strong>
+                        <a href="https://territorium.com/product/lifejourney/" target="_blank">LifeJourney</a> |
+                        <a href="https://territorium.com/product/clr/" target="_blank">CLR</a> |
+                        <a href="https://territorium.com/lifejourney-product-brief/" target="_blank">Product Brief</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">3. Workday Skills Cloud + WayTo 추천 시스템 심층 분석</h2>
+
+                <div class="platform-section" style="border-color: #0073cf;">
+                    <div class="platform-header">
+                        <div class="platform-logo" style="background: #0073cf;">Workday</div>
+                        <div>
+                            <h3 style="margin: 0;">Graph Technology 기반 Skills Cloud</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #666;">55,000개 스킬의 관계를 그래프로 모델링한 엔터프라이즈 솔루션</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">3.1 기술 아키텍처</h4>
+                    <div class="trend-grid">
+                        <div class="trend-card">
+                            <h4>Skills Cloud 구조</h4>
+                            <p>• <strong>그래프 DB:</strong> 스킬 엔티티와 관계 저장<br>
+                            • <strong>55,000 스킬:</strong> 200M 원시 데이터에서 정제<br>
+                            • <strong>O*NET 시드:</strong> 미국 정부 직업 데이터 기반<br>
+                            • <strong>5B+ 사용량:</strong> 고객사 실사용 데이터</p>
+                        </div>
+                        <div class="trend-card">
+                            <h4>ML 파이프라인</h4>
+                            <p>• <strong>스킬 추론:</strong> 업무 활동에서 스킬 자동 도출<br>
+                            • <strong>유사도 계산:</strong> 스킬 간 거리/관계 측정<br>
+                            • <strong>실시간 적응:</strong> 새 스킬 학습시 즉시 추천 갱신<br>
+                            • <strong>어노테이션:</strong> 외부 데이터 정규화</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">3.2 추천 알고리즘 상세</h4>
+                    <div class="algorithm-box">
+                        <strong>Workday 적응형 추천 시스템:</strong><br>
+                        1. 직원 프로파일: 보유 스킬, 경력, 학습 이력 수집<br>
+                        2. 그래프 탐색: 관련 스킬 클러스터 및 경로 탐색<br>
+                        3. Career Hub: 스킬 기반 역할/기회 매칭<br>
+                        4. Talent Marketplace: 프로젝트/긱 기회 추천<br>
+                        5. 피드백 루프: 학습/경험 반영으로 추천 즉시 갱신
+                    </div>
+
+                    <h4 class="subsection-title">3.3 WayTo 지갑 기능</h4>
+                    <table>
+                        <tr>
+                            <td><strong>Blockchain Credentials</strong></td>
+                            <td>블록체인 기반 검증 가능한 자격증명 발급 및 저장</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Portable Identity</strong></td>
+                            <td>개인 소유의 이동 가능한 디지털 신원</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Selective Disclosure</strong></td>
+                            <td>공유 대상과 내용을 사용자가 선택적 제어</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Skills Interoperability</strong></td>
+                            <td>외부 시스템과 양방향 스킬 데이터 교환</td>
+                        </tr>
+                    </table>
+
+                    <h4 class="subsection-title">3.4 Skills Software Alliance 파트너</h4>
+                    <p>Workday는 다음 파트너들과 사전 매핑된 스킬 온톨로지를 통해 데이터 상호운용성을 제공합니다:</p>
+                    <ul class="key-findings">
+                        <li><strong>Aon:</strong> 인재 평가 및 스킬 데이터 연동</li>
+                        <li><strong>Degreed:</strong> 학습 경험 플랫폼 스킬 연계</li>
+                        <li><strong>SkyHive:</strong> 노동시장 스킬 인텔리전스 통합</li>
+                    </ul>
+
+                    <div class="related-links">
+                        <strong>기술 문서 및 참고 자료:</strong>
+                        <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Skills Cloud</a> |
+                        <a href="https://blog.workday.com/en-us/2020/foundation-workday-skills-cloud.html" target="_blank">Foundation</a> |
+                        <a href="https://credentials.workday.com/docs/overview/" target="_blank">Credentials</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">4. TalentPass 추천 시스템 심층 분석</h2>
+
+                <div class="platform-section" style="border-color: #9c27b0;">
+                    <div class="platform-header">
+                        <div class="platform-logo" style="background: #9c27b0;">TalentPass</div>
+                        <div>
+                            <h3 style="margin: 0;">LER 표준 기반 검증 가능한 자격증명 지갑</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #666;">Gobekli 개발, University of Phoenix 파일럿 진행</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">4.1 기술 아키텍처</h4>
+                    <div class="trend-grid">
+                        <div class="trend-card">
+                            <h4>Verifiable Credentials (VC)</h4>
+                            <p>• <strong>W3C VC 표준:</strong> 국제 표준 준수<br>
+                            • <strong>DID 기반:</strong> 분산 식별자 활용<br>
+                            • <strong>암호화 검증:</strong> 위변조 불가 보장<br>
+                            • <strong>선택적 공개:</strong> 프라이버시 보호</p>
+                        </div>
+                        <div class="trend-card">
+                            <h4>LER 상호운용성</h4>
+                            <p>• <strong>T3 Innovation:</strong> JFF 프로젝트 참여<br>
+                            • <strong>핸드오프 메커니즘:</strong> 지갑 간 이전 검증<br>
+                            • <strong>Use Case 테스트:</strong> 실제 시나리오 파일럿<br>
+                            • <strong>US Chamber 검증:</strong> 기술 자문단 인증</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">4.2 추천 접근 방식</h4>
+                    <div class="algorithm-box">
+                        <strong>TalentPass 상호운용성 중심 설계:</strong><br>
+                        1. LER 표준 기반 자격증명 수집 및 저장<br>
+                        2. 다양한 발급 기관의 VC를 통합 관리<br>
+                        3. 채용 시스템과 표준화된 데이터 교환<br>
+                        4. 스킬 매칭은 연동 시스템(ATS 등)에서 수행<br>
+                        5. 검증 가능한 데이터로 신뢰도 높은 매칭 지원
+                    </div>
+
+                    <h4 class="subsection-title">4.3 파일럿 현황</h4>
+                    <table>
+                        <tr>
+                            <td><strong>University of Phoenix</strong></td>
+                            <td>학생 LER 데이터의 지갑 핸드오프 기술 검증 완료</td>
+                        </tr>
+                        <tr>
+                            <td><strong>US Chamber Foundation</strong></td>
+                            <td>기술 자문단의 상호운용성 테스트 통과</td>
+                        </tr>
+                        <tr>
+                            <td><strong>JFF T3 Project</strong></td>
+                            <td>스킬 기반 인재 시장 구축 프로젝트 참여</td>
+                        </tr>
+                    </table>
+
+                    <div class="related-links">
+                        <strong>참고 자료:</strong>
+                        <a href="https://www.jff.org/idea/verifiable-credentials-wallets-in-a-skills-first-talent-marketplace/" target="_blank">JFF Report</a> |
+                        <a href="https://info.jff.org/digital-wallets" target="_blank">Digital Wallets</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">5. LearnCard 추천 시스템 심층 분석</h2>
+
+                <div class="platform-section" style="border-color: #00bcd4;">
+                    <div class="platform-header">
+                        <div class="platform-logo" style="background: #00bcd4;">LearnCard</div>
+                        <div>
+                            <h3 style="margin: 0;">오픈소스 분산형 학습 지갑</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #666;">Learning Economy Foundation의 Web3 기반 평생학습 패스포트</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">5.1 기술 아키텍처</h4>
+                    <div class="trend-grid">
+                        <div class="trend-card">
+                            <h4>오픈소스 인프라</h4>
+                            <p>• <strong>플러그인 아키텍처:</strong> 무한 확장 가능<br>
+                            • <strong>시스템 무관:</strong> DB, 블록체인 독립적<br>
+                            • <strong>API 중심:</strong> 어떤 앱과도 연동<br>
+                            • <strong>GitHub 공개:</strong> 투명한 개발</p>
+                        </div>
+                        <div class="trend-card">
+                            <h4>Skills Bridge</h4>
+                            <p>• <strong>OSN 기반:</strong> Open Skills Network 연계<br>
+                            • <strong>분산형 그래프:</strong> 스킬 텍스트 연결<br>
+                            • <strong>HTTP 비유:</strong> 스킬의 하이퍼텍스트화<br>
+                            • <strong>LER 웹:</strong> 학습고용기록 네트워크</p>
+                        </div>
+                    </div>
+
+                    <h4 class="subsection-title">5.2 LearnCloud 플랫폼</h4>
+                    <div class="algorithm-box">
+                        <strong>LearnCloud 통합 생태계:</strong><br>
+                        1. 학습 제공자, 기술 시스템, 자격증명 연결<br>
+                        2. AI 기반 에코시스템과 원활한 통합<br>
+                        3. AI 코파일럿/봇이 학습자 데이터에 적응<br>
+                        4. 동의 기반 대시보드 (가족, 학교, 상담사)<br>
+                        5. 교육-고용-자격증명 플랫폼 간 상호운용
+                    </div>
+
+                    <h4 class="subsection-title">5.3 핵심 원칙</h4>
+                    <table>
+                        <tr>
+                            <td><strong>Portable</strong></td>
+                            <td>자격증명이 학습자와 함께 이동, 특정 시스템에 종속되지 않음</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Consent-Driven</strong></td>
+                            <td>데이터 공개 대상과 시점을 학습자가 직접 통제</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Open</strong></td>
+                            <td>상호운용 가능한 커뮤니티 주도 표준 기반</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Developer-Friendly</strong></td>
+                            <td>현대적 API와 도구로 기존 앱에 쉽게 연결</td>
+                        </tr>
+                    </table>
+
+                    <h4 class="subsection-title">5.4 주요 프로젝트</h4>
+                    <ul class="key-findings">
+                        <li><strong>SuperSkills!:</strong> LEGO Foundation과 협력한 어린이용 디지털 배지 게임</li>
+                        <li><strong>App Marketplace:</strong> 지갑 내 앱 마켓플레이스로 자격증명 활용 확장</li>
+                        <li><strong>Davos 파일럿:</strong> 글로벌 스킬 갭 해소를 위한 연구 프로젝트</li>
+                    </ul>
+
+                    <div class="related-links">
+                        <strong>기술 문서 및 참고 자료:</strong>
+                        <a href="https://www.learncard.com/" target="_blank">LearnCard</a> |
+                        <a href="https://docs.learncard.com" target="_blank">Documentation</a> |
+                        <a href="https://github.com/learningeconomy/LearnCard" target="_blank">GitHub</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">추천 시스템 성숙도 비교 분석</h2>
+
+                <div class="chart-container">
+                    <canvas id="maturityRadar"></canvas>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>평가 항목</th>
+                            <th><span class="platform-badge credly">Credly</span></th>
+                            <th><span class="platform-badge territorium">Territorium</span></th>
+                            <th><span class="platform-badge workday">Workday</span></th>
+                            <th><span class="platform-badge talentpass">TalentPass</span></th>
+                            <th><span class="platform-badge learncard">LearnCard</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>AI/ML 성숙도</strong></td>
+                            <td>★★★★★</td>
+                            <td>★★★★☆</td>
+                            <td>★★★★★</td>
+                            <td>★★☆☆☆</td>
+                            <td>★★★☆☆</td>
+                        </tr>
+                        <tr>
+                            <td><strong>스킬 온톨로지</strong></td>
+                            <td>★★★★★</td>
+                            <td>★★★★☆</td>
+                            <td>★★★★★</td>
+                            <td>★★★☆☆</td>
+                            <td>★★★★☆</td>
+                        </tr>
+                        <tr>
+                            <td><strong>상호운용성</strong></td>
+                            <td>★★★☆☆</td>
+                            <td>★★★★☆</td>
+                            <td>★★★★☆</td>
+                            <td>★★★★★</td>
+                            <td>★★★★★</td>
+                        </tr>
+                        <tr>
+                            <td><strong>분산화/개인통제</strong></td>
+                            <td>★★☆☆☆</td>
+                            <td>★★★☆☆</td>
+                            <td>★★★☆☆</td>
+                            <td>★★★★★</td>
+                            <td>★★★★★</td>
+                        </tr>
+                        <tr>
+                            <td><strong>시장 적용도</strong></td>
+                            <td>★★★★★</td>
+                            <td>★★★★☆</td>
+                            <td>★★★★★</td>
+                            <td>★★☆☆☆</td>
+                            <td>★★★☆☆</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">기술 트렌드 및 전망</h2>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>1. 그래프 기술의 부상</h4>
+                        <p>Credly와 Workday 모두 지식 그래프 기술을 핵심으로 채택. 스킬 간 관계를 모델링하여 더 정확한 추론과 추천이 가능해짐.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>2. 실시간 적응형 추천</h4>
+                        <p>Workday의 "새 스킬 학습시 모든 추천이 즉시 갱신"되는 방식이 업계 표준으로 확산 중.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>3. 오픈 표준 vs 독점 온톨로지</h4>
+                        <p>Credly/Workday의 독점 온톨로지와 LearnCard의 오픈 접근 방식이 공존. 시장은 상호운용성을 점점 더 요구.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>4. CLR/LER 통합 가속화</h4>
+                        <p>Territorium의 CLR+LER 접근법이 교육-고용 연계의 모범 사례로 부상. 1EdTech 표준 채택 확대.</p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">향후 발전 방향</h3>
+                <ul class="key-findings">
+                    <li><strong>AI 추천의 고도화:</strong> LLM 기반 대화형 커리어 코칭으로 진화 예상</li>
+                    <li><strong>분산 신원의 표준화:</strong> DID/VC 기반 자기주권 신원이 메인스트림으로 이동</li>
+                    <li><strong>Skills Passport 통합:</strong> EU Digital Identity Wallet 등 정부 주도 이니셔티브와 연계</li>
+                    <li><strong>실시간 노동시장 피드:</strong> 채용공고 데이터와 스킬 온톨로지의 실시간 동기화</li>
+                </ul>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">결론 및 권고사항</h2>
+
+                <div class="executive-summary">
+                    <h4>사용 목적별 플랫폼 선택 가이드</h4>
+                    <ul class="key-findings">
+                        <li><strong>대규모 기업 인재 관리:</strong> Workday Skills Cloud - 엔터프라이즈급 확장성과 HCM 통합</li>
+                        <li><strong>글로벌 자격증명 네트워크:</strong> Credly - 가장 큰 배지 생태계와 채용 연계</li>
+                        <li><strong>교육기관 학습 기록:</strong> Territorium LifeJourney - CLR/LER 표준과 LMS 통합</li>
+                        <li><strong>분산형 자기주권 신원:</strong> TalentPass/LearnCard - VC/DID 기반 프라이버시 중심</li>
+                        <li><strong>오픈소스 커스터마이징:</strong> LearnCard - 개발자 친화적, 플러그인 확장 가능</li>
+                    </ul>
+                </div>
+            </section>
+
+            <div class="sources">
+                <strong>참고 자료 (Sources)</strong>
+                <ul>
+                    <li>• <a href="https://info.credly.com/product/workforce/data-quality" target="_blank">Credly Skills Ontology</a></li>
+                    <li>• <a href="https://support.credly.com/hc/en-us/articles/33349982949403-What-s-the-Pearson-Ontology" target="_blank">Pearson Ontology FAQ</a></li>
+                    <li>• <a href="https://territorium.com/product/lifejourney/" target="_blank">Territorium LifeJourney</a></li>
+                    <li>• <a href="https://territorium.com/product/clr/" target="_blank">Territorium CLR</a></li>
+                    <li>• <a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud</a></li>
+                    <li>• <a href="https://blog.workday.com/en-us/2020/foundation-workday-skills-cloud.html" target="_blank">Foundation of Workday Skills Cloud</a></li>
+                    <li>• <a href="https://credentials.workday.com/docs/overview/" target="_blank">Workday Credentials</a></li>
+                    <li>• <a href="https://www.jff.org/idea/verifiable-credentials-wallets-in-a-skills-first-talent-marketplace/" target="_blank">JFF - Verifiable Credentials Wallets</a></li>
+                    <li>• <a href="https://www.learncard.com/" target="_blank">LearnCard</a></li>
+                    <li>• <a href="https://docs.learncard.com" target="_blank">LearnCard Documentation</a></li>
+                    <li>• <a href="https://github.com/learningeconomy/LearnCard" target="_blank">LearnCard GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('maturityRadar').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['AI/ML 성숙도', '스킬 온톨로지', '상호운용성', '분산화/개인통제', '시장 적용도'],
+                datasets: [
+                    {
+                        label: 'Credly',
+                        data: [5, 5, 3, 2, 5],
+                        borderColor: '#ff6b35',
+                        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Territorium',
+                        data: [4, 4, 4, 3, 4],
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Workday',
+                        data: [5, 5, 4, 3, 5],
+                        borderColor: '#0073cf',
+                        backgroundColor: 'rgba(0, 115, 207, 0.1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'TalentPass',
+                        data: [2, 3, 5, 5, 2],
+                        borderColor: '#9c27b0',
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'LearnCard',
+                        data: [3, 4, 5, 5, 3],
+                        borderColor: '#00bcd4',
+                        backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: { stepSize: 1, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
