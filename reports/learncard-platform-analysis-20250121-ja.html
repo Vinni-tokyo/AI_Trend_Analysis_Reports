@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnCard プラットフォーム詳細分析</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-color: #00b4d8; --secondary-color: #0096c7; --accent-color: #0077b6; --text-primary: #1a1a1a; --text-secondary: #4a4a4a; --bg-subtle: #fafafa; --border-color: #e5e5e5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; line-height: 1.7; color: var(--text-primary); background: var(--bg-subtle); font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; text-decoration: none; }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .header .subtitle { font-size: 0.95rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge { display: inline-block; background: white; color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); }
+        .subsection-title { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; font-weight: 600; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card { background: linear-gradient(135deg, var(--bg-subtle) 0%, white 100%); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .info-box { background: #e0f7fa; border-left: 4px solid var(--primary-color); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .highlight-box { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--primary-color); }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .feature-tag { display: inline-block; background: var(--primary-color); color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; margin: 0.15rem; }
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .ai-feature-box { background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        .ai-feature-box h4 { color: var(--accent-color); margin-bottom: 0.5rem; }
+        .timeline { position: relative; padding-left: 2rem; margin: 1rem 0; }
+        .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--primary-color); }
+        .timeline-item { position: relative; margin: 1rem 0; padding: 0.75rem; background: var(--bg-subtle); border-radius: 4px; }
+        .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 1rem; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; }
+        .timeline-date { font-size: 0.75rem; color: var(--primary-color); font-weight: 600; }
+        .web3-badge { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin: 0.25rem; }
+        .open-source-badge { display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin: 0.25rem; }
+        .sources { background: var(--bg-subtle); padding: 1rem 1.25rem; border-radius: 8px; margin-top: 2rem; font-size: 0.75rem; }
+        .sources h4 { margin-bottom: 0.5rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        @media (max-width: 768px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } .two-column, .pros-cons { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← ホーム</a>
+                <div class="language-switcher">
+                    <button class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='learncard-platform-analysis-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='learncard-platform-analysis-20250121-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <span class="open-source-badge">オープンソース</span>
+            <span class="web3-badge">Web3</span>
+            <h1>LearnCard プラットフォーム詳細分析</h1>
+            <div class="subtitle">Learning Economy Foundationのオープンソース生涯学習デジタルウォレット</div>
+            <div class="meta">レポート作成日: 2025年1月21日 | 個別プラットフォーム詳細分析</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="number">2018</div>
+                    <div class="label">設立年</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">200K+</div>
+                    <div class="label">発行資格証明</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">57M</div>
+                    <div class="label">潜在スカウトユーザー</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">172</div>
+                    <div class="label">ScoutPass対象国</div>
+                </div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">1. 企業概要</h2>
+                <div class="info-box">
+                    <p><strong>Learning Economy Foundation (LEF)</strong>は2018年に設立された501(c)(3)非営利財団で、
+                    <strong>LearnCard</strong>というオープンソースデジタルウォレットプラットフォームを開発しています。
+                    LearnCardは「生涯学習パスポート」として、学習者が自分のスキルと経験を収集、所有、共有できるよう支援します。</p>
+                </div>
+
+                <div class="two-column">
+                    <div class="card">
+                        <h4>組織情報</h4>
+                        <ul>
+                            <li><strong>本社:</strong> ナッシュビル、テネシー州、米国</li>
+                            <li><strong>組織形態:</strong> 501(c)(3)非営利財団</li>
+                            <li><strong>従業員数:</strong> 11-50名</li>
+                            <li><strong>創設者:</strong> Amy Purifoy, Ana Rold, Chris Purifoy, Jackson Smith</li>
+                            <li><strong>ウェブサイト:</strong> learncard.com, learningeconomy.io</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>コアミッション</h4>
+                        <ul>
+                            <li>21世紀の教育・職場インフラの加速化</li>
+                            <li>学生/従業員中心モデルによる不平等の解消</li>
+                            <li>分断されたエコシステムを統合イノベーションハブへ接続</li>
+                            <li>個人の主体性、公平性、経済的流動性の促進</li>
+                            <li>Web3対応の22世紀インフラ構築</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">2. コア技術とアーキテクチャ</h2>
+
+                <h3 class="subsection-title">2.1 オープンソースSDKとプラグインシステム</h3>
+                <p>LearnCardはフロントエンドとバックエンドの両コンポーネントを含む堅牢なオープンソースSDK（ソフトウェア開発キット）です。
+                プラグインベースのアプローチにより、無限の柔軟性を提供します。</p>
+
+                <div class="highlight-box">
+                    <h4>対応プラットフォーム</h4>
+                    <span class="feature-tag">Web</span>
+                    <span class="feature-tag">iOS</span>
+                    <span class="feature-tag">Android</span>
+                    <span class="feature-tag">macOS (M1+)</span>
+                    <span class="feature-tag">visionOS</span>
+                </div>
+
+                <h3 class="subsection-title">2.2 相互運用性と標準準拠</h3>
+                <table>
+                    <tr>
+                        <th>標準</th>
+                        <th>説明</th>
+                        <th>サポート状況</th>
+                    </tr>
+                    <tr>
+                        <td>W3C Verifiable Credentials (VCs)</td>
+                        <td>安全で改ざん防止された携帯可能なデジタル記録の標準</td>
+                        <td>完全サポート</td>
+                    </tr>
+                    <tr>
+                        <td>W3C Decentralized Identifiers (DIDs)</td>
+                        <td>ユーザー制御のグローバル一意識別子</td>
+                        <td>完全サポート</td>
+                    </tr>
+                    <tr>
+                        <td>Open Badges 3.0</td>
+                        <td>最新の1EdTechオープンバッジ標準</td>
+                        <td>完全サポート</td>
+                    </tr>
+                    <tr>
+                        <td>VC-API</td>
+                        <td>ウォレットとサーバー間の資格証明発行/検証標準プロトコル</td>
+                        <td>完全サポート</td>
+                    </tr>
+                    <tr>
+                        <td>CTDL (Credential Transparency Description Language)</td>
+                        <td>Credential Engineのスキルと資格証明の標準スキーマ</td>
+                        <td>統合サポート</td>
+                    </tr>
+                </table>
+
+                <div class="info-box">
+                    <p><strong>ブロックチェーン非依存:</strong> LearnCardは特定のブロックチェーンやデータベースに縛られません。
+                    プラグインアプローチにより、様々なシステムと柔軟に連携できます。</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">3. スキル推薦システムとAI機能</h2>
+
+                <div class="ai-feature-box">
+                    <h4>Skills Bridge - スキル接続技術</h4>
+                    <p>Skills BridgeはOpen Skills Network（OSN）の研究をベースに、スキルテキストを分散ネットワークに接続します。
+                    HTTPがテキストをナビゲート可能なウェブに接続したように、Skills Bridgeはスキルを接続されたネットワークに構築します。</p>
+                    <ul>
+                        <li><strong>Rich Skill Descriptors (RSDs):</strong> スキル相互運用性のための詳細なスキル記述子</li>
+                        <li><strong>CTDLスキーマ:</strong> スキル情報交換のためのオープン標準スキーマ</li>
+                        <li><strong>Credential Engine統合:</strong> リンクドオープンデータによるLERエコシステムの拡張</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">3.1 LearnCloudプラットフォーム</h3>
+                <div class="highlight-box">
+                    <p>LearnCloudは、学習プロバイダー、技術システム、資格証明、AI駆動エコシステムをシームレスに統合する
+                    オープンAPI駆動プラットフォームです。教育と雇用の未来に向けた迅速なスケーリングと相互運用性を実現します。</p>
+                    <ul>
+                        <li>デジタルウォレットと検証可能資格証明の接続</li>
+                        <li>分析ダッシュボードの統合</li>
+                        <li>学校、雇用主、グローバルネットワーク間の接続</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">3.2 LearningFREQUENCYパートナーシップ</h3>
+                <p>Gates Ventures、Animoca Brands、Open Campus、Operation KidsとともにLearningFREQUENCYとパートナーシップを締結しました。
+                メタ認知的な振り返りを通じて、学習者が自分独自の学習と関与の好みを理解できるよう支援します。
+                現在、LearnCardアプリ全体の統合を展開中です。</p>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">4. 主要導入事例</h2>
+
+                <div class="two-column">
+                    <div class="card">
+                        <h4>ScoutPass - 世界スカウト運動</h4>
+                        <ul>
+                            <li><strong>パートナー:</strong> 世界スカウト機構（WOSM）</li>
+                            <li><strong>規模:</strong> 172か国5,700万人のスカウト</li>
+                            <li><strong>実績:</strong> 初週で70,000+バッジ発行</li>
+                            <li><strong>2024年:</strong> 200,000+検証可能資格証明を発行</li>
+                            <li><strong>ローンチ:</strong> 2023年12月パリ世界スカウト教育会議</li>
+                        </ul>
+                        <p style="margin-top: 0.75rem;"><strong>主要機能:</strong></p>
+                        <span class="feature-tag">デジタルバッジ</span>
+                        <span class="feature-tag">Boosts（ソーシャルバッジ）</span>
+                        <span class="feature-tag">Troops（組織管理）</span>
+                        <span class="feature-tag">Journeys（学習の旅）</span>
+                    </div>
+                    <div class="card">
+                        <h4>SuperSkills! - レゴ財団</h4>
+                        <ul>
+                            <li><strong>パートナー:</strong> LEGO Foundation</li>
+                            <li><strong>対象:</strong> 4-12歳の子供</li>
+                            <li><strong>コンセプト:</strong> 遊びを通じた学習</li>
+                            <li><strong>ローンチ:</strong> 2021年11月クローズドベータ</li>
+                        </ul>
+                        <p style="margin-top: 0.75rem;"><strong>育成スキル領域:</strong></p>
+                        <span class="feature-tag">認知能力</span>
+                        <span class="feature-tag">創造性</span>
+                        <span class="feature-tag">社会性</span>
+                        <span class="feature-tag">感情</span>
+                        <span class="feature-tag">身体</span>
+                        <p style="margin-top: 0.75rem; font-size: 0.85rem;"><em>BrainPOP評価研究に基づき、創造性と認知的思考から始まる全人的発達を評価します。</em></p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>プライバシーファーストデザイン</h4>
+                    <p>SuperSkills!プロジェクトは子供とそのデータの保護を最優先としています。分散ID アプローチを採用し、
+                    関係する組織はユーザーデータをホストする必要がありません。すべてのデータ所有権は本人に帰属し、
+                    すべてのデータ管理は信頼性をもって移植可能でなければなりません。</p>
+                    <p><strong>技術スタック:</strong> カストディアルウォレット（Torus）+ Ceramic VC/ストレージツール → プライベートでエクスポート可能な将来対応の実績記録</p>
+                </div>
+
+                <h3 class="subsection-title">4.3 その他の導入事例</h3>
+                <table>
+                    <tr>
+                        <th>プロジェクト</th>
+                        <th>パートナー</th>
+                        <th>説明</th>
+                    </tr>
+                    <tr>
+                        <td>Metaversity</td>
+                        <td>モトロウコミュニティカレッジ、テネシー</td>
+                        <td>コミュニティカレッジのデジタル資格証明導入</td>
+                    </tr>
+                    <tr>
+                        <td>The Skyway</td>
+                        <td>PVBLIC Foundation、国連</td>
+                        <td>2024年国連総会でグローバル学習イニシアティブを開始</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">5. ビジネスモデル</h2>
+
+                <table>
+                    <tr>
+                        <th>タイプ</th>
+                        <th>対象</th>
+                        <th>価格</th>
+                        <th>特徴</th>
+                    </tr>
+                    <tr>
+                        <td>個人用アプリ</td>
+                        <td>個人学習者</td>
+                        <td>無料</td>
+                        <td>Web、iOS、Androidアプリ無料提供</td>
+                    </tr>
+                    <tr>
+                        <td>オープンソースSDK</td>
+                        <td>開発者</td>
+                        <td>無料</td>
+                        <td>GitHubから無料ダウンロード・使用</td>
+                    </tr>
+                    <tr>
+                        <td>機関パートナーシップ</td>
+                        <td>大規模組織</td>
+                        <td>協議</td>
+                        <td>カスタム開発とサポート（例：WOSM、LEGO）</td>
+                    </tr>
+                    <tr>
+                        <td>助成金・スポンサーシップ</td>
+                        <td>非営利運営</td>
+                        <td>-</td>
+                        <td>Gates Foundation、UNESCO等からの支援</td>
+                    </tr>
+                </table>
+
+                <div class="info-box">
+                    <p><strong>非営利モデル:</strong> Learning Economy Foundationは501(c)(3)非営利財団として、
+                    助成金、慈善寄付、大規模パートナーシップを通じて運営されています。
+                    個人ユーザーには無料サービスを提供し、オープンソース精神を維持しています。</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">6. 主要パートナーシップ</h2>
+
+                <div class="highlight-box">
+                    <h4>グローバルパートナーネットワーク</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                        <span class="feature-tag">LEGO Foundation</span>
+                        <span class="feature-tag">World Organization of the Scout Movement</span>
+                        <span class="feature-tag">World Bank</span>
+                        <span class="feature-tag">Credential Engine</span>
+                        <span class="feature-tag">UNESCO</span>
+                        <span class="feature-tag">World Economic Forum</span>
+                        <span class="feature-tag">Gates Foundation</span>
+                        <span class="feature-tag">PVBLIC Foundation</span>
+                        <span class="feature-tag">Brookings Institution</span>
+                        <span class="feature-tag">SmartResume</span>
+                        <span class="feature-tag">Gates Ventures</span>
+                        <span class="feature-tag">Animoca Brands</span>
+                        <span class="feature-tag">Open Campus</span>
+                        <span class="feature-tag">LearningFREQUENCY</span>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">Credential Engineとの協力</h3>
+                <p>2025年2月、Open Skills Network（OSN）はOpen Skills Management Tool（OSMT）と
+                Rich Skills Descriptors（RSD）をCredential Engineに移管しました。
+                これはスキルエコシステム全体のデータ接続強化と標準化促進を目的としています。</p>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">7. アジア地域の状況</h2>
+
+                <div class="info-box">
+                    <h4>AP Co-Lab（アジア太平洋協力研究所）</h4>
+                    <p>アジア太平洋地域に、完全に調整されながらも分散化された、
+                    教育と雇用の未来のための協調的イノベーション、調査、実験のエコシステムを提供することを目指しています。</p>
+                    <ul>
+                        <li>標準化された学習プロトコルの採用に焦点を当てたアジア太平洋地域のパイロットネットワーク</li>
+                        <li>国境を越えた流動性とデジタル公平性の重視</li>
+                        <li>教育と雇用の未来のための協調的イノベーション</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">ScoutPassによるアジア展開</h3>
+                <p>ScoutPassは172か国のスカウト組織を対象としており、アジア地域の多くの国を含みます。
+                2023年12月のパリでの第4回世界スカウト教育会議で、172か国の国家スカウト組織にScoutPassが紹介されました。</p>
+
+                <table>
+                    <tr>
+                        <th>地域</th>
+                        <th>状況</th>
+                        <th>備考</th>
+                    </tr>
+                    <tr>
+                        <td>日本</td>
+                        <td>ScoutPass対象国</td>
+                        <td>ボーイスカウト日本連盟を含む</td>
+                    </tr>
+                    <tr>
+                        <td>韓国</td>
+                        <td>ScoutPass対象国</td>
+                        <td>韓国スカウト連盟を含む</td>
+                    </tr>
+                    <tr>
+                        <td>アジア太平洋</td>
+                        <td>AP Co-Labパイロット</td>
+                        <td>標準化プロトコル採用に重点</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">8. 顧客満足度と評価</h2>
+
+                <div class="highlight-box">
+                    <p>非営利オープンソースプロジェクトとして、LearnCardはG2やGartnerなど従来の商用製品と比較して
+                    公式評価が限られています。しかし、グローバルな認知を得ています：</p>
+                </div>
+
+                <div class="two-column">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">強み</h4>
+                        <ul>
+                            <li>完全オープンソースで透明性を保証</li>
+                            <li>W3C、1EdTech標準完全準拠</li>
+                            <li>LEGO、WOSMなどグローバルパートナーシップ</li>
+                            <li>プライバシーファーストデザイン</li>
+                            <li>無料個人用アプリ提供</li>
+                            <li>ブロックチェーン非依存の柔軟性</li>
+                            <li>UNESCO Global Education Coalitionメンバー</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">検討事項</h4>
+                        <ul>
+                            <li>商用サポート体制が限定的</li>
+                            <li>公式ユーザーレビュープラットフォーム評価なし</li>
+                            <li>企業向けSLAが不明確</li>
+                            <li>アジア地域専用導入事例が限定的</li>
+                            <li>非営利モデルによる長期持続性の疑問</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">HundrEDグローバル認知</h3>
+                <div class="info-box">
+                    <p>LearnCardは、世界中でインパクトのある教育イノベーションを発掘する非営利組織HundrEDによって
+                    グローバル教育イノベーションとして選定されました。
+                    これは教育分野での革新性と影響力が認められたものです。</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">9. 開発ロードマップ</h2>
+
+                <h3 class="subsection-title">2024年の主要実績</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <strong>The Skywayローンチ</strong> - 2024年国連総会でPVBLIC Foundationとのパートナーシップによりグローバル学習イニシアティブを開始
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <strong>LearnCard 2.0リリース</strong> - 強化された機能と改善されたユーザーエクスペリエンス
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <strong>Consent Flow導入</strong> - ユーザー同意ベースのデータフロー管理機能
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <strong>Gatekeepers for Guardians</strong> - 保護者向け管理機能の開発
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <strong>ScoutPass拡張</strong> - 200,000+検証可能資格証明の発行達成
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2025年の展望</h3>
+                <div class="highlight-box">
+                    <p>Learning Economy Foundationは2025年の課題と無限のポジティブな変化の可能性を認識しています。
+                    共に先端技術の公平な翻訳を支援し、個人がどのような状況でも到達し成長できるよう
+                    エンパワーメントすることを目指しています。</p>
+                    <ul>
+                        <li>グローバル採用とインパクトの拡大</li>
+                        <li>AP Co-Labを通じたアジア太平洋地域の拡大</li>
+                        <li>Credential Engineとのスキルエコシステム統合の深化</li>
+                        <li>さらなるグローバルパートナーシップの構築</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">10. 競合分析</h2>
+
+                <table>
+                    <tr>
+                        <th>プラットフォーム</th>
+                        <th>タイプ</th>
+                        <th>価格</th>
+                        <th>差別化要素</th>
+                    </tr>
+                    <tr>
+                        <td><strong>LearnCard</strong></td>
+                        <td>非営利オープンソース</td>
+                        <td>無料</td>
+                        <td>Web3、ブロックチェーン非依存、完全オープンソース</td>
+                    </tr>
+                    <tr>
+                        <td>Credly</td>
+                        <td>商用SaaS</td>
+                        <td>$2,500-$20,000+/年</td>
+                        <td>市場リーダー、大企業顧客</td>
+                    </tr>
+                    <tr>
+                        <td>Territorium</td>
+                        <td>商用SaaS</td>
+                        <td>協議</td>
+                        <td>CLR 2.0 + OB 3.0認証、教育機関特化</td>
+                    </tr>
+                    <tr>
+                        <td>TalentPass</td>
+                        <td>スタートアップ</td>
+                        <td>$2-$12/ユーザー/年</td>
+                        <td>AI搭載Pythiaガイド、LER特化</td>
+                    </tr>
+                </table>
+
+                <div class="info-box">
+                    <p><strong>LearnCardの差別化:</strong> 非営利ミッション駆動運営、Web3哲学、
+                    グローバル標準機関との緊密な協力を持つ唯一の完全オープンソースソリューションです。
+                    商用競合他社と異なり、公共財としての教育インフラ構築に注力しています。</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">11. 結論と推奨事項</h2>
+
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">適したユーザー</h4>
+                        <ul>
+                            <li>オープンソースソリューションを求める組織</li>
+                            <li>プライバシーを重視する教育機関</li>
+                            <li>Web3/分散システムに関心のある開発者</li>
+                            <li>非営利/公共部門組織</li>
+                            <li>スカウトなどの青少年団体</li>
+                            <li>グローバル標準準拠が必要な機関</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">検討が必要な場合</h4>
+                        <ul>
+                            <li>即時使用可能なエンタープライズソリューションが必要</li>
+                            <li>商用SLAとサポート契約が必要</li>
+                            <li>既存HR/LMSシステムとの即時統合が必要</li>
+                            <li>大規模企業導入経験が必要</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>最終評価:</strong> LearnCardは教育・雇用資格証明分野で最も革新的なオープンソースソリューションです。
+                    非営利ミッションとグローバルパートナーシップ（LEGO、WOSM、UNESCO）を通じて信頼を構築しています。
+                    アジア地域ではAP Co-LabとScoutPassを通じて展開中であり、
+                    特にプライバシー保護と学習者の主体性を重視する組織に適しています。</p>
+                </div>
+            </section>
+
+            <div class="sources">
+                <h4>参考資料</h4>
+                <ul>
+                    <li><a href="https://www.learncard.com/" target="_blank">LearnCard公式ウェブサイト</a></li>
+                    <li><a href="https://www.learningeconomy.io/" target="_blank">Learning Economy Foundation</a></li>
+                    <li><a href="https://docs.learncard.com/" target="_blank">LearnCard開発者ドキュメント</a></li>
+                    <li><a href="https://www.scout.org/scoutpass" target="_blank">ScoutPass - WOSM</a></li>
+                    <li><a href="https://www.learncard.com/superskills" target="_blank">SuperSkills! - LEGO Foundation</a></li>
+                    <li><a href="https://credentialengine.org/" target="_blank">Credential Engine</a></li>
+                    <li><a href="https://www.openskillsnetwork.org/" target="_blank">Open Skills Network</a></li>
+                    <li><a href="https://hundred.org/en/innovations/learncard" target="_blank">HundrED - LearnCard</a></li>
+                    <li><a href="https://www.crunchbase.com/organization/learning-economy" target="_blank">Crunchbase - Learning Economy Foundation</a></li>
+                    <li><a href="https://globaleducationcoalition.unesco.org/members/details/357" target="_blank">UNESCO Global Education Coalition</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

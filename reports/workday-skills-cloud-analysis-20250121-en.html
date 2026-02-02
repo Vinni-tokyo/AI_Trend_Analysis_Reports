@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workday Skills Cloud Platform Deep Analysis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-color: #0073cf; --secondary-color: #005cb9; --text-primary: #1a1a1a; --text-secondary: #4a4a4a; --bg-subtle: #fafafa; --border-color: #e5e5e5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.7; color: var(--text-primary); background: var(--bg-subtle); font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; text-decoration: none; }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .header .subtitle { font-size: 0.95rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge { display: inline-block; background: white; color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); }
+        .subsection-title { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; font-weight: 600; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-secondary); }
+        .info-box { background: #e3f2fd; border-left: 4px solid var(--primary-color); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .highlight-box { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--primary-color); }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .award-badge { display: inline-block; background: #ffd700; color: #333; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; margin: 0.2rem; }
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .ai-feature-box { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        .ai-feature-box h4 { color: #004494; margin-bottom: 0.5rem; }
+        .timeline { position: relative; padding-left: 2rem; margin: 1rem 0; }
+        .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--primary-color); }
+        .timeline-item { position: relative; margin: 1rem 0; padding: 0.75rem; background: var(--bg-subtle); border-radius: 4px; }
+        .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 1rem; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; }
+        .timeline-date { font-size: 0.75rem; color: var(--primary-color); font-weight: 600; }
+        .sources { background: var(--bg-subtle); padding: 1rem 1.25rem; border-radius: 8px; margin-top: 2rem; font-size: 0.75rem; }
+        .sources h4 { margin-bottom: 0.5rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        @media (max-width: 768px) { .stat-grid, .two-column, .pros-cons { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='workday-skills-cloud-analysis-20250121-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='workday-skills-cloud-analysis-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button class="lang-btn active">English</button>
+                </div>
+            </div>
+            <div class="company-badge">Gartner Leader</div>
+            <h1>Workday Skills Cloud Platform Deep Analysis</h1>
+            <div class="subtitle">Enterprise Skills Intelligence & AI-Powered Talent Management Platform</div>
+            <div class="meta">Report Date: January 21, 2025 | Individual Platform Analysis</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card"><div class="number">55K+</div><div class="label">Managed Skills</div></div>
+                <div class="stat-card"><div class="number">10,500+</div><div class="label">Global Customers</div></div>
+                <div class="stat-card"><div class="number">150K+</div><div class="label">Skills Cloud Users</div></div>
+                <div class="stat-card"><div class="number">60%+</div><div class="label">Fortune 500 Adoption</div></div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">1. Company Overview</h2>
+                <div class="info-box">
+                    <p><strong>Workday Skills Cloud</strong> is a foundational component of Workday Human Capital Management (HCM), using machine learning to infer, verify, and manage skills data for an organization's entire workforce. Workday was founded in 2005 and is a NASDAQ-listed global cloud enterprise software company.</p>
+                </div>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Company Information</h4>
+                        <ul>
+                            <li><strong>Founded:</strong> 2005</li>
+                            <li><strong>HQ:</strong> Pleasanton, California, USA</li>
+                            <li><strong>Listed:</strong> NASDAQ (WDAY)</li>
+                            <li><strong>Service Regions:</strong> 175+ Countries</li>
+                            <li><strong>Interface Languages:</strong> 35+</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Industry Recognition</h4>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="award-badge">Gartner MQ Leader</span>
+                            <span class="award-badge">2024 Cloud ERP Leader</span>
+                            <span class="award-badge">2025 Financial Planning Leader</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">2. Business Model & Pricing</h2>
+                <div class="info-box">
+                    <p>Workday operates a subscription-based SaaS model with pricing varying by employee count, required modules, and implementation complexity. Recent mid-market push includes streamlined implementations and flexible pricing.</p>
+                </div>
+                <h3 class="subsection-title">Pricing Structure</h3>
+                <table>
+                    <thead><tr><th>Company Size</th><th>Estimated Annual Cost</th><th>Notes</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>&lt;500 employees</strong></td><td>$150,000 - $300,000</td><td>Basic HCM & Payroll</td></tr>
+                        <tr><td><strong>500-2,500 employees</strong></td><td>$300,000 - $500,000</td><td>Extended modules</td></tr>
+                        <tr><td><strong>Large Enterprise</strong></td><td>$500,000+</td><td>Custom implementation</td></tr>
+                        <tr><td><strong>Per Employee</strong></td><td>~$99/month (2024)</td><td>PEPM basis</td></tr>
+                    </tbody>
+                </table>
+                <h3 class="subsection-title">2025 New Pricing Model</h3>
+                <div class="ai-feature-box">
+                    <h4>Workday Flex Credits</h4>
+                    <p style="font-size: 0.9rem;">New subscription-based consumption model announced at Workday Rising 2025. Included in every contract, credits refresh annually and can be applied across AI agents and platform features. Eliminates complex pricing tiers.</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">3. AI Recommendation System Technology</h2>
+                <div class="info-box">
+                    <p><strong>Workday Skills Cloud</strong> runs on <strong>Workday Illuminate™</strong>, using graph technology and machine learning to manage 55,000+ skills and deliver personalized recommendations.</p>
+                </div>
+                <h3 class="subsection-title">Core Technology Architecture</h3>
+                <table>
+                    <thead><tr><th>Component</th><th>Specifications</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Skills Ontology</strong></td><td>55,000+ standardized skills from 200M+ raw data</td></tr>
+                        <tr><td><strong>AI Engine</strong></td><td>Workday Illuminate™ - Next-gen AI platform</td></tr>
+                        <tr><td><strong>Graph Technology</strong></td><td>Skills relationship discovery and related skills recommendations</td></tr>
+                        <tr><td><strong>Machine Learning</strong></td><td>Skills inference, verification, real-time recommendation adaptation</td></tr>
+                        <tr><td><strong>NLP</strong></td><td>Data Query - Natural language data search</td></tr>
+                    </tbody>
+                </table>
+                <h3 class="subsection-title">2025 AI New Features</h3>
+                <div class="ai-feature-box">
+                    <h4>Intelligent Job Recommendations</h4>
+                    <p style="font-size: 0.9rem;">Leverages AI to suggest jobs matching employee's experience, skills, interests, and career growth while following company rules for internal moves. Same recommendations across Career Hub and Opportunity Marketplace.</p>
+                </div>
+                <h3 class="subsection-title">AI Agent Performance</h3>
+                <table>
+                    <thead><tr><th>Area</th><th>Result</th></tr></thead>
+                    <tbody>
+                        <tr><td>Contract execution time</td><td>65% reduction</td></tr>
+                        <tr><td>Payroll processing</td><td>4x faster</td></tr>
+                        <tr><td>Automated audits</td><td>900 hours/year saved</td></tr>
+                        <tr><td>Candidate screening (GM case)</td><td>70% time reduction</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">4. User Statistics</h2>
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="number">10,500+</div><div class="label">Global Customers</div></div>
+                    <div class="stat-card"><div class="number">2,100+</div><div class="label">Skills Cloud Adopters</div></div>
+                    <div class="stat-card"><div class="number">150K+</div><div class="label">Skills Cloud Users</div></div>
+                    <div class="stat-card"><div class="number">175+</div><div class="label">Countries Served</div></div>
+                </div>
+                <div class="highlight-box">
+                    <ul style="padding-left: 1.25rem; margin: 0;">
+                        <li><strong>Fortune 500 Adoption:</strong> 60%+</li>
+                        <li><strong>Retail/Hospitality ARR:</strong> $1B+ achieved</li>
+                        <li><strong>Large Implementation:</strong> One global company manages 152 countries, 328,000 employees</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">5. Asia Pacific Presence</h2>
+                <div class="info-box">
+                    <p>Workday has designated Asia Pacific as a strategic core market, segmenting Japan and APAC into separate business units for focused investment.</p>
+                </div>
+                <h3 class="subsection-title">Asia Regional Expansion</h3>
+                <table>
+                    <thead><tr><th>Market</th><th>Status</th><th>Key Customers</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Japan</strong></td><td>Tokyo office since 2013, supports 150+ global companies</td><td>Nissan, Sony, Rakuten, Mitsui Chemicals</td></tr>
+                        <tr><td><strong>Korea</strong></td><td>Seoul office (Gangnam N Tower 14F)</td><td>Kolmar Korea Holdings, MUSINSA</td></tr>
+                        <tr><td><strong>Southeast Asia</strong></td><td>Singapore, Thailand offices</td><td>Osotspa Thailand</td></tr>
+                    </tbody>
+                </table>
+                <div class="highlight-box">
+                    <p style="font-size: 0.9rem;"><strong>APAC Investment:</strong> 50%+ increase in people and assets over the past 12 months. New offices in Seoul, Bangkok, plus strengthened existing offices.</p>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">6. Customer Satisfaction</h2>
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="number">4.7/5</div><div class="label">Gartner Peer Insights</div></div>
+                    <div class="stat-card"><div class="number">Leader</div><div class="label">Gartner MQ 2024</div></div>
+                    <div class="stat-card"><div class="number">2025</div><div class="label">Customers' Choice</div></div>
+                    <div class="stat-card"><div class="number">3 Years</div><div class="label">Consecutive Leader</div></div>
+                </div>
+                <h3 class="subsection-title">Customer Feedback Summary</h3>
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">Pros</h4>
+                        <ul>
+                            <li>Real-time employee engagement insights</li>
+                            <li>User-friendly interface</li>
+                            <li>Customizable surveys</li>
+                            <li>Successful process transformation</li>
+                            <li>Significant time/effort reduction in planning</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">Cons</h4>
+                        <ul>
+                            <li>High initial implementation cost</li>
+                            <li>Some concerns about product innovation pace</li>
+                            <li>Training complexity</li>
+                            <li>New feature release speed vs competitors</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">7. Development Roadmap</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">January 2025</div>
+                        <p><strong>TechWolf Partnership:</strong> AI-powered skills intelligence rolled out across 20,400+ global employees</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">March 2025</div>
+                        <p><strong>Spring Release:</strong> 350+ new features including Intelligent Job Recommendations, Data Query natural language search</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">September 2025 (Rising)</div>
+                        <p><strong>Workday Illuminate Agents:</strong> AI agents for HR, Finance, Industry. Flex Credits consumption model, Data Cloud partnerships</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">H1 2026</div>
+                        <p><strong>Flowise Agent Builder:</strong> Enterprise-grade custom agent builder for Workday Extend Professional customers</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">8. Competitive Analysis</h2>
+                <table>
+                    <thead><tr><th>Comparison</th><th>Workday</th><th>SAP SuccessFactors</th><th>Oracle HCM</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Skills Management</strong></td><td>Skills Cloud (55K+ skills)</td><td>Skills Ontology</td><td>Dynamic Skills</td></tr>
+                        <tr><td><strong>AI Platform</strong></td><td>Workday Illuminate</td><td>SAP AI</td><td>Oracle AI</td></tr>
+                        <tr><td><strong>Target Market</strong></td><td>Mid-Large, Fortune 500</td><td>Large, Global</td><td>Large, Global</td></tr>
+                        <tr><td><strong>Cloud Native</strong></td><td>Full Cloud</td><td>Hybrid</td><td>Hybrid</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">9. Conclusion & Recommendations</h2>
+                <div class="highlight-box">
+                    <h4 style="margin-bottom: 0.75rem; color: var(--primary-color);">Overall Assessment</h4>
+                    <p style="font-size: 0.95rem;">Workday Skills Cloud is an enterprise HCM market leader with 55,000+ standardized skills and powerful AI-based recommendations. Adopted by 60%+ Fortune 500 companies with expanding APAC investment. High implementation cost may not suit SMBs.</p>
+                </div>
+                <div class="two-column">
+                    <div class="card">
+                        <h4 style="color: #4caf50;">Best Suited For</h4>
+                        <ul>
+                            <li>Large global enterprises</li>
+                            <li>Fortune 500 companies</li>
+                            <li>Complex talent management needs</li>
+                            <li>HR-Finance integration requirements</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4 style="color: #f44336;">Consider Alternatives</h4>
+                        <ul>
+                            <li>Budget-constrained SMBs</li>
+                            <li>Organizations under 500 employees</li>
+                            <li>Simple badge/credential needs only</li>
+                            <li>On-premise preference</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <div class="sources">
+                <h4>References</h4>
+                <ul>
+                    <li><a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud Official</a></li>
+                    <li><a href="https://newsroom.workday.com/2025-03-19-Workday-2025-Spring-Release" target="_blank">Workday 2025 Spring Release</a></li>
+                    <li><a href="https://investor.workday.com/2025-01-29-Workday-to-Roll-Out-TechWolfs-AI-Powered-Skills-Intelligence" target="_blank">TechWolf Partnership</a></li>
+                    <li><a href="https://futurumgroup.com/insights/workday-rising-2025-ai-agents-data-cloud-and-flex-credits-unveiled/" target="_blank">Workday Rising 2025 Analysis</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workday Skills Cloud 플랫폼 심층 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #0073cf;
+            --secondary-color: #005cb9;
+            --accent-color: #004494;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif; line-height: 1.7; color: var(--text-primary); background: var(--bg-subtle); font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .header .subtitle { font-size: 0.95rem; margin-top: 0.25rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge { display: inline-block; background: white; color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.3rem; color: var(--text-primary); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); }
+        .subsection-title { font-size: 1.05rem; color: var(--text-primary); margin: 1.25rem 0 0.5rem; font-weight: 600; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card { background: linear-gradient(135deg, var(--bg-subtle) 0%, white 100%); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .info-box { background: #e3f2fd; border-left: 4px solid var(--primary-color); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .info-box p { font-size: 0.95rem; line-height: 1.6; }
+        .highlight-box { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        tr:hover { background: var(--bg-subtle); }
+        .chart-container { position: relative; height: 300px; margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--primary-color); }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .award-badge { display: inline-block; background: #ffd700; color: #333; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin: 0.2rem; }
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .timeline { position: relative; padding-left: 2rem; margin: 1rem 0; }
+        .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--primary-color); }
+        .timeline-item { position: relative; margin: 1rem 0; padding: 0.75rem; background: var(--bg-subtle); border-radius: 4px; }
+        .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 1rem; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; }
+        .timeline-date { font-size: 0.75rem; color: var(--primary-color); font-weight: 600; }
+        .sources { background: var(--bg-subtle); padding: 1rem 1.25rem; border-radius: 8px; margin-top: 2rem; font-size: 0.75rem; }
+        .sources h4 { margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .score-bar { background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden; margin: 0.25rem 0; }
+        .score-fill { height: 100%; background: var(--primary-color); border-radius: 4px; }
+        .ai-feature-box { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        .ai-feature-box h4 { color: var(--accent-color); margin-bottom: 0.5rem; }
+        @media (max-width: 768px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } .two-column, .pros-cons { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; } }
+        @media print { body { padding: 0; } .container { box-shadow: none; } .header-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='workday-skills-cloud-analysis-20250121-ja.html'" class="lang-btn">日本語</button>
+                    <button class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='workday-skills-cloud-analysis-20250121-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <div class="company-badge">Gartner 리더</div>
+            <h1>Workday Skills Cloud 플랫폼 심층 분석</h1>
+            <div class="subtitle">엔터프라이즈 스킬 인텔리전스와 AI 기반 인재 관리 플랫폼</div>
+            <div class="meta">보고서 작성일: 2025년 1월 21일 | 개별 플랫폼 심층 분석</div>
+        </div>
+
+        <div class="content">
+            <!-- 핵심 지표 -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="number">55K+</div>
+                    <div class="label">관리 스킬 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">10,500+</div>
+                    <div class="label">글로벌 고객사</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">150K+</div>
+                    <div class="label">Skills Cloud 사용자</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">60%+</div>
+                    <div class="label">Fortune 500 채택</div>
+                </div>
+            </div>
+
+            <!-- 회사 개요 -->
+            <section class="section">
+                <h2 class="section-title">1. 회사 개요</h2>
+                <div class="info-box">
+                    <p><strong>Workday Skills Cloud</strong>는 Workday Human Capital Management(HCM) 솔루션의 핵심 구성요소로,
+                    머신러닝을 활용하여 조직 전체 인력의 스킬 데이터를 추론, 검증, 관리합니다.
+                    Workday는 2005년 설립되어 NASDAQ에 상장된 글로벌 클라우드 기반 기업 소프트웨어 회사입니다.</p>
+                </div>
+
+                <div class="two-column">
+                    <div class="card">
+                        <h4>회사 정보</h4>
+                        <ul>
+                            <li><strong>설립연도:</strong> 2005년</li>
+                            <li><strong>본사:</strong> 미국 캘리포니아 플레전턴</li>
+                            <li><strong>상장:</strong> NASDAQ (WDAY)</li>
+                            <li><strong>서비스 지역:</strong> 175개국 이상</li>
+                            <li><strong>인터페이스 언어:</strong> 35개 이상</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>업계 인정</h4>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="award-badge">Gartner Magic Quadrant 리더</span>
+                            <span class="award-badge">2024 Cloud ERP 리더</span>
+                            <span class="award-badge">2025 Financial Planning 리더</span>
+                        </div>
+                        <p style="font-size: 0.85rem; margin-top: 0.75rem; color: var(--text-secondary);">
+                            Gartner Magic Quadrant Cloud ERP, HCM, Financial Planning 부문 연속 리더
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">주요 글로벌 고객</h3>
+                <div class="highlight-box">
+                    <ul style="padding-left: 1.25rem; margin: 0; columns: 2;">
+                        <li>AWS</li>
+                        <li>Nissan</li>
+                        <li>Rakuten</li>
+                        <li>Sony</li>
+                        <li>Mitsui Chemicals</li>
+                        <li>Topcon</li>
+                        <li>Kolmar Korea Holdings</li>
+                        <li>MUSINSA</li>
+                        <li>McLaren Racing</li>
+                        <li>General Motors</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 비즈니스 모델 -->
+            <section class="section">
+                <h2 class="section-title">2. 비즈니스 모델 및 가격 정책</h2>
+
+                <div class="info-box">
+                    <p>Workday는 구독 기반 SaaS 모델을 운영하며, 가격은 직원 수, 필요 모듈, 구현 복잡도에 따라 달라집니다.
+                    최근 중소기업 시장 진출을 위해 간소화된 구현 방식과 유연한 가격 정책을 도입했습니다.</p>
+                </div>
+
+                <h3 class="subsection-title">가격 구조</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>기업 규모</th>
+                            <th>예상 연간 비용</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>500명 미만</strong></td>
+                            <td>$150,000 ~ $300,000</td>
+                            <td>HCM & Payroll 기본 기능</td>
+                        </tr>
+                        <tr>
+                            <td><strong>500~2,500명</strong></td>
+                            <td>$300,000 ~ $500,000</td>
+                            <td>확장 모듈 포함</td>
+                        </tr>
+                        <tr>
+                            <td><strong>대규모 기업</strong></td>
+                            <td>$500,000+</td>
+                            <td>맞춤 구현, 전체 모듈</td>
+                        </tr>
+                        <tr>
+                            <td><strong>사용자당 비용</strong></td>
+                            <td>약 $99/월 (2024년 기준)</td>
+                            <td>PEPM (Per Employee Per Month)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">2025년 새로운 가격 모델</h3>
+                <div class="ai-feature-box">
+                    <h4>Workday Flex Credits</h4>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        Workday Rising 2025에서 발표된 새로운 구독 기반 소비 모델입니다.
+                        모든 계약에 포함되며, 연간 갱신되는 크레딧을 AI 에이전트와 플랫폼 기능에 적용할 수 있습니다.
+                        복잡한 가격 체계를 제거하고, 필요에 따라 추가 크레딧 구매가 가능합니다.
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">서비스 유형</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>핵심 모듈</h4>
+                        <ul>
+                            <li>Human Capital Management (HCM)</li>
+                            <li>Skills Cloud</li>
+                            <li>Recruiting</li>
+                            <li>Learning</li>
+                            <li>Talent Optimization</li>
+                            <li>People Analytics</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>확장 서비스</h4>
+                        <ul>
+                            <li>Financial Management</li>
+                            <li>Adaptive Planning</li>
+                            <li>Payroll</li>
+                            <li>Workforce Planning</li>
+                            <li>Integration Cloud</li>
+                            <li>Workday Illuminate AI</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI 추천 시스템 -->
+            <section class="section">
+                <h2 class="section-title">3. AI 추천 시스템 기술</h2>
+
+                <div class="info-box">
+                    <p><strong>Workday Skills Cloud</strong>는 <strong>Workday Illuminate™</strong> AI 플랫폼 위에서 구동되며,
+                    그래프 기술과 머신러닝을 활용하여 55,000개 이상의 스킬을 관리하고 개인화된 추천을 제공합니다.</p>
+                </div>
+
+                <h3 class="subsection-title">핵심 기술 아키텍처</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>기술 요소</th>
+                            <th>세부 사양</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>스킬 온톨로지</strong></td>
+                            <td>2억+ 원시 데이터에서 정제된 55,000+ 표준화 스킬</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI 엔진</strong></td>
+                            <td>Workday Illuminate™ - 차세대 AI 플랫폼</td>
+                        </tr>
+                        <tr>
+                            <td><strong>그래프 기술</strong></td>
+                            <td>스킬 간 연결 관계 파악 및 관련 스킬 추천</td>
+                        </tr>
+                        <tr>
+                            <td><strong>머신러닝</strong></td>
+                            <td>스킬 추론, 검증, 실시간 추천 적응</td>
+                        </tr>
+                        <tr>
+                            <td><strong>자연어 처리</strong></td>
+                            <td>Data Query - 자연어 기반 데이터 검색</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">2025년 AI 신기능</h3>
+                <div class="ai-feature-box">
+                    <h4>Intelligent Job Recommendations</h4>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        AI를 활용하여 직원의 경험, 스킬, 관심사, 커리어 성장 목표를 분석하고
+                        회사의 내부 이동 규정을 준수하면서 적합한 직무를 추천합니다.
+                        Career Hub, Opportunity Marketplace 등 모든 접점에서 동일한 추천을 제공합니다.
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">TechWolf 파트너십 (2025년 1월)</h3>
+                <div class="highlight-box">
+                    <p style="font-size: 0.9rem;">
+                        Workday는 TechWolf의 AI 기반 스킬 인텔리전스를 자사 20,400명 이상의 글로벌 인력에 적용합니다.
+                        Salesforce, Jira 등 다양한 시스템의 정보를 활용하여 직원 스킬을 자동으로 발견하고,
+                        직원들이 직접 스킬 프로필을 쉽게 업데이트할 수 있도록 지원합니다.
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">주요 AI 기능</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>인재 관리</h4>
+                        <ul>
+                            <li>스킬 갭 분석 (People Analytics)</li>
+                            <li>개인화된 학습 경로 추천</li>
+                            <li>내부 이동 기회 매칭</li>
+                            <li>후보자 소싱 확장</li>
+                            <li>업스킬링/리스킬링 지원</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>비즈니스 인텔리전스</h4>
+                        <ul>
+                            <li>전략적 인력 계획</li>
+                            <li>스킬 기반 채용</li>
+                            <li>실시간 마진 인사이트</li>
+                            <li>자동화된 감사 (연간 900시간 절감)</li>
+                            <li>재무 리스크 탐지</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">AI 에이전트 성과</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>영역</th>
+                            <th>성과</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>계약 실행 시간</td>
+                            <td>65% 단축</td>
+                        </tr>
+                        <tr>
+                            <td>급여 처리 속도</td>
+                            <td>4배 향상</td>
+                        </tr>
+                        <tr>
+                            <td>자동 감사</td>
+                            <td>연간 900시간 절감</td>
+                        </tr>
+                        <tr>
+                            <td>후보자 스크리닝 (GM 사례)</td>
+                            <td>70% 시간 단축</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 사용자 현황 -->
+            <section class="section">
+                <h2 class="section-title">4. 사용자 현황</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="number">10,500+</div>
+                        <div class="label">전 세계 고객사</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">2,100+</div>
+                        <div class="label">Skills Cloud 도입사</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">150K+</div>
+                        <div class="label">Skills Cloud 사용자</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">175+</div>
+                        <div class="label">서비스 국가</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">시장 점유율</h3>
+                <div class="highlight-box">
+                    <ul style="padding-left: 1.25rem; margin: 0;">
+                        <li><strong>Fortune 500 채택률:</strong> 60% 이상</li>
+                        <li><strong>리테일/호스피탈리티 ARR:</strong> $10억+ 달성</li>
+                        <li><strong>Adaptive Planning 고객:</strong> 6,500+ 기업 (AWS, Capstone Logistics, CNA Financial 등)</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">대규모 구현 사례</h3>
+                <div class="info-box">
+                    <p>한 글로벌 기업은 152개국, 328,000명 직원에 대한 스킬 관리를 Workday Skills Cloud로 통합 운영 중입니다.</p>
+                </div>
+            </section>
+
+            <!-- 아시아 현황 -->
+            <section class="section">
+                <h2 class="section-title">5. 아시아 태평양 지역 현황</h2>
+
+                <div class="info-box">
+                    <p>Workday는 아시아 태평양 지역을 전략적 핵심 시장으로 지정하고,
+                    일본과 APAC을 별도 비즈니스 유닛으로 분리하여 집중 투자하고 있습니다.</p>
+                </div>
+
+                <h3 class="subsection-title">아시아 지역 확장 현황</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>시장</th>
+                            <th>현황</th>
+                            <th>주요 고객</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>일본</strong></td>
+                            <td>2013년 도쿄 사무소 설립, 150+ 글로벌 기업 지원</td>
+                            <td>Nissan, Sony, Rakuten, Mitsui Chemicals, Topcon</td>
+                        </tr>
+                        <tr>
+                            <td><strong>한국</strong></td>
+                            <td>서울 사무소 개설 (강남N타워 14층)</td>
+                            <td>Kolmar Korea Holdings, MUSINSA</td>
+                        </tr>
+                        <tr>
+                            <td><strong>동남아시아</strong></td>
+                            <td>싱가포르, 태국 사무소 운영</td>
+                            <td>Osotspa Thailand</td>
+                        </tr>
+                        <tr>
+                            <td><strong>중국/대만</strong></td>
+                            <td>주요 4대 시장 중 하나</td>
+                            <td>MGM China</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">일본 시장 전략</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>파트너십</h4>
+                        <ul>
+                            <li>IBM Japan</li>
+                            <li>Hitachi Solutions</li>
+                            <li>Toshiba Digital</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>현지화</h4>
+                        <ul>
+                            <li>일본 비즈니스 프로세스 적응</li>
+                            <li>일본 규정 준수 기능</li>
+                            <li>오사카 사무소 운영</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">APAC 투자 확대</h3>
+                <div class="highlight-box">
+                    <p style="font-size: 0.9rem;">
+                        지난 12개월간 APAC 지역 인력 및 자산 투자를 <strong>50% 이상 확대</strong>했습니다.
+                        싱가포르, 서울, 방콕 등에 새 사무소를 개설하고, 기존 사무소도 강화했습니다.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 고객 만족도 -->
+            <section class="section">
+                <h2 class="section-title">6. 고객 만족도 및 평가</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="number">4.7/5</div>
+                        <div class="label">Gartner Peer Insights</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">Leader</div>
+                        <div class="label">Gartner MQ 2024</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">2025</div>
+                        <div class="label">Customers' Choice</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">2024</div>
+                        <div class="label">Financial Planning Choice</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">Gartner 평가</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>평가</th>
+                            <th>결과</th>
+                            <th>연도</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Gartner Magic Quadrant for Cloud ERP</td>
+                            <td><strong>리더</strong> (3년 연속)</td>
+                            <td>2024</td>
+                        </tr>
+                        <tr>
+                            <td>Gartner Magic Quadrant for Financial Planning</td>
+                            <td><strong>리더</strong> (3년 연속)</td>
+                            <td>2024</td>
+                        </tr>
+                        <tr>
+                            <td>Gartner Peer Insights Customers' Choice</td>
+                            <td><strong>선정</strong></td>
+                            <td>2025</td>
+                        </tr>
+                        <tr>
+                            <td>Workday Adaptive Planning 평점</td>
+                            <td>4.7/5 (408개 리뷰)</td>
+                            <td>2024</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">고객 피드백 요약</h3>
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">장점</h4>
+                        <ul>
+                            <li>실시간 직원 참여도 인사이트</li>
+                            <li>사용자 친화적 인터페이스</li>
+                            <li>맞춤형 설문 기능</li>
+                            <li>성공적인 프로세스 전환 지원</li>
+                            <li>계획 수립 시간/노력 대폭 절감</li>
+                            <li>HR, 재무, 조달 통합 운영</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">개선 필요</h4>
+                        <ul>
+                            <li>높은 초기 도입 비용</li>
+                            <li>제품 혁신 속도에 대한 일부 우려</li>
+                            <li>교육 과정의 복잡성</li>
+                            <li>경쟁사 대비 신기능 출시 속도</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 서비스 발전 계획 -->
+            <section class="section">
+                <h2 class="section-title">7. 서비스 발전 계획</h2>
+
+                <div class="info-box">
+                    <p>Workday는 2025년 Spring Release에서 350개 이상의 신기능을 발표하며,
+                    AI 에이전트와 데이터 클라우드를 중심으로 한 혁신을 가속화하고 있습니다.</p>
+                </div>
+
+                <h3 class="subsection-title">주요 로드맵</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025년 1월</div>
+                        <p><strong>TechWolf 파트너십:</strong> AI 기반 스킬 인텔리전스를 Workday 전 직원에 적용,
+                        다양한 시스템에서 스킬 데이터 자동 수집</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025년 3월</div>
+                        <p><strong>Spring Release:</strong> 350+ 신기능, AI 기반 Intelligent Job Recommendations,
+                        Data Query 자연어 검색 등</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025년 9월 (Rising)</div>
+                        <p><strong>Workday Illuminate Agents:</strong> HR, Finance, Industry용 AI 에이전트 발표,
+                        Flex Credits 소비 모델, Workday Data Cloud 파트너십</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026년 상반기</div>
+                        <p><strong>Flowise Agent Builder:</strong> Workday Extend Professional 고객용
+                        엔터프라이즈급 커스텀 에이전트 빌더 출시 예정</p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">AI 전략 방향</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Workday Illuminate</h4>
+                        <ul>
+                            <li>50개 이상 AI 사용 사례 활성화</li>
+                            <li>후보자 매칭부터 재무 리스크 탐지까지</li>
+                            <li>Skills Cloud, Anomaly Detection 통합</li>
+                            <li>Talent Optimization ML 내장</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>2026년 트렌드 대응</h4>
+                        <ul>
+                            <li>스킬 기반 채용 확산 대응</li>
+                            <li>ERP/HR 전문 인력 수요 대응</li>
+                            <li>AI 에이전트 거버넌스 강화</li>
+                            <li>Microsoft Entra 통합</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 경쟁 분석 -->
+            <section class="section">
+                <h2 class="section-title">8. 경쟁 분석</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>비교 항목</th>
+                            <th>Workday</th>
+                            <th>SAP SuccessFactors</th>
+                            <th>Oracle HCM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>스킬 관리</strong></td>
+                            <td>Skills Cloud (55K+ 스킬)</td>
+                            <td>Skills Ontology</td>
+                            <td>Dynamic Skills</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI 플랫폼</strong></td>
+                            <td>Workday Illuminate</td>
+                            <td>SAP AI</td>
+                            <td>Oracle AI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>타겟 시장</strong></td>
+                            <td>중대기업, Fortune 500</td>
+                            <td>대기업, 글로벌</td>
+                            <td>대기업, 글로벌</td>
+                        </tr>
+                        <tr>
+                            <td><strong>클라우드 네이티브</strong></td>
+                            <td>완전 클라우드</td>
+                            <td>하이브리드</td>
+                            <td>하이브리드</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gartner 평가</strong></td>
+                            <td>리더 (3년 연속)</td>
+                            <td>리더</td>
+                            <td>리더</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 결론 -->
+            <section class="section">
+                <h2 class="section-title">9. 결론 및 권고사항</h2>
+
+                <div class="highlight-box">
+                    <h4 style="margin-bottom: 0.75rem; color: var(--primary-color);">종합 평가</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">
+                        Workday Skills Cloud는 엔터프라이즈 HCM 시장의 리더로서, 55,000개 이상의 표준화된 스킬과
+                        강력한 AI 기반 추천 시스템을 제공합니다. Fortune 500 기업의 60% 이상이 채택했으며,
+                        아시아 태평양 지역 투자를 지속 확대하고 있습니다.
+                        다만, 높은 도입 비용과 구현 복잡도로 인해 중소기업에는 적합하지 않을 수 있습니다.
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">추천 대상</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4 style="color: #4caf50;">적합한 조직</h4>
+                        <ul>
+                            <li>대규모 글로벌 기업</li>
+                            <li>Fortune 500 기업</li>
+                            <li>복잡한 인재 관리가 필요한 조직</li>
+                            <li>HR-재무 통합이 필요한 기업</li>
+                            <li>아시아 진출 글로벌 기업</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4 style="color: #f44336;">대안 검토 권장</h4>
+                        <ul>
+                            <li>예산이 제한된 중소기업</li>
+                            <li>500명 미만 소규모 조직</li>
+                            <li>단순 배지/자격증명만 필요한 기관</li>
+                            <li>온프레미스 선호 기업</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 출처 -->
+            <div class="sources">
+                <h4>참고 자료</h4>
+                <ul>
+                    <li><a href="https://www.workday.com/en-us/products/human-capital-management/skills-cloud.html" target="_blank">Workday Skills Cloud 공식 페이지</a></li>
+                    <li><a href="https://newsroom.workday.com/2025-03-19-Workday-2025-Spring-Release" target="_blank">Workday 2025 Spring Release 발표</a></li>
+                    <li><a href="https://investor.workday.com/2025-01-29-Workday-to-Roll-Out-TechWolfs-AI-Powered-Skills-Intelligence" target="_blank">TechWolf 파트너십 발표</a></li>
+                    <li><a href="https://futurumgroup.com/insights/workday-rising-2025-ai-agents-data-cloud-and-flex-credits-unveiled/" target="_blank">Workday Rising 2025 분석</a></li>
+                    <li><a href="https://www.gartner.com/reviews/market/human-resources/vendor/workday-hcm" target="_blank">Gartner Peer Insights - Workday</a></li>
+                    <li><a href="https://interestingasia.com/2023/11/workday-scales-up-operations-in-japan-and-asia-pacific" target="_blank">Workday 일본/APAC 확장</a></li>
+                    <li><a href="https://hrmasia.com/workdays-retail-and-hospitality-sector-surpasses-us1b-in-annual-revenue/" target="_blank">Workday APAC 리테일 성과</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

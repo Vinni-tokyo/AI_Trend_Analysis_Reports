@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Territorium プラットフォーム詳細分析</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #4caf50;
+            --secondary-color: #388e3c;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif; line-height: 1.8; color: var(--text-primary); background: var(--bg-subtle); font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; text-decoration: none; }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .header .subtitle { font-size: 0.95rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge { display: inline-block; background: white; color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); }
+        .subsection-title { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; font-weight: 600; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 1.6rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-secondary); }
+        .info-box { background: #e8f5e9; border-left: 4px solid var(--primary-color); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .highlight-box { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--primary-color); }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .certification-badge { display: inline-block; background: var(--primary-color); color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; margin: 0.2rem; }
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .feature-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        .timeline { position: relative; padding-left: 2rem; margin: 1rem 0; }
+        .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--primary-color); }
+        .timeline-item { position: relative; margin: 1rem 0; padding: 0.75rem; background: var(--bg-subtle); border-radius: 4px; }
+        .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 1rem; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; }
+        .timeline-date { font-size: 0.75rem; color: var(--primary-color); font-weight: 600; }
+        .sources { background: var(--bg-subtle); padding: 1rem 1.25rem; border-radius: 8px; margin-top: 2rem; font-size: 0.75rem; }
+        .sources h4 { margin-bottom: 0.5rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        @media (max-width: 768px) { .stat-grid, .two-column, .pros-cons { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← ホーム</a>
+                <div class="language-switcher">
+                    <button class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='territorium-platform-analysis-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='territorium-platform-analysis-20250121-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <div class="company-badge">1EdTech 認証</div>
+            <h1>Territorium プラットフォーム詳細分析</h1>
+            <div class="subtitle">AI駆動CLR/LER統合学習・雇用記録プラットフォーム</div>
+            <div class="meta">レポート作成日：2025年1月21日 | 個別プラットフォーム分析</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card"><div class="number">1,200万+</div><div class="label">グローバルユーザー</div></div>
+                <div class="stat-card"><div class="number">15</div><div class="label">運営国</div></div>
+                <div class="stat-card"><div class="number">2012</div><div class="label">設立年</div></div>
+                <div class="stat-card"><div class="number">初</div><div class="label">CLR 2.0 + OB 3.0</div></div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">1. 会社概要</h2>
+                <div class="info-box">
+                    <p><strong>Territorium</strong>は2012年に設立されたグローバル教育テクノロジー企業で、包括的学習者記録（CLR）と学習・雇用記録（LER）を通じて学習者とキャリアを結びつけるAI駆動プラットフォームを提供しています。米国で初めて1EdTechのCLR 2.0とOpen Badges 3.0認証を同時に取得した企業です。</p>
+                </div>
+
+                <div class="two-column">
+                    <div class="card">
+                        <h4>会社情報</h4>
+                        <ul>
+                            <li><strong>設立：</strong>2012年</li>
+                            <li><strong>タイプ：</strong>非公開グローバル企業</li>
+                            <li><strong>本社：</strong>米国</li>
+                            <li><strong>運営地域：</strong>15カ国</li>
+                            <li><strong>従業員評価：</strong>3.4/5 (Glassdoor)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>認証・規格</h4>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="certification-badge">CLR 2.0</span>
+                            <span class="certification-badge">Open Badges 3.0</span>
+                            <span class="certification-badge">1EdTech認証</span>
+                        </div>
+                        <p style="font-size: 0.85rem; margin-top: 0.75rem; color: var(--text-secondary);">
+                            米国初のCLR 2.0とOpen Badges 3.0同時認証取得企業
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">対象顧客</h3>
+                <div class="highlight-box">
+                    <ul style="padding-left: 1.25rem; margin: 0;">
+                        <li>Fortune 100大企業</li>
+                        <li>教育サービスプロバイダー</li>
+                        <li>テクノロジー組織</li>
+                        <li>教育省・教育システム</li>
+                        <li>K-12学校</li>
+                        <li>高等教育機関</li>
+                        <li>人材開発機関</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">2. ビジネスモデルとサービスタイプ</h2>
+
+                <div class="info-box">
+                    <p>TerritoriumはB2BおよびB2Gモデルを中心に運営し、教育機関と企業にCLR/LERベースの学習管理とキャリア接続プラットフォームを提供しています。具体的な価格情報は公開されておらず、カスタム見積りで提供されます。</p>
+                </div>
+
+                <h3 class="subsection-title">主要製品ライン</h3>
+                <table>
+                    <thead><tr><th>製品</th><th>説明</th><th>対象</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>TerritoriumCLR</strong></td><td>包括的学習者記録 - コンピテンシーベース教育プラットフォーム</td><td>K-12、高等教育、企業</td></tr>
+                        <tr><td><strong>LifeJourney</strong></td><td>AI駆動スキル・コンピテンシーツールキット</td><td>学習者、機関</td></tr>
+                        <tr><td><strong>CareerBit</strong></td><td>キャリア探索・マッチングサービス</td><td>学生、求職者</td></tr>
+                        <tr><td><strong>Assessment Services</strong></td><td>スキルベース評価エンジン</td><td>教育機関、企業</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">3. AIレコメンドシステム技術</h2>
+
+                <div class="info-box">
+                    <p><strong>LifeJourney</strong>はTerritoriumのコアAI技術で、リアルタイム労働市場データを使用して学習者のスキルとキャリア機会をマッチングします。</p>
+                </div>
+
+                <h3 class="subsection-title">コアAI機能</h3>
+                <div class="feature-box">
+                    <h4 style="color: #2e7d32;">Top 5スキルマッチングアルゴリズム</h4>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        最新の労働市場データを分析し、特定の職種に必要なスキルと要件を把握。学習者のCLRデータと比較して適切なキャリア選択と就職機会を見つけ、AI生成パスウェイを通じて特定のポジションに最も重要な5つのスキルをマッチングします。
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">技術アーキテクチャ</h3>
+                <table>
+                    <thead><tr><th>コンポーネント</th><th>仕様</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>スキルオントロジー</strong></td><td>Credential Engine連携、Open Skills Network統合</td></tr>
+                        <tr><td><strong>データ連携</strong></td><td>リアルタイム労働市場データ、職務要件分析</td></tr>
+                        <tr><td><strong>規格サポート</strong></td><td>CLR 2.0、Open Badges 3.0、LER規格</td></tr>
+                        <tr><td><strong>レコメンドアルゴリズム</strong></td><td>AIベースキャリアパスウェイ生成、Top 5スキルマッチング</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">LifeJourney主要機能</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>学習者向け機能</h4>
+                        <ul>
+                            <li>デジタル資格証明ウォレット</li>
+                            <li>パーソナライズド学習推奨</li>
+                            <li>キャリア適合性分析</li>
+                            <li>スキルギャップ特定</li>
+                            <li>リアルタイム就職機会マッチング</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>機関向け機能</h4>
+                        <ul>
+                            <li>学生エンゲージメント分析</li>
+                            <li>学習成果追跡</li>
+                            <li>コンピテンシーベース教育サポート</li>
+                            <li>マイクロクレデンシャル発行</li>
+                            <li>雇用主連携キャリアサポート</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">4. ユーザー統計</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="number">1,200万+</div><div class="label">グローバル学習者</div></div>
+                    <div class="stat-card"><div class="number">15</div><div class="label">運営国</div></div>
+                    <div class="stat-card"><div class="number">K-12</div><div class="label">初等・中等教育</div></div>
+                    <div class="stat-card"><div class="number">Higher Ed</div><div class="label">高等教育</div></div>
+                </div>
+
+                <h3 class="subsection-title">主要パートナーシップ</h3>
+                <table>
+                    <thead><tr><th>パートナー</th><th>協力内容</th><th>時期</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>University of Texas System</strong></td><td>AI駆動マイクロクレデンシャルウォレット、Texas Credentials for the Futureプロジェクト</td><td>2024年1月</td></tr>
+                        <tr><td><strong>HACU</strong></td><td>Avanzaイニシアチブ - ヒスパニック系大学生キャリア成功サポート</td><td>2024年</td></tr>
+                        <tr><td><strong>Credential Engine</strong></td><td>学習者資格証明と実世界の就職データマッピング</td><td>2022年</td></tr>
+                        <tr><td><strong>Google、IBM、Microsoft、Salesforce</strong></td><td>35以上のエントリーレベル専門認定統合</td><td>2024年</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">5. グローバル・アジア太平洋地域の現状</h2>
+
+                <div class="info-box">
+                    <p>Territoriumは15カ国で運営されるグローバル企業ですが、アジア太平洋地域、特に韓国・日本市場への具体的な進出情報は限定的です。</p>
+                </div>
+
+                <h3 class="subsection-title">グローバル運営状況</h3>
+                <div class="highlight-box">
+                    <table style="margin: 0;">
+                        <tr><td><strong>運営地域</strong></td><td>15カ国</td></tr>
+                        <tr><td><strong>主要市場</strong></td><td>北米、中南米</td></tr>
+                        <tr><td><strong>言語サポート</strong></td><td>英語、スペイン語中心</td></tr>
+                        <tr><td><strong>対象顧客</strong></td><td>教育機関、Fortune 100企業</td></tr>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title">アジア市場の可能性</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>機会要因</h4>
+                        <ul>
+                            <li>CLR/LER規格のグローバル拡大</li>
+                            <li>アジア教育デジタル変革</li>
+                            <li>スキルベース採用トレンド</li>
+                            <li>生涯学習政策強化</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>参入課題</h4>
+                        <ul>
+                            <li>アジア言語サポート必要</li>
+                            <li>現地労働市場データ確保</li>
+                            <li>ローカルパートナーシップ構築</li>
+                            <li>文化的コンテキスト適応</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">6. 顧客満足度</h2>
+
+                <div class="highlight-box">
+                    <p style="font-size: 0.9rem;"><strong>注：</strong>Territorium製品の公開顧客レビューデータは限定的です。Learn & Work Ecosystem Libraryに登録されていますが、まだ顧客評価は提出されていません。Glassdoor基準の従業員評価は3.4/5です。</p>
+                </div>
+
+                <h3 class="subsection-title">強みと改善点</h3>
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">強み</h4>
+                        <ul>
+                            <li>業界初のCLR 2.0 + OB 3.0認証</li>
+                            <li>K-12から高等教育までの統合サポート</li>
+                            <li>AIベースキャリアマッチング</li>
+                            <li>リアルタイム労働市場連携</li>
+                            <li>Fortune 100顧客獲得</li>
+                            <li>1EdTech規格準拠</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">改善点</h4>
+                        <ul>
+                            <li>公開価格情報なし</li>
+                            <li>アジア市場進出限定的</li>
+                            <li>多言語サポート拡大必要</li>
+                            <li>公開顧客レビュー不足</li>
+                            <li>ブランド認知度向上必要</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">7. サービス発展計画</h2>
+
+                <div class="info-box">
+                    <p>TerritoriumはLifeJourneyプラットフォームの継続的なアップデートと主要教育システムとのパートナーシップ拡大を通じて成長を続けています。</p>
+                </div>
+
+                <h3 class="subsection-title">最近の主要開発</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年1月</div>
+                        <p><strong>UT Systemパートナーシップ：</strong>University of Texas Systemと「Texas Credentials for the Future」プロジェクト開始。35以上の産業関連マイクロクレデンシャル統合</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <p><strong>HACU Avanzaイニシアチブ：</strong>ヒスパニック系大学生の教育・雇用環境変革のための協力</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年</div>
+                        <p><strong>LifeJourneyアップデート：</strong>再設計されたメインメニュー、役割・権限システム、改善された評価、資格証明、レポーティングツール</p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">戦略的方向性</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>技術発展</h4>
+                        <ul>
+                            <li>AIベースレコメンド高度化</li>
+                            <li>ユーザー体験改善</li>
+                            <li>役割ベースアクセス制御強化</li>
+                            <li>ビジュアルガイド・リソース拡大</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>市場拡大</h4>
+                        <ul>
+                            <li>主要大学システムパートナーシップ</li>
+                            <li>K-12市場浸透</li>
+                            <li>企業顧客拡大</li>
+                            <li>連邦資金活用</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">8. 競合分析</h2>
+
+                <table>
+                    <thead><tr><th>比較項目</th><th>Territorium</th><th>Credly</th><th>LearnCard</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>コアポジション</strong></td><td>CLR/LER統合プラットフォーム</td><td>デジタルバッジネットワーク</td><td>オープンソースウォレット</td></tr>
+                        <tr><td><strong>対象顧客</strong></td><td>機関、企業</td><td>大企業、認証機関</td><td>開発者、機関</td></tr>
+                        <tr><td><strong>AI機能</strong></td><td>キャリアパスウェイマッチング</td><td>スキルレコメンド</td><td>Skills Bridge</td></tr>
+                        <tr><td><strong>規格</strong></td><td>CLR 2.0、OB 3.0</td><td>Open Badges</td><td>W3C VC、DID</td></tr>
+                        <tr><td><strong>K-12サポート</strong></td><td>強い</td><td>限定的</td><td>SuperSkills!</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">9. 結論と推奨事項</h2>
+
+                <div class="highlight-box">
+                    <h4 style="margin-bottom: 0.75rem; color: var(--primary-color);">総合評価</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">
+                        Territoriumは米国で初めてCLR 2.0とOpen Badges 3.0認証を同時に取得した企業として、K-12から高等教育、企業まで網羅する統合学習-雇用接続プラットフォームを提供しています。AIベースキャリアマッチングとリアルタイム労働市場連携が強みですが、アジア市場進出とブランド認知度向上が必要です。
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">推奨対象</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4 style="color: #4caf50;">適合する組織</h4>
+                        <ul>
+                            <li>CLR機能が必要な教育機関</li>
+                            <li>コンピテンシーベース教育導入K-12学校</li>
+                            <li>キャリア連携プログラム運営大学</li>
+                            <li>スキルベース採用導入企業</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4 style="color: #f44336;">代替検討推奨</h4>
+                        <ul>
+                            <li>アジア地域中心サービスが必要な機関</li>
+                            <li>多言語サポートが必須のグローバル企業</li>
+                            <li>オープンソースソリューション志向の組織</li>
+                            <li>シンプルなバッジ発行のみ必要な機関</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <div class="sources">
+                <h4>参考資料</h4>
+                <ul>
+                    <li><a href="https://territorium.com/" target="_blank">Territorium 公式サイト</a></li>
+                    <li><a href="https://territorium.com/product/lifejourney/" target="_blank">LifeJourney 製品ページ</a></li>
+                    <li><a href="https://territorium.com/territorium-announces-1edtech-clr-2-0-and-open-badges-3-0-certification/" target="_blank">1EdTech認証発表</a></li>
+                    <li><a href="https://www.prnewswire.com/news-releases/territorium-partners-with-the-university-of-texas-system-302041743.html" target="_blank">UT Systemパートナーシップ発表</a></li>
+                    <li><a href="https://credentialengine.org/2022/03/01/territorium-credential-engine-partner/" target="_blank">Credential Engineパートナーシップ</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Purview and Agent Services Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='microsoft-purview-agent-services-20260202-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='microsoft-purview-agent-services-20260202-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='microsoft-purview-agent-services-20260202-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>Microsoft Purview and Agent Services Analysis<br>Data Governance and Autonomous Agents in the AI Era</h1>
+            <div class="subtitle">Data Security, Compliance, and Enterprise AI Agent Ecosystem</div>
+            <div class="meta">Report Date: February 2, 2026 | Standard Report (5-8 pages)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Top 5 Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <h3 class="subsection-title">1. Microsoft Purview Unified Catalog: The Core of AI-Powered Data Governance</h3>
+                <p><strong>Current Status:</strong> Microsoft Purview is a comprehensive solution for data governance, protection, and management in the AI era. Through Unified Catalog and Data Map, it consolidates metadata from disparate data sources and simplifies data quality and curation with AI-powered recommendations. A new label scheme is automatically applied to tenants created after October 1, 2025, and virtual network (vNet) provisioning is now generally available.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Core Features</h4>
+                        <p>• <strong>Unified Catalog:</strong> SaaS-based single-tenant model for data discovery, quality management, and access control<br>
+                        • <strong>AI Natural Language Search:</strong> Find data products using natural language for business purposes (preview)<br>
+                        • <strong>Data Map:</strong> Automatic metadata scanning and collection from multi-cloud sources</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AI Governance Enhancement</h4>
+                        <p>• <strong>Copilot Integration:</strong> Automate governance tasks and enforce policies in real-time<br>
+                        • <strong>DSPM for AI:</strong> Detect sensitive data risks in AI apps with actionable recommendations<br>
+                        • <strong>Usage Monitoring:</strong> Track DGPU consumption across governance domains (preview)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.microsoft.com/en-us/security/business/microsoft-purview" target="_blank">Microsoft Purview</a> |
+                    <a href="https://learn.microsoft.com/en-us/purview/unified-catalog" target="_blank">Unified Catalog Docs</a> |
+                    <a href="https://learn.microsoft.com/en-us/purview/whats-new" target="_blank">Latest Updates</a>
+                </div>
+
+                <p><strong>Outlook:</strong> With tight integration with Microsoft Fabric, data security and compliance controls for Copilot in Power BI are now GA. Unified governance across AI workloads is expected to strengthen further in 2026.</p>
+
+                <h3 class="subsection-title">2. Azure AI Foundry Agent Service: Enterprise-Grade Multi-Agent Platform</h3>
+                <p><strong>Current Status:</strong> Azure AI Foundry Agent Service is a platform that empowers developers to securely design, deploy, and scale AI agents. At Microsoft Ignite 2025, a new version supporting multi-agent workflows, persistent memory, and enterprise governance was unveiled. It is the only cloud platform offering both OpenAI and Anthropic models.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Core Features</h4>
+                        <p>• <strong>Multi-Agent Orchestration:</strong> Sequential, concurrent, hand-off, and Magentic patterns<br>
+                        • <strong>Computer Use Tool:</strong> Automated computer system manipulation via UI (preview)<br>
+                        • <strong>Deep Research:</strong> Advanced research capability to plan, analyze, and synthesize information</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Enterprise Integration</h4>
+                        <p>• <strong>1,400+ Action Connectors:</strong> Extensive integration via Azure Logic Apps<br>
+                        • <strong>M365 One-Click Deploy:</strong> Instant deployment to Copilot and Teams<br>
+                        • <strong>Model Router:</strong> Dynamic model selection balancing cost, performance, and quality</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://azure.microsoft.com/en-us/products/ai-foundry/agent-service" target="_blank">Foundry Agent Service</a> |
+                    <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/agents/overview" target="_blank">Documentation</a> |
+                    <a href="https://azure.microsoft.com/en-us/blog/introducing-deep-research-in-azure-ai-foundry-agent-service/" target="_blank">Deep Research</a>
+                </div>
+
+                <p><strong>Outlook:</strong> With Foundry Control Plane in public preview, unified management of agents regardless of where they were built is now possible. Claude Sonnet 4.5, Opus 4.1, and Haiku 4.5 from Anthropic have been added, broadening model choices.</p>
+
+                <h3 class="subsection-title">3. Microsoft Agent Framework: Open-Source Multi-Agent SDK</h3>
+                <p><strong>Current Status:</strong> Microsoft Agent Framework is an open-source AI agent development toolkit supporting .NET and Python. It unifies the strengths of Semantic Kernel and AutoGen into a single framework. It includes graph-based workflows, checkpointing, human-in-the-loop capabilities, and OpenTelemetry-integrated observability.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Framework Features</h4>
+                        <p>• <strong>Graph-Based Workflows:</strong> Streaming, checkpointing, and time-travel support<br>
+                        • <strong>A2A Protocol:</strong> Standard communication for cross-vendor agent collaboration<br>
+                        • <strong>MCP Integration:</strong> Model Context Protocol for dynamic tool connections</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Developer Experience</h4>
+                        <p>• <strong>VS Code AI Toolkit:</strong> Multi-agent workflow visualization and debugging<br>
+                        • <strong>Python/C# Support:</strong> Full support for both languages with consistent APIs<br>
+                        • <strong>OpenAPI Integration:</strong> Connect to any API</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://github.com/microsoft/agent-framework" target="_blank">GitHub Repository</a> |
+                    <a href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview" target="_blank">Documentation</a> |
+                    <a href="https://azure.microsoft.com/en-us/blog/introducing-microsoft-agent-framework/" target="_blank">Blog</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Integration with Azure AI Foundry enables running multi-agent workflows on a managed runtime, with enhanced enterprise governance and telemetry capabilities.</p>
+
+                <h3 class="subsection-title">4. Microsoft 365 Copilot Agents: Collaboration-Focused AI Teammates</h3>
+                <p><strong>Current Status:</strong> At Ignite 2025, Microsoft announced collaboration-focused agents that provide AI teammates for every team, project, and meeting. Agent 365 serves as the control plane for agents, managing agent identity and audit across email, Teams, and SharePoint through Entra Agent ID.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Agents</h4>
+                        <p>• <strong>Facilitator Agent:</strong> Meeting agenda management, note-taking, action tracking (GA)<br>
+                        • <strong>SharePoint Agent:</strong> Automated metadata tagging, file classification, content analysis<br>
+                        • <strong>Sales Agent:</strong> Autonomous lead search, qualification, and personalized outreach</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Work IQ Layer</h4>
+                        <p>• <strong>Long-Term Memory:</strong> Continuous awareness of user roles, company structure, and project history<br>
+                        • <strong>Agent Mode:</strong> Agent mode in chat and Office apps (early 2026 preview)<br>
+                        • <strong>Context Awareness:</strong> Understanding across email, calendar, and communication patterns</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.microsoft.com/en-us/microsoft-365-copilot/microsoft-copilot-studio/" target="_blank">Copilot Studio</a> |
+                    <a href="https://www.microsoft.com/en-us/microsoft-365/blog/2025/11/18/microsoft-ignite-2025-copilot-and-agents-built-to-power-the-frontier-firm/" target="_blank">Ignite 2025 Announcement</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Starting July 2026, AI and security features will be included in M365 subscriptions by default with price increases. GPT-5 models (GPT-5 Auto, Chat, Reasoning) are available in public preview in Copilot Studio.</p>
+
+                <h3 class="subsection-title">5. Purview AI Compliance: Data Protection in the Generative AI Era</h3>
+                <p><strong>Current Status:</strong> Microsoft Purview provides integrated protection for data security and compliance in generative AI apps. Information Protection, DLP, Insider Risk Management, and DSPM for AI work together to classify sensitive data, prevent leaks, detect insider threats, and uncover AI-related risks.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>AI Security Features</h4>
+                        <p>• <strong>DSPM for AI:</strong> Data security posture management for AI applications<br>
+                        • <strong>ML Detection:</strong> Detect unusual behavior patterns and prevent data leaks<br>
+                        • <strong>Real-Time Dashboards:</strong> Compliance monitoring and auto-generated audit reports</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Regulatory Compliance</h4>
+                        <p>• <strong>Global Regulations:</strong> GDPR, HIPAA, CCPA, ISO 27001 compliance<br>
+                        • <strong>M365 Copilot View:</strong> Dedicated data security and compliance management for Copilot<br>
+                        • <strong>eDiscovery/Retention:</strong> Audit and retention policies for AI interactions</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.microsoft.com/en-us/security/blog/2025/09/16/microsoft-purview-innovations-for-your-fabric-data-unify-data-security-and-governance-for-the-ai-era/" target="_blank">Purview Innovations for AI Era</a> |
+                    <a href="https://www.microsoft.com/en-us/security/business/risk-management/microsoft-purview-data-governance" target="_blank">Data Governance</a>
+                </div>
+
+                <p><strong>Outlook:</strong> As AI usage increases, organizations must mitigate AI-related risks and implement appropriate protection and governance controls. Purview is positioning itself as a unified security solution across AI workloads.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">Data Governance Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">Microsoft Purview ranks #1 in the data governance market with a 17.1% market share. Competitors each have specialized strengths, and the choice depends on an organization's technology stack and requirements.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Category</th>
+                            <th>Key Strengths</th>
+                            <th>Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Microsoft Purview</strong></td>
+                            <td>Unified Platform</td>
+                            <td>Native Azure/M365/Power BI integration, lower adoption cost</td>
+                            <td>Microsoft ecosystem enterprises</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Collibra</strong></td>
+                            <td>Enterprise Governance</td>
+                            <td>Advanced data mapping and lineage, 96% recommendation rate</td>
+                            <td>Large complex environments</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Alation</strong></td>
+                            <td>Data Intelligence</td>
+                            <td>120+ pre-built connectors, business self-service</td>
+                            <td>Data literacy-focused organizations</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Informatica IDMC</strong></td>
+                            <td>Hybrid Environments</td>
+                            <td>CLAIRE AI engine, large enterprise install base</td>
+                            <td>On-prem + cloud hybrid</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Atlan</strong></td>
+                            <td>Active Metadata</td>
+                            <td>Fast time-to-value, modern data stack</td>
+                            <td>Speed-focused startups/scaleups</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">AI Agent Platform Comparison</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Category</th>
+                            <th>Key Strengths</th>
+                            <th>Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Azure AI Foundry</strong></td>
+                            <td>Enterprise Infrastructure</td>
+                            <td>Multi-agent, OpenAI+Anthropic models, 1,400+ connectors</td>
+                            <td>Regulated industries, enterprises</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Copilot Studio</strong></td>
+                            <td>Low-Code/No-Code</td>
+                            <td>M365 integration, GPT-5 support, non-developer friendly</td>
+                            <td>Business teams, citizen developers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Agent Framework</strong></td>
+                            <td>Open-Source SDK</td>
+                            <td>.NET/Python support, graph workflows, A2A/MCP</td>
+                            <td>Developers, engineering teams</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Amazon Bedrock</strong></td>
+                            <td>AWS Agents</td>
+                            <td>AWS native, diverse model selection</td>
+                            <td>AWS ecosystem enterprises</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google Vertex AI</strong></td>
+                            <td>GCP Agents</td>
+                            <td>Gemini integration, MLOps pipelines</td>
+                            <td>GCP ecosystem enterprises</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Platform Capability Comparison</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key adoption approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>AI Governance Pilot</strong> - Leverage Purview DSPM for AI to analyze existing Copilot usage patterns, identify sensitive data risks, and establish phased policy frameworks</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Multi-Agent Workflow Automation</strong> - Build multi-agent workflows with Foundry Agent Service for repetitive business processes (e.g., expense processing, document routing)</p>
+                    <p style="line-height: 1.6;">3. <strong>SharePoint Knowledge Management</strong> - Modernize knowledge bases with SharePoint Agent for automated document metadata tagging and content freshness analysis</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Unified Governance:</strong> Purview is #1 in data governance (17.1% share), providing integrated data protection and governance for the AI era</li>
+                        <li><strong>Agent Ecosystem:</strong> Microsoft covers all tiers with Foundry Agent Service (enterprise), Copilot Studio (low-code), and Agent Framework (developers)</li>
+                        <li><strong>2026 Transition:</strong> AI/security features to be included in M365 subscriptions by default, GPT-5 models introduced, price increases planned (July 2026)</li>
+                        <li><strong>Multi-Model Strategy:</strong> Azure is the only cloud offering both OpenAI and Anthropic models</li>
+                        <li><strong>Open Standards:</strong> A2A, MCP, and OpenAPI support ensures interoperability in multi-vendor environments</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Microsoft Ecosystem Enterprises → Purview + Copilot Studio</strong><br>
+                        Reason: Native Azure/M365/Power BI integration, lower adoption cost, fast time-to-value<br><br>
+                        <strong>Multi-Cloud/Complex Environments → Collibra or Informatica</strong><br>
+                        Reason: Platform-independent advanced governance capabilities needed<br><br>
+                        <strong>Developer-Led AI Agents → Agent Framework + Foundry</strong><br>
+                        Reason: Combination of open-source flexibility and enterprise management features
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Outlook:</strong> Positive (Microsoft is building a comprehensive solution portfolio for data governance and agent services in the AI era, making it an attractive choice especially for existing Microsoft ecosystem enterprises)</p>
+            </section>
+
+            <!-- SECTION 5: Key Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Unified Catalog</strong> - A core component of Microsoft Purview, a SaaS-based data catalog for discovering and curating data across the organization
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>DSPM for AI (Data Security Posture Management for AI)</strong> - A Purview feature that manages data security posture for AI applications and identifies risks
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Foundry Agent Service</strong> - A managed agent runtime from Azure AI Foundry providing multi-agent orchestration and enterprise governance
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Agent 365</strong> - The control plane for managing and securing agents in the Microsoft 365 environment
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>A2A (Agent-to-Agent Protocol)</strong> - A standard protocol enabling collaboration between AI agents from different vendors
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>MCP (Model Context Protocol)</strong> - A standard protocol for connecting AI models to data sources
+                    </div>
+                    <div>
+                        <strong>Work IQ</strong> - Copilot's long-term memory layer that maintains continuous awareness of user roles and project history across M365
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> February 2, 2026</p>
+                    <ul>
+                        <li>• <a href="https://learn.microsoft.com/en-us/purview/purview" target="_blank">Microsoft Learn - Microsoft Purview Overview</a></li>
+                        <li>• <a href="https://learn.microsoft.com/en-us/purview/whats-new" target="_blank">Microsoft Learn - What's New in Microsoft Purview</a></li>
+                        <li>• <a href="https://azure.microsoft.com/en-us/products/ai-foundry/agent-service" target="_blank">Azure AI Foundry Agent Service</a></li>
+                        <li>• <a href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview" target="_blank">Microsoft Agent Framework Documentation</a></li>
+                        <li>• <a href="https://www.microsoft.com/en-us/microsoft-365/blog/2025/11/18/microsoft-ignite-2025-copilot-and-agents-built-to-power-the-frontier-firm/" target="_blank">Microsoft Ignite 2025 Announcements</a></li>
+                        <li>• <a href="https://www.peerspot.com/products/microsoft-purview-data-governance-alternatives-and-competitors" target="_blank">PeerSpot - Purview Alternatives Comparison</a></li>
+                        <li>• <a href="https://github.com/microsoft/agent-framework" target="_blank">GitHub - Microsoft Agent Framework</a></li>
+                        <li>• <a href="https://www.microsoft.com/en-us/security/blog/2025/09/16/microsoft-purview-innovations-for-your-fabric-data-unify-data-security-and-governance-for-the-ai-era/" target="_blank">Microsoft Security Blog - Purview Innovations</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Microsoft Integration', 'AI Governance', 'Multi-Agent', 'Open Standards', 'Cost Efficiency'],
+                datasets: [
+                    {
+                        label: 'Microsoft Purview',
+                        data: [95, 90, 70, 80, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Azure AI Foundry',
+                        data: [90, 80, 95, 90, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Collibra',
+                        data: [50, 85, 40, 70, 50],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'AWS Bedrock',
+                        data: [30, 70, 80, 75, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

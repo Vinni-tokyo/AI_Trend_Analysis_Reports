@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Purviewとエージェントサービス分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='microsoft-purview-agent-services-20260202-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='microsoft-purview-agent-services-20260202-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='microsoft-purview-agent-services-20260202-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>Microsoft Purviewとエージェントサービス分析<br>AI時代のデータガバナンスと自律エージェント</h1>
+            <div class="subtitle">データセキュリティ、コンプライアンス、エンタープライズAIエージェントエコシステム</div>
+            <div class="meta">レポート作成日：2026年2月2日 | 標準レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. Microsoft Purview Unified Catalog：AI基盤データガバナンスの中核</h3>
+                <p><strong>現状：</strong> Microsoft Purviewは、AI時代のデータガバナンス、保護、管理のための統合ソリューションです。Unified CatalogとData Mapを通じて分散データソースからメタデータを統合し、AI基盤の推奨でデータ品質とキュレーションを簡素化します。2025年10月以降に作成されたテナントには新しいラベル体系が自動適用され、仮想ネットワーク（vNet）プロビジョニングが一般提供（GA）となりました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>核心機能</h4>
+                        <p>• <strong>Unified Catalog：</strong>SaaS基盤シングルテナントモデルでデータ検索、品質管理、アクセス制御<br>
+                        • <strong>AI自然言語検索：</strong>ビジネス目的に合わせた自然言語でデータ製品を検索（プレビュー）<br>
+                        • <strong>Data Map：</strong>マルチクラウドソースからのメタデータ自動スキャン・収集</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AIガバナンス強化</h4>
+                        <p>• <strong>Copilot統合：</strong>ガバナンスタスク自動化とリアルタイムポリシー施行<br>
+                        • <strong>DSPM for AI：</strong>AIアプリの機密データリスク検出と推奨事項提供<br>
+                        • <strong>使用量モニタリング：</strong>ガバナンスドメイン別DGPU消費量追跡（プレビュー）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.microsoft.com/en-us/security/business/microsoft-purview" target="_blank">Microsoft Purview</a> |
+                    <a href="https://learn.microsoft.com/en-us/purview/unified-catalog" target="_blank">Unified Catalogドキュメント</a> |
+                    <a href="https://learn.microsoft.com/en-us/purview/whats-new" target="_blank">最新アップデート</a>
+                </div>
+
+                <p><strong>展望：</strong> Microsoft Fabricとの緊密な統合により、Power BI Copilotのデータセキュリティおよびコンプライアンス制御がGAとなり、2026年にはAIワークロード全体の統合ガバナンスがさらに強化される見込みです。</p>
+
+                <h3 class="subsection-title">2. Azure AI Foundry Agent Service：エンタープライズ級マルチエージェントプラットフォーム</h3>
+                <p><strong>現状：</strong> Azure AI Foundry Agent Serviceは、開発者がAIエージェントを安全に設計、展開、拡張できるプラットフォームです。Microsoft Ignite 2025で、マルチエージェントワークフロー、永続メモリ、エンタープライズガバナンスをサポートする新バージョンが発表されました。OpenAIとAnthropicの両モデルを提供する唯一のクラウドプラットフォームです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>核心機能</h4>
+                        <p>• <strong>マルチエージェントオーケストレーション：</strong>順次、同時、ハンドオフ、Magenticパターン対応<br>
+                        • <strong>Computer Use Tool：</strong>UIを通じたコンピュータシステム自動操作（プレビュー）<br>
+                        • <strong>Deep Research：</strong>Web全体から情報を計画、分析、合成する高度な調査機能</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>エンタープライズ統合</h4>
+                        <p>• <strong>1,400以上のアクションコネクタ：</strong>Azure Logic Apps基盤の広範な統合<br>
+                        • <strong>M365ワンクリック展開：</strong>CopilotとTeamsへ即座に展開可能<br>
+                        • <strong>モデルルーター：</strong>コスト、性能、品質バランスのための動的モデル選択</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://azure.microsoft.com/en-us/products/ai-foundry/agent-service" target="_blank">Foundry Agent Service</a> |
+                    <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/agents/overview" target="_blank">ドキュメント</a> |
+                    <a href="https://azure.microsoft.com/en-us/blog/introducing-deep-research-in-azure-ai-foundry-agent-service/" target="_blank">Deep Research</a>
+                </div>
+
+                <p><strong>展望：</strong> Foundry Control Planeのパブリックプレビューにより、どこで作成されたエージェントでも統合管理が可能になりました。Claude Sonnet 4.5、Opus 4.1、Haiku 4.5などAnthropicモデルが追加され、モデル選択の幅が広がりました。</p>
+
+                <h3 class="subsection-title">3. Microsoft Agent Framework：オープンソースマルチエージェントSDK</h3>
+                <p><strong>現状：</strong> Microsoft Agent Frameworkは、.NETとPythonをサポートするオープンソースAIエージェント開発ツールです。Semantic KernelとAutoGenの強みを統合し、単一フレームワークで提供します。グラフベースワークフロー、チェックポイント、ヒューマンインザループ機能を含み、OpenTelemetry統合オブザーバビリティを提供します。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>フレームワーク機能</h4>
+                        <p>• <strong>グラフベースワークフロー：</strong>ストリーミング、チェックポイント、タイムトラベル対応<br>
+                        • <strong>A2Aプロトコル：</strong>異なるベンダーのエージェント間協業のための標準通信<br>
+                        • <strong>MCP統合：</strong>動的ツール接続のためのModel Context Protocol</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>開発者体験</h4>
+                        <p>• <strong>VS Code AI Toolkit：</strong>マルチエージェントワークフロー可視化とデバッグ<br>
+                        • <strong>Python/C#サポート：</strong>一貫したAPIで両言語を完全サポート<br>
+                        • <strong>OpenAPI統合：</strong>あらゆるAPIとの接続が可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://github.com/microsoft/agent-framework" target="_blank">GitHubリポジトリ</a> |
+                    <a href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview" target="_blank">ドキュメント</a> |
+                    <a href="https://azure.microsoft.com/en-us/blog/introducing-microsoft-agent-framework/" target="_blank">ブログ</a>
+                </div>
+
+                <p><strong>展望：</strong> Azure AI Foundryとの統合により、マネージドランタイムでマルチエージェントワークフローを実行でき、エンタープライズガバナンスとテレメトリ機能が強化されています。</p>
+
+                <h3 class="subsection-title">4. Microsoft 365 Copilot Agents：コラボレーション重視のAIチームメイト</h3>
+                <p><strong>現状：</strong> Microsoftは、Ignite 2025ですべてのチーム、プロジェクト、会議にAIチームメイトを提供するコラボレーション重視のエージェントを発表しました。Agent 365はエージェントのコントロールプレーンとして、Entra Agent IDを通じてメール、Teams、SharePoint全体でエージェントIDと監査を管理します。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要エージェント</h4>
+                        <p>• <strong>Facilitator Agent：</strong>会議アジェンダ管理、ノート作成、アクション管理（GA）<br>
+                        • <strong>SharePoint Agent：</strong>メタデータタグ付け、ファイル分類、コンテンツ分析の自動化<br>
+                        • <strong>Sales Agent：</strong>リード検索、資格確認、パーソナライズドアウトリーチの自動実行</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Work IQレイヤー</h4>
+                        <p>• <strong>長期記憶：</strong>ユーザー役割、会社構造、プロジェクト履歴の継続的認識<br>
+                        • <strong>Agent Mode：</strong>チャットとOfficeアプリでのエージェントモード対応（2026年初頭プレビュー）<br>
+                        • <strong>コンテキスト認識：</strong>メール、カレンダー、コミュニケーションパターン全体の理解</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.microsoft.com/en-us/microsoft-365-copilot/microsoft-copilot-studio/" target="_blank">Copilot Studio</a> |
+                    <a href="https://www.microsoft.com/en-us/microsoft-365/blog/2025/11/18/microsoft-ignite-2025-copilot-and-agents-built-to-power-the-frontier-firm/" target="_blank">Ignite 2025発表</a>
+                </div>
+
+                <p><strong>展望：</strong> 2026年7月からM365サブスクリプションにAI・セキュリティ機能がデフォルトで含まれ、価格が引き上げられます。GPT-5モデル（GPT-5 Auto、Chat、Reasoning）がCopilot Studioでパブリックプレビュー提供されます。</p>
+
+                <h3 class="subsection-title">5. Purview AIコンプライアンス：生成AI時代のデータ保護</h3>
+                <p><strong>現状：</strong> Microsoft Purviewは、生成AIアプリのデータセキュリティとコンプライアンスのための統合保護機能を提供します。Information Protection、DLP、Insider Risk Management、DSPM for AIが連携して、機密データの分類、漏洩防止、内部脅威検出、AI関連リスクの発見を行います。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>AIセキュリティ機能</h4>
+                        <p>• <strong>DSPM for AI：</strong>AIアプリケーションのデータセキュリティ態勢管理<br>
+                        • <strong>機械学習検出：</strong>異常行動パターン検知とデータ漏洩防止<br>
+                        • <strong>リアルタイムダッシュボード：</strong>コンプライアンス監視と自動監査レポート</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>規制対応</h4>
+                        <p>• <strong>グローバル規制：</strong>GDPR、HIPAA、CCPA、ISO 27001対応<br>
+                        • <strong>M365 Copilotビュー：</strong>Copilot専用データセキュリティ・コンプライアンス管理<br>
+                        • <strong>eDiscovery/保持：</strong>AI対話の監査と保持ポリシー</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.microsoft.com/en-us/security/blog/2025/09/16/microsoft-purview-innovations-for-your-fabric-data-unify-data-security-and-governance-for-the-ai-era/" target="_blank">AI時代のPurviewイノベーション</a> |
+                    <a href="https://www.microsoft.com/en-us/security/business/risk-management/microsoft-purview-data-governance" target="_blank">データガバナンス</a>
+                </div>
+
+                <p><strong>展望：</strong> AI利用が増加する中、組織はAI関連リスクを軽減し、適切な保護とガバナンス制御を実装する必要があります。PurviewはAIワークロード全体の統合セキュリティソリューションとして位置付けられています。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">データガバナンス市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">Microsoft Purviewはデータガバナンス市場で17.1%のシェアを持ち、1位にランクされています。競合他社はそれぞれ特化した強みを持っており、組織の技術スタックと要件に応じて選択が異なります。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>プラットフォーム</th>
+                            <th>カテゴリ</th>
+                            <th>主要な強み</th>
+                            <th>最適な対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Microsoft Purview</strong></td>
+                            <td>統合プラットフォーム</td>
+                            <td>Azure/M365/Power BIネイティブ統合、低い導入コスト</td>
+                            <td>Microsoftエコシステム企業</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Collibra</strong></td>
+                            <td>エンタープライズガバナンス</td>
+                            <td>高度なデータマッピングとリネージ、96%の推奨率</td>
+                            <td>大規模複雑環境</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Alation</strong></td>
+                            <td>データインテリジェンス</td>
+                            <td>120以上の事前構築コネクタ、ビジネスセルフサービス</td>
+                            <td>データリテラシー重視組織</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Informatica IDMC</strong></td>
+                            <td>ハイブリッド環境</td>
+                            <td>CLAIRE AIエンジン、大規模エンタープライズインストールベース</td>
+                            <td>オンプレミス+クラウドハイブリッド</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Atlan</strong></td>
+                            <td>アクティブメタデータ</td>
+                            <td>迅速な価値実現、モダンデータスタック</td>
+                            <td>スピード重視のスタートアップ</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">AIエージェントプラットフォーム比較</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>プラットフォーム</th>
+                            <th>カテゴリ</th>
+                            <th>主要な強み</th>
+                            <th>最適な対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Azure AI Foundry</strong></td>
+                            <td>エンタープライズインフラ</td>
+                            <td>マルチエージェント、OpenAI+Anthropicモデル、1,400以上のコネクタ</td>
+                            <td>規制業界、大企業</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Copilot Studio</strong></td>
+                            <td>ローコード/ノーコード</td>
+                            <td>M365統合、GPT-5サポート、非開発者フレンドリー</td>
+                            <td>ビジネスチーム、市民開発者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Agent Framework</strong></td>
+                            <td>オープンソースSDK</td>
+                            <td>.NET/Pythonサポート、グラフワークフロー、A2A/MCP</td>
+                            <td>開発者、エンジニアリングチーム</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Amazon Bedrock</strong></td>
+                            <td>AWSエージェント</td>
+                            <td>AWSネイティブ、多様なモデル選択</td>
+                            <td>AWSエコシステム企業</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google Vertex AI</strong></td>
+                            <td>GCPエージェント</td>
+                            <td>Gemini統合、MLOpsパイプライン</td>
+                            <td>GCPエコシステム企業</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム能力比較</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>AIガバナンスパイロット</strong> - Purview DSPM for AIを活用して既存Copilot利用パターンを分析し、機密データリスクを特定した上で段階的なポリシーを策定</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>マルチエージェント業務自動化</strong> - Foundry Agent Serviceで反復的なビジネスプロセス（例：経費処理、文書ルーティング）にマルチエージェントワークフローを構築</p>
+                    <p style="line-height: 1.6;">3. <strong>SharePointナレッジ管理</strong> - SharePoint Agentで文書メタデータの自動タグ付けとコンテンツ鮮度分析を通じたナレッジベースの近代化</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">主要な発見</h3>
+                    <ul class="key-findings">
+                        <li><strong>統合ガバナンス：</strong>Purviewはデータガバナンス市場1位（17.1%シェア）で、AI時代のデータ保護とガバナンスを統合提供</li>
+                        <li><strong>エージェントエコシステム：</strong>MicrosoftはFoundry Agent Service（エンタープライズ）、Copilot Studio（ローコード）、Agent Framework（開発者）で全層をカバー</li>
+                        <li><strong>2026年の転換：</strong>M365サブスクリプションにAI/セキュリティ機能がデフォルト含まれ、GPT-5モデル導入、価格引き上げ予定（2026年7月）</li>
+                        <li><strong>マルチモデル戦略：</strong>AzureはOpenAIとAnthropicモデルを両方提供する唯一のクラウド</li>
+                        <li><strong>オープン標準：</strong>A2A、MCP、OpenAPIサポートでマルチベンダー環境での相互運用性を確保</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選択ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Microsoftエコシステム企業 → Purview + Copilot Studio</strong><br>
+                        理由：Azure/M365/Power BIネイティブ統合、低い導入コスト、迅速な価値実現<br><br>
+                        <strong>マルチクラウド/複雑環境 → CollibraまたはInformatica</strong><br>
+                        理由：プラットフォーム独立の高度なガバナンス機能が必要な場合<br><br>
+                        <strong>開発者主導AIエージェント → Agent Framework + Foundry</strong><br>
+                        理由：オープンソースの柔軟性とエンタープライズ管理機能の組み合わせ
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（MicrosoftはAI時代のデータガバナンスとエージェントサービスで包括的なソリューションポートフォリオを構築しており、特に既存のMicrosoftエコシステム企業にとって魅力的な選択肢）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Unified Catalog</strong> - Microsoft Purviewの核心コンポーネントで、組織全体のデータを検索しキュレーションするSaaS基盤データカタログ
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>DSPM for AI（AI向けデータセキュリティ態勢管理）</strong> - AIアプリケーションのデータセキュリティ態勢を管理し、リスクを特定するPurview機能
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Foundry Agent Service</strong> - Azure AI Foundryのマネージドエージェントランタイムで、マルチエージェントオーケストレーションとエンタープライズガバナンスを提供
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Agent 365</strong> - Microsoft 365環境でエージェントを管理・セキュア化するためのコントロールプレーン
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>A2A（Agent-to-Agentプロトコル）</strong> - 異なるベンダーのAIエージェント間の協業を可能にする標準プロトコル
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>MCP（Model Context Protocol）</strong> - AIモデルをデータソースに接続するための標準プロトコル
+                    </div>
+                    <div>
+                        <strong>Work IQ</strong> - Copilotの長期記憶レイヤーで、M365全体でユーザー役割とプロジェクト履歴を継続的に認識
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年2月2日</p>
+                    <ul>
+                        <li>• <a href="https://learn.microsoft.com/en-us/purview/purview" target="_blank">Microsoft Learn - Microsoft Purview概要</a></li>
+                        <li>• <a href="https://learn.microsoft.com/en-us/purview/whats-new" target="_blank">Microsoft Learn - Microsoft Purviewの新機能</a></li>
+                        <li>• <a href="https://azure.microsoft.com/en-us/products/ai-foundry/agent-service" target="_blank">Azure AI Foundry Agent Service</a></li>
+                        <li>• <a href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview" target="_blank">Microsoft Agent Frameworkドキュメント</a></li>
+                        <li>• <a href="https://www.microsoft.com/en-us/microsoft-365/blog/2025/11/18/microsoft-ignite-2025-copilot-and-agents-built-to-power-the-frontier-firm/" target="_blank">Microsoft Ignite 2025発表</a></li>
+                        <li>• <a href="https://www.peerspot.com/products/microsoft-purview-data-governance-alternatives-and-competitors" target="_blank">PeerSpot - Purview代替製品比較</a></li>
+                        <li>• <a href="https://github.com/microsoft/agent-framework" target="_blank">GitHub - Microsoft Agent Framework</a></li>
+                        <li>• <a href="https://www.microsoft.com/en-us/security/blog/2025/09/16/microsoft-purview-innovations-for-your-fabric-data-unify-data-security-and-governance-for-the-ai-era/" target="_blank">Microsoft Securityブログ - Purviewイノベーション</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Microsoft統合', 'AIガバナンス', 'マルチエージェント', 'オープン標準', 'コスト効率'],
+                datasets: [
+                    {
+                        label: 'Microsoft Purview',
+                        data: [95, 90, 70, 80, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Azure AI Foundry',
+                        data: [90, 80, 95, 90, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Collibra',
+                        data: [50, 85, 40, 70, 50],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'AWS Bedrock',
+                        data: [30, 70, 80, 75, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentPass by Gobekli Platform Deep Analysis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-color: #9c27b0; --secondary-color: #7b1fa2; --text-primary: #1a1a1a; --text-secondary: #4a4a4a; --bg-subtle: #fafafa; --border-color: #e5e5e5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.7; color: var(--text-primary); background: var(--bg-subtle); font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; text-decoration: none; }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; }
+        .header .subtitle { font-size: 0.95rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge { display: inline-block; background: white; color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.3rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); }
+        .subsection-title { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; font-weight: 600; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-secondary); }
+        .info-box { background: #f3e5f5; border-left: 4px solid var(--primary-color); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .highlight-box { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--primary-color); }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .feature-tag { display: inline-block; background: var(--primary-color); color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; margin: 0.15rem; }
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .ai-feature-box { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        .ai-feature-box h4 { color: #6a1b9a; margin-bottom: 0.5rem; }
+        .timeline { position: relative; padding-left: 2rem; margin: 1rem 0; }
+        .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--primary-color); }
+        .timeline-item { position: relative; margin: 1rem 0; padding: 0.75rem; background: var(--bg-subtle); border-radius: 4px; }
+        .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 1rem; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; }
+        .timeline-date { font-size: 0.75rem; color: var(--primary-color); font-weight: 600; }
+        .sources { background: var(--bg-subtle); padding: 1rem 1.25rem; border-radius: 8px; margin-top: 2rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        @media (max-width: 768px) { .stat-grid, .two-column, .pros-cons { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='talentpass-platform-analysis-20250121-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='talentpass-platform-analysis-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button class="lang-btn active">English</button>
+                </div>
+            </div>
+            <div class="company-badge">LER Standard Based</div>
+            <h1>TalentPass by Gobekli Platform Deep Analysis</h1>
+            <div class="subtitle">AI-Powered Learning and Employment Record (LER) Digital Wallet Platform</div>
+            <div class="meta">Report Date: January 21, 2025 | Individual Platform Analysis</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card"><div class="number">2020</div><div class="label">Founded</div></div>
+                <div class="stat-card"><div class="number">$40K</div><div class="label">Funding</div></div>
+                <div class="stat-card"><div class="number">~30</div><div class="label">Pilot Participants</div></div>
+                <div class="stat-card"><div class="number">LER</div><div class="label">Core Standard</div></div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">1. Company Overview</h2>
+                <div class="info-box">
+                    <p><strong>Gobekli</strong> is a startup founded in 2020 developing <strong>TalentPass</strong>, a user-friendly, standards-compliant digital wallet for Learning and Employment Records (LER). The company collaborates with the Experience You Project supported by U.S. Chamber of Commerce Foundation and Education Design Lab.</p>
+                </div>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Company Information</h4>
+                        <ul>
+                            <li><strong>Founded:</strong> 2020</li>
+                            <li><strong>Type:</strong> Startup (Private)</li>
+                            <li><strong>Funding:</strong> Under $40,000</li>
+                            <li><strong>Products:</strong> TalentPass, TalentSync</li>
+                            <li><strong>HQ:</strong> United States</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Core Technology</h4>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="feature-tag">LER Standard</span>
+                            <span class="feature-tag">W3C VC</span>
+                            <span class="feature-tag">AI Guide (Pythia)</span>
+                            <span class="feature-tag">Talent Tree</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">2. Business Model</h2>
+                <div class="info-box">
+                    <p>TalentPass is <strong>free for individuals</strong>, while organizations pay annual per-user fees for Passport Pages hosting.</p>
+                </div>
+                <h3 class="subsection-title">Pricing Structure</h3>
+                <table>
+                    <thead><tr><th>Customer Type</th><th>Price</th><th>Details</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Individuals</strong></td><td>Free</td><td>Profile building, opportunity discovery, AI guide access</td></tr>
+                        <tr><td><strong>Organizations</strong></td><td>$2-$12/user/year</td><td>Varies by size, features, and data provided</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">3. AI Recommendation System</h2>
+                <div class="info-box">
+                    <p><strong>Pythia</strong> is TalentPass's AI guide that captures user talent information and transforms it into a visual Talent Tree.</p>
+                </div>
+                <div class="ai-feature-box">
+                    <h4>Pythia AI Guide</h4>
+                    <p style="font-size: 0.9rem;">Through conversation, Pythia captures all talent information - from formal credentials and job skills to abilities developed as family member, volunteer, artist, athlete, creator, leader, or learner. Data becomes trusted, portable, and beautifully visual through Talent Tree.</p>
+                </div>
+                <h3 class="subsection-title">Technology Architecture</h3>
+                <table>
+                    <thead><tr><th>Component</th><th>Specifications</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Standards</strong></td><td>LER (Learning and Employment Record) compliant</td></tr>
+                        <tr><td><strong>Data Framework</strong></td><td>Unifying Talent Data Framework, Super Taxonomy</td></tr>
+                        <tr><td><strong>Visualization</strong></td><td>Talent Tree - living map of skills, roles, motivations, experiences</td></tr>
+                        <tr><td><strong>AI</strong></td><td>Pythia - personal AI guide</td></tr>
+                        <tr><td><strong>Interoperability</strong></td><td>Integration with other apps and wallets</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">4. User Statistics & Pilots</h2>
+                <div class="info-box">
+                    <p><strong>University of Phoenix</strong> pilot project is the primary validation case for TalentPass.</p>
+                </div>
+                <h3 class="subsection-title">University of Phoenix Pilot</h3>
+                <table>
+                    <thead><tr><th>Item</th><th>Details</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Timeline</strong></td><td>Initial 2023, Success announced August 2025</td></tr>
+                        <tr><td><strong>Participants</strong></td><td>~30 student volunteers (focus group)</td></tr>
+                        <tr><td><strong>Support</strong></td><td>Experience You Project (U.S. Chamber of Commerce Foundation, Education Design Lab)</td></tr>
+                        <tr><td><strong>Goal</strong></td><td>Test LER interoperable exchange, verify digital wallet portability</td></tr>
+                        <tr><td><strong>Result</strong></td><td>Successful testing of verifiable digital credentials wallet capability</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">5. Strengths & Areas for Improvement</h2>
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">Strengths</h4>
+                        <ul>
+                            <li>Free for individuals</li>
+                            <li>Learner-centered data ownership</li>
+                            <li>LER standard compliance</li>
+                            <li>Innovative AI guide (Pythia)</li>
+                            <li>Visual Talent Tree</li>
+                            <li>Wallet interoperability</li>
+                            <li>University of Phoenix validation</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">Areas for Improvement</h4>
+                        <ul>
+                            <li>Limited funding (under $40K)</li>
+                            <li>Early startup stage</li>
+                            <li>No large user base yet</li>
+                            <li>No public customer reviews</li>
+                            <li>Limited international presence</li>
+                            <li>Enterprise features limited</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">6. Development Roadmap</h2>
+                <div class="timeline">
+                    <div class="timeline-item"><div class="timeline-date">2023</div><p><strong>Initial Pilot:</strong> Focus group with ~30 students at University of Phoenix</p></div>
+                    <div class="timeline-item"><div class="timeline-date">July 2024</div><p><strong>Beta Launch:</strong> Early tester recruitment and beta program start</p></div>
+                    <div class="timeline-item"><div class="timeline-date">August 2025</div><p><strong>Pilot Success:</strong> Successful verifiable digital credentials wallet capability testing announced</p></div>
+                    <div class="timeline-item"><div class="timeline-date">Future</div><p><strong>Next Phase:</strong> Focus on digital wallet portability development</p></div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">7. Competitive Analysis</h2>
+                <table>
+                    <thead><tr><th>Comparison</th><th>TalentPass</th><th>LearnCard</th><th>Territorium</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Position</strong></td><td>LER-based Digital Wallet</td><td>Open Source Web3 Wallet</td><td>CLR/LER Integrated Platform</td></tr>
+                        <tr><td><strong>Pricing</strong></td><td>Free for individuals</td><td>Open source/Free</td><td>Institutional license</td></tr>
+                        <tr><td><strong>AI Features</strong></td><td>Pythia AI Guide</td><td>Skills Bridge</td><td>Top 5 Skills Matching</td></tr>
+                        <tr><td><strong>Stage</strong></td><td>Startup Beta</td><td>Mature Open Source</td><td>Commercialized</td></tr>
+                        <tr><td><strong>User Scale</strong></td><td>Pilot stage</td><td>70K+ (ScoutPass)</td><td>12M+</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">8. Conclusion & Recommendations</h2>
+                <div class="highlight-box">
+                    <h4 style="color: var(--primary-color);">Overall Assessment</h4>
+                    <p style="font-size: 0.95rem;">TalentPass is an innovative digital wallet solution based on learner-centered data ownership and LER standards. University of Phoenix pilot provides technical validation, but limited funding and early stage mean large-scale adoption requires time. Suitable for institutions interested in learner-owned data ecosystems.</p>
+                </div>
+                <div class="two-column">
+                    <div class="card">
+                        <h4 style="color: #4caf50;">Best Suited For</h4>
+                        <ul>
+                            <li>Institutions adopting LER standards</li>
+                            <li>Organizations prioritizing learner data ownership</li>
+                            <li>Universities interested in innovative pilots</li>
+                            <li>Individual learners managing portfolios</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4 style="color: #f44336;">Consider Alternatives</h4>
+                        <ul>
+                            <li>Need immediate large-scale deployment</li>
+                            <li>Require stable enterprise solutions</li>
+                            <li>Need proven large user base</li>
+                            <li>Require Asia region support</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <div class="sources">
+                <h4>References</h4>
+                <ul>
+                    <li><a href="https://gobekli.io/" target="_blank">Gobekli Official Website</a></li>
+                    <li><a href="https://talentpass.io/" target="_blank">TalentPass Official Website</a></li>
+                    <li><a href="https://gobekli.io/passport-pages/" target="_blank">Passport Pages</a></li>
+                    <li><a href="https://www.morningstar.com/news/business-wire/20250828681350/university-of-phoenix-announces-successful-pilot-testing" target="_blank">University of Phoenix Pilot Success</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credly by Pearson プラットフォーム詳細分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #ff6b35;
+            --secondary-color: #e85a2a;
+            --accent-color: #d44d1f;
+            --navy: #001e5c;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+            line-height: 1.8;
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+            font-size: 16px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .header .subtitle { font-size: 0.95rem; margin-top: 0.25rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge {
+            display: inline-block;
+            background: white;
+            color: var(--primary-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .subsection-title {
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            margin: 1.25rem 0 0.5rem;
+            font-weight: 600;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-subtle) 0%, white 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        .info-box {
+            background: #fff5f2;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .info-box p { font-size: 0.95rem; line-height: 1.7; }
+        .highlight-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        tr:hover { background: var(--bg-subtle); }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+        .card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+        .card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary-color);
+        }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin: 1rem 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary-color);
+        }
+        .timeline-item {
+            position: relative;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 1rem;
+            width: 10px;
+            height: 10px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+        .timeline-date {
+            font-size: 0.75rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .sources {
+            background: var(--bg-subtle);
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+        }
+        .sources h4 { margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .score-bar {
+            background: var(--border-color);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.25rem 0;
+        }
+        .score-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-column, .pros-cons { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+        }
+        @media print {
+            body { padding: 0; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← ホーム</a>
+                <div class="language-switcher">
+                    <button class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='credly-platform-analysis-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='credly-platform-analysis-20250121-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <div class="company-badge">Pearson グループ</div>
+            <h1>Credly プラットフォーム詳細分析</h1>
+            <div class="subtitle">世界最大のデジタル資格証明ネットワーク：AIレコメンドシステムとビジネスモデル</div>
+            <div class="meta">レポート作成日：2025年1月21日 | 個別プラットフォーム分析</div>
+        </div>
+
+        <div class="content">
+            <!-- 主要指標 -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="number">1億+</div>
+                    <div class="label">発行バッジ数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">4,800万+</div>
+                    <div class="label">資格証明取得者</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">4,000+</div>
+                    <div class="label">発行機関</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">99%</div>
+                    <div class="label">G2 4-5星評価率</div>
+                </div>
+            </div>
+
+            <!-- 会社概要 -->
+            <section class="section">
+                <h2 class="section-title">1. 会社概要</h2>
+                <div class="info-box">
+                    <p><strong>Credly</strong>は2012年に設立され、2022年1月にPearsonに買収された世界最大のデジタル資格証明ネットワークです。
+                    ニューヨーク・マンハッタン（368 Ninth Avenue）に本社を置き、企業、教育機関、専門団体向けに
+                    デジタルバッジの作成、発行、管理のためのエンドツーエンドソリューションを提供しています。</p>
+                </div>
+
+                <div class="two-column">
+                    <div class="card">
+                        <h4>会社情報</h4>
+                        <ul>
+                            <li><strong>設立：</strong>2012年</li>
+                            <li><strong>買収：</strong>Pearson（2022年1月）</li>
+                            <li><strong>本社：</strong>米国ニューヨーク</li>
+                            <li><strong>サービス地域：</strong>175カ国以上</li>
+                            <li><strong>対応言語：</strong>35以上</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>主要顧客</h4>
+                        <ul>
+                            <li><strong>IBM：</strong>172万+バッジ発行（2024年）</li>
+                            <li><strong>Google Cloud：</strong>エリート発行機関</li>
+                            <li><strong>PMI：</strong>69万+バッジ発行</li>
+                            <li><strong>ISC2：</strong>57.5万+バッジ発行</li>
+                            <li><strong>SAP：</strong>2024エリート発行機関</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ビジネスモデル -->
+            <section class="section">
+                <h2 class="section-title">2. ビジネスモデルと価格体系</h2>
+
+                <div class="highlight-box">
+                    <h4 style="margin-bottom: 0.5rem; color: var(--primary-color);">価格体系概要</h4>
+                    <p style="font-size: 0.9rem;">Credlyはエンタープライズ向けの価格体系を採用しており、
+                    公式ウェブサイトでは価格を公開していません。具体的な価格は営業チームへのお問い合わせが必要です。</p>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>価格要素</th>
+                            <th>詳細</th>
+                            <th>備考</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>年間サブスクリプション</strong></td>
+                            <td>$2,500～$20,000+</td>
+                            <td>バッジ発行量と機能により変動</td>
+                        </tr>
+                        <tr>
+                            <td><strong>バッジ単価</strong></td>
+                            <td>$2～$5</td>
+                            <td>大量購入時に割引適用</td>
+                        </tr>
+                        <tr>
+                            <td><strong>契約形態</strong></td>
+                            <td>年間契約必須</td>
+                            <td>月額払いオプションなし</td>
+                        </tr>
+                        <tr>
+                            <td><strong>初期設定費用</strong></td>
+                            <td>別途請求</td>
+                            <td>ライセンス費用含む</td>
+                        </tr>
+                        <tr>
+                            <td><strong>無料トライアル</strong></td>
+                            <td>提供なし</td>
+                            <td>デモリクエスト可能</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">ターゲット市場</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>主要ターゲット</h4>
+                        <ul>
+                            <li>Fortune 500大企業</li>
+                            <li>大規模認証機関</li>
+                            <li>専門団体・資格機関</li>
+                            <li>大学・高等教育機関</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>サービスの制限</h4>
+                        <ul>
+                            <li>中小企業には費用負担大</li>
+                            <li>個人ユーザー向けではない</li>
+                            <li>最低契約価値あり</li>
+                            <li>カスタム価格で透明性低い</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AIレコメンドシステム -->
+            <section class="section">
+                <h2 class="section-title">3. AIレコメンドシステム技術</h2>
+
+                <div class="info-box">
+                    <p><strong>Pearson Ontology</strong>ベースの知識グラフと自然言語処理（NLP）を活用し、
+                    スキルとキャリアを結びつける高度なレコメンドシステムを運用しています。</p>
+                </div>
+
+                <h3 class="subsection-title">コア技術アーキテクチャ</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>技術要素</th>
+                            <th>仕様</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>スキルオントロジー</strong></td>
+                            <td>Pearson Ontology - 自社開発知識グラフ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>職業マッピング</strong></td>
+                            <td>5,000+職業群、200,000+職種タイトル</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NLP技術</strong></td>
+                            <td>スキル抽出・マッチング、自然言語検索</td>
+                        </tr>
+                        <tr>
+                            <td><strong>レコメンドアルゴリズム</strong></td>
+                            <td>知識グラフベースの関連スキル推薦</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ワークフォース分析</strong></td>
+                            <td>人材計画AI、候補者ソーシングアルゴリズム</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要機能</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>バッジ発行者向け機能</h4>
+                        <ul>
+                            <li>カスタムバッジテンプレート設計</li>
+                            <li>自動化されたバッジ発行ワークフロー</li>
+                            <li>スキルフレームワークマッピング</li>
+                            <li>一括バッジ発行機能</li>
+                            <li>API連携（LMS、ATSなど）</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>バッジ取得者向け機能</h4>
+                        <ul>
+                            <li>LinkedInワンクリック共有</li>
+                            <li>検証可能なデジタル資格証明</li>
+                            <li>キャリアインサイトダッシュボード</li>
+                            <li>求人機会マッチング</li>
+                            <li>スキルギャップ分析</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ユーザー統計 -->
+            <section class="section">
+                <h2 class="section-title">4. ユーザー統計と成長</h2>
+
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">2024年主要実績</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>指標</th>
+                            <th>数値</th>
+                            <th>備考</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>総発行バッジ数</td>
+                            <td>1億+</td>
+                            <td>2025年1月マイルストーン達成</td>
+                        </tr>
+                        <tr>
+                            <td>資格証明取得者</td>
+                            <td>4,800万+</td>
+                            <td>グローバルネットワーク</td>
+                        </tr>
+                        <tr>
+                            <td>発行機関数</td>
+                            <td>4,000+</td>
+                            <td>認証・評価・研修機関</td>
+                        </tr>
+                        <tr>
+                            <td>複数バッジ取得者（2個以上）</td>
+                            <td>+123%</td>
+                            <td>2020-2024増加率</td>
+                        </tr>
+                        <tr>
+                            <td>複数バッジ取得者（10個以上）</td>
+                            <td>+81%</td>
+                            <td>2020-2024増加率</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">2024年トップ発行機関（1-10月）</h3>
+                <div class="chart-container">
+                    <canvas id="issuersChart"></canvas>
+                </div>
+            </section>
+
+            <!-- アジア太平洋地域 -->
+            <section class="section">
+                <h2 class="section-title">5. アジア太平洋地域の現状</h2>
+
+                <div class="info-box">
+                    <p>CredlyはG2 Summer 2025レポートにおいて、アジア太平洋地域のデジタル資格証明管理分野で
+                    <strong>#1リーダー</strong>に選出されました。</p>
+                </div>
+
+                <h3 class="subsection-title">G2地域別ランキング（2025年）</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>地域</th>
+                            <th>順位</th>
+                            <th>カテゴリ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>アジア太平洋</td>
+                            <td>#1 リーダー</td>
+                            <td>Digital Credential Management</td>
+                        </tr>
+                        <tr>
+                            <td>アジア</td>
+                            <td>#1 リーダー</td>
+                            <td>Digital Credential Management</td>
+                        </tr>
+                        <tr>
+                            <td>インド</td>
+                            <td>#1 リーダー</td>
+                            <td>Digital Credential Management</td>
+                        </tr>
+                        <tr>
+                            <td>インド（中小企業）</td>
+                            <td>#1 リーダー</td>
+                            <td>Small-Business India</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">日本市場</h3>
+                <div class="highlight-box">
+                    <ul style="padding-left: 1.25rem;">
+                        <li><strong>Japan Market Expansion Competition（JMEC）：</strong>グローバルオープンバッジプラットフォームとして活用</li>
+                        <li>日本国内に多数のグローバル企業顧客を保有</li>
+                        <li>教育機関、企業、専門団体とのパートナーシップ拡大中</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">韓国市場の可能性</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>機会要因</h4>
+                        <ul>
+                            <li>IT資格証明市場の成長</li>
+                            <li>グローバル企業韓国支社の需要</li>
+                            <li>高等教育デジタル化の加速</li>
+                            <li>生涯学習トレンドの拡大</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>参入課題</h4>
+                        <ul>
+                            <li>国内資格システムとの連携</li>
+                            <li>ローカルパートナーシップ構築</li>
+                            <li>韓国語サポートの強化</li>
+                            <li>国内競合ソリューションの存在</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 顧客満足度 -->
+            <section class="section">
+                <h2 class="section-title">6. 顧客満足度と評価</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="number">4.7/5</div>
+                        <div class="label">G2平均評価</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">9.3</div>
+                        <div class="label">カスタマーサポート</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">9.5</div>
+                        <div class="label">製品方向性</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">97%</div>
+                        <div class="label">推奨意向率</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">詳細評価スコア（G2）</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>評価項目</th>
+                            <th>スコア</th>
+                            <th>可視化</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>製品方向性</td>
+                            <td>9.5/10</td>
+                            <td><div class="score-bar"><div class="score-fill" style="width: 95%;"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td>カスタマーサポート</td>
+                            <td>9.3/10</td>
+                            <td><div class="score-bar"><div class="score-fill" style="width: 93%;"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td>ダッシュボードUI</td>
+                            <td>9.1/10</td>
+                            <td><div class="score-bar"><div class="score-fill" style="width: 91%;"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td>レポート機能</td>
+                            <td>8.9/10</td>
+                            <td><div class="score-bar"><div class="score-fill" style="width: 89%;"></div></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">顧客フィードバック要約</h3>
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">長所</h4>
+                        <ul>
+                            <li>LinkedInワンクリック共有の利便性</li>
+                            <li>プロフェッショナルな資格証明管理</li>
+                            <li>自動検証機能</li>
+                            <li>優れたカスタマーサポート</li>
+                            <li>システム連携の容易さ</li>
+                            <li>業界をリードする信頼性</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">改善点</h4>
+                        <ul>
+                            <li>価格の透明性不足</li>
+                            <li>インターフェースの速度低下</li>
+                            <li>大量バッジ管理の柔軟性</li>
+                            <li>バッジダウンロード/エクスポートの複雑さ</li>
+                            <li>一部の高度な機能の制限</li>
+                            <li>カスタマーサービス担当者の変動</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 開発ロードマップ -->
+            <section class="section">
+                <h2 class="section-title">7. サービス発展計画とロードマップ</h2>
+
+                <div class="info-box">
+                    <p>Pearsonの戦略的ビジョンの下、CredlyはAIベースの人材ソリューションとグローバルパートナーシップを通じて、
+                    スキルベース経済の中核インフラとして成長しています。</p>
+                </div>
+
+                <h3 class="subsection-title">主要マイルストーン</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年1月</div>
+                        <p><strong>1億バッジマイルストーン：</strong>Credlyプラットフォームを通じて1億番目のユニークバッジ発行達成</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年9月</div>
+                        <p><strong>Cognizant戦略的パートナーシップ：</strong>PearsonとCognizantのグローバル戦略的パートナーシップ発表。
+                        Credly、Faethm、Talent Lensを統合した人材開発プログラムをサポート</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年以降</div>
+                        <p><strong>AI駆動の拡張：</strong>Agentic AI、拡張現実（AR）、仮想現実（VR）、会話型AIを活用した
+                        新しい学習製品・サービスの開発</p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">戦略的方向性</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>技術発展</h4>
+                        <ul>
+                            <li>高度な人材予測AI強化</li>
+                            <li>インテリジェント候補者ソーシングアルゴリズム</li>
+                            <li>メタデータ品質の高度化</li>
+                            <li>分析ダッシュボードの拡張</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>市場拡大</h4>
+                        <ul>
+                            <li>アジア太平洋市場の強化</li>
+                            <li>エンタープライズ顧客の拡大</li>
+                            <li>教育機関パートナーシップの拡張</li>
+                            <li>政府・公共部門への進出</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 競合分析 -->
+            <section class="section">
+                <h2 class="section-title">8. 競合分析</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>比較項目</th>
+                            <th>Credly</th>
+                            <th>Accredible</th>
+                            <th>Badgr</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>市場ポジション</strong></td>
+                            <td>業界リーダー</td>
+                            <td>有力競合</td>
+                            <td>オープンソース代替</td>
+                        </tr>
+                        <tr>
+                            <td><strong>価格帯</strong></td>
+                            <td>プレミアム</td>
+                            <td>中価格帯</td>
+                            <td>無料/低価格</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ターゲット顧客</strong></td>
+                            <td>大企業</td>
+                            <td>中小～大企業</td>
+                            <td>教育機関</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI機能</strong></td>
+                            <td>高度</td>
+                            <td>中程度</td>
+                            <td>基本</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ネットワーク規模</strong></td>
+                            <td>最大</td>
+                            <td>中規模</td>
+                            <td>小規模</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 結論 -->
+            <section class="section">
+                <h2 class="section-title">9. 結論と推奨事項</h2>
+
+                <div class="highlight-box">
+                    <h4 style="margin-bottom: 0.75rem; color: var(--primary-color);">総合評価</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">
+                        Credlyは世界最大のデジタル資格証明ネットワークとして、強力なAIベースのレコメンドシステム、
+                        広範な顧客基盤、Pearsonの教育エコシステムとのシナジーを通じて業界リーダーシップを維持しています。
+                        ただし、プレミアム価格により小規模組織へのアクセシビリティは制限される可能性があります。
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">推奨対象</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4 style="color: #4caf50;">適合する組織</h4>
+                        <ul>
+                            <li>大規模資格プログラム運営企業</li>
+                            <li>グローバル認証機関</li>
+                            <li>Fortune 500企業</li>
+                            <li>大規模教育機関</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4 style="color: #f44336;">代替検討推奨</h4>
+                        <ul>
+                            <li>予算制約のある中小企業</li>
+                            <li>個人ユーザー</li>
+                            <li>スタートアップ初期段階</li>
+                            <li>オープンソース志向の組織</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 参考資料 -->
+            <div class="sources">
+                <h4>参考資料</h4>
+                <ul>
+                    <li><a href="https://info.credly.com/" target="_blank">Credly by Pearson 公式サイト</a></li>
+                    <li><a href="https://www.g2.com/products/credly/reviews" target="_blank">G2 Credly Reviews 2025</a></li>
+                    <li><a href="https://learn.credly.com/blog/celebrating-top-credly-issuers-of-2024" target="_blank">Top Credly Issuers 2024</a></li>
+                    <li><a href="https://plc.pearson.com/en-GB/news-and-insights/news/100-million-digital-credentials-issued-through-credly-pearson-fosters-future" target="_blank">Pearson 1億デジタル資格証明マイルストーン</a></li>
+                    <li><a href="https://learn.credly.com/blog/g2-summer-reports-2025-credly-named-leading-digital-credential-management-software" target="_blank">G2 Summer Reports 2025</a></li>
+                    <li><a href="https://news.cognizant.com/2025-09-02-Pearson-and-Cognizant-Announce-Global-Strategic-Partnership" target="_blank">Pearson-Cognizant パートナーシップ 2025</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 成長チャート
+        new Chart(document.getElementById('growthChart'), {
+            type: 'line',
+            data: {
+                labels: ['2020', '2021', '2022', '2023', '2024', '2025.1'],
+                datasets: [{
+                    label: '累計発行バッジ数（百万）',
+                    data: [30, 45, 60, 80, 93, 100],
+                    borderColor: '#ff6b35',
+                    backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Credly 累計バッジ発行成長推移'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: '百万' }
+                    }
+                }
+            }
+        });
+
+        // 発行機関チャート
+        new Chart(document.getElementById('issuersChart'), {
+            type: 'bar',
+            data: {
+                labels: ['IBM', 'PMI', 'ISC2', 'SAP', 'Google Cloud'],
+                datasets: [{
+                    label: '2024年発行バッジ数（千）',
+                    data: [1720, 690, 575, 400, 350],
+                    backgroundColor: [
+                        '#ff6b35',
+                        '#ff8c5a',
+                        '#ffad7f',
+                        '#ffcea4',
+                        '#ffefd4'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '2024年トップ発行機関（1-10月）'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: '千' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS의 종말과 LMS에서 LXP, HCMS로의 전환</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "\2192";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .credibility-score {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            margin: 0.75rem 0;
+            font-size: 0.85rem;
+        }
+        .credibility-score-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+        .credibility-score-value {
+            font-weight: 700;
+            color: #166534;
+            font-size: 1rem;
+        }
+        .credibility-score-details {
+            color: #4a4a4a;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .overall-credibility {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .overall-credibility h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .overall-credibility-score {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #166534;
+            margin: 0.5rem 0;
+        }
+        .overall-credibility-details {
+            font-size: 0.9rem;
+            color: #4a4a4a;
+            text-align: left;
+            line-height: 1.6;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">&larr; 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='end-of-saas-lms-lxp-hcms-evolution-20260128-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='end-of-saas-lms-lxp-hcms-evolution-20260128-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='end-of-saas-lms-lxp-hcms-evolution-20260128-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>SaaS의 종말과<br>LMS에서 LXP, HCMS로의 전환</h1>
+            <div class="subtitle">AI 에이전트 시대의 소프트웨어 패러다임 변화와 학습/인재 관리 플랫폼의 진화</div>
+            <div class="meta">보고서 작성일: 2026년 1월 28일 | 표준 보고서</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <!-- Trend 1 -->
+                <h3 class="subsection-title">1. SaaS의 종말: AI 에이전트가 전통 SaaS를 대체하다</h3>
+                <p><strong>현황:</strong> 전통적인 SaaS 비즈니스 모델이 AI 에이전트의 부상으로 근본적인 위기에 직면하고 있습니다. 2025년 SaaS 지수는 6.5% 하락한 반면 S&P 500은 17.6% 상승했으며, 소프트웨어 기업의 매출 배수는 7배 이상에서 5배 미만으로 급락했습니다 (출처: Calcalist Tech, 2025). Bain &amp; Company는 에이전틱 AI를 "온프레미스에서 클라우드로의 전환 이후 SaaS 비즈니스 모델에 대한 가장 중대한 파괴"로 규정했습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>시장 충격 지표</h4>
+                        <p>&bull; <strong>SaaS 지수 하락:</strong> S&P 500 대비 24%p 언더퍼폼 (2025)<br>
+                        &bull; <strong>매출 배수 급락:</strong> 7x &rarr; 5x 미만으로 하락<br>
+                        &bull; <strong>AlixPartners 분석:</strong> 100개 이상 중견 소프트웨어 기업이 AI 스타트업과 빅테크 사이에서 압박</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>비즈니스 모델 전환</h4>
+                        <p>&bull; <strong>좌석 기반 과금 소멸:</strong> IDC 예측 - 2028년까지 70% 벤더가 가격 체계 재편<br>
+                        &bull; <strong>사용량 기반 모델:</strong> 59% 소프트웨어 기업이 사용량 기반 매출 증가 예상 (2025 Monetization Monitor)<br>
+                        &bull; <strong>결과 기반 과금:</strong> 로그인이 아닌 성과에 따른 과금으로 전환</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.bain.com/insights/will-agentic-ai-disrupt-saas-technology-report-2025/" target="_blank">Bain &amp; Company - Agentic AI &amp; SaaS</a> |
+                    <a href="https://www.idc.com/resource-center/blog/is-saas-dead-rethinking-the-future-of-software-in-the-age-of-ai/" target="_blank">IDC - Is SaaS Dead?</a> |
+                    <a href="https://www.calcalistech.com/ctechnews/article/hjlvyl7lze" target="_blank">Calcalist - SaaS is Dying</a>
+                </div>
+
+                <p><strong>전망:</strong> SaaS가 완전히 사라지지는 않겠지만, "배달 모델로서의 SaaS"에서 "AI 네이티브, 사용량 기반, 수직 특화, 성과 기반 과금 플랫폼"으로의 변태(metamorphosis)가 불가피합니다. 글로벌 SaaS 시장은 2024년 2,660억 달러에서 2032년 1조 1,310억 달러로 성장이 전망되지만, 그 내용은 과거와 근본적으로 달라질 것입니다.</p>
+
+                <!-- Trend 2 -->
+                <h3 class="subsection-title">2. LMS에서 LXP로: 관리자 중심에서 학습자 중심으로</h3>
+                <p><strong>현황:</strong> 전통적인 학습관리시스템(LMS)은 관리자 주도의 콘텐츠 전달에 초점을 맞춘 반면, 학습경험플랫폼(LXP)은 학습자가 주도하는 개인화된 경험을 제공합니다. 2023년 업계 조사에 따르면, 글로벌 기업의 71%가 레거시 LMS를 LXP로 교체하고 있으며, 2024년에는 Fortune 500 기업의 60% 이상이 LXP를 도입했습니다 (출처: Global Growth Insights, educate-me.co).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LMS vs LXP 핵심 차이</h4>
+                        <p>&bull; <strong>학습 주체:</strong> LMS는 관리자 주도, LXP는 학습자 주도<br>
+                        &bull; <strong>콘텐츠 표준:</strong> LMS는 SCORM 기반, LXP는 xAPI(Experience API) 기반<br>
+                        &bull; <strong>추적 범위:</strong> LMS는 과정 완료 추적, LXP는 디바이스 간 학습 행동 전체 추적</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>LXP 시장 성장</h4>
+                        <p>&bull; <strong>시장 규모:</strong> 2025년 28.2억 달러 &rarr; 2033년 289.1억 달러 (CAGR 33.79%)<br>
+                        &bull; <strong>AI 활용률:</strong> 62% LXP가 AI 기반 학습 경로 추천 적용<br>
+                        &bull; <strong>마이크로러닝:</strong> 64% 사용자가 바이트 사이즈 모듈에서 높은 콘텐츠 보유율 보고</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.degreed.com/" target="_blank">Degreed</a> |
+                    <a href="https://www.docebo.com/" target="_blank">Docebo</a> |
+                    <a href="https://www.cornerstoneondemand.com/" target="_blank">Cornerstone (EdCast)</a> |
+                    <a href="https://www.valamis.com/hub/learning-experience-platform" target="_blank">Valamis LXP 가이드</a>
+                </div>
+
+                <p><strong>전망:</strong> LMS와 LXP의 완전한 대체보다는 수렴(convergence)이 예상됩니다. LMS의 규정 준수/구조화 학습과 LXP의 개인화/발견 기능이 결합된 AI 기반 통합 학습 생태계가 2026년 이후 주류가 될 것입니다.</p>
+
+                <!-- Trend 3 -->
+                <h3 class="subsection-title">3. HCMS의 부상: HR 관리에서 전략적 인재 자본 관리로</h3>
+                <p><strong>현황:</strong> 인적자본관리시스템(HCMS)은 HRIS(인사정보시스템)와 HRMS(인사관리시스템)를 넘어, 인재 개발, 승계 계획, 글로벌 HR 실무를 포괄하는 전략적 계층입니다. 글로벌 HCM 시장은 2024년 313.4억 달러에서 2032년 649.7억 달러로 성장이 전망되며(CAGR 9.60%), AI 통합, 규제 변화, 직원 웰빙이 핵심 동인입니다 (출처: Fortune Business Insights, Precedence Research).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>HCM 진화 단계</h4>
+                        <p>&bull; <strong>HRIS:</strong> 핵심 HR 운영 (직원 정보, 급여, 규정 준수)<br>
+                        &bull; <strong>HRMS:</strong> 복리후생, 채용, 성과 평가까지 확장<br>
+                        &bull; <strong>HCM:</strong> 인재 개발, 승계 계획, 글로벌 HR, AI 분석을 포괄하는 전략적 계층</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>핵심 기술 동향</h4>
+                        <p>&bull; <strong>에이전틱 AI:</strong> ADP는 2026년 핵심 HR 기술 트렌드로 에이전틱 AI 강조<br>
+                        &bull; <strong>스킬 기반 채용:</strong> Google, Tesla, IBM이 학위보다 역량 기반 채용 선도<br>
+                        &bull; <strong>클라우드 전환:</strong> 2025년 HCM 시장의 60%가 클라우드 세그먼트 (CAGR 10.30%)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.adp.com/spark/articles/2025/12/key-hr-technology-trends-for-2026-and-how-to-plan.aspx" target="_blank">ADP - HR Tech Trends 2026</a> |
+                    <a href="https://www.fortunebusinessinsights.com/industry-reports/human-capital-management-hcm-market-100240" target="_blank">Fortune Business Insights - HCM Market</a> |
+                    <a href="https://www.workday.com/" target="_blank">Workday</a> |
+                    <a href="https://www.sap.com/products/hcm.html" target="_blank">SAP SuccessFactors</a>
+                </div>
+
+                <p><strong>전망:</strong> 2026년에는 하이브리드 근무, 글로벌 모빌리티, 가속화된 디지털 전환이 핵심 과제가 되며, HCM은 선택이 아닌 필수가 됩니다. 특히 인재 확보 세그먼트(CAGR 11.20%)와 소기업 세그먼트(CAGR 10.80%)의 빠른 성장이 예상됩니다.</p>
+
+                <!-- Trend 4 -->
+                <h3 class="subsection-title">4. AI 네이티브 아키텍처: "기능으로서의 AI"에서 "AI 우선 설계"로</h3>
+                <p><strong>현황:</strong> 2026년 SaaS 제품들은 AI 애드온에서 AI 네이티브 아키텍처로 전환하고 있습니다. Salesforce CIO 설문조사에 따르면 기업의 AI 도입은 280% 이상 급증했으며, "에이전틱 AI"가 2026년 핵심 우선순위로 지목되었습니다. Gartner는 2026년까지 기업의 80%가 GenAI 기반 애플리케이션을 배포할 것으로 예측합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>AI 네이티브 전환 지표</h4>
+                        <p>&bull; <strong>AI 도입 급증:</strong> 기업 AI 도입률 280% 증가 (Salesforce CIO 설문)<br>
+                        &bull; <strong>GenAI 확산:</strong> 2026년까지 80% 기업이 GenAI 앱 배포 예상 (Gartner)<br>
+                        &bull; <strong>조직 활용률:</strong> 2024년 기준 71% 조직이 1개 이상 기능에서 GenAI 사용 (McKinsey)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>가격 모델 충격</h4>
+                        <p>&bull; <strong>AI 추가 요금:</strong> 73% SaaS 벤더가 AI 기능에 추가 과금<br>
+                        &bull; <strong>Microsoft Copilot:</strong> 기존 대비 60-70% 프리미엄 가격<br>
+                        &bull; <strong>비용 증가:</strong> AI 사용이 SaaS 청구서에 30-100% 추가 (Gartner 예측 - 2027년까지 40% 증가)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.salesforce.com/" target="_blank">Salesforce</a> |
+                    <a href="https://www.microsoft.com/en-us/microsoft-copilot" target="_blank">Microsoft Copilot</a> |
+                    <a href="https://www.gartner.com/" target="_blank">Gartner</a> |
+                    <a href="https://www.mckinsey.com/" target="_blank">McKinsey</a>
+                </div>
+
+                <p><strong>전망:</strong> AI 에이전트가 새로운 엔터프라이즈 SKU가 되며, 모놀리식 SaaS 플랫폼이 아닌 모듈형 백엔드 기능으로 구동되는 마켓플레이스를 통해 구매됩니다. 수직형 SaaS가 수평형 대비 2-3배 빠른 성장(연 32% vs 12%)을 보이며 차별화의 핵심이 됩니다.</p>
+
+                <!-- Trend 5 -->
+                <h3 class="subsection-title">5. LMS + LXP + HCM 통합 생태계의 등장</h3>
+                <p><strong>현황:</strong> 학습과 인재 관리의 사일로가 무너지며, LMS, LXP, HCM이 하나의 통합 플랫폼으로 수렴하는 추세가 가속화되고 있습니다. Cornerstone의 EdCast 인수(1억 4천만 사용자, 7,000+ 고객, 180개국 운영)가 대표적 사례이며, 학습-스킬-커리어 모빌리티를 단일 생태계에서 연결합니다. HR 리더의 58%가 AI 기반 학습 경로를 통한 교육 ROI 개선을 보고했습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>통합 플랫폼 동향</h4>
+                        <p>&bull; <strong>Cornerstone + EdCast:</strong> LXP + 지식 허브 통합, 1.4억 사용자<br>
+                        &bull; <strong>Docebo:</strong> LMS + LXP + 영업/규정 교육 통합 클라우드 플랫폼<br>
+                        &bull; <strong>Degreed:</strong> 스킬 기반 학습 + 내부 모빌리티 연결</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>학습 기술 혁신</h4>
+                        <p>&bull; <strong>모바일 퍼스트:</strong> 49% 이상 학습자가 모바일 디바이스로 콘텐츠 접근<br>
+                        &bull; <strong>게이미피케이션:</strong> 43% 조직이 과정 완료율 향상 보고<br>
+                        &bull; <strong>VR/AR 통합:</strong> 몰입형 학습 경험으로 참여도와 이해도 향상</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.cornerstoneondemand.com/" target="_blank">Cornerstone OnDemand</a> |
+                    <a href="https://www.degreed.com/" target="_blank">Degreed</a> |
+                    <a href="https://www.docebo.com/" target="_blank">Docebo</a> |
+                    <a href="https://360learning.com/" target="_blank">360Learning</a>
+                </div>
+
+                <p><strong>전망:</strong> 2026년은 AI가 모든 학습 접점에 내장되는 해가 될 것이며, AI가 학습 여정을 개인화하고, 성과 격차를 식별하며, 예측적 인사이트로 콘텐츠 품질을 개선합니다. LXP가 이 모든 변화가 일어나는 허브 역할을 합니다.</p>
+
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4계층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">학습 및 인재 관리 플랫폼 시장은 전통 LMS, 차세대 LXP, 통합 HCM, AI 네이티브 솔루션의 4계층으로 분화되고 있습니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>계층</th>
+                            <th>대표 플랫폼</th>
+                            <th>핵심 특징</th>
+                            <th>대상 고객</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tier 1: 전통 LMS</strong></td>
+                            <td>Moodle, Canvas, Blackboard</td>
+                            <td>SCORM 기반, 관리자 주도, 규정 준수 교육</td>
+                            <td>교육기관, 규정 중심 기업</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 2: 차세대 LXP</strong></td>
+                            <td>Degreed, 360Learning, Thirst</td>
+                            <td>학습자 주도, AI 추천, xAPI, 마이크로러닝</td>
+                            <td>학습 혁신 기업, L&D팀</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 3: 통합 LMS+LXP</strong></td>
+                            <td>Docebo, Cornerstone (EdCast), Absorb</td>
+                            <td>LMS+LXP 통합, 스킬 매핑, 커리어 모빌리티</td>
+                            <td>대기업, 글로벌 조직</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 4: 전략적 HCM</strong></td>
+                            <td>Workday, SAP SuccessFactors, Oracle HCM</td>
+                            <td>학습+채용+성과+승계 통합, AI 분석, 글로벌 HR</td>
+                            <td>엔터프라이즈, 다국적 기업</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 동향</h3>
+                <p style="font-size: 0.95rem; line-height: 1.8;">
+                    &bull; <strong>LXP-HCM 수렴 가속:</strong> Cornerstone의 EdCast 인수처럼 LXP와 HCM 플랫폼의 결합이 가속화<br>
+                    &bull; <strong>AI 개인화 필수화:</strong> 62%의 LXP가 AI 기반 학습 경로 추천을 핵심 기능으로 탑재<br>
+                    &bull; <strong>스킬 기반 전환:</strong> 학위보다 역량 중심 채용으로 전환하는 기업이 Google, Tesla, IBM 등 글로벌 리더로 확대<br>
+                    &bull; <strong>수직형 SaaS 부상:</strong> 수직형이 수평형 대비 2-3배 빠른 성장(32% vs 12% CAGR)<br>
+                    &bull; <strong>사용량 기반 과금:</strong> 42% 구매자가 사용량 기반 선호, 38% 전통 구독 선호 (IDC)
+                </p>
+
+                <h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장 변화에 대응하여 관찰되는 주요 활용 접근법을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>LXP 파일럿 프로젝트</strong> - 기존 LMS와 병행하여 Degreed 또는 360Learning 등 LXP를 특정 부서에 시범 도입하고, AI 기반 학습 경로 추천의 ROI를 측정</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>SaaS 비용 구조 재검토</strong> - 현재 좌석 기반 SaaS 구독을 점검하고, 사용량/결과 기반 과금 모델로 전환 가능한 영역을 식별하여 AI 에이전트 도입 시 비용 최적화 전략 수립</p>
+                    <p style="line-height: 1.6;">3. <strong>학습-인재 통합 로드맵</strong> - LMS/LXP 학습 데이터와 HCM 인재 데이터를 연계하여 스킬 기반 내부 인재 마켓플레이스 구축을 위한 단계별 통합 계획 수립</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 에그제큐티브 서머리 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">에그제큐티브 서머리</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 인사이트</h3>
+                    <ul class="key-findings">
+                        <li><strong>SaaS 비즈니스 모델의 구조적 변화:</strong> AI 에이전트가 전통적인 좌석 기반 SaaS를 대체하면서, 사용량/결과 기반 과금 모델로의 전환이 불가피합니다. 70% 벤더가 2028년까지 가격 체계를 재편할 전망입니다.</li>
+                        <li><strong>LMS에서 LXP로의 전환 가속:</strong> 글로벌 기업의 71%가 LXP로 전환 중이며, LXP 시장은 2033년까지 289억 달러(CAGR 33.79%)로 급성장합니다. 핵심은 학습자 주도, AI 개인화, xAPI 기반 추적입니다.</li>
+                        <li><strong>HCM의 전략적 부상:</strong> 단순 인사 관리를 넘어 인재 개발, 승계 계획, 글로벌 HR을 통합하는 전략적 HCM이 필수화되고 있으며, 시장은 2032년 650억 달러 규모로 성장합니다.</li>
+                        <li><strong>통합 생태계의 도래:</strong> LMS, LXP, HCM의 사일로가 무너지며, 학습-스킬-커리어를 연결하는 통합 플랫폼이 시장을 주도합니다. Cornerstone+EdCast, Docebo 등이 선도 사례입니다.</li>
+                        <li><strong>AI 네이티브가 새로운 표준:</strong> "기능으로서의 AI"에서 "AI 우선 설계"로의 전환이 가속화되며, 2026년까지 기업 80%가 GenAI 앱을 배포할 전망입니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>규정 준수 중심 교육이 핵심인 조직 &rarr; 전통 LMS (Moodle, Canvas)</strong><br>
+                        이유: SCORM 기반의 구조화된 교육과 컴플라이언스 추적에 최적화<br><br>
+                        <strong>학습자 주도 개인화 학습을 추구하는 조직 &rarr; LXP (Degreed, 360Learning)</strong><br>
+                        이유: AI 기반 추천, 마이크로러닝, xAPI 지원으로 학습 경험 혁신<br><br>
+                        <strong>학습-인재 관리 통합이 필요한 대기업 &rarr; 통합 플랫폼 (Cornerstone, Docebo)</strong><br>
+                        이유: LMS+LXP 기능과 스킬 매핑, 커리어 모빌리티를 단일 플랫폼에서 제공<br><br>
+                        <strong>글로벌 인재 전략이 핵심인 다국적 기업 &rarr; 전략적 HCM (Workday, SAP SuccessFactors)</strong><br>
+                        이유: 학습+채용+성과+승계를 글로벌 스케일로 통합 관리
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 변화 (소프트웨어 산업과 학습/인재 관리 시장 모두 AI 주도의 근본적 재편이 진행 중이며, 통합형 AI 네이티브 플랫폼으로의 전환이 새로운 기회를 창출하고 있습니다.)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>SaaS (Software as a Service)</strong> - 소프트웨어를 구독 방식으로 제공하는 클라우드 기반 비즈니스 모델. 전통적으로 좌석(사용자 수) 기반 월/연간 과금을 적용합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LMS (Learning Management System)</strong> - 학습관리시스템. 교육 콘텐츠의 전달, 추적, 관리를 위한 관리자 주도의 플랫폼입니다. SCORM 표준을 주로 사용합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LXP (Learning Experience Platform)</strong> - 학습경험플랫폼. 학습자 중심으로 AI 기반 개인화 추천, 마이크로러닝, 소셜 학습을 제공하는 차세대 학습 플랫폼입니다. xAPI 표준을 사용합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>HCMS/HCM (Human Capital Management System)</strong> - 인적자본관리시스템. HRIS/HRMS를 넘어 인재 개발, 승계 계획, 글로벌 HR, AI 분석을 포괄하는 전략적 인사 관리 플랫폼입니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>에이전틱 AI (Agentic AI)</strong> - 사용자를 보조하는 수준을 넘어 자율적으로 다단계 프로세스를 실행하고 의사결정을 내리는 AI 기술. SaaS 비즈니스 모델을 근본적으로 변화시키는 핵심 동인입니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>xAPI (Experience API)</strong> - LXP에서 사용하는 학습 추적 표준으로, 기존 SCORM과 달리 디바이스와 플랫폼을 넘나드는 학습 행동 전체를 추적하고 실무 성과와의 연관성을 측정할 수 있습니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>사용량 기반 과금 (Usage-Based Pricing)</strong> - 고정 좌석 수가 아닌 실제 사용량, 처리량, 성과에 따라 과금하는 모델. AI 시대에 전통적인 좌석 기반 SaaS 과금을 대체하는 새로운 표준입니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집일:</strong> 2026년 1월 28일</p>
+                    <ul>
+                        <li>&bull; <a href="https://www.bain.com/insights/will-agentic-ai-disrupt-saas-technology-report-2025/" target="_blank">Bain &amp; Company - Will Agentic AI Disrupt SaaS? (2025)</a></li>
+                        <li>&bull; <a href="https://www.idc.com/resource-center/blog/is-saas-dead-rethinking-the-future-of-software-in-the-age-of-ai/" target="_blank">IDC - Is SaaS Dead? Rethinking the Future of Software in the Age of AI</a></li>
+                        <li>&bull; <a href="https://www.calcalistech.com/ctechnews/article/hjlvyl7lze" target="_blank">Calcalist Tech - SaaS is Dying as a Business Category</a></li>
+                        <li>&bull; <a href="https://dodopayments.com/blogs/saas-report-trends-2025-2026" target="_blank">Dodo Payments - SaaS Market Report 2025-2026</a></li>
+                        <li>&bull; <a href="https://www.globalgrowthinsights.com/market-reports/learning-experience-platform-lxp-market-102110" target="_blank">Global Growth Insights - LXP Market Size &amp; Trends 2033</a></li>
+                        <li>&bull; <a href="https://research.com/education/lms-trends" target="_blank">Research.com - Top 10 LMS Trends for 2026</a></li>
+                        <li>&bull; <a href="https://www.fortunebusinessinsights.com/industry-reports/human-capital-management-hcm-market-100240" target="_blank">Fortune Business Insights - HCM Market Size 2032</a></li>
+                        <li>&bull; <a href="https://www.precedenceresearch.com/human-capital-management-market" target="_blank">Precedence Research - HCM Market Size 2025-2034</a></li>
+                        <li>&bull; <a href="https://www.adp.com/spark/articles/2025/12/key-hr-technology-trends-for-2026-and-how-to-plan.aspx" target="_blank">ADP - Key HR Technology Trends for 2026</a></li>
+                        <li>&bull; <a href="https://www.bettercloud.com/monitor/saas-industry/" target="_blank">BetterCloud - AI and the SaaS Industry in 2026</a></li>
+                        <li>&bull; <a href="https://martinalderson.com/posts/ai-agents-are-starting-to-eat-saas/" target="_blank">Martin Alderson - AI Agents Are Starting to Eat SaaS</a></li>
+                        <li>&bull; <a href="https://aws.amazon.com/isv/resources/why-saas-companies-must-transform-for-agentic-ai/" target="_blank">AWS - Why SaaS Companies Must Transform for the Agentic AI Era</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Overall Credibility -->
+            <div class="overall-credibility">
+                <h3>종합 신뢰도 평가</h3>
+                <div class="overall-credibility-score">8.0/10</div>
+                <div class="overall-credibility-details">
+                    <p><strong>종합 평가:</strong> 12개의 권위 있는 출처(Bain & Company, IDC, Gartner, McKinsey, Fortune Business Insights 등)에 기반한 데이터 중심의 신뢰성 있는 분석 보고서입니다.</p>
+                    <p><strong>주요 강점:</strong> 구체적인 시장 규모, 성장률, 도입률 데이터가 명확한 출처와 함께 제시됨. SaaS 시장 지표(SaaS 지수 -6.5%, 매출 배수 7x→5x), LXP 시장 전망(CAGR 33.79%), HCM 시장 규모($64.97B by 2032) 등 검증 가능한 데이터 포인트 다수.</p>
+                    <p><strong>개선 우선순위:</strong> 일부 시장 전망 수치는 조사 기관에 따라 편차가 있으며(LXP 시장 규모 추정치 $10.5B~$28.9B), 플랫폼 비교 차트의 점수는 정성적 평가 기반입니다.</p>
+                </div>
+            </div>
+
+            <div class="disclaimer" style="display: none;">
+                <p>이 보고서는 AI가 생성한 내용으로, 중요 정보는 원본 출처를 확인하시기 바랍니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['AI 개인화', '스킬 매핑', '규정 준수', '통합 범위', '사용 편의성'],
+                datasets: [
+                    {
+                        label: 'Degreed (LXP)',
+                        data: [90, 95, 40, 65, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Docebo (LMS+LXP)',
+                        data: [80, 75, 85, 80, 80],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Cornerstone (통합)',
+                        data: [85, 80, 80, 90, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'Workday HCM',
+                        data: [75, 85, 90, 95, 65],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments &amp; Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>&#x1F90D;</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>

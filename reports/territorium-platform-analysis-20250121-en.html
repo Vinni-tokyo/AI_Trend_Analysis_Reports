@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Territorium Platform Deep Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #4caf50;
+            --secondary-color: #388e3c;
+            --accent-color: #2e7d32;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7;
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+            font-size: 16px;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); }
+        .lang-btn.active { background: white; color: var(--primary-color); }
+        .header h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        .header .subtitle { font-size: 0.95rem; margin-top: 0.25rem; opacity: 0.95; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.85; }
+        .company-badge { display: inline-block; background: white; color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 1.5rem 2rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.3rem; color: var(--text-primary); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); }
+        .subsection-title { font-size: 1.05rem; color: var(--text-primary); margin: 1.25rem 0 0.5rem; font-weight: 600; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-card { background: linear-gradient(135deg, var(--bg-subtle) 0%, white 100%); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .stat-card .number { font-size: 1.6rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .info-box { background: #e8f5e9; border-left: 4px solid var(--primary-color); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .info-box p { font-size: 0.95rem; line-height: 1.6; }
+        .highlight-box { background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-subtle); font-weight: 600; }
+        tr:hover { background: var(--bg-subtle); }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--primary-color); }
+        .card ul { padding-left: 1.25rem; }
+        .card li { margin: 0.4rem 0; font-size: 0.9rem; }
+        .certification-badge { display: inline-block; background: var(--primary-color); color: white; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin: 0.2rem; }
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+        .pros { border-left: 4px solid #4caf50; }
+        .cons { border-left: 4px solid #f44336; }
+        .feature-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+        .feature-box h4 { color: var(--accent-color); margin-bottom: 0.5rem; }
+        .timeline { position: relative; padding-left: 2rem; margin: 1rem 0; }
+        .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--primary-color); }
+        .timeline-item { position: relative; margin: 1rem 0; padding: 0.75rem; background: var(--bg-subtle); border-radius: 4px; }
+        .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 1rem; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; }
+        .timeline-date { font-size: 0.75rem; color: var(--primary-color); font-weight: 600; }
+        .sources { background: var(--bg-subtle); padding: 1rem 1.25rem; border-radius: 8px; margin-top: 2rem; font-size: 0.75rem; }
+        .sources h4 { margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: var(--text-primary); text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        @media (max-width: 768px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } .two-column, .pros-cons { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; } }
+        @media print { body { padding: 0; } .container { box-shadow: none; } .header-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='territorium-platform-analysis-20250121-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='territorium-platform-analysis-20250121-ko.html'" class="lang-btn">한국어</button>
+                    <button class="lang-btn active">English</button>
+                </div>
+            </div>
+            <div class="company-badge">1EdTech Certified</div>
+            <h1>Territorium Platform Deep Analysis</h1>
+            <div class="subtitle">AI-Powered CLR/LER Integrated Learning and Employment Record Platform</div>
+            <div class="meta">Report Date: January 21, 2025 | Individual Platform Analysis</div>
+        </div>
+
+        <div class="content">
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="number">12M+</div>
+                    <div class="label">Global Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">15</div>
+                    <div class="label">Countries</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">2012</div>
+                    <div class="label">Founded</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">1st</div>
+                    <div class="label">CLR 2.0 + OB 3.0</div>
+                </div>
+            </div>
+
+            <section class="section">
+                <h2 class="section-title">1. Company Overview</h2>
+                <div class="info-box">
+                    <p><strong>Territorium</strong> is a global education technology company founded in 2012 that connects learners to careers through Comprehensive Learner Records (CLR) and Learning & Employment Records (LER). It is the first U.S. organization to achieve both CLR 2.0 and Open Badges 3.0 certifications from 1EdTech.</p>
+                </div>
+
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Company Information</h4>
+                        <ul>
+                            <li><strong>Founded:</strong> 2012</li>
+                            <li><strong>Type:</strong> Private Global Company</li>
+                            <li><strong>HQ:</strong> United States</li>
+                            <li><strong>Operations:</strong> 15 Countries</li>
+                            <li><strong>Employee Rating:</strong> 3.4/5 (Glassdoor)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Certifications & Standards</h4>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="certification-badge">CLR 2.0</span>
+                            <span class="certification-badge">Open Badges 3.0</span>
+                            <span class="certification-badge">1EdTech Certified</span>
+                        </div>
+                        <p style="font-size: 0.85rem; margin-top: 0.75rem; color: var(--text-secondary);">
+                            First U.S. organization to achieve both CLR 2.0 and Open Badges 3.0 certifications
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">Target Customers</h3>
+                <div class="highlight-box">
+                    <ul style="padding-left: 1.25rem; margin: 0;">
+                        <li>Fortune 100 Enterprises</li>
+                        <li>Education Service Providers</li>
+                        <li>Technology Organizations</li>
+                        <li>Education Ministries & Systems</li>
+                        <li>K-12 Schools</li>
+                        <li>Higher Education Institutions</li>
+                        <li>Workforce Development Providers</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">2. Business Model & Service Types</h2>
+
+                <div class="info-box">
+                    <p>Territorium operates primarily B2B and B2G models, providing CLR/LER-based learning management and career connection platforms to educational institutions and enterprises. Specific pricing is not publicly available and provided through custom quotes.</p>
+                </div>
+
+                <h3 class="subsection-title">Core Product Lines</h3>
+                <table>
+                    <thead>
+                        <tr><th>Product</th><th>Description</th><th>Target</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>TerritoriumCLR</strong></td><td>Comprehensive Learner Record - Competency-based education platform</td><td>K-12, Higher Ed, Enterprise</td></tr>
+                        <tr><td><strong>LifeJourney</strong></td><td>AI-powered skills and competency toolkit</td><td>Learners, Institutions</td></tr>
+                        <tr><td><strong>CareerBit</strong></td><td>Career exploration and matching service</td><td>Students, Job Seekers</td></tr>
+                        <tr><td><strong>Assessment Services</strong></td><td>Skills-based assessment engine</td><td>Educational Institutions, Enterprises</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Business Model Features</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Revenue Model</h4>
+                        <ul>
+                            <li>Institutional licensing contracts</li>
+                            <li>User-based subscription fees</li>
+                            <li>Custom implementation services</li>
+                            <li>API integration services</li>
+                            <li>Consulting and support services</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Value Proposition</h4>
+                        <ul>
+                            <li>Learning to employment connection</li>
+                            <li>Verifiable skills proof</li>
+                            <li>Real-time labor market data integration</li>
+                            <li>Learner-centered data ownership</li>
+                            <li>Interoperable standards support</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">3. AI Recommendation System Technology</h2>
+
+                <div class="info-box">
+                    <p><strong>LifeJourney</strong> is Territorium's core AI technology that uses real-time labor market data to match learners' skills with career opportunities.</p>
+                </div>
+
+                <h3 class="subsection-title">Core AI Features</h3>
+                <div class="feature-box">
+                    <h4>Top 5 Skills Matching Algorithm</h4>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        Using the latest labor market data, LifeJourney determines necessary skills and requirements for different job titles. It compares this information with learner's CLR data to find suitable career choices and job opportunities. Through AI-generated pathways, learners are matched with the five most important skills for a specific position.
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">Technology Architecture</h3>
+                <table>
+                    <thead>
+                        <tr><th>Component</th><th>Specifications</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Skills Ontology</strong></td><td>Credential Engine integration, Open Skills Network</td></tr>
+                        <tr><td><strong>Data Integration</strong></td><td>Real-time labor market data, job requirements analysis</td></tr>
+                        <tr><td><strong>Standards Support</strong></td><td>CLR 2.0, Open Badges 3.0, LER standards</td></tr>
+                        <tr><td><strong>Recommendation Algorithm</strong></td><td>AI-based career pathway generation, Top 5 skills matching</td></tr>
+                        <tr><td><strong>Integration</strong></td><td>Existing HR/EdTech system API connectivity</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">LifeJourney Key Features</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>For Learners</h4>
+                        <ul>
+                            <li>Digital credential wallet</li>
+                            <li>Personalized learning recommendations</li>
+                            <li>Career fit analysis</li>
+                            <li>Skills gap identification</li>
+                            <li>Real-time job opportunity matching</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>For Institutions</h4>
+                        <ul>
+                            <li>Student engagement analytics</li>
+                            <li>Learning outcome tracking</li>
+                            <li>Competency-based education support</li>
+                            <li>Microcredential issuance</li>
+                            <li>Employer-connected career support</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">4. User Statistics</h2>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="number">12M+</div>
+                        <div class="label">Global Learners</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">15</div>
+                        <div class="label">Countries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">K-12</div>
+                        <div class="label">Primary/Secondary</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">Higher Ed</div>
+                        <div class="label">Post-Secondary</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">Key Partnerships</h3>
+                <table>
+                    <thead>
+                        <tr><th>Partner</th><th>Collaboration</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>University of Texas System</strong></td><td>AI-powered microcredential wallet, Texas Credentials for the Future project</td><td>Jan 2024</td></tr>
+                        <tr><td><strong>HACU</strong></td><td>Avanza Initiative - Hispanic college student career success support</td><td>2024</td></tr>
+                        <tr><td><strong>Credential Engine</strong></td><td>Learner credentials to real-world job data mapping</td><td>2022</td></tr>
+                        <tr><td><strong>Google, IBM, Microsoft, Salesforce</strong></td><td>35+ entry-level professional certifications integration</td><td>2024</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">5. Global & Asia Pacific Presence</h2>
+
+                <div class="info-box">
+                    <p>Territorium operates in 15 countries as a global company, but specific expansion information for the Asia Pacific region, particularly Korea and Japan markets, is limited.</p>
+                </div>
+
+                <h3 class="subsection-title">Global Operations</h3>
+                <div class="highlight-box">
+                    <table style="margin: 0;">
+                        <tr><td><strong>Operating Regions</strong></td><td>15 Countries</td></tr>
+                        <tr><td><strong>Primary Markets</strong></td><td>North America, Latin America</td></tr>
+                        <tr><td><strong>Language Support</strong></td><td>English, Spanish focused</td></tr>
+                        <tr><td><strong>Target Customers</strong></td><td>Educational Institutions, Fortune 100 Enterprises</td></tr>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title">Asia Market Potential</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Opportunities</h4>
+                        <ul>
+                            <li>Global CLR/LER standards expansion</li>
+                            <li>Asian education digital transformation</li>
+                            <li>Skills-based hiring trends</li>
+                            <li>Lifelong learning policy strengthening</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Entry Challenges</h4>
+                        <ul>
+                            <li>Asian language support needed</li>
+                            <li>Local labor market data acquisition</li>
+                            <li>Local partnership building</li>
+                            <li>Cultural context adaptation</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">6. Customer Satisfaction</h2>
+
+                <div class="highlight-box">
+                    <p style="font-size: 0.9rem;"><strong>Note:</strong> Public customer review data for Territorium products is limited. Registered on Learn & Work Ecosystem Library but no customer ratings submitted yet. Employee rating on Glassdoor is 3.4/5.</p>
+                </div>
+
+                <h3 class="subsection-title">Strengths and Areas for Improvement</h3>
+                <div class="pros-cons">
+                    <div class="card pros">
+                        <h4 style="color: #4caf50;">Strengths</h4>
+                        <ul>
+                            <li>First CLR 2.0 + OB 3.0 certified in industry</li>
+                            <li>K-12 to higher education integrated support</li>
+                            <li>AI-based career matching</li>
+                            <li>Real-time labor market integration</li>
+                            <li>Fortune 100 customers acquired</li>
+                            <li>1EdTech standards compliance</li>
+                        </ul>
+                    </div>
+                    <div class="card cons">
+                        <h4 style="color: #f44336;">Areas for Improvement</h4>
+                        <ul>
+                            <li>No public pricing information</li>
+                            <li>Limited Asia market presence</li>
+                            <li>Multilingual support expansion needed</li>
+                            <li>Lack of public customer reviews</li>
+                            <li>Brand awareness improvement needed</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">7. Development Roadmap</h2>
+
+                <div class="info-box">
+                    <p>Territorium continues to grow through continuous updates to the LifeJourney platform and expanding partnerships with major educational systems.</p>
+                </div>
+
+                <h3 class="subsection-title">Recent Key Developments</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">January 2024</div>
+                        <p><strong>UT System Partnership:</strong> Launched "Texas Credentials for the Future" project with University of Texas System. Integration of 35+ industry-relevant microcredentials</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024</div>
+                        <p><strong>HACU Avanza Initiative:</strong> Collaboration to transform education and employment landscape for Hispanic college students</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025</div>
+                        <p><strong>LifeJourney Update:</strong> Redesigned main menu, roles and permissions system, improved assessments, credentials, and reporting tools</p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">Strategic Direction</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4>Technology Advancement</h4>
+                        <ul>
+                            <li>AI-based recommendation enhancement</li>
+                            <li>User experience improvements</li>
+                            <li>Role-based access control strengthening</li>
+                            <li>Visual guides and resource expansion</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Market Expansion</h4>
+                        <ul>
+                            <li>Major university system partnerships</li>
+                            <li>K-12 market penetration</li>
+                            <li>Enterprise customer expansion</li>
+                            <li>Federal funding utilization</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">8. Competitive Analysis</h2>
+
+                <table>
+                    <thead>
+                        <tr><th>Comparison</th><th>Territorium</th><th>Credly</th><th>LearnCard</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Core Position</strong></td><td>CLR/LER Integrated Platform</td><td>Digital Badge Network</td><td>Open Source Wallet</td></tr>
+                        <tr><td><strong>Target Customers</strong></td><td>Institutions, Enterprises</td><td>Large Enterprises, Certifiers</td><td>Developers, Institutions</td></tr>
+                        <tr><td><strong>AI Features</strong></td><td>Career Pathway Matching</td><td>Skills Recommendation</td><td>Skills Bridge</td></tr>
+                        <tr><td><strong>Standards</strong></td><td>CLR 2.0, OB 3.0</td><td>Open Badges</td><td>W3C VC, DID</td></tr>
+                        <tr><td><strong>K-12 Support</strong></td><td>Strong</td><td>Limited</td><td>SuperSkills!</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">9. Conclusion & Recommendations</h2>
+
+                <div class="highlight-box">
+                    <h4 style="margin-bottom: 0.75rem; color: var(--primary-color);">Overall Assessment</h4>
+                    <p style="font-size: 0.95rem; line-height: 1.7;">
+                        Territorium is the first U.S. company to achieve both CLR 2.0 and Open Badges 3.0 certifications, providing an integrated learning-employment connection platform spanning K-12 to higher education and enterprise. AI-based career matching and real-time labor market integration are strengths, but Asia market expansion and brand awareness improvement are needed.
+                    </p>
+                </div>
+
+                <h3 class="subsection-title">Recommendations</h3>
+                <div class="two-column">
+                    <div class="card">
+                        <h4 style="color: #4caf50;">Best Suited For</h4>
+                        <ul>
+                            <li>Institutions needing CLR capabilities</li>
+                            <li>K-12 schools adopting competency-based education</li>
+                            <li>Universities with career connection programs</li>
+                            <li>Enterprises implementing skills-based hiring</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4 style="color: #f44336;">Consider Alternatives</h4>
+                        <ul>
+                            <li>Organizations requiring Asia-focused services</li>
+                            <li>Global companies needing multilingual support</li>
+                            <li>Organizations preferring open source</li>
+                            <li>Institutions needing only simple badge issuance</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <div class="sources">
+                <h4>References</h4>
+                <ul>
+                    <li><a href="https://territorium.com/" target="_blank">Territorium Official Website</a></li>
+                    <li><a href="https://territorium.com/product/lifejourney/" target="_blank">LifeJourney Product Page</a></li>
+                    <li><a href="https://territorium.com/territorium-announces-1edtech-clr-2-0-and-open-badges-3-0-certification/" target="_blank">1EdTech Certification Announcement</a></li>
+                    <li><a href="https://www.prnewswire.com/news-releases/territorium-partners-with-the-university-of-texas-system-302041743.html" target="_blank">UT System Partnership Announcement</a></li>
+                    <li><a href="https://credentialengine.org/2022/03/01/territorium-credential-engine-partner/" target="_blank">Credential Engine Partnership</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
