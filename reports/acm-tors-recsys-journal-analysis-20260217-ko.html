@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACM TORS 심층 분석: 추천 시스템 최초 전용 학술지의 탄생과 영향력</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .timeline {
+            border-left: 3px solid var(--accent-navy);
+            margin: 1rem 0 1rem 1rem;
+            padding-left: 1.5rem;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.85rem;
+            top: 0.4rem;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-navy);
+            border-radius: 50%;
+        }
+        .timeline-date {
+            font-weight: 700;
+            color: var(--accent-navy);
+            font-size: 0.85rem;
+        }
+        .timeline-content {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='acm-tors-recsys-journal-analysis-20260217-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='acm-tors-recsys-journal-analysis-20260217-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='acm-tors-recsys-journal-analysis-20260217-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>ACM TORS 심층 분석:<br>추천 시스템 최초 전용 학술지의 탄생과 영향력</h1>
+            <div class="subtitle">ACM Transactions on Recommender Systems - 학술 생태계, 연구 동향, 경쟁 저널 비교</div>
+            <div class="meta">보고서 작성일: 2026년 2월 17일 | 표준 보고서</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <!-- Trend 1 -->
+                <h3 class="subsection-title">1. ACM TORS의 탄생: 추천 시스템 최초 전용 저널의 역사적 의의</h3>
+                <p><strong>현황:</strong> ACM Transactions on Recommender Systems(ACM TORS)은 2022년 3월 ACM에서 공식 발표하고, 2023년 1월 27일 창간호(Volume 1, Issue 1)를 발간한 세계 최초의 추천 시스템 전용 학술지입니다. 편집장 Dietmar Jannach(클라겐푸르트 대학교)가 2020년 여름 "왜 추천 시스템 전용 저널이 없는가?"라는 블로그 글에서 착안하여, Li Chen(홍콩침례대학교)과 함께 ACM RecSys 운영위원회에 제안서를 제출해 탄생했습니다. ACM RecSys 학회가 2021년 CORE 'A' 등급으로 격상된 시점에 맞추어, 학문 분야의 성숙도를 반영한 전용 저널의 출범은 학계에서 큰 반향을 일으켰습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>저널 기본 정보</h4>
+                        <p>• <strong>EISSN:</strong> 2770-6699<br>
+                        • <strong>발행 주기:</strong> 연 4회(분기별 발행)<br>
+                        • <strong>출판사:</strong> Association for Computing Machinery (ACM)<br>
+                        • <strong>H-index:</strong> 9 (2025년 기준, 신생 저널)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>탄생 배경</h4>
+                        <p>• <strong>착안:</strong> 2020년 여름, Jannach의 블로그 글에서 출발<br>
+                        • <strong>제안:</strong> 2020년 말 ACM RecSys 운영위원회 논의<br>
+                        • <strong>공식 발표:</strong> 2022년 3월 ACM 공식 발표<br>
+                        • <strong>창간:</strong> 2023년 1월 Volume 1, Issue 1 발간</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://dl.acm.org/journal/tors" target="_blank">ACM TORS 공식 페이지</a> |
+                    <a href="https://dl.acm.org/doi/10.1145/3569454" target="_blank">창간호 에디토리얼</a> |
+                    <a href="https://recommender-systems.com/acm-tors-news/" target="_blank">TORS 뉴스</a>
+                </div>
+
+                <p><strong>전망:</strong> ACM TORS는 창간 3년 차에 접어들며 연간 발행 논문 수와 인용도가 꾸준히 상승하고 있습니다. 현재 H-index 9는 신생 저널로서 양호한 수준이며, 향후 2-3년 내 JCR Impact Factor가 부여되면 추천 시스템 분야 핵심 게재지로서의 위상이 더욱 공고해질 것으로 예상됩니다.</p>
+
+                <!-- Trend 2 -->
+                <h3 class="subsection-title">2. 대규모 언어 모델(LLM)과 추천 시스템의 융합 연구</h3>
+                <p><strong>현황:</strong> ACM TORS는 2024년 "Large Language Models for Recommender Systems(LLM4RecSys)" 특별호를 기획하여, LLM 기반 추천 시스템 연구의 최전선을 조명했습니다. Yongfeng Zhang(럿거스 대학교), Lei Li(홍콩침례대학교), Luyang Kong(Amazon Research)이 게스트 에디터로 참여했으며, 이는 학계와 산업계 모두에서 LLM과 추천 시스템의 통합이 핵심 연구 주제로 부상했음을 보여줍니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LLM4RecSys 핵심 연구 방향</h4>
+                        <p>• <strong>대화형 추천:</strong> LLM을 활용한 자연어 기반 추천 인터페이스<br>
+                        • <strong>설명 가능한 추천:</strong> LLM의 텍스트 생성 능력을 활용한 추천 근거 설명<br>
+                        • <strong>멀티모달 추천:</strong> 텍스트, 이미지, 리뷰를 종합한 복합 추천<br>
+                        • <strong>프롬프트 엔지니어링:</strong> 추천 태스크에 최적화된 프롬프트 설계</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시장 맥락</h4>
+                        <p>• <strong>추천 엔진 시장 규모:</strong> 2025년 $91.5억 → 2030년 $332억 (CAGR 33-36%)<br>
+                        • <strong>클라우드 비중:</strong> 2023년 기준 87.7%가 클라우드 배포<br>
+                        • <strong>하이브리드 시스템:</strong> 2030년까지 CAGR 39% 성장 전망<br>
+                        • <strong>아시아태평양:</strong> 17.66% CAGR로 가장 빠른 성장 (출처: Grand View Research, Mordor Intelligence)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://dl.acm.org/journal/tors/special-issues" target="_blank">TORS 특별호 목록</a> |
+                    <a href="https://recommender-systems.com/news/2023/10/09/cfp-acm-tors-special-issue-on-large-language-models-for-recommender-systems-llm4recsys/" target="_blank">LLM4RecSys CfP</a>
+                </div>
+
+                <p><strong>전망:</strong> LLM과 추천 시스템의 융합은 단순한 유행이 아니라 구조적 전환입니다. 2025년 10개의 새로운 TORS 논문이 이 주제를 다루고 있으며, LLM의 강건한 추천 적응(robust recommendation adaptation), 다국어 뉴스 추천, 설명 메트릭 등이 핵심 연구 방향으로 자리잡고 있습니다.</p>
+
+                <!-- Trend 3 -->
+                <h3 class="subsection-title">3. 책임 있는 추천 시스템: 공정성, 신뢰성, 윤리</h3>
+                <p><strong>현황:</strong> ACM TORS는 추천 시스템의 사회적 영향에 대한 학술적 논의를 선도하고 있습니다. 2023년 "Trustworthy Recommender Systems" 특별호에 이어, 2024년에는 "Recommender Systems for Good" 특별호를 기획했습니다. Marko Tkalčič, Noemi Mauro, Alan Said, Nava Tintarev, Antonela Tommasel이 게스트 에디터로 참여한 이 특별호는 추천 시스템이 건강한 행동 촉진, 저소득 가정 교육 지원, 에너지 절약 습관 장려, 공정한 소액 대출, 뉴스 소비 품질 향상 등 사회적 선(善)에 기여할 수 있는 방안을 탐구합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>관련 특별호 흐름</h4>
+                        <p>• <strong>2023:</strong> Causal Inference for RecSys (인과 추론)<br>
+                        • <strong>2023:</strong> Trustworthy Recommender Systems (신뢰성)<br>
+                        • <strong>2024:</strong> Recommender Systems for Good (사회적 선)<br>
+                        • <strong>2025:</strong> 민감 속성 편향, 설계 정의 접근법 논문 게재</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>핵심 연구 주제</h4>
+                        <p>• <strong>공정성(Fairness):</strong> 다양한 이해관계자에 대한 공정한 추천<br>
+                        • <strong>투명성(Transparency):</strong> 추천 근거의 설명 가능성<br>
+                        • <strong>편향 감소(Bias Mitigation):</strong> 민감 속성 연관 편향 제거<br>
+                        • <strong>설계 정의(Design Justice):</strong> 소외 계층을 고려한 추천 설계</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://recommender-systems.com/news/2024/06/07/acm-tors-call-for-papers-special-issue-on-recommender-systems-for-good/" target="_blank">RecSys for Good CfP</a> |
+                    <a href="https://recommender-systems.com/news/2025/12/18/10-new-acm-tors-papers-on-news-music-metrics-and-responsible-recommendation/" target="_blank">2025 Responsible RecSys 논문</a>
+                </div>
+
+                <p><strong>전망:</strong> EU AI Act 등 글로벌 AI 규제가 강화되면서, 추천 시스템의 윤리적 측면에 대한 학술 연구 수요는 더욱 증가할 것입니다. ACM TORS는 이 분야의 핵심 게재지로서, 산업계의 규제 준수 전략 수립에도 학술적 근거를 제공하는 역할을 할 것으로 전망됩니다.</p>
+
+                <!-- Trend 4 -->
+                <h3 class="subsection-title">4. 산업 현장의 추천 시스템: 도전과 실전 솔루션</h3>
+                <p><strong>현황:</strong> 2024년 ACM TORS는 "Recommender Systems in Industry: Challenges and Solutions" 특별호를 기획하여, 학술 연구와 산업 현장 간의 격차를 좁히는 데 주력하고 있습니다. 실제 환경에서의 추천 시스템 설계와 구현에 대한 최신 진전과 지속적인 도전 과제를 다룹니다. Amazon의 매출 35%가 추천 엔진에서 발생하고, 전자상거래 매출의 31%가 맞춤형 추천에서 창출되는 등 산업적 영향력이 증대함에 따라, 학술적 검증과 산업적 적용의 연계가 중요해지고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>산업 적용 핵심 분야</h4>
+                        <p>• <strong>전자상거래:</strong> 매출 31% 맞춤 추천 기여 (Amazon 35%)<br>
+                        • <strong>스트리밍/엔터테인먼트:</strong> Netflix, Spotify 등 콘텐츠 발견<br>
+                        • <strong>의료/헬스케어:</strong> 2030년까지 CAGR 19% 성장<br>
+                        • <strong>교육:</strong> 적응형 학습 경로 추천</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>산업-학술 격차 해소</h4>
+                        <p>• <strong>확장성 문제:</strong> 학술 실험 vs. 수억 명 대상 실시간 서빙<br>
+                        • <strong>A/B 테스트:</strong> 오프라인 평가와 온라인 성과의 괴리<br>
+                        • <strong>콜드 스타트:</strong> 신규 사용자/아이템 대응 전략<br>
+                        • <strong>실시간 피드백:</strong> 스트리밍 데이터 기반 즉시 적응</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://recommender-systems.com/news/2024/06/21/cfp-acm-tors-industry/" target="_blank">Industry RecSys CfP</a> |
+                    <a href="https://www.grandviewresearch.com/industry-analysis/recommendation-engine-market-report" target="_blank">추천 엔진 시장 보고서</a>
+                </div>
+
+                <p><strong>전망:</strong> 2025년 TORS에 게재된 산업 평가 실무(evaluation practices in industry) 논문은 학술 커뮤니티와 산업계의 연구 방법론 통합을 가속화하고 있습니다. 특히 인과 추론 기반 프로모션 효과 측정, 롱테일 아이템 개인화 등 실전 과제에 대한 학술적 해법이 주목받고 있습니다.</p>
+
+                <!-- Trend 5 -->
+                <h3 class="subsection-title">5. 뉴스 추천 시스템의 새로운 방향</h3>
+                <p><strong>현황:</strong> 2025년 12월 ACM TORS는 "New Directions for News Recommender Systems" 특별호를 공개 모집했습니다. Joseph Konstan(미네소타 대학교), Özlem Özgöbek(노르웨이 과학기술대학교), Edward Malthouse(노스웨스턴 대학교)가 게스트 에디터로 참여합니다. 이 특별호는 클릭 최적화를 넘어선, 빠르게 만료되는 콘텐츠에 대한 새로운 추천 패러다임을 모색합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>뉴스 추천의 핵심 과제</h4>
+                        <p>• <strong>콘텐츠 수명:</strong> 뉴스는 수시간 내 가치 소멸<br>
+                        • <strong>클릭베이트 탈피:</strong> 클릭률(CTR) 넘어선 품질 지표 필요<br>
+                        • <strong>필터 버블:</strong> 정보 편향과 에코 챔버 문제<br>
+                        • <strong>다국어 지원:</strong> 다국어 뉴스 추천 알고리즘 연구</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>관련 TORS 연구 동향</h4>
+                        <p>• <strong>설계 정의 접근:</strong> 뉴스 추천의 민주적 설계 방법론<br>
+                        • <strong>음악 반복 모델링:</strong> 콘텐츠 소비 패턴 연구 확장<br>
+                        • <strong>슬레이트 추천:</strong> 보상 기반 밴딧 접근법 적용<br>
+                        • <strong>게임 번역:</strong> 도메인 확장형 추천 연구</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://recommender-systems.com/news/2025/12/15/new-directions-for-news-recommender-systems-acm-tors-special-issue-cfp/" target="_blank">News RecSys 특별호 CfP</a> |
+                    <a href="https://recsys.acm.org/" target="_blank">ACM RecSys 학회</a>
+                </div>
+
+                <p><strong>전망:</strong> 가짜 뉴스 확산과 정보 생태계 건전성에 대한 사회적 관심이 높아지면서, 뉴스 추천 시스템의 윤리적이고 다양성을 보장하는 설계는 향후 규제 및 정책 논의의 핵심 주제가 될 것입니다. ACM TORS는 이 분야의 학술적 기반을 마련하는 선도적 역할을 수행하고 있습니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 및 저널 비교 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 저널 포지셔닝</h2>
+
+                <h3 class="subsection-title">추천 시스템 관련 학술지 비교</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">ACM TORS는 추천 시스템 전용 저널로서 독보적인 위치를 차지하지만, 관련 연구는 여러 학술지에 분산 게재되고 있습니다. 아래는 주요 경쟁/보완 저널과의 비교 분석입니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>저널명</th>
+                            <th>출판사</th>
+                            <th>범위</th>
+                            <th>IF (2024)</th>
+                            <th>특징</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ACM TORS</strong></td>
+                            <td>ACM</td>
+                            <td>추천 시스템 전용</td>
+                            <td>신규 (H-index 9)</td>
+                            <td>유일한 RecSys 전용 저널, 알고리즘+HCI+평가+영향 포괄</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ACM TOIS</strong></td>
+                            <td>ACM</td>
+                            <td>정보 시스템</td>
+                            <td>~5.4</td>
+                            <td>정보 검색/추천 연구의 전통적 게재지, 광범위한 범위</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UMUAI</strong></td>
+                            <td>Springer</td>
+                            <td>사용자 모델링/적응형 인터페이스</td>
+                            <td>~3.6</td>
+                            <td>HCI 관점의 추천/개인화 연구, 1991년 창간</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IEEE TKDE</strong></td>
+                            <td>IEEE</td>
+                            <td>지식/데이터 공학</td>
+                            <td>~8.9</td>
+                            <td>데이터 마이닝/ML 기반 추천 연구 다수 게재</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ACM CSUR</strong></td>
+                            <td>ACM</td>
+                            <td>컴퓨팅 서베이</td>
+                            <td>~23.8</td>
+                            <td>추천 시스템 서베이 논문의 주요 게재지</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Information Sciences</strong></td>
+                            <td>Elsevier</td>
+                            <td>정보과학 전반</td>
+                            <td>~8.1</td>
+                            <td>추천 알고리즘 연구 다수 게재, 넓은 범위</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">주요 저널 역량 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">ACM TORS 편집위원회 구성</h3>
+                <p style="margin-bottom: 0.5rem; font-size: 0.95rem;">ACM TORS의 편집위원회는 추천 시스템 분야를 대표하는 세계적 석학 18명으로 구성되어 있습니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>편집장/부편집장</th>
+                            <th>소속</th>
+                            <th>전문 분야</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Dietmar Jannach</strong> (EiC)</td><td>클라겐푸르트 대학교 (오스트리아)</td><td>추천 시스템 평가, 세션 기반 추천</td></tr>
+                        <tr><td><strong>Li Chen</strong> (EiC)</td><td>홍콩침례대학교 (중국)</td><td>설명 가능한 추천, HCI</td></tr>
+                        <tr><td><strong>Joseph Konstan</strong></td><td>미네소타 대학교 (미국)</td><td>협업 필터링, GroupLens 창립자</td></tr>
+                        <tr><td><strong>Julian McAuley</strong></td><td>UCSD (미국)</td><td>설명 가능한 추천, Amazon 데이터셋</td></tr>
+                        <tr><td><strong>Robin Burke</strong></td><td>콜로라도 대학교 (미국)</td><td>하이브리드/다중 이해관계자 추천</td></tr>
+                        <tr><td><strong>Francesco Ricci</strong></td><td>볼차노 자유대학교 (이탈리아)</td><td>관광/맥락 인식 추천</td></tr>
+                        <tr><td><strong>George Karypis</strong></td><td>미네소타 대학교 (미국)</td><td>데이터 마이닝, 그래프 분할</td></tr>
+                        <tr><td><strong>Xing Xie</strong></td><td>Microsoft Research Asia (중국)</td><td>위치 기반 추천, 소셜 미디어</td></tr>
+                        <tr><td><strong>Yongfeng Zhang</strong></td><td>럿거스 대학교 (미국)</td><td>설명 가능한 추천, LLM4RecSys</td></tr>
+                    </tbody>
+                </table>
+
+                <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #4a4a4a;">이외에도 Christine Bauer(위트레흐트 대학교), Pablo Castells(마드리드 자치대학교), Bart Knijnenburg(클렘슨 대학교), Bamshad Mobasher(드폴 대학교), Nava Tintarev(마스트리흐트 대학교), Martijn Willemsen(아인트호번 공과대학교), Markus Zanker(볼차노 자유대학교), Jie Zhang(난양 공과대학교), Guibing Guo(선양 동북대학교), Weike Pan(선전 대학교), Joeran Beel(지겐 대학교) 등이 편집위원으로 활동하고 있습니다.</p>
+
+                <h3 class="subsection-title">ACM TORS 발행 연혁</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020년 여름</div>
+                        <div class="timeline-content">Dietmar Jannach, 추천 시스템 전용 저널 필요성 착안</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020년 말</div>
+                        <div class="timeline-content">ACM RecSys 운영위원회에서 제안서 논의, 높은 지지</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021년 6월</div>
+                        <div class="timeline-content">ACM RecSys 학회 CORE 'A' 등급 격상</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021년 9월</div>
+                        <div class="timeline-content">ACM RecSys 2021 학회에서 TORS 공식 공개</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021년 12월</div>
+                        <div class="timeline-content">편집위원회 첫 회의 개최, 저널 방향 설정</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2022년 3월</div>
+                        <div class="timeline-content">ACM 공식 발표, Manuscript Central 투고 시스템 오픈</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023년 1월</div>
+                        <div class="timeline-content">Volume 1, Issue 1 창간호 발간 (3편 논문 + 에디토리얼)</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023년</div>
+                        <div class="timeline-content">첫 해 4개 이슈 발간 완료, 인과 추론/신뢰성 특별호</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024년</div>
+                        <div class="timeline-content">Volume 2 발간, LLM4RecSys/RecSys for Good/Industry 특별호</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025년</div>
+                        <div class="timeline-content">Volume 3 발간, 뉴스 추천 특별호 공모, 소셜 미디어 LinkedIn 전환</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">시장 동향</h3>
+                <p style="font-size: 0.95rem;">• <strong>추천 엔진 시장 급성장:</strong> 2025년 $91.5억에서 2030년 $332-538억으로 확대 전망 (CAGR 33-37%)<br>
+                • <strong>학술-산업 연계 강화:</strong> TORS Industry 특별호를 통한 실무 격차 해소 시도<br>
+                • <strong>RecSys 커뮤니티 성장:</strong> 학회 논문 제출 수 2007년 35편에서 최근 250편 이상으로 7배 증가<br>
+                • <strong>AI 규제 대응:</strong> EU AI Act 등 글로벌 규제에 따른 공정성/투명성 연구 수요 급증<br>
+                • <strong>LLM 통합:</strong> 전통 협업 필터링에서 LLM 기반 추천으로의 패러다임 전환 가속화</p>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">ACM TORS의 연구 동향을 기반으로 한 실질적 활용 방안을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>LLM 기반 추천 시스템 프로토타입</strong> - TORS LLM4RecSys 특별호의 최신 연구를 참조하여, 대화형 추천 인터페이스를 파일럿 프로젝트로 구축 (예: 사내 학습 콘텐츠 추천)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>추천 시스템 공정성 감사 프레임워크</strong> - TORS의 Trustworthy RecSys/RecSys for Good 연구를 참조하여, 기존 추천 알고리즘의 편향 분석 및 공정성 평가 체계 수립</p>
+                    <p style="line-height: 1.6;">3. <strong>학술 논문 투고 전략</strong> - 추천 시스템 관련 연구 성과를 ACM TORS에 투고하여, 분야 전용 저널 게재를 통한 학술적 영향력 극대화 (특별호 투고 기회 활용)</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 에그제큐티브 서머리 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">에그제큐티브 서머리</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 발견</h3>
+                    <ul class="key-findings">
+                        <li><strong>최초의 전용 저널:</strong> ACM TORS는 세계 최초이자 유일한 추천 시스템 전용 학술지로, 2023년 창간 이후 빠르게 분야 핵심 게재지로 자리잡고 있습니다.</li>
+                        <li><strong>최정상급 편집진:</strong> Jannach, Chen, Konstan, McAuley, Burke, Ricci 등 추천 시스템 분야의 세계적 석학 18명이 편집위원으로 참여하여 학술적 신뢰성을 보장합니다.</li>
+                        <li><strong>LLM 융합 선도:</strong> LLM4RecSys 특별호를 통해 LLM과 추천 시스템의 통합 연구를 선도하며, 시장 성장(CAGR 33-37%)과 궤를 같이합니다.</li>
+                        <li><strong>사회적 책임 연구:</strong> Trustworthy RecSys, RecSys for Good 등 공정성과 윤리 연구의 학술적 기반을 마련하고 있습니다.</li>
+                        <li><strong>산업-학술 연계:</strong> Industry 특별호와 산업 평가 실무 논문을 통해 학술 연구와 실제 배포 간의 격차를 좁히고 있습니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">저널 활용 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>추천 시스템 전용 연구 → ACM TORS</strong><br>
+                        이유: 유일한 전용 저널, 알고리즘/HCI/평가/영향력 모든 측면 포괄<br><br>
+                        <strong>정보 검색 기반 추천 연구 → ACM TOIS</strong><br>
+                        이유: 전통적 IR 커뮤니티의 강력한 기반, 높은 Impact Factor<br><br>
+                        <strong>사용자 모델링/HCI 중심 → UMUAI</strong><br>
+                        이유: 1991년 이래 HCI 관점 개인화 연구의 핵심 게재지<br><br>
+                        <strong>데이터 마이닝/ML 방법론 → IEEE TKDE</strong><br>
+                        이유: ML 기반 추천 알고리즘의 기술적 검증에 적합<br><br>
+                        <strong>포괄적 서베이 논문 → ACM CSUR</strong><br>
+                        이유: 가장 높은 Impact Factor, 서베이 논문의 최고 게재지
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가: 매우 긍정적</strong> — ACM TORS는 창간 3년 만에 추천 시스템 분야의 핵심 학술지로 자리잡았으며, 세계적 편집진, 선도적 특별호 기획, 산업-학술 연계를 통해 분야의 학술적 정체성을 확립하고 있습니다.</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ACM TORS (ACM Transactions on Recommender Systems)</strong> - ACM에서 발행하는 세계 최초 추천 시스템 전용 학술지. 알고리즘, 사용자 경험, 평가, 사회적 영향 등을 포괄적으로 다룹니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>협업 필터링 (Collaborative Filtering)</strong> - 유사한 취향을 가진 사용자들의 행동 데이터를 기반으로 아이템을 추천하는 기법. Netflix Prize에서 핵심적 역할을 했습니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LLM4RecSys</strong> - 대규모 언어 모델(LLM)을 추천 시스템에 통합하는 연구 분야. ACM TORS 특별호 주제이며, 대화형 추천과 설명 가능한 추천에 활용됩니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CORE 랭킹</strong> - Computing Research and Education Association of Australasia에서 운영하는 학술 학회 등급 체계. A*, A, B, C 등급으로 분류하며, ACM RecSys는 2021년 'A' 등급을 획득했습니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>H-index</strong> - 학술지나 연구자의 영향력을 측정하는 지표. h편의 논문이 각각 h회 이상 인용될 때의 h값입니다. ACM TORS의 현재 H-index는 9입니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Impact Factor (IF)</strong> - Clarivate의 Journal Citation Reports에서 산출하는 학술지 영향력 지표. 최근 2년간 게재 논문의 평균 인용 횟수로 계산됩니다. ACM TORS는 신생 저널로 아직 IF가 부여되지 않았습니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>슬레이트 추천 (Slate Recommendation)</strong> - 개별 아이템이 아닌 아이템 목록(슬레이트) 전체를 최적화하여 추천하는 기법. 뉴스, 음악 플레이리스트 등에서 활용됩니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 2월 17일</p>
+                    <ul>
+                        <li>• <a href="https://dl.acm.org/journal/tors" target="_blank">ACM TORS 공식 페이지 - ACM Digital Library</a></li>
+                        <li>• <a href="https://dl.acm.org/doi/10.1145/3569454" target="_blank">ACM TORS 창간호 에디토리얼 - Jannach & Chen (2023)</a></li>
+                        <li>• <a href="https://www.acm.org/media-center/2022/march/tors-launch" target="_blank">ACM 미디어 센터 - TORS 출범 보도자료 (2022)</a></li>
+                        <li>• <a href="https://recommender-systems.com/acm-tors-news/" target="_blank">RS_c - ACM TORS 뉴스 아카이브</a></li>
+                        <li>• <a href="https://dl.acm.org/journal/tors/editorial-board" target="_blank">ACM TORS 편집위원회</a></li>
+                        <li>• <a href="https://dl.acm.org/journal/tors/special-issues" target="_blank">ACM TORS 특별호 목록</a></li>
+                        <li>• <a href="https://recommender-systems.com/news/2021/06/08/acm-recsys-conference-a-conference-core/" target="_blank">ACM RecSys CORE A 등급 격상 (2021)</a></li>
+                        <li>• <a href="https://www.grandviewresearch.com/industry-analysis/recommendation-engine-market-report" target="_blank">Grand View Research - 추천 엔진 시장 보고서</a></li>
+                        <li>• <a href="https://www.mordorintelligence.com/industry-reports/recommendation-engine-market" target="_blank">Mordor Intelligence - 추천 엔진 시장 분석</a></li>
+                        <li>• <a href="https://recommender-systems.com/news/2025/12/18/10-new-acm-tors-papers-on-news-music-metrics-and-responsible-recommendation/" target="_blank">RS_c - 2025년 TORS 신규 논문 10편 소개</a></li>
+                        <li>• <a href="https://www.acm.org/articles/people-of-acm/2022/dietmar-jannach" target="_blank">People of ACM - Dietmar Jannach 인터뷰</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['추천 시스템 전문성', '학술 영향력(IF)', '산업 연계', '범위 포괄성', '접근 용이성'],
+                datasets: [
+                    {
+                        label: 'ACM TORS',
+                        data: [98, 40, 85, 90, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ACM TOIS',
+                        data: [60, 75, 60, 70, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'UMUAI',
+                        data: [55, 55, 45, 50, 65],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'IEEE TKDE',
+                        data: [45, 90, 70, 85, 60],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
