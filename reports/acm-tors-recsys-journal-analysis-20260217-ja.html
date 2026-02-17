@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACM TORS徹底分析：推薦システム初の専門学術誌の誕生と影響力</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .timeline {
+            border-left: 3px solid var(--accent-navy);
+            margin: 1rem 0 1rem 1rem;
+            padding-left: 1.5rem;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.85rem;
+            top: 0.4rem;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-navy);
+            border-radius: 50%;
+        }
+        .timeline-date {
+            font-weight: 700;
+            color: var(--accent-navy);
+            font-size: 0.85rem;
+        }
+        .timeline-content {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='acm-tors-recsys-journal-analysis-20260217-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='acm-tors-recsys-journal-analysis-20260217-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='acm-tors-recsys-journal-analysis-20260217-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>ACM TORS徹底分析：<br>推薦システム初の専門学術誌の誕生と影響力</h1>
+            <div class="subtitle">ACM Transactions on Recommender Systems - 学術エコシステム、研究動向、競合ジャーナル比較</div>
+            <div class="meta">レポート作成日：2026年2月17日 | 標準レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <!-- Trend 1 -->
+                <h3 class="subsection-title">1. ACM TORSの誕生：推薦システム初の専門ジャーナルの歴史的意義</h3>
+                <p><strong>現状：</strong>ACM Transactions on Recommender Systems（ACM TORS）は、2022年3月にACMが公式発表し、2023年1月27日に創刊号（Volume 1, Issue 1）を刊行した、世界初にして唯一の推薦システム専門学術誌です。編集長のDietmar Jannach（クラーゲンフルト大学）が2020年夏、「なぜ推薦システム専門のジャーナルが存在しないのか？」というブログ記事に触発され、Li Chen（香港浸会大学）とともにACM RecSys運営委員会に提案書を提出したことがきっかけです。ACM RecSys学会が2021年にCORE「A」ランクに昇格した時期と重なり、分野の成熟度を反映した専門ジャーナルの創刊は学界で大きな反響を呼びました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>ジャーナル基本情報</h4>
+                        <p>• <strong>EISSN：</strong>2770-6699<br>
+                        • <strong>刊行頻度：</strong>年4回（四半期刊行）<br>
+                        • <strong>出版社：</strong>Association for Computing Machinery（ACM）<br>
+                        • <strong>H-index：</strong>9（2025年時点、新規ジャーナル）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>誕生の経緯</h4>
+                        <p>• <strong>着想：</strong>2020年夏、Jannachのブログ記事がきっかけ<br>
+                        • <strong>提案：</strong>2020年末、ACM RecSys運営委員会で議論<br>
+                        • <strong>公式発表：</strong>2022年3月、ACM公式アナウンス<br>
+                        • <strong>創刊：</strong>2023年1月、Volume 1, Issue 1刊行</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://dl.acm.org/journal/tors" target="_blank">ACM TORS公式ページ</a> |
+                    <a href="https://dl.acm.org/doi/10.1145/3569454" target="_blank">創刊号エディトリアル</a> |
+                    <a href="https://recommender-systems.com/acm-tors-news/" target="_blank">TORSニュース</a>
+                </div>
+
+                <p><strong>展望：</strong>創刊3年目を迎え、ACM TORSは年間の掲載論文数と被引用数が着実に増加しています。現在のH-index 9は新規ジャーナルとして良好な水準であり、今後2〜3年以内にJCR Impact Factorが付与されれば、推薦システム分野の中核的掲載誌としての地位がさらに強固になると見込まれます。</p>
+
+                <!-- Trend 2 -->
+                <h3 class="subsection-title">2. 大規模言語モデル（LLM）と推薦システムの融合研究</h3>
+                <p><strong>現状：</strong>ACM TORSは2024年に「Large Language Models for Recommender Systems（LLM4RecSys）」特集号を企画し、大規模言語モデル（LLM）を活用した推薦システム研究の最前線を照らし出しました。Yongfeng Zhang（ラトガース大学）、Lei Li（香港浸会大学）、Luyang Kong（Amazon Research）がゲストエディターを務め、学界と産業界の双方でLLMと推薦システムの統合が核心的な研究テーマとして浮上していることを示しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LLM4RecSys 主要研究方向</h4>
+                        <p>• <strong>対話型推薦：</strong>LLMを活用した自然言語ベースの推薦インターフェース<br>
+                        • <strong>説明可能な推薦：</strong>LLMのテキスト生成能力を活かした推薦根拠の説明<br>
+                        • <strong>マルチモーダル推薦：</strong>テキスト・画像・レビューを統合した複合推薦<br>
+                        • <strong>プロンプトエンジニアリング：</strong>推薦タスクに最適化されたプロンプト設計</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>市場背景</h4>
+                        <p>• <strong>推薦エンジン市場規模：</strong>2025年91.5億ドル → 2030年332億ドル（CAGR 33〜36%）<br>
+                        • <strong>クラウド比率：</strong>2023年時点で87.7%がクラウド展開<br>
+                        • <strong>ハイブリッドシステム：</strong>2030年までCAGR 39%成長見込み<br>
+                        • <strong>アジア太平洋：</strong>17.66% CAGRで最速成長（出典：Grand View Research、Mordor Intelligence）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://dl.acm.org/journal/tors/special-issues" target="_blank">TORS特集号一覧</a> |
+                    <a href="https://recommender-systems.com/news/2023/10/09/cfp-acm-tors-special-issue-on-large-language-models-for-recommender-systems-llm4recsys/" target="_blank">LLM4RecSys募集要項</a>
+                </div>
+
+                <p><strong>展望：</strong>LLMと推薦システムの融合は、一過性のトレンドではなく構造的な転換です。2025年にはTORSから10本の新規論文がこのテーマに関連して掲載され、LLMの頑健な推薦適応（robust recommendation adaptation）、多言語ニュース推薦、説明指標などが核心的な研究方向として定着しつつあります。</p>
+
+                <!-- Trend 3 -->
+                <h3 class="subsection-title">3. 責任ある推薦システム：公平性、信頼性、倫理</h3>
+                <p><strong>現状：</strong>ACM TORSは推薦システムの社会的影響に関する学術的議論を牽引しています。2023年の「Trustworthy Recommender Systems」特集号に続き、2024年には「Recommender Systems for Good」特集号を企画しました。Marko Tkalčič、Noemi Mauro、Alan Said、Nava Tintarev、Antonela Tommaselがゲストエディターを務めたこの特集号は、推薦システムが健康的な行動の促進、低所得世帯の教育支援、省エネ習慣の奨励、公正な少額融資、ニュース消費の質向上など、社会的善（Social Good）に貢献できる方策を探求しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>特集号の流れ</h4>
+                        <p>• <strong>2023年：</strong>Causal Inference for RecSys（因果推論）<br>
+                        • <strong>2023年：</strong>Trustworthy Recommender Systems（信頼性）<br>
+                        • <strong>2024年：</strong>Recommender Systems for Good（社会的善）<br>
+                        • <strong>2025年：</strong>センシティブ属性バイアス、デザインジャスティス論文掲載</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>主要研究テーマ</h4>
+                        <p>• <strong>公平性（Fairness）：</strong>多様なステークホルダーへの公正な推薦<br>
+                        • <strong>透明性（Transparency）：</strong>推薦根拠の説明可能性<br>
+                        • <strong>バイアス軽減（Bias Mitigation）：</strong>センシティブ属性関連バイアスの除去<br>
+                        • <strong>デザインジャスティス（Design Justice）：</strong>周辺化されたコミュニティを考慮した推薦設計</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://recommender-systems.com/news/2024/06/07/acm-tors-call-for-papers-special-issue-on-recommender-systems-for-good/" target="_blank">RecSys for Good募集要項</a> |
+                    <a href="https://recommender-systems.com/news/2025/12/18/10-new-acm-tors-papers-on-news-music-metrics-and-responsible-recommendation/" target="_blank">2025年責任あるRecSys論文</a>
+                </div>
+
+                <p><strong>展望：</strong>EU AI法をはじめとするグローバルなAI規制の強化に伴い、推薦システムの倫理的側面に関する学術研究の需要はさらに増加する見込みです。ACM TORSはこの分野の中核的掲載誌として、産業界の規制遵守戦略策定にも学術的根拠を提供する役割を果たすと見られます。</p>
+
+                <!-- Trend 4 -->
+                <h3 class="subsection-title">4. 産業現場の推薦システム：課題と実践的ソリューション</h3>
+                <p><strong>現状：</strong>2024年、ACM TORSは「Recommender Systems in Industry: Challenges and Solutions」特集号を企画し、学術研究と産業現場との間のギャップ解消に注力しています。実環境における推薦システムの設計・実装に関する最新の進展と継続的な課題を取り上げています。Amazonの売上の35%が推薦エンジンから生まれ、ECサイト売上の31%がパーソナライズ推薦から創出されるなど、産業的影響力が増大する中、学術的検証と産業的応用の連携がますます重要になっています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>産業適用の重点分野</h4>
+                        <p>• <strong>Eコマース：</strong>売上の31%がパーソナライズ推薦（Amazon 35%）<br>
+                        • <strong>ストリーミング/エンタメ：</strong>Netflix、Spotifyなどのコンテンツ発見<br>
+                        • <strong>ヘルスケア：</strong>2030年までCAGR 19%成長<br>
+                        • <strong>教育：</strong>適応型学習パス推薦</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>産学ギャップの解消</h4>
+                        <p>• <strong>スケーラビリティ：</strong>学術実験 vs. 数億人対象のリアルタイム配信<br>
+                        • <strong>A/Bテスト：</strong>オフライン評価とオンラインパフォーマンスの乖離<br>
+                        • <strong>コールドスタート：</strong>新規ユーザー/アイテムへの対応戦略<br>
+                        • <strong>リアルタイムフィードバック：</strong>ストリーミングデータからの即時適応</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://recommender-systems.com/news/2024/06/21/cfp-acm-tors-industry/" target="_blank">Industry RecSys募集要項</a> |
+                    <a href="https://www.grandviewresearch.com/industry-analysis/recommendation-engine-market-report" target="_blank">推薦エンジン市場レポート</a>
+                </div>
+
+                <p><strong>展望：</strong>2025年にTORSに掲載された産業における評価実務（evaluation practices in industry）論文は、学術コミュニティと産業界の研究方法論の統合を加速しています。特に因果推論に基づくプロモーション効果測定、ロングテールアイテムのパーソナライゼーションなど、実践的課題に対する学術的解決策が注目を集めています。</p>
+
+                <!-- Trend 5 -->
+                <h3 class="subsection-title">5. ニュース推薦システムの新しい方向性</h3>
+                <p><strong>現状：</strong>2025年12月、ACM TORSは「New Directions for News Recommender Systems」特集号の論文募集を開始しました。Joseph Konstan（ミネソタ大学）、Özlem Özgöbek（ノルウェー科学技術大学）、Edward Malthouse（ノースウェスタン大学）がゲストエディターを務めます。クリック最適化を超えた、急速に価値が失われるコンテンツに対する新しい推薦パラダイムを模索する特集号です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>ニュース推薦の核心課題</h4>
+                        <p>• <strong>コンテンツ寿命：</strong>ニュースは数時間で価値が消滅<br>
+                        • <strong>クリックベイト脱却：</strong>クリック率（CTR）を超えた品質指標の必要性<br>
+                        • <strong>フィルターバブル：</strong>情報偏向とエコーチェンバーの問題<br>
+                        • <strong>多言語対応：</strong>多言語ニュース推薦アルゴリズムの研究</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>関連TORS研究動向</h4>
+                        <p>• <strong>デザインジャスティス：</strong>ニュース推薦の民主的設計方法論<br>
+                        • <strong>音楽繰り返しモデリング：</strong>コンテンツ消費パターン研究の拡張<br>
+                        • <strong>スレート推薦：</strong>報酬情報付きバンディットアプローチ<br>
+                        • <strong>ゲーム翻訳：</strong>ドメイン拡張型推薦研究</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://recommender-systems.com/news/2025/12/15/new-directions-for-news-recommender-systems-acm-tors-special-issue-cfp/" target="_blank">ニュースRecSys特集号募集要項</a> |
+                    <a href="https://recsys.acm.org/" target="_blank">ACM RecSys学会</a>
+                </div>
+
+                <p><strong>展望：</strong>フェイクニュースの拡散と情報生態系の健全性に対する社会的関心が高まる中、倫理的で多様性を保証するニュース推薦設計は、今後の規制および政策議論の中心的テーマとなるでしょう。ACM TORSはこの分野の学術的基盤を築く先導的役割を担っています。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境とジャーナルポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境とジャーナルポジショニング</h2>
+
+                <h3 class="subsection-title">推薦システム関連学術誌比較</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">ACM TORSは推薦システム専門ジャーナルとして唯一無二の位置を占めていますが、関連研究は複数の学術誌に分散掲載されています。以下は主要な競合・補完ジャーナルとの比較分析です。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ジャーナル名</th>
+                            <th>出版社</th>
+                            <th>範囲</th>
+                            <th>IF（2024年）</th>
+                            <th>特徴</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ACM TORS</strong></td>
+                            <td>ACM</td>
+                            <td>推薦システム専門</td>
+                            <td>新規（H-index 9）</td>
+                            <td>唯一のRecSys専門誌、アルゴリズム+HCI+評価+影響を網羅</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ACM TOIS</strong></td>
+                            <td>ACM</td>
+                            <td>情報システム</td>
+                            <td>約5.4</td>
+                            <td>情報検索/推薦研究の伝統的掲載誌、幅広い範囲</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UMUAI</strong></td>
+                            <td>Springer</td>
+                            <td>ユーザーモデリング/適応型インターフェース</td>
+                            <td>約3.6</td>
+                            <td>HCI視点の推薦/個人化研究、1991年創刊</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IEEE TKDE</strong></td>
+                            <td>IEEE</td>
+                            <td>知識・データ工学</td>
+                            <td>約8.9</td>
+                            <td>データマイニング/機械学習ベースの推薦研究を多数掲載</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ACM CSUR</strong></td>
+                            <td>ACM</td>
+                            <td>コンピューティングサーベイ</td>
+                            <td>約23.8</td>
+                            <td>推薦システムサーベイ論文の主要掲載誌</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Information Sciences</strong></td>
+                            <td>Elsevier</td>
+                            <td>情報科学全般</td>
+                            <td>約8.1</td>
+                            <td>推薦アルゴリズム研究を多数掲載、広い範囲</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要ジャーナル能力比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">ACM TORS編集委員会の構成</h3>
+                <p style="margin-bottom: 0.5rem; font-size: 0.95rem;">ACM TORSの編集委員会は、推薦システム分野を代表する世界的な研究者18名で構成されています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>編集長/副編集長</th>
+                            <th>所属</th>
+                            <th>専門分野</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Dietmar Jannach</strong>（EiC）</td><td>クラーゲンフルト大学（オーストリア）</td><td>推薦システム評価、セッションベース推薦</td></tr>
+                        <tr><td><strong>Li Chen</strong>（EiC）</td><td>香港浸会大学（中国）</td><td>説明可能な推薦、HCI</td></tr>
+                        <tr><td><strong>Joseph Konstan</strong></td><td>ミネソタ大学（米国）</td><td>協調フィルタリング、GroupLens創設者</td></tr>
+                        <tr><td><strong>Julian McAuley</strong></td><td>UCSD（米国）</td><td>説明可能な推薦、Amazonデータセット</td></tr>
+                        <tr><td><strong>Robin Burke</strong></td><td>コロラド大学（米国）</td><td>ハイブリッド/マルチステークホルダー推薦</td></tr>
+                        <tr><td><strong>Francesco Ricci</strong></td><td>ボルツァーノ自由大学（イタリア）</td><td>観光/コンテキストアウェア推薦</td></tr>
+                        <tr><td><strong>George Karypis</strong></td><td>ミネソタ大学（米国）</td><td>データマイニング、グラフ分割</td></tr>
+                        <tr><td><strong>Xing Xie</strong></td><td>Microsoft Research Asia（中国）</td><td>位置情報ベース推薦、ソーシャルメディア</td></tr>
+                        <tr><td><strong>Yongfeng Zhang</strong></td><td>ラトガース大学（米国）</td><td>説明可能な推薦、LLM4RecSys</td></tr>
+                    </tbody>
+                </table>
+
+                <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #4a4a4a;">このほか、Christine Bauer（ユトレヒト大学）、Pablo Castells（マドリード自治大学）、Bart Knijnenburg（クレムソン大学）、Bamshad Mobasher（デポール大学）、Nava Tintarev（マーストリヒト大学）、Martijn Willemsen（アイントホーフェン工科大学）、Markus Zanker（ボルツァーノ自由大学）、Jie Zhang（南洋理工大学）、Guibing Guo（瀋陽東北大学）、Weike Pan（深圳大学）、Joeran Beel（ジーゲン大学）が編集委員として活動しています。</p>
+
+                <h3 class="subsection-title">ACM TORS刊行年表</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020年夏</div>
+                        <div class="timeline-content">Dietmar Jannach、推薦システム専門ジャーナルの必要性を着想</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2020年末</div>
+                        <div class="timeline-content">ACM RecSys運営委員会で提案書を議論、高い支持を獲得</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021年6月</div>
+                        <div class="timeline-content">ACM RecSys学会がCORE「A」ランクに昇格</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021年9月</div>
+                        <div class="timeline-content">ACM RecSys 2021学会でTORSを公式公開</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2021年12月</div>
+                        <div class="timeline-content">編集委員会初会合を開催、ジャーナルの方向性を設定</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2022年3月</div>
+                        <div class="timeline-content">ACM公式発表、Manuscript Central投稿システム開設</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023年1月</div>
+                        <div class="timeline-content">Volume 1, Issue 1 創刊号刊行（3本の論文 + エディトリアル）</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2023年</div>
+                        <div class="timeline-content">初年度4号刊行完了、因果推論/信頼性の特集号</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年</div>
+                        <div class="timeline-content">Volume 2刊行、LLM4RecSys/RecSys for Good/Industry特集号</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2025年</div>
+                        <div class="timeline-content">Volume 3刊行、ニュース推薦特集号募集、SNSをLinkedInへ移行</div>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">市場動向</h3>
+                <p style="font-size: 0.95rem;">• <strong>推薦エンジン市場の急成長：</strong>2025年91.5億ドルから2030年332〜538億ドルに拡大見込み（CAGR 33〜37%）<br>
+                • <strong>産学連携の強化：</strong>TORS Industry特集号を通じた実務ギャップの解消<br>
+                • <strong>RecSysコミュニティの成長：</strong>学会論文投稿数が2007年の35本から最近の250本超へ、7倍増加<br>
+                • <strong>AI規制への対応：</strong>EU AI法などグローバル規制に伴う公平性/透明性研究の需要急増<br>
+                • <strong>LLM統合：</strong>従来の協調フィルタリングからLLMベース推薦へのパラダイムシフトが加速</p>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">ACM TORSの研究動向に基づく実践的な活用方策をご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>LLMベース推薦システムのプロトタイプ構築</strong> - TORS LLM4RecSys特集号の最新研究を参照し、対話型推薦インターフェースをパイロットプロジェクトとして構築（例：社内学習コンテンツ推薦）</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>推薦システム公平性監査フレームワーク</strong> - TORSのTrustworthy RecSys/RecSys for Good研究を参照し、既存推薦アルゴリズムのバイアス分析・公平性評価体制を構築</p>
+                    <p style="line-height: 1.6;">3. <strong>学術論文投稿戦略</strong> - 推薦システム関連の研究成果をACM TORSに投稿し、分野専門ジャーナルへの掲載を通じた学術的影響力の最大化（特集号の投稿機会を活用）</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>初の専門ジャーナル：</strong>ACM TORSは世界初にして唯一の推薦システム専門学術誌であり、2023年の創刊以降、急速に分野の中核的掲載誌として確立されています。</li>
+                        <li><strong>最高水準の編集陣：</strong>Jannach、Chen、Konstan、McAuley、Burke、Ricciをはじめ、推薦システム分野の世界的研究者18名が編集委員として参加し、学術的信頼性を保証しています。</li>
+                        <li><strong>LLM融合の先導：</strong>LLM4RecSys特集号を通じてLLMと推薦システムの統合研究を牽引し、市場成長（CAGR 33〜37%）と軌を一にしています。</li>
+                        <li><strong>社会的責任の研究：</strong>Trustworthy RecSys、RecSys for Goodなどの特集号で、公平性と倫理に関する研究の学術的基盤を構築しています。</li>
+                        <li><strong>産学連携：</strong>Industry特集号と産業評価実務論文を通じて、学術研究と実際の展開との間のギャップを縮小しています。</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">ジャーナル選択ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>推薦システム専門研究 → ACM TORS</strong><br>
+                        理由：唯一の専門誌、アルゴリズム/HCI/評価/社会的影響をすべて網羅<br><br>
+                        <strong>情報検索ベースの推薦研究 → ACM TOIS</strong><br>
+                        理由：伝統的なIRコミュニティの強固な基盤、高いImpact Factor<br><br>
+                        <strong>ユーザーモデリング/HCI中心 → UMUAI</strong><br>
+                        理由：1991年以来のHCI視点の個人化研究の中核的掲載誌<br><br>
+                        <strong>データマイニング/ML方法論 → IEEE TKDE</strong><br>
+                        理由：MLベースの推薦アルゴリズムの技術的検証に最適<br><br>
+                        <strong>包括的サーベイ論文 → ACM CSUR</strong><br>
+                        理由：最も高いImpact Factor、サーベイ論文の最高掲載誌
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：非常にポジティブ</strong> — ACM TORSは創刊からわずか3年で推薦システム分野の中核的学術誌として確立し、世界的な編集陣、先導的な特集号企画、産学連携を通じて、分野の学術的アイデンティティを定義しつつあります。</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ACM TORS（ACM Transactions on Recommender Systems）</strong> - ACMが発行する世界初の推薦システム専門学術誌。アルゴリズム、ユーザー体験、評価、社会的影響を包括的に扱います。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>協調フィルタリング（Collaborative Filtering）</strong> - 類似した嗜好を持つユーザーの行動データに基づいてアイテムを推薦する手法。Netflix Prizeで中心的な役割を果たしました。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LLM4RecSys</strong> - 大規模言語モデル（LLM）を推薦システムに統合する研究分野。ACM TORS特集号のテーマであり、対話型推薦や説明可能な推薦に活用されています。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>COREランキング</strong> - オーストラレーシア計算機研究教育協会が運営する学術会議等級制度。A*、A、B、Cの等級で分類され、ACM RecSysは2021年に「A」等級を獲得しました。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>H-index</strong> - 学術誌や研究者の影響力を測定する指標。h本の論文がそれぞれh回以上引用されている場合のh値です。ACM TORSの現在のH-indexは9です。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Impact Factor（IF）</strong> - ClarivateのJournal Citation Reportsで算出される学術誌影響力指標。直近2年間に掲載された論文の平均被引用数で計算されます。ACM TORSは新規ジャーナルのため、まだIFが付与されていません。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>スレート推薦（Slate Recommendation）</strong> - 個別のアイテムではなく、アイテムリスト（スレート）全体を最適化して推薦する手法。ニュースフィード、音楽プレイリストなどで活用されています。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年2月17日</p>
+                    <ul>
+                        <li>• <a href="https://dl.acm.org/journal/tors" target="_blank">ACM TORS公式ページ - ACM Digital Library</a></li>
+                        <li>• <a href="https://dl.acm.org/doi/10.1145/3569454" target="_blank">ACM TORS創刊号エディトリアル - Jannach & Chen（2023年）</a></li>
+                        <li>• <a href="https://www.acm.org/media-center/2022/march/tors-launch" target="_blank">ACMメディアセンター - TORS創刊プレスリリース（2022年）</a></li>
+                        <li>• <a href="https://recommender-systems.com/acm-tors-news/" target="_blank">RS_c - ACM TORSニュースアーカイブ</a></li>
+                        <li>• <a href="https://dl.acm.org/journal/tors/editorial-board" target="_blank">ACM TORS編集委員会</a></li>
+                        <li>• <a href="https://dl.acm.org/journal/tors/special-issues" target="_blank">ACM TORS特集号一覧</a></li>
+                        <li>• <a href="https://recommender-systems.com/news/2021/06/08/acm-recsys-conference-a-conference-core/" target="_blank">ACM RecSys CORE Aランク昇格（2021年）</a></li>
+                        <li>• <a href="https://www.grandviewresearch.com/industry-analysis/recommendation-engine-market-report" target="_blank">Grand View Research - 推薦エンジン市場レポート</a></li>
+                        <li>• <a href="https://www.mordorintelligence.com/industry-reports/recommendation-engine-market" target="_blank">Mordor Intelligence - 推薦エンジン市場分析</a></li>
+                        <li>• <a href="https://recommender-systems.com/news/2025/12/18/10-new-acm-tors-papers-on-news-music-metrics-and-responsible-recommendation/" target="_blank">RS_c - 2025年TORS新規論文10本紹介</a></li>
+                        <li>• <a href="https://www.acm.org/articles/people-of-acm/2022/dietmar-jannach" target="_blank">People of ACM - Dietmar Jannachインタビュー</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['推薦システム専門性', '学術的影響力（IF）', '産業連携', '範囲の広さ', 'アクセシビリティ'],
+                datasets: [
+                    {
+                        label: 'ACM TORS',
+                        data: [98, 40, 85, 90, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ACM TOIS',
+                        data: [60, 75, 60, 70, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'UMUAI',
+                        data: [55, 55, 45, 50, 65],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'IEEE TKDE',
+                        data: [45, 90, 70, 85, 60],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
