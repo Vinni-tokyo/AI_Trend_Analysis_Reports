@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>후지쯔 'Takane'과 AI 드리븐 개발 플랫폼 - 소프트웨어 개발 전 공정 자동화의 충격</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: #166534; font-size: 1rem; }
+        .credibility-score-details { font-size: 0.8rem; color: #4a4a4a; line-height: 1.5; }
+        .overall-credibility { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; text-align: center; }
+        .overall-credibility h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 2rem; font-weight: 800; color: #166534; margin: 0.5rem 0; }
+        .overall-credibility-details { font-size: 0.9rem; color: #4a4a4a; line-height: 1.6; text-align: left; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='fujitsu-takane-ai-dev-platform-20260218-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='fujitsu-takane-ai-dev-platform-20260218-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='fujitsu-takane-ai-dev-platform-20260218-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>후지쯔 'Takane'과 AI 드리븐 개발 플랫폼<br>소프트웨어 개발 전 공정 자동화의 충격</h1>
+            <div class="subtitle">독자적 대규모 언어 모델과 멀티 에이전트 기술이 구현하는 생산성 100배의 세계</div>
+            <div class="meta">보고서 작성일: 2026년 2월 18일 | 심층 분석 보고서 (10페이지 이상)</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <!-- 트렌드 1 -->
+                <h3 class="subsection-title">1. 후지쯔 'Takane': 일본어 성능 세계 1위의 기업용 대규모 언어 모델</h3>
+                <p><strong>현황:</strong> 후지쯔는 캐나다의 Cohere사와 공동 개발한 대규모 언어 모델(LLM) 'Takane(타카네)'를 2024년 9월 30일부터 글로벌 제공을 시작했다. Cohere의 Command R+를 기반으로 후지쯔가 축적해 온 일본어 특화 LLM 개발 기술과 Cohere의 업무 특화 LLM 기술을 융합한 모델이다. 일본어 언어 이해 벤치마크 'JGLUE'에서 자연어 추론(JNLI)과 기계 독해(JSQuAD) 부문 세계 최고 기록을 달성했다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 기술과 특징</h4>
+                        <p>• <strong>베이스 모델:</strong> Cohere Command R+(업무 특화형 LLM)에 일본어 추가 학습 및 파인튜닝 실시<br>
+                        • <strong>다국어 지원:</strong> 일본어를 중심으로 영어, 독일어, 중국어, 포르투갈어 등 10개 언어 지원<br>
+                        • <strong>보안:</strong> 프라이빗 환경에서 운영 가능하며, 제조업 및 안보 분야에서도 활용 가능<br>
+                        • <strong>경량화 기술:</strong> 1비트 양자화로 메모리 소비율 94% 감소, 정밀도 유지율 89%(세계 최고), 추론 속도 3배 향상</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>벤치마크 실적</h4>
+                        <p>• <strong>JGLUE 자연어 추론(JNLI):</strong> 세계 최고 점수 달성<br>
+                        • <strong>JGLUE 기계 독해(JSQuAD):</strong> 세계 최고 점수 달성<br>
+                        • <strong>Nejumi LLM 리더보드 3:</strong> 의미 이해 및 구문 분석에서 높은 성능 기록<br>
+                        • <strong>Fujitsu Kozuchi 통합:</strong> AI 서비스 플랫폼 'Fujitsu Kozuchi'의 생성 AI 기능으로 통합 제공</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://pr.fujitsu.com/jp/news/2024/09/30.html" target="_blank">후지쯔 Takane 발표 보도자료</a> |
+                    <a href="https://cohere.com/customer-stories/fujitsu" target="_blank">Cohere × Fujitsu</a> |
+                    <a href="https://www.fujitsu.com/global/services/kozuchi/" target="_blank">Fujitsu Kozuchi</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 구체적인 벤치마크 데이터(JGLUE), 공식 보도자료 인용, Cohere 파트너십 세부 사항<br>
+                        <strong>개선점:</strong> JGLUE의 구체적인 수치 점수가 포함되면 더욱 좋음
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> 후지쯔는 2025년 9월에 생성 AI 재구성 기술을 개발하여 Takane의 1비트 양자화로 메모리 소비율 94% 감소와 추론 속도 3배 고속화를 실현했다. 향후 Fujitsu Kozuchi Physical AI 1.0과의 통합을 통해 로보틱스와 에이전틱 자동화 영역으로도 확장할 전망이다 (출처: 후지쯔 보도자료 2025년 9월 8일).</p>
+
+                <!-- 트렌드 2 -->
+                <h3 class="subsection-title">2. AI 드리븐 개발 플랫폼: 소프트웨어 개발 전 공정의 완전 자동화</h3>
+                <p><strong>현황:</strong> 2026년 2월 17일, 후지쯔는 Takane와 후지쯔연구소가 개발한 대규모 시스템 개발용 AI 에이전트 기술을 활용하여, 요건 정의부터 설계, 구현, 결합 테스트에 이르는 전 공정을 AI 에이전트가 협조적으로 실행하는 'AI-Driven Software Development Platform'의 운용을 시작했다고 발표했다. 2024년도 진료보수 개정에 따른 소프트웨어 개수의 실증 실험에서, 약 300건 중 1건에서 기존 3인월이 소요되던 개수를 4시간으로 단축하여 생산성이 100배 향상되었다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>3대 핵심 기술</h4>
+                        <p>• <strong>법령 이해 기술:</strong> 769페이지 진료보수 개정 문서를 종합 분석하여, 설계서 및 소스코드와 대조해 개수 요건과 개수 지점을 자동 특정<br>
+                        • <strong>자율 설계·감사 기술:</strong> 개발 노하우와 규칙을 이해하고, 품질 검증을 병행하여 자율적으로 실행. SE 수준의 설계 품질 구현<br>
+                        • <strong>결합 테스트 생성 기술:</strong> AI가 테스트 시나리오를 탐색하여, 요건 적합성을 확인하는 포괄적 조합 테스트 사양과 테스트 코드를 자동 생성</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>4계층 품질 관리 아키텍처</h4>
+                        <p>• <strong>자동 설계 레이어:</strong> 관찰·사고·행동을 반복하며, 개발 목표를 지속적으로 구체화<br>
+                        • <strong>가디언 레이어:</strong> 품질 감사인 역할을 수행하며, 불비나 모순이 있으면 반려 명령 실행<br>
+                        • <strong>지식 레이어:</strong> 명명 규칙이나 예외 운용 등 회사 고유의 암묵지를 규칙화하여 체계화<br>
+                        • <strong>정보 접근 레이어:</strong> 68,000건의 자산에서 필요한 정보만을 추출하여 AI에 제공</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://global.fujitsu/ja-jp/pr/news/2026/02/17-01" target="_blank">후지쯔 공식 보도자료</a> |
+                    <a href="https://www.itmedia.co.jp/aiplus/articles/2602/17/news086.html" target="_blank">ITmedia NEWS 보도</a> |
+                    <a href="https://enterprisezine.jp/news/detail/23741" target="_blank">EnterpriseZine 상세 기사</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 상세한 4계층 아키텍처, 구체적 수치(100배, 3인월→4시간, 769페이지, 68,000건 자산)<br>
+                        <strong>개선점:</strong> 100배 주장은 약 300건 중 1건(최우수 사례)이며, 평균적 개선율은 미공개
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> 2026년 1월부터 진료보수 개정 대응에 선행 도입을 시작했으며, 2026년도 중에 후지쯔Japan이 제공하는 전체 67개 의료·행정 분야 소프트웨어에 적용할 예정이다. 나아가 금융, 제조, 유통, 공공 분야로의 확대를 계획하고 있으며, 고객 및 파트너 기업에 대한 서비스 제공도 시작할 방침이다 (출처: 후지쯔 보도자료 2026년 2월 17일, EnterpriseZine 2026년 2월 17일).</p>
+
+                <!-- 트렌드 3 -->
+                <h3 class="subsection-title">3. 일본 기업의 LLM 개발 경쟁: Takane·tsuzumi·cotomi의 삼파전</h3>
+                <p><strong>현황:</strong> 일본의 대형 IT 기업들이 잇달아 독자적 LLM 개발에 주력하고 있다. 후지쯔의 'Takane', NTT의 'tsuzumi', NEC의 'cotomi'가 일본어 특화 기업용 LLM으로서 시장 경쟁을 벌이고 있다. 영어를 기반으로 한 GPT 등의 범용 LLM과는 달리, 일본어 처리 성능과 일본 국내 규제 대응을 차별화 요소로 삼고 있다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>각 모델의 특징 비교</h4>
+                        <p>• <strong>후지쯔 Takane:</strong> Cohere와 공동 개발. JGLUE 세계 최고 기록. Command R+ 기반으로 10개 언어 대응. 업무 자동화 기능 계승<br>
+                        • <strong>NTT tsuzumi/tsuzumi 2:</strong> 스크래치 개발의 순수 일본산. GPU 1개로 동작하는 경량 설계. 멀티모달 대응으로 도표 판독도 가능. 2025년 10월 차세대 버전 제공 시작<br>
+                        • <strong>NEC cotomi:</strong> 2023년 8월 타사에 앞서 제공 시작. 개별 업무에 대한 깊은 튜닝을 중시. 고속·고정밀도 처리가 특징</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>차별화 전략</h4>
+                        <p>• <strong>후지쯔의 강점:</strong> 글로벌 전개(Cohere 연계)와 대규모 시스템 개발에의 적용 실적. Kozuchi 플랫폼과의 통합<br>
+                        • <strong>NTT의 강점:</strong> '대형화 경쟁에는 참여하지 않겠다'는 전략. 경량·저비용·고보안의 순수 일본산 노선. 전력 업무 등 특화형 LLM 구축 추진<br>
+                        • <strong>NEC의 강점:</strong> 선점자 이점과 '좁고 깊은 커스터마이징'에 의한 업무 특화. 다수의 고객 기업과의 검증 실적</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://group.ntt/jp/newsrelease/2025/10/20/251020a.html" target="_blank">NTT tsuzumi 2</a> |
+                    <a href="https://jpn.nec.com/LLM/cotomi.html" target="_blank">NEC cotomi</a> |
+                    <a href="https://www.fujitsu.com/global/services/kozuchi/" target="_blank">Fujitsu Kozuchi</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 복수 출처의 비교(NTT, NEC, 후지쯔), 공식 제품 페이지 인용<br>
+                        <strong>개선점:</strong> 레이더 차트 평가값은 편집부의 추정치이며 독립적 벤치마크에 기반하지 않음
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> 닛케이에 따르면, NEC와 NTT는 '작은 대규모 언어 모델'로 승부하겠다는 방침을 명확히 하고 있다. 후지쯔는 Cohere와의 연계로 글로벌 전개를 축으로 하면서, AI 드리븐 개발 플랫폼과 같은 독자적인 애플리케이션 계층에서의 차별화를 도모하고 있다. 향후 각사의 LLM이 산업 특화형 솔루션으로 진화하여 일본 기업의 디지털 전환(DX) 추진을 가속화할 전망이다.</p>
+
+                <!-- 트렌드 4 -->
+                <h3 class="subsection-title">4. AI 코딩 에이전트 시장의 폭발적 성장</h3>
+                <p><strong>현황:</strong> AI 코딩 도구 시장은 2025년 기준 73.7억 달러 규모에 달하며, 2030년에는 239.7억 달러(연평균 성장률 26.6%)로 확대될 전망이다 (출처: Mordor Intelligence). GitHub Copilot의 연간 경상 수익(ARR)은 20억 달러를 돌파했으며, Claude Code(Anthropic)와 Anysphere(Cursor)도 각각 ARR 10억 달러를 넘어섰다. 상위 3사가 시장 점유율의 70% 이상을 차지하고 있다 (출처: CB Insights Research).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 플레이어 동향</h4>
+                        <p>• <strong>GitHub Copilot:</strong> ARR 20억 달러 돌파. Agent Mode를 전체 VS Code 사용자에게 개방. SWE-bench에서 Claude 3.7 Sonnet 조합으로 56% 합격률<br>
+                        • <strong>Claude Code:</strong> Opus 4.5로 SWE-bench Verified 80.9% 달성(최고 정확도). 커맨드라인에서 직접 조작 가능하며 깊은 코드베이스 이해가 특징<br>
+                        • <strong>Cursor:</strong> AI-first IDE(VS Code 포크). Composer 모드로 최대 8개 병렬 에이전트 지원. 월 20달러<br>
+                        • <strong>Devin:</strong> 가격을 월 500달러에서 20달러로 대폭 인하. 독자적 클라우드 샌드박스에서 계획~배포까지 일관 실행</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시장 구조의 변화</h4>
+                        <p>• <strong>자동 완성에서 자율형으로:</strong> 2026년의 AI 코딩 도구는 단순한 코드 보완에서, 계획·구현·테스트·디버깅을 자율적으로 수행하는 '자율형 팀원'으로 진화<br>
+                        • <strong>엔터프라이즈 도입 가속:</strong> IBM은 AI 도구로 개발 주기를 30% 이상 단축. 2026년에는 엔터프라이즈 소프트웨어 개발의 80%가 AI 자동화를 도입할 것으로 예측<br>
+                        • <strong>플랫폼 엔지니어링과의 융합:</strong> 표준화된 개발 환경이 AI 도구의 성능을 극대화. AI + Platform Engineering이 최중요 트렌드</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://github.com/features/copilot" target="_blank">GitHub Copilot</a> |
+                    <a href="https://www.anthropic.com/" target="_blank">Anthropic Claude Code</a> |
+                    <a href="https://cursor.sh/" target="_blank">Cursor</a> |
+                    <a href="https://www.cognition.ai/" target="_blank">Devin</a> |
+                    <a href="https://factory.ai/" target="_blank">Factory AI</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Mordor Intelligence의 시장 규모 데이터, CB Insights의 ARR 데이터, 구체적인 SWE-bench 점수<br>
+                        <strong>개선점:</strong> 일부 ARR 수치는 출처에 따라 상이할 수 있음
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> Analytics India Magazine은 '2026년은 소프트웨어 엔지니어링이 AI 네이티브가 되는 해'라고 선언했다. Level 3의 AI 에이전트는 다단계 작업을 계획·실행하고, 오류를 만나도 인간의 개입 없이 디버깅과 재시도를 수행한다. 후지쯔의 AI 드리븐 개발 플랫폼은 이러한 글로벌 흐름과 궤를 같이하는 시도이며, 특히 엔터프라이즈 대규모 시스템의 전 공정 자동화라는 영역에서 독자적인 포지션을 확립하고 있다.</p>
+
+                <!-- 트렌드 5 -->
+                <h3 class="subsection-title">5. AI-Ready Engineering: 자동화의 전제조건으로서의 사전 준비</h3>
+                <p><strong>현황:</strong> 후지쯔가 제창하는 'AI-Ready Engineering'은 AI에 의한 개발 자동화를 성공시키기 위한 사전 준비 프로세스로, 다음의 4가지 요소로 구성된다. (1) 시스템 자산의 이해, (2) 개발 규칙의 표준화, (3) 정확한 데이터 준비, (4) 실행 환경의 설정. 이 프레임워크는 단순히 AI 도구를 도입하는 것만으로는 충분한 성과를 얻을 수 없다는 실천 지식에 기반하고 있다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>후지쯔의 경쟁 우위</h4>
+                        <p>• <strong>암묵지의 체계화:</strong> 오랜 SI 경험에서 축적한 시스템 엔지니어의 암묵지를 규칙화하여 AI 에이전트에 학습시키는 기술<br>
+                        • <strong>대규모 자산 대응:</strong> 68,000건의 프로그램 자산에서 필요한 부분을 정확하게 추출하는 정보 접근 기술<br>
+                        • <strong>할루시네이션 방지:</strong> 가디언 레이어에 의한 품질 감사로 AI의 오류·모순을 감지하여 반려하는 체계</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>업계에의 시사점</h4>
+                        <p>• <strong>진입 장벽 형성:</strong> 수십 년에 걸친 대규모 시스템 개발 지식이 필요하며, 신규 진입자가 쉽게 모방할 수 없음<br>
+                        • <strong>SE의 역할 변화:</strong> '생성 AI 도입으로 단순 개발의 가치는 하락한다. 지속적인 시스템 진화야말로 차별화 요소' (후지쯔 오카다 타케시 씨)<br>
+                        • <strong>24시간 365일 개발:</strong> '자기 릴레이 방식' 아키텍처로, 인간이 중단을 지시하지 않는 한 지속적으로 개발 수행</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://enterprisezine.jp/news/detail/23741" target="_blank">EnterpriseZine 상세 기사</a> |
+                    <a href="https://cloud.watch.impress.co.jp/docs/news/2086629.html" target="_blank">클라우드 Watch 기사</a> |
+                    <a href="https://note.com/fujitsu_pr/n/n52583c18f838" target="_blank">후지쯔 홍보 note</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">7.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 경영진 인용, 공식 출처의 프레임워크 설명<br>
+                        <strong>개선점:</strong> 개념은 주로 후지쯔 자체의 프레이밍이며, 독립적 검증은 제한적
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> AI-Ready Engineering의 사고방식은 후지쯔 고유의 것에 머무르지 않고, 향후 엔터프라이즈 AI 도입 전반에 적용 가능한 보편적 프레임워크가 될 가능성이 있다. IDC, Google Cloud Japan, IBM Japan, Microsoft Japan도 이 접근법에 기대를 표명했으며, 2026년 2분기 이후에는 오픈 개발자 커뮤니티 출범도 계획되어 있다 (출처: EnterpriseZine 2026년 2월 17일).</p>
+
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4계층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI 기반 소프트웨어 개발 시장은 대상 사용자와 자동화 범위에 따라 4계층으로 분류할 수 있다. 후지쯔의 AI 드리븐 개발 플랫폼은 제4계층 '엔터프라이즈 전 공정 자동화'에 위치하는 유일한 플레이어로, 타사와는 명확히 다른 포지션을 차지하고 있다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>도구/플랫폼</th>
+                            <th>카테고리</th>
+                            <th>주요 특징</th>
+                            <th>대상 사용자</th>
+                            <th>ARR/가격</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>GitHub Copilot</strong></td>
+                            <td>AI 페어 프로그래밍</td>
+                            <td>멀티모델 대응, Agent Mode, VS Code 통합</td>
+                            <td>개인 개발자·팀</td>
+                            <td>ARR 20억 달러 이상</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Claude Code</strong></td>
+                            <td>자율형 코딩 에이전트</td>
+                            <td>SWE-bench 80.9% 최고 정확도, CLI 조작, 깊은 코드베이스 이해</td>
+                            <td>개발자·엔지니어</td>
+                            <td>ARR 10억 달러 이상</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cursor</strong></td>
+                            <td>AI-first IDE</td>
+                            <td>VS Code 포크, Composer 모드, 8 병렬 에이전트</td>
+                            <td>개발자·팀</td>
+                            <td>월 20달러</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Devin</strong></td>
+                            <td>자율형 소프트웨어 엔지니어</td>
+                            <td>클라우드 샌드박스로 전 공정 실행, 계획~배포</td>
+                            <td>개발 팀</td>
+                            <td>월 20달러</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Factory AI</strong></td>
+                            <td>에이전트 네이티브 개발</td>
+                            <td>Agent-native Software Development</td>
+                            <td>엔터프라이즈</td>
+                            <td>문의 필요</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NTT tsuzumi 2</strong></td>
+                            <td>일본산 LLM 기반</td>
+                            <td>경량·저비용·순수 일본산, 멀티모달, 전력 업무 특화</td>
+                            <td>일본 기업</td>
+                            <td>문의 필요</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NEC cotomi</strong></td>
+                            <td>일본산 LLM 기반</td>
+                            <td>개별 업무 깊은 튜닝, 고속·고정밀도</td>
+                            <td>일본 기업</td>
+                            <td>문의 필요</td>
+                        </tr>
+                        <tr style="background: #f0f7ff;">
+                            <td><strong>후지쯔 AI 드리븐 개발 플랫폼</strong></td>
+                            <td>엔터프라이즈 전 공정 자동화</td>
+                            <td>Takane LLM + 4계층 멀티에이전트, 법령 이해, 24시간 자동 개발</td>
+                            <td>대규모 엔터프라이즈</td>
+                            <td>자체 활용→고객 제공 예정</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 트렌드 (5가지 중요한 변화)</h3>
+                <ul style="list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>코드 보완에서 전 공정 자동화로:</strong> AI의 역할이 '행 단위 제안'에서 '프로젝트 전체의 자율 실행'으로 확대. 후지쯔는 요건 정의~결합 테스트의 전 공정을 자동화</li>
+                    <li><strong>개인 개발자에서 엔터프라이즈로:</strong> GitHub Copilot으로 대표되는 개인용 도구의 보급을 거쳐, 엔터프라이즈 대규모 시스템에의 적용이 본격화</li>
+                    <li><strong>범용 LLM에서 도메인 특화 LLM으로:</strong> 일본어 성능이나 보안 요건 등 업무 고유의 필요에 대응하는 커스터마이징 모델 수요 증가</li>
+                    <li><strong>멀티 에이전트 협조의 진화:</strong> 단일 AI에서 복수 에이전트가 협조하는 방식으로 전환. 품질 감사·지식 관리·정보 접근의 역할 분담이 품질을 담보</li>
+                    <li><strong>AI-Ready Engineering의 대두:</strong> AI 도구 도입의 전제로, 기존 시스템 자산의 정리와 암묵지의 체계화가 불가결하다는 인식 확산</li>
+                </ul>
+
+                <h3 class="subsection-title">주요 플랫폼 역량 비교 차트</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">일본 자국산 LLM 비교 차트</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="llmComparisonChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근법을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>법규제 대응의 자동화</strong> - 진료보수 개정이나 법 개정 등의 규제 변경에 따른 소프트웨어 개수를, AI 드리븐 개발 플랫폼으로 자동화하여 대응 속도와 품질을 비약적으로 향상</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>레거시 시스템의 AI-Ready화</strong> - 기존의 대규모 기간 시스템에 AI-Ready Engineering을 적용하여, 자산 재고 조사·암묵지의 규칙화·개발 환경의 표준화를 단계적으로 추진</p>
+                    <p style="line-height: 1.6;">3. <strong>일본산 LLM의 업무 특화 활용</strong> - Takane, tsuzumi, cotomi 등 일본산 LLM을 프라이빗 환경에서 활용하여, 보안 요건이 엄격한 금융·행정 분야에서의 생성 AI 도입을 추진</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 핵심 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">핵심 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 발견사항</h3>
+                    <ul class="key-findings">
+                        <li><strong>생산성 100배 실증:</strong> 후지쯔는 진료보수 개정 대응에서 3인월→4시간의 개수를 실현. 다만 약 300건 중 1건의 최우수 사례이며, 전체 건의 평균 생산성 향상률은 향후 검증이 필요</li>
+                        <li><strong>일본발 전 공정 자동화:</strong> 요건 정의~결합 테스트의 전 공정을 AI 에이전트가 협조적으로 실행하는 구조는 글로벌에서도 유례가 없는 시도. GitHub Copilot 등의 개인 개발자용 도구와는 다른 엔터프라이즈 영역에서의 도전</li>
+                        <li><strong>4계층 품질 관리가 차별화의 핵심:</strong> 자동 설계·가디언·지식·정보 접근의 4레이어로 AI의 할루시네이션을 방지하며 SE 수준의 품질을 유지. 수십 년의 대규모 SI 경험이 진입 장벽으로 작용</li>
+                        <li><strong>일본산 LLM 경쟁은 '공존' 단계로:</strong> 후지쯔(글로벌×애플리케이션 계층), NTT(경량×저비용), NEC(깊은 커스터마이징) 등 각사의 방향성이 명확해지는 중</li>
+                        <li><strong>AI 코딩 도구 시장은 2030년 240억 달러 규모로:</strong> 연평균 성장률 26.6%로 급속 확대. 엔터프라이즈 도입의 본격화가 다음 성장 동력</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>법규제 대응이 빈번한 대규모 엔터프라이즈 → 후지쯔 AI 드리븐 개발 플랫폼</strong><br>
+                        이유: 법령 문서 이해부터 결합 테스트까지의 전 공정 자동화는, 진료보수 개정 등 정기적인 규제 대응을 안고 있는 조직에 최적. 현 시점에서는 후지쯔 내부 활용이 중심.<br><br>
+                        <strong>개발 팀의 생산성 향상 (중규모) → GitHub Copilot + Claude Code</strong><br>
+                        이유: Copilot Pro+(월 39달러)와 Claude Code(SWE-bench 최고 정확도)의 조합이 비용 대비 효과와 정확도의 균형에서 우수.<br><br>
+                        <strong>일본어 보안 환경에서의 AI 활용 → NTT tsuzumi 2 / NEC cotomi</strong><br>
+                        이유: 프라이빗 환경에서의 운영이 가능하며 일본어 성능에 특화. 금융·관공서 등 고보안 요건의 조직에 적합.<br><br>
+                        <strong>스타트업/소규모 팀 → Cursor / Devin</strong><br>
+                        이유: 월 20달러의 합리적 가격으로 자율적 코드 생성·테스트 기능 이용 가능. 빠른 개발 사이클에 최적.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (후지쯔의 AI 드리븐 개발 플랫폼은 '엔터프라이즈 대규모 시스템의 전 공정 자동화'라는 미답의 영역에 발을 내딛은 획기적인 시도이다. 한편 '100배 생산성'은 최우수 사례이며, 전반적인 재현성 검증과 적용 범위의 확대가 향후 과제가 된다)</p>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>대규모 언어 모델(LLM: Large Language Model)</strong> - 방대한 텍스트 데이터를 학습하여 인간처럼 자연스러운 문장을 생성·이해할 수 있는 AI 모델. ChatGPT, Claude, Takane 등이 대표적
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>AI 에이전트</strong> - 특정 목적을 향해 자율적으로 판단·행동하는 AI 프로그램. 복수의 에이전트가 협조하는 구조를 '멀티 에이전트 시스템'이라 부름
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>SWE-bench</strong> - 소프트웨어 엔지니어링 작업에서의 AI 성능을 측정하는 벤치마크. 실제 GitHub 이슈를 해결하는 능력을 평가. Claude Opus 4.5가 80.9%로 세계 최고
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>AI-Ready Engineering</strong> - AI에 의한 자동화를 성공시키기 위한 사전 준비 프로세스. 기존 시스템 자산 정리, 개발 규칙 표준화, 암묵지의 규칙화가 포함. 후지쯔가 제창
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>JGLUE</strong> - 일본어 자연어 이해 벤치마크. 자연어 추론(JNLI)이나 기계 독해(JSQuAD) 등의 과제로 LLM의 일본어 처리 능력을 평가하는 지표
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>할루시네이션(Hallucination)</strong> - AI가 사실에 기반하지 않은 잘못된 정보를 그럴듯하게 생성하는 현상. 후지쯔는 가디언 레이어로 감지·수정하는 체계를 구축
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>양자화(Quantization)</strong> - AI 모델의 연산 정밀도를 의도적으로 낮추어 메모리 사용량을 줄이고 처리 속도를 향상시키는 기술. Takane에서는 1비트 양자화로 메모리 94% 감소 달성
+                    </div>
+                    <div>
+                        <strong>Fujitsu Kozuchi</strong> - 후지쯔가 제공하는 AI 서비스 플랫폼. 생성 AI, AutoML, 예측 분석, 이미지 인식, 텍스트 분석, AI 신뢰성, 설명 가능 AI의 7개 분야로 구성
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 2월 18일</p>
+                    <ul>
+                        <li>• <a href="https://global.fujitsu/ja-jp/pr/news/2026/02/17-01" target="_blank">후지쯔 공식 보도자료 'AI 드리븐 개발 플랫폼 개발 및 운용 개시' (2026년 2월 17일)</a></li>
+                        <li>• <a href="https://www.prnewswire.com/news-releases/fujitsu-automates-entire-software-development-lifecycle-with-new-ai-driven-software-development-platform-302689406.html" target="_blank">PR Newswire - Fujitsu automates entire software development lifecycle (2026년 2월 17일)</a></li>
+                        <li>• <a href="https://www.itmedia.co.jp/aiplus/articles/2602/17/news086.html" target="_blank">ITmedia NEWS '후지쯔, 소프트웨어 개발 전 공정을 AI로 자동화 생산성 100배' (2026년 2월 17일)</a></li>
+                        <li>• <a href="https://enterprisezine.jp/news/detail/23741" target="_blank">EnterpriseZine '후지쯔가 시스템 개발 비즈니스를 바꿔 나간다' (2026년 2월 17일)</a></li>
+                        <li>• <a href="https://cloud.watch.impress.co.jp/docs/news/2086629.html" target="_blank">클라우드 Watch '후지쯔, 시스템 개발 전 공정 자동화 AI-Driven Software Development Platform' (2026년 2월 17일)</a></li>
+                        <li>• <a href="https://news.mynavi.jp/techplus/article/20260217-4137042/" target="_blank">마이나비 뉴스 '후지쯔, AI 에이전트로 소프트웨어 개발 전 공정 자동화' (2026년 2월 17일)</a></li>
+                        <li>• <a href="https://pr.fujitsu.com/jp/news/2024/09/30.html" target="_blank">후지쯔 'Takane' 제공 시작 보도자료 (2024년 9월 30일)</a></li>
+                        <li>• <a href="https://group.ntt/jp/newsrelease/2025/10/20/251020a.html" target="_blank">NTT 'tsuzumi 2' 제공 시작 뉴스 릴리스 (2025년 10월 20일)</a></li>
+                        <li>• <a href="https://jpn.nec.com/LLM/cotomi.html" target="_blank">NEC cotomi 공식 페이지</a></li>
+                        <li>• <a href="https://www.mordorintelligence.com/industry-reports/artificial-intelligence-code-tools-market" target="_blank">Mordor Intelligence - AI Code Tools Market Size & 2030 Trends Report</a></li>
+                        <li>• <a href="https://www.cbinsights.com/research/report/coding-ai-market-share-2025/" target="_blank">CB Insights Research - Coding AI agents market share 2025</a></li>
+                        <li>• <a href="https://analyticsindiamag.com/ai-highlights/2026-the-year-software-engineering-will-become-ai-native/" target="_blank">Analytics India Magazine '2026: The Year Software Engineering Will Become AI Native'</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Overall Credibility -->
+            <div class="overall-credibility">
+                <h3>종합 신뢰도 평가</h3>
+                <div class="overall-credibility-score">7.9/10</div>
+                <div class="overall-credibility-details">
+                    <p><strong>종합 평가:</strong> 공식 보도자료와 복수의 보도기관 확인 데이터에 기반한 신뢰도 높은 분석</p>
+                    <p><strong>주요 강점:</strong> 구체적인 벤치마크 데이터, 시장 데이터의 명확한 출처, 4계층 아키텍처의 상세한 기술 설명</p>
+                    <p><strong>개선 우선순위:</strong> 생산성 100배 주장은 최우수 사례(300건 중 1건)이며, 평균적 개선율의 공개가 기대됨. 레이더 차트 평가값은 편집부의 추정치</p>
+                </div>
+            </div>
+
+            <div class="disclaimer" style="display: none;">
+                <p>이 보고서는 AI가 생성한 내용이며, 모든 정보의 정확성을 보장하지 않습니다. 중요한 의사결정 전에는 원본 출처에서의 확인을 권장합니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 경쟁사 비교 레이더 차트
+        const ctx1 = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'radar',
+            data: {
+                labels: ['자동화 범위', '엔터프라이즈 대응', '정확도/품질', '비용 효율', '도입 용이성'],
+                datasets: [
+                    {
+                        label: '후지쯔 AI 드리븐 개발 플랫폼',
+                        data: [98, 95, 85, 60, 40],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'GitHub Copilot',
+                        data: [50, 70, 75, 90, 95],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Claude Code',
+                        data: [65, 60, 95, 80, 85],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Devin',
+                        data: [80, 50, 70, 85, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Cursor',
+                        data: [55, 55, 80, 90, 90],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } }
+                }
+            }
+        });
+
+        // 일본 자국산 LLM 비교 차트
+        const ctx2 = document.getElementById('llmComparisonChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['일본어 성능', '다국어 대응', '프라이버시/보안', '경량성', '커스터마이징', '에코시스템'],
+                datasets: [
+                    {
+                        label: '후지쯔 Takane',
+                        data: [95, 90, 85, 60, 75, 85],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'NTT tsuzumi 2',
+                        data: [90, 50, 90, 95, 80, 65],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'NEC cotomi',
+                        data: [85, 45, 85, 80, 90, 60],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } }
+                }
+            }
+        });
+    </script>
+
+    <!-- 인터랙션 컴포넌트 -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">이름 (선택사항)</label>
+                    <input type="text" id="comment-author" placeholder="익명" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">댓글</label>
+                    <textarea id="comment-content" placeholder="의견을 남겨주세요..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">댓글 작성</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">댓글을 불러오는 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
