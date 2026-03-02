@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expert Systems with Applications — 学術誌 深層分析レポート</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, #001e5c 0%, #003d8f 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; }
+        .lang-btn.active { background: white; color: #001e5c; border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1.2rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+        .metric-card { background: #f8fafc; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem; text-align: center; }
+        .metric-value { font-size: 1.6rem; font-weight: 700; color: #001e5c; }
+        .metric-label { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 0.75rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; color: #0369a1; }
+        .credibility-score-value { font-weight: 700; color: #0369a1; font-size: 1rem; }
+        .credibility-score-details { color: #555; line-height: 1.5; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e5e5; border-radius: 4px; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; font-weight: bold; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        @media (max-width: 768px) { .trend-grid, .metrics-grid { grid-template-columns: 1fr; } .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← トップ</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='expert-systems-applications-journal-20260302-ja.html'" class="lang-btn active">日本語</button>
+                <button onclick="window.location.href='expert-systems-applications-journal-20260302-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='expert-systems-applications-journal-20260302-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>Expert Systems with Applications<br>学術誌 深層分析レポート</h1>
+        <div class="subtitle">ESWA完全ガイド：現状・トレンド・投稿戦略</div>
+        <div class="meta">レポート作成日：2026年3月2日 | 深層分析 | データ基準：2024–2025年</div>
+    </div>
+    <div class="content">
+
+        <!-- 主要指標 -->
+        <section class="section">
+            <h2 class="section-title">主要パフォーマンス指標（2024年）</h2>
+            <div class="metrics-grid">
+                <div class="metric-card"><div class="metric-value">7.5</div><div class="metric-label">インパクトファクター（WoS JCR）</div></div>
+                <div class="metric-card"><div class="metric-value">10.48</div><div class="metric-label">インパクトファクター（Scopus）</div></div>
+                <div class="metric-card"><div class="metric-value">12.2</div><div class="metric-label">CiteScore（2024年）</div></div>
+                <div class="metric-card"><div class="metric-value">290</div><div class="metric-label">h指数</div></div>
+                <div class="metric-card"><div class="metric-value">1.854</div><div class="metric-label">SJR（SCImago）</div></div>
+                <div class="metric-card"><div class="metric-value">Q1</div><div class="metric-label">四分位ランク（2024年）</div></div>
+            </div>
+        </section>
+
+        <!-- 主要トレンド分析 -->
+        <section id="trends" class="section">
+            <h2 class="section-title">主要トレンド分析</h2>
+
+            <h3 class="subsection-title">1. インパクトファクターの急上昇とAI研究ブームとの相関</h3>
+            <p><strong>現状：</strong>ESWAのScopus基準インパクトファクターは2024年に10.48となり、前年比12.81%上昇しました。WoS JCR基準では7.5です。AI・機械学習研究の爆発的成長とともに、ESWAがこの分野の中核的な掲載媒体として確立された結果です（出典：Resurchify、BioxBio、2024年）。</p>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>インパクトファクターの現状</h4>
+                    <p>• <strong>WoS JCR 2024：</strong>7.5<br>
+                    • <strong>Scopus 2024：</strong>10.48（前年比+12.81%）<br>
+                    • <strong>CiteScore 2024：</strong>12.2<br>
+                    • <strong>SJR：</strong>1.854 / <strong>SNIP：</strong>2.99<br>
+                    • <strong>3年間の被引用論文数：</strong>63,040件</p>
+                </div>
+                <div class="trend-card">
+                    <h4>出版規模（2024年）</h4>
+                    <p>• <strong>年間掲載論文数：</strong>1,385本<br>
+                    • <strong>総累積論文数：</strong>21,215本以上<br>
+                    • <strong>総累積被引用数：</strong>169,065回以上<br>
+                    • <strong>h指数：</strong>290<br>
+                    • <strong>創刊：</strong>1990年（35年の歴史）</p>
+                </div>
+            </div>
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span class="credibility-score-label">信頼性評価：</span>
+                    <span class="credibility-score-value">9/10</span>
+                </div>
+                <div class="credibility-score-details">
+                    <strong>強み：</strong>Resurchify、BioxBio、Researcher.Lifeなど複数の権威あるメトリクスデータベースを引用<br>
+                    <strong>注記：</strong>WoS JCR（7.5）とScopus（10.48）の数値が異なる点を明示。所属機関の評価基準を事前確認のこと
+                </div>
+            </div>
+            <div class="related-links">
+                <strong>🔗 関連リンク：</strong>
+                <a href="https://www.sciencedirect.com/journal/expert-systems-with-applications" target="_blank">ESWA公式サイト</a> |
+                <a href="https://www.resurchify.com/impact/details/24201" target="_blank">Resurchifyメトリクス</a> |
+                <a href="https://www.bioxbio.com/journal/EXPERT-SYST-APPL" target="_blank">BioxBio IF推移</a> |
+                <a href="https://www.scimagojr.com/journalsearch.php?q=24201&tip=sid" target="_blank">SCImago SJR</a>
+            </div>
+            <p><strong>展望：</strong>AI研究のトレンドが続く限り、ESWAのインパクトファクターは中短期的に上昇傾向を維持すると予想されます。</p>
+
+            <h3 class="subsection-title">2. AI・ML研究領域の深化と多様化</h3>
+            <p><strong>現状：</strong>ESWAは従来のエキスパートシステムから出発し、現在は深層学習、自然言語処理、コンピュータビジョン、強化学習などAI全分野を包括する学術誌へと進化しました。2024年に掲載された1,385本のうち、AI・ML応用研究が中核を占め、ヘルスケア・金融・Industry 4.0分野の応用論文が特に高い被引用率を記録しています（出典：SciSpace 2024年論文分析）。</p>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>主要研究分野</h4>
+                    <p>• <strong>機械学習・深層学習：</strong>分類、予測、生成モデル<br>
+                    • <strong>自然言語処理（NLP）：</strong>感情分析、テキストマイニング<br>
+                    • <strong>コンピュータビジョン：</strong>物体検出、医用画像解析<br>
+                    • <strong>ファジィ論理：</strong>不確実性処理システム<br>
+                    • <strong>知識ベースシステム：</strong>オントロジー、推論エンジン</p>
+                </div>
+                <div class="trend-card">
+                    <h4>応用産業分野</h4>
+                    <p>• <strong>ヘルスケア：</strong>診断支援、創薬、予後予測<br>
+                    • <strong>金融：</strong>リスク管理、不正検知<br>
+                    • <strong>Industry 4.0：</strong>予知保全、品質管理、IoT<br>
+                    • <strong>教育：</strong>AIベースの個別化学習<br>
+                    • <strong>エネルギー：</strong>需要予測、スマートグリッド最適化</p>
+                </div>
+            </div>
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span class="credibility-score-label">信頼性評価：</span>
+                    <span class="credibility-score-value">8/10</span>
+                </div>
+                <div class="credibility-score-details">
+                    <strong>強み：</strong>ScienceDirect公式スコープおよびSciSpace 2024年論文分析データに基づく<br>
+                    <strong>改善点：</strong>分野別の正確な掲載比率は独自の書誌計量分析が必要
+                </div>
+            </div>
+            <div class="related-links">
+                <strong>🔗 関連リンク：</strong>
+                <a href="https://scispace.com/journals/expert-systems-with-applications-15wqujal/2024" target="_blank">SciSpace 2024年論文リスト</a> |
+                <a href="https://dblp.org/db/journals/eswa/index.html" target="_blank">DBLP ESWAアーカイブ</a>
+            </div>
+            <p><strong>展望：</strong>大規模言語モデル（LLM）、マルチモーダルAI、説明可能なAI（XAI）関連論文の急増により、ESWAの研究地形はさらに多様化する見通しです。</p>
+
+            <h3 class="subsection-title">3. 査読速度の問題と著者体験</h3>
+            <p><strong>現状：</strong>ESWAの平均査読期間は約13.8ヶ月で、AI・CS分野の学術誌の中では比較的長い部類に入ります。SciRevおよびAcademic Acceleratorの著者レビューによると、一部の事例では最初の査読結果が届くまでに73.9週（約17ヶ月）かかった例もあります。論文投稿数の急増と査読者不足が主な原因です（出典：LetPub、SciRev、Academic Accelerator）。</p>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>査読プロセスの特徴</h4>
+                    <p>• <strong>査読方式：</strong>シングルブラインド査読<br>
+                    • <strong>最小査読者数：</strong>独立した専門家2名<br>
+                    • <strong>平均査読期間：</strong>約13.8ヶ月<br>
+                    • <strong>最長事例：</strong>73.9週（約17ヶ月）<br>
+                    • <strong>エディター初期確認：</strong>投稿後数週間以内</p>
+                </div>
+                <div class="trend-card">
+                    <h4>著者体験と改善要望</h4>
+                    <p>• <strong>主な不満：</strong>長い査読待ち時間<br>
+                    • <strong>コミュニケーション：</strong>エディターの返信が遅いとの指摘<br>
+                    • <strong>査読品質：</strong>査読者によって大きなばらつき<br>
+                    • <strong>著者へのアドバイス：</strong>進捗確認メールを積極活用<br>
+                    • <strong>デスク却下：</strong>スコープ外の論文は迅速に却下</p>
+                </div>
+            </div>
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span class="credibility-score-label">信頼性評価：</span>
+                    <span class="credibility-score-value">7.5/10</span>
+                </div>
+                <div class="credibility-score-details">
+                    <strong>強み：</strong>LetPub、SciRevなど実際の著者体験に基づくデータ<br>
+                    <strong>改善点：</strong>個人差が大きく、統計的代表性に限界あり
+                </div>
+            </div>
+            <div class="related-links">
+                <strong>🔗 関連リンク：</strong>
+                <a href="https://www.letpub.com/index.php?journalid=2799&page=journalapp&view=detail" target="_blank">LetPub 査読速度</a> |
+                <a href="https://scirev.org/journal/expert-systems-with-applications/" target="_blank">SciRev 著者レビュー</a> |
+                <a href="https://academic-accelerator.com/Review-Speed/Expert-Systems-with-Applications" target="_blank">Academic Accelerator</a>
+            </div>
+            <p><strong>展望：</strong>投稿数が増加し続ける傾向を考えると、査読遅延問題の短期的解決は難しいでしょう。迅速な掲載が必要な場合は、Knowledge-Based SystemsやApplied Intelligenceを代替候補として検討することが現実的です。</p>
+
+            <h3 class="subsection-title">4. オープンアクセス移行とAPC政策</h3>
+            <p><strong>現状：</strong>ESWAはハイブリッド型オープンアクセスモデルを採用しており、オープンアクセス掲載時のAPC（論文掲載料）はUSD 3,490です。Elsevierのグローバル転換契約を通じて、一部の国・機関の研究者はAPC割引を受けることができます（出典：Elsevier ScienceDirect オープンアクセス情報ページ）。</p>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>出版費用の構造</h4>
+                    <p>• <strong>APC（オープンアクセス）：</strong>USD 3,490（税別）<br>
+                    • <strong>購読型掲載：</strong>著者負担なし<br>
+                    • <strong>著作権：</strong>著者保有・Elsevierに出版権を許諾<br>
+                    • <strong>機関協定：</strong>各国の転換契約が適用可能<br>
+                    • <strong>ORCID：</strong>責任著者は必須登録</p>
+                </div>
+                <div class="trend-card">
+                    <h4>オープンアクセスの現状</h4>
+                    <p>• <strong>モデル：</strong>ハイブリッド型（購読＋OA選択）<br>
+                    • <strong>ライセンス：</strong>CC BYなど選択可能<br>
+                    • <strong>Plan S対応：</strong>cOAlition Sの要件を充足<br>
+                    • <strong>途上国支援：</strong>Research4Life割引プログラム<br>
+                    • <strong>展望：</strong>完全OA移行に向けた議論が進行中</p>
+                </div>
+            </div>
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span class="credibility-score-label">信頼性評価：</span>
+                    <span class="credibility-score-value">8.5/10</span>
+                </div>
+                <div class="credibility-score-details">
+                    <strong>強み：</strong>Elsevier公式OAページに基づきAPCを正式確認<br>
+                    <strong>注記：</strong>国・機関によって個別のAPC額が適用される場合あり
+                </div>
+            </div>
+            <div class="related-links">
+                <strong>🔗 関連リンク：</strong>
+                <a href="https://www.sciencedirect.com/journal/expert-systems-with-applications/publish/open-access-options" target="_blank">ESWA オープンアクセスオプション</a>
+            </div>
+            <p><strong>展望：</strong>OAを義務化する研究助成機関が増加するにつれ、ESWAのOA掲載比率も徐々に高まると予想されます。</p>
+
+            <h3 class="subsection-title">5. 投稿却下ポリシーの強化とスコープの明確化</h3>
+            <p><strong>現状：</strong>ESWAは特定の論文タイプに対する掲載却下ポリシーを明確にしています。既存の概念を単に異なるメタファーで再包装したアルゴリズム（例：生物学的着想に基づく最適化アルゴリズムの繰り返し変形提案）や、応用上の貢献が明確でない論文は、初期審査段階で却下されます（出典：ESWA著者ガイドライン）。</p>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>掲載に適した論文タイプ</h4>
+                    <p>• <strong>応用重視：</strong>実際の問題へのAI・ML適用<br>
+                    • <strong>比較実験：</strong>既存手法に対する優位性の説得力ある証明<br>
+                    • <strong>革新的システム：</strong>新しいエキスパートシステムの設計<br>
+                    • <strong>融合研究：</strong>AI＋ドメイン専門知識の相乗効果<br>
+                    • <strong>実用的貢献：</strong>産業・社会への適用可能性の明示</p>
+                </div>
+                <div class="trend-card">
+                    <h4>掲載に不適切な論文タイプ</h4>
+                    <p>• <strong>メタファーアルゴリズム：</strong>単純な再包装最適化<br>
+                    • <strong>純粋理論：</strong>応用のない数学的研究のみ<br>
+                    • <strong>低い新規性：</strong>既存研究の漸進的な拡張のみ<br>
+                    • <strong>小規模実験：</strong>非代表的なデータセットの使用<br>
+                    • <strong>スコープ外：</strong>ESWAのテーマと無関係な研究</p>
+                </div>
+            </div>
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span class="credibility-score-label">信頼性評価：</span>
+                    <span class="credibility-score-value">8/10</span>
+                </div>
+                <div class="credibility-score-details">
+                    <strong>強み：</strong>ESWA公式著者ガイドラインおよびエディター声明に基づく<br>
+                    <strong>改善点：</strong>実際の却下率統計は非公開
+                </div>
+            </div>
+            <p><strong>展望：</strong>AI研究の品質基準が全般的に高まるにつれ、ESWAの採択基準も一層厳格化することが予想されます。投稿前に著者ガイドラインを熟読し、応用上の貢献を明確に示すことが採択成功の鍵です。</p>
+        </section>
+
+        <!-- 競合誌環境 -->
+        <section id="competitive" class="section">
+            <h2 class="section-title">競合誌環境と市場ポジショニング</h2>
+
+            <h3 class="subsection-title">AI・CS分野の主要学術誌比較</h3>
+            <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">ESWAと競合関係にある主要AI・コンピュータサイエンス学術誌の主要指標比較（データ基準：2024年公開メトリクス）</p>
+            <table>
+                <thead>
+                    <tr><th>学術誌名</th><th>IF（WoS）</th><th>CiteScore</th><th>h指数</th><th>区分</th><th>特徴</th></tr>
+                </thead>
+                <tbody>
+                    <tr style="background:#f0f7ff;"><td><strong>Expert Systems with Applications</strong></td><td><strong>7.5</strong></td><td><strong>12.2</strong></td><td><strong>290</strong></td><td><strong>Q1</strong></td><td>AI応用分野最大規模</td></tr>
+                    <tr><td>IEEE TNNLS</td><td>~10.2</td><td>~17.0</td><td>~220</td><td>Q1</td><td>深層学習・神経回路網特化</td></tr>
+                    <tr><td>Information Sciences</td><td>~8.1</td><td>~11.5</td><td>~210</td><td>Q1</td><td>情報理論全般を包括</td></tr>
+                    <tr><td>Knowledge-Based Systems</td><td>~7.2</td><td>~11.0</td><td>~190</td><td>Q1</td><td>知識表現・推論中心</td></tr>
+                    <tr><td>Pattern Recognition</td><td>~7.5</td><td>~12.0</td><td>~200</td><td>Q1</td><td>パターン認識・CV</td></tr>
+                    <tr><td>Neural Networks</td><td>~6.0</td><td>~10.5</td><td>~185</td><td>Q1</td><td>神経回路網理論・応用</td></tr>
+                    <tr><td>Applied Intelligence</td><td>~5.0</td><td>~8.0</td><td>~120</td><td>Q1</td><td>AI応用、査読が速い</td></tr>
+                </tbody>
+            </table>
+            <p style="font-size:0.72rem; color:#888; margin-top:0.3rem;">※ 競合誌の数値は公開近似値であり、正確な値は各誌の公式ページでご確認ください。</p>
+
+            <h3 class="subsection-title">学術誌ポジショニング レーダーチャート</h3>
+            <div class="chart-container"><canvas id="radarChart"></canvas></div>
+
+            <h3 class="subsection-title">主要市場トレンド</h3>
+            <ul style="list-style:none; padding:0; margin:0.5rem 0;">
+                <li style="padding:0.4rem 0; padding-left:1.2rem; position:relative; font-size:0.95rem;"><span style="position:absolute;left:0;font-weight:bold;">•</span> <strong>出版量の圧倒的優位：</strong>2024年の年間1,385本という掲載数は同種の学術誌の中で最大規模</li>
+                <li style="padding:0.4rem 0; padding-left:1.2rem; position:relative; font-size:0.95rem;"><span style="position:absolute;left:0;font-weight:bold;">•</span> <strong>応用特化の差別化：</strong>理論より実用性を重視する研究者から選ばれる代表的な学術誌</li>
+                <li style="padding:0.4rem 0; padding-left:1.2rem; position:relative; font-size:0.95rem;"><span style="position:absolute;left:0;font-weight:bold;">•</span> <strong>メガジャーナルからの圧力：</strong>IEEE AccessやFrontiers in AIなど迅速な査読を提供するメガジャーナルへの著者の流出傾向</li>
+                <li style="padding:0.4rem 0; padding-left:1.2rem; position:relative; font-size:0.95rem;"><span style="position:absolute;left:0;font-weight:bold;">•</span> <strong>IF格差の縮小：</strong>KBSやApplied Intelligenceなど代替誌のIFが急速に上昇し、ESWAの相対的優位が縮小</li>
+                <li style="padding:0.4rem 0; padding-left:1.2rem; position:relative; font-size:0.95rem;"><span style="position:absolute;left:0;font-weight:bold;">•</span> <strong>ドメイン特化誌の成長：</strong>医療AI・金融AI特化誌の台頭により細分化された競争が激化</li>
+            </ul>
+
+            <h3 class="subsection-title">主要学術誌 インパクトファクター比較</h3>
+            <div class="chart-container"><canvas id="barChart"></canvas></div>
+        </section>
+
+        <!-- 活用アイデア -->
+        <section id="application-ideas" class="section">
+            <h2 class="section-title">活用アイデア</h2>
+            <p style="margin-bottom:1rem; color:#4a4a4a;">ESWAの分析結果に基づく研究者向けの戦略的提案です。</p>
+            <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+                <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>投稿戦略の最適化</strong> - 平均13.8ヶ月という長い査読期間を考慮し、投稿前にエディターへの事前問い合わせ（pre-submission inquiry）を活用するとともに、Knowledge-Based Systemsなどをポートフォリオとして並行管理する</p>
+                <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>応用フレーミングの強化</strong> - ESWAが重視する実際の問題解決への貢献を論文の冒頭に明示し、ヘルスケア・金融・Industry 4.0などの特定産業データセットで実用性を説得力をもって実証する</p>
+                <p style="line-height:1.6;">3. <strong>二重IFメトリクス戦略</strong> - WoS JCR（7.5）とScopus（10.48）の差異を理解し、JSPSや各大学の昇進・科研費評価においてどちらの指標が使用されるかを事前に把握して戦略的に活用する</p>
+            </div>
+        </section>
+
+        <!-- エグゼクティブサマリー -->
+        <section id="executive-summary" class="section">
+            <h2 class="section-title">エグゼクティブサマリー</h2>
+            <div class="executive-summary">
+                <h3 style="font-size:1rem; margin-bottom:0.4rem;">重要なポイント</h3>
+                <ul class="key-findings">
+                    <li><strong>世界最大のAI応用学術誌：</strong>年間1,385本掲載（2024年）、h指数290、総累積被引用169,065回以上——応用AI分野において絶対的な権威を誇る</li>
+                    <li><strong>二重IFの認識が必要：</strong>WoS JCR 7.5 対 Scopus 10.48——所属機関の評価基準が何を使うか必ず事前確認</li>
+                    <li><strong>査読遅延が最大のリスク：</strong>平均13.8ヶ月（最長17ヶ月）の査読期間は時間的制約のある研究者に大きな負担</li>
+                    <li><strong>応用貢献度が採択の鍵：</strong>実際の問題解決への貢献を明確に示した論文が有利——単純なアルゴリズム変形は却下リスク大</li>
+                    <li><strong>AIブームの最大受益誌：</strong>ChatGPT登場以降、AI研究の爆発的増加でESWAの地位はさらに強化——今後3〜5年でのIF追加上昇の可能性</li>
+                </ul>
+                <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem;">学術誌選択ガイド</h3>
+                <p style="font-size:0.95rem; line-height:1.8;">
+                    <strong>AI実用応用研究 → ESWA（最優先推奨）</strong><br>理由：最高の権威、幅広い読者層、高い被引用可能性<br>
+                    <strong>迅速な掲載が必要 → Applied IntelligenceまたはIEEE Access</strong><br>理由：ESWAと比較して査読期間が約3〜6ヶ月程度<br>
+                    <strong>知識表現・推論特化 → Knowledge-Based Systems</strong><br>理由：ESWAと同等の権威、専門読者層を確保
+                </p>
+            </div>
+            <p style="margin-top:1rem; font-size:1rem; color:#4a4a4a;"><strong>総合評価：ポジティブ</strong> — ESWAはAI応用研究分野での絶対的な地位を維持しています。査読速度の問題が改善されれば、研究者からの支持はさらに高まると予想されます。</p>
+        </section>
+
+        <!-- 学術誌基本情報 -->
+        <section class="section">
+            <h2 class="section-title">学術誌基本情報</h2>
+            <table>
+                <tr><td><strong>正式名称</strong></td><td>Expert Systems with Applications: An International Journal</td></tr>
+                <tr><td><strong>略称</strong></td><td>ESWA / Expert Syst. Appl.</td></tr>
+                <tr><td><strong>ISSN</strong></td><td>0957-4174（印刷版）/ 1873-6793（オンライン版）</td></tr>
+                <tr><td><strong>出版社</strong></td><td>Elsevier Ltd（英国）</td></tr>
+                <tr><td><strong>創刊</strong></td><td>1990年（創刊者：Jay Liebowitz、University of Maryland）</td></tr>
+                <tr><td><strong>編集長</strong></td><td>Binshan Lin（Louisiana State University in Shreveport）</td></tr>
+                <tr><td><strong>発行頻度</strong></td><td>継続的オンライン出版</td></tr>
+                <tr><td><strong>索引収録</strong></td><td>SCI-E、Scopus、DBLP、ACM Digital Library</td></tr>
+                <tr><td><strong>オープンアクセスAPC</strong></td><td>USD 3,490（税別）</td></tr>
+                <tr><td><strong>査読方式</strong></td><td>シングルブラインド査読</td></tr>
+            </table>
+        </section>
+
+        <!-- 主要用語 -->
+        <section id="terminology" class="section">
+            <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">主要用語の説明</h2>
+            <div style="background:#fafafa; padding:0.5rem 0.75rem; border-left:3px solid #e5e5e5; font-size:0.85rem;">
+                <div style="margin-bottom:0.4rem;"><strong>インパクトファクター（IF）</strong> — ClarivateのWeb of Science JCRが算出する指標。当該誌の論文が2年間に平均何回引用されたかを示す</div>
+                <div style="margin-bottom:0.4rem;"><strong>CiteScore</strong> — ElsevierのScopusベースの被引用指標で、4年間の平均被引用数を算出。一般的にIFより高く算出される</div>
+                <div style="margin-bottom:0.4rem;"><strong>h指数</strong> — h本以上の論文がそれぞれh回以上引用された最大値。ESWAのh指数290は290本の論文が各々290回以上引用されていることを意味する</div>
+                <div style="margin-bottom:0.4rem;"><strong>SJR（SCImago Journal Rank）</strong> — 引用元誌の権威を加重値として反映した精緻な学術誌影響力指標</div>
+                <div style="margin-bottom:0.4rem;"><strong>シングルブラインド査読</strong> — 査読者は著者情報を知っているが、著者は査読者情報を知らない形式の査読</div>
+                <div style="margin-bottom:0.4rem;"><strong>APC（論文掲載料）</strong> — オープンアクセスで論文を掲載する際に著者（または機関）が出版社に支払う費用</div>
+                <div style="margin-bottom:0.4rem;"><strong>Q1（第1四分位）</strong> — 当該分野の上位25%の学術誌に属することを意味。ESWAはコンピュータサイエンス分野でQ1に相当</div>
+            </div>
+        </section>
+
+        <!-- 参考資料 -->
+        <section id="sources" class="section">
+            <div class="sources">
+                <h3>参考資料</h3>
+                <p><strong>データ収集日：</strong>2026年3月2日</p>
+                <ul>
+                    <li>• <a href="https://www.sciencedirect.com/journal/expert-systems-with-applications" target="_blank">Expert Systems with Applications 公式ページ（Elsevier ScienceDirect）</a></li>
+                    <li>• <a href="https://www.resurchify.com/impact/details/24201" target="_blank">Resurchify — ESWAインパクトファクター・総合メトリクス</a></li>
+                    <li>• <a href="https://www.bioxbio.com/journal/EXPERT-SYST-APPL" target="_blank">BioxBio — ESWA IFの年別推移（2025|2024|2023）</a></li>
+                    <li>• <a href="https://researcher.life/journal/expert-systems-with-applications/4191" target="_blank">Researcher.Life — ESWA総合学術誌メトリクス</a></li>
+                    <li>• <a href="https://www.scimagojr.com/journalsearch.php?q=24201&tip=sid" target="_blank">SCImago Journal Rank — ESWA SJRデータ</a></li>
+                    <li>• <a href="https://wos-journal.info/journalid/19495" target="_blank">WoS Journal Info — ESWA IFおよび四分位データ</a></li>
+                    <li>• <a href="https://www.letpub.com/index.php?journalid=2799&page=journalapp&view=detail" target="_blank">LetPub — ESWA査読速度・投稿情報</a></li>
+                    <li>• <a href="https://scirev.org/journal/expert-systems-with-applications/" target="_blank">SciRev — ESWA著者による査読体験レビュー</a></li>
+                    <li>• <a href="https://academic-accelerator.com/Review-Speed/Expert-Systems-with-Applications" target="_blank">Academic Accelerator — 査読期間の分析</a></li>
+                    <li>• <a href="https://scispace.com/journals/expert-systems-with-applications-15wqujal/2024" target="_blank">SciSpace — 2024年ESWA掲載論文一覧（1,385本）</a></li>
+                    <li>• <a href="https://journals.sagepub.com/doi/full/10.1177/21582440211027574" target="_blank">Zyoud &amp; Zyoud（2021）— ESWA創刊30年の書誌計量分析（SAGE Journals）</a></li>
+                </ul>
+                <p style="margin-top:0.5rem; font-size:0.65rem; color:#808080;"><em>注意：WoS JCR（7.5）とScopus（10.48）のインパクトファクターは異なります。所属機関の評価基準に合致した指標をご利用ください。</em></p>
+            </div>
+        </section>
+    </div>
+</div>
+<script>
+const radarCtx = document.getElementById('radarChart').getContext('2d');
+new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+        labels: ['インパクトファクター', '出版規模', '応用の多様性', '被引用影響力', '査読速度', 'オープンアクセス'],
+        datasets: [
+            { label: 'ESWA', data: [82,95,90,88,25,60], borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.15)', borderWidth:2 },
+            { label: 'Knowledge-Based Systems', data: [80,72,78,78,55,58], borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.15)', borderWidth:2 },
+            { label: 'Applied Intelligence', data: [62,68,74,63,82,55], borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.15)', borderWidth:2 },
+            { label: 'Information Sciences', data: [83,78,84,82,42,57], borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.15)', borderWidth:2 }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{font:{size:11}}}, title:{display:true,text:'主要AI学術誌のポジショニング比較（100点満点）',font:{size:13}} }, scales:{ r:{beginAtZero:true,max:100,ticks:{stepSize:20,font:{size:10}},pointLabels:{font:{size:10}}} } }
+});
+const barCtx = document.getElementById('barChart').getContext('2d');
+new Chart(barCtx, {
+    type: 'bar',
+    data: {
+        labels: ['ESWA','IEEE TNNLS','Info. Sciences','KBS','Pattern Recog.','Neural Networks','Applied Intel.'],
+        datasets: [{ label:'インパクトファクター（WoS JCR 2024、近似値）', data:[7.5,10.2,8.1,7.2,7.5,6.0,5.0], backgroundColor:['rgba(59,130,246,0.8)','rgba(239,68,68,0.8)','rgba(168,85,247,0.8)','rgba(34,197,94,0.8)','rgba(249,115,22,0.8)','rgba(20,184,166,0.8)','rgba(234,179,8,0.8)'], borderWidth:1 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{font:{size:11}}}, title:{display:true,text:'主要AI学術誌のインパクトファクター比較（2024年）',font:{size:13}} }, scales:{ y:{beginAtZero:true,max:12}, x:{ticks:{font:{size:9},maxRotation:30}} } }
+});
+</script>
+</body>
+</html>
