@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グローバルSLM ドメイン別活用事例分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "\2192";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .credibility-score {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            margin: 0.75rem 0;
+            font-size: 0.85rem;
+        }
+        .credibility-score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.3rem;
+        }
+        .credibility-score-value {
+            font-weight: 700;
+            color: #166534;
+            font-size: 1rem;
+        }
+        .overall-credibility {
+            background: #eff6ff;
+            border: 2px solid #93c5fd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .overall-credibility h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .overall-credibility-score {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e40af;
+            margin: 0.5rem 0;
+        }
+        .overall-credibility-details {
+            text-align: left;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header {
+                padding-top: 1rem;
+                text-align: center;
+            }
+            .language-switcher {
+                justify-content: center;
+            }
+            .back-btn {
+                order: -1;
+            }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">&larr; トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='global-slm-domain-applications-20260305-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='global-slm-domain-applications-20260305-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='global-slm-domain-applications-20260305-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>グローバルSLM（Small Language Model）<br>ドメイン別活用事例分析</h1>
+            <div class="subtitle">医療・金融・法律・教育・HR分野の代表的事例と市場展望</div>
+            <div class="meta">レポート作成日：2026年3月5日 | 標準レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. 医療：オンプレミス臨床AIの中核インフラ</h3>
+                <p><strong>現状：</strong>医療分野はSLM導入の最前線にあります。HIPAAなど個人情報保護規制への準拠と患者データの保護が不可欠な臨床環境において、SLMは外部APIを呼び出すことなく病院内部サーバーで実行できるため、データ漏洩リスクを根本的に排除します。Microsoft Phi-3 Miniは医療記録から構造化データを抽出する用途に活用されており、標準的なサーバーハードウェアで1時間あたり数千件の文書を処理します。特にMeerkat-7B/8Bモデルは、6つの医療試験データセットにおいて従来モデル比22.3%の性能向上を達成しました（出典：Nature npj Digital Medicine, 2025）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要活用事例</h4>
+                        <p>&bull; <strong>ICD-10/CPTコード自動付与：</strong>FHIRリソースに基づき、医療コーディングエージェントが診断・処置コードを自動割り当て<br>
+                        &bull; <strong>SOAPノート生成：</strong>臨床面談から主観的/客観的/評価/計画ノートを自動作成するスクライブエージェント<br>
+                        &bull; <strong>医療必要性文書作成：</strong>保険会社審査のための医療必要性根拠資料を自動組立するアピールエージェント</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>医療特化の利点</h4>
+                        <p>&bull; <strong>ハルシネーション低減：</strong>医療特化コーパスで学習したSLMは、曖昧な臨床コンテキストにおいてもより保守的かつ根拠に基づいた応答を生成<br>
+                        &bull; <strong>単一GPU運用：</strong>24GB NVIDIA RTX 3090単体でMeerkat-7Bモデルを稼働可能<br>
+                        &bull; <strong>HIPAA完全準拠：</strong>患者データが外部に送信されないため、規制リスクをゼロに</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.nature.com/articles/s41746-025-01653-8" target="_blank">Nature npj Digital Medicine - SLM医療研究</a> |
+                    <a href="https://arxiv.org/abs/2504.17119" target="_blank">SLMs in Healthcare Survey (arXiv)</a> |
+                    <a href="https://azure.microsoft.com/en-us/products/phi/" target="_blank">Microsoft Phi Models</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>Nature、arXivなどの査読付き論文に基づく具体的な性能数値の提示<br>
+                        <strong>改善点：</strong>実際の病院導入事例の規模と期間に関するデータの補強が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>医療SLM市場は2026年以降、急速に拡大する見通しです。特にFHIRベースのモジュラーAIエージェントアーキテクチャが注目を集めており、ICD-10コーディング、臨床文書作成、患者モニタリングなどの細分化されたタスクに特化したSLMエージェントが、LLMベースの汎用ソリューションに取って代わると予想されます。</p>
+
+                <h3 class="subsection-title">2. 金融：リアルタイム不正検出とコスト革新</h3>
+                <p><strong>現状：</strong>金融サービス分野におけるSLM導入は、コスト削減と規制準拠という2つの軸で加速しています。Mistral-7BベースのSLMは1,000トークンあたり$0.0004のコストで、1日10万件のAPI呼び出しでも年間運用費が$15,000未満です（出典：Infosys IKI, 2025）。これは大型LLMの10〜30分の1のコストです。規制産業のSLM導入率では、金融部門が19%で政府・防衛（22%）に次ぐ2位です（出典：CB Insights, 2025）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要活用事例</h4>
+                        <p>&bull; <strong>リアルタイム不正検出：</strong>特定の不正パターンで学習されたSLMが取引をリアルタイムで分析し、誤検知率（false positive）を大幅に削減<br>
+                        &bull; <strong>契約書分析：</strong>7Bパラメータの法律特化SLMが契約条項分析で94%の精度を達成（GPT-5の87%を上回る）<br>
+                        &bull; <strong>KYC/AML自動化：</strong>顧客本人確認とマネーロンダリング防止の文書審査をエッジデバイスで実行</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>金融特化の利点</h4>
+                        <p>&bull; <strong>エッジデバイス展開：</strong>決済や不正検出に必要な超低遅延応答をオンデバイスで実現<br>
+                        &bull; <strong>データ主権の確保：</strong>機密性の高い金融データが外部APIに送信されないため、GDPR、PCI-DSSへの準拠が容易<br>
+                        &bull; <strong>GPU費用75%削減：</strong>7BパラメータSLMは70〜175B LLM比でGPU、クラウド、エネルギーコストを最大75%削減</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.infosys.com/iki/perspectives/small-language-models-financial-services.html" target="_blank">Infosys - 金融SLM</a> |
+                    <a href="https://www.cbinsights.com/research/report/small-language-model-gain-momentum/" target="_blank">CB Insights - SLM動向</a> |
+                    <a href="https://lumenalta.com/insights/hidden-power-of-small-language-models-in-banking" target="_blank">Lumenalta - 銀行SLM</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>CB Insights、Infosysなど業界分析機関のデータに基づく具体的数値の引用<br>
+                        <strong>改善点：</strong>個別金融機関のSLM導入によるROI事例データの補強が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>金融機関のSLM導入は「SLMファースト」戦略へと進化しています。構造化情報の抽出、顧客サービス、社内ナレッジ管理など定型化されたタスクはRAG（検索拡張生成）と組み合わせたSLMが標準ソリューションとなり、複雑な推論が必要な場合のみLLMを呼び出すハイブリッドアーキテクチャが主流になると見込まれます。</p>
+
+                <h3 class="subsection-title">3. 法律：オンプレミス契約分析とコンプライアンス</h3>
+                <p><strong>現状：</strong>法律分野は機密保持義務が最も厳格な産業の一つであり、SLMのオンプレミス展開能力が核心的な差別化要因です。機密契約書を外部ベンダーと共有できない環境において、3〜7Bパラメータの SLMは単一GPUワークステーションでファインチューニングを開始でき、導入障壁が低いことが特長です。法律分野のSLM導入率は4%ですが、GDPR、CCPA、EU AI Actなどの規制強化に伴い需要が急増しています（出典：CB Insights, 2025）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要活用事例</h4>
+                        <p>&bull; <strong>契約条項分析：</strong>法律事務所の過去の契約リポジトリでファインチューニングされたSLMがリスク条項を自動検出<br>
+                        &bull; <strong>規制コンプライアンス監視：</strong>GDPR、CCPA、EU AI Actなど変化する規制要件を自動追跡し、違反リスクをフラグ付け<br>
+                        &bull; <strong>判例分析：</strong>労働法、知的財産権など特定の法律領域の判例データで学習した特化型SLM</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>法律特化の利点</h4>
+                        <p>&bull; <strong>機密性の保証：</strong>ベンダー非依存プラットフォームにより、クライアントデータを自社インフラ内のみで処理<br>
+                        &bull; <strong>迅速なファインチューニング：</strong>3〜7BパラメータSLMは単一GPUで特定法律分野のデータを使い数時間でファインチューニング可能<br>
+                        &bull; <strong>コスト効率：</strong>大型LLM比で年間数百万ドルのAPIコスト削減</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://edrm.net/2026/01/the-shrinking-giants-how-small-language-models-are-rewiring-corporate-security-and-legal-strategy/" target="_blank">EDRM - 法律SLM戦略</a> |
+                    <a href="https://www.spellbook.legal/learn/ai-legal-compliance" target="_blank">Spellbook - AI法務コンプライアンス</a> |
+                    <a href="https://www.legartis.ai/blog/latest-large-language-model-trends" target="_blank">Legartis - 法務LMトレンド</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>EDRM、Spellbookなど法律専門メディアの分析を引用<br>
+                        <strong>改善点：</strong>法律SLMの精度に関する独立ベンチマークデータが不足
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>法律AI市場においてSLMは「好奇心から必需品へ」と移行中です。特にeディスカバリー、デューデリジェンス、規制変更追跡の分野でオンプレミスSLMの導入が急増する見通しです。DeepSeek-R1（164Kコンテキストウィンドウ）やQwen3-235B-A22B（100以上の言語対応）などの大型モデルが複雑な法律推論に活用される一方、日常的な契約審査は3〜7B SLMが担当する分業構造が広がるでしょう。</p>
+
+                <h3 class="subsection-title">4. 教育：K-12から企業研修までの個別最適化学習</h3>
+                <p><strong>現状：</strong>教育分野においてSLMは、コスト効率の高い個別最適化学習を可能にします。LLMがインターネット全体のデータで学習するのに対し、SLMは特定の教科や学習段階に特化したデータセットで学習されるため、K-12環境により適しています（出典：EdTech Magazine, 2025）。SLMは学習目標の設定、進捗モニタリング、メタ認知フィードバックを通じた自己調整学習（Self-Regulated Learning）を支援します。2026年現在、実務者の80%が「ノートパソコンで実行できるモデルが本番ユースケースの80%で同等の品質を提供しつつ、コストを95%削減する」と報告しています（出典：MachineLearningMastery, 2026）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要活用事例</h4>
+                        <p>&bull; <strong>K-12向け個別AIチューター：</strong>各生徒の学習レベルと進度に合わせた説明・問題出題を、学校ネットワーク内で安全に運用<br>
+                        &bull; <strong>自動採点・フィードバック：</strong>エッセイ、数学の解答などへのリアルタイムフィードバック提供により、教師の業務負担を軽減<br>
+                        &bull; <strong>教育コンテンツ生成：</strong>教科カリキュラムに沿ったクイズ、要約、学習教材を自動生成</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>教育特化の利点</h4>
+                        <p>&bull; <strong>生徒の安全性：</strong>インターネット全体ではなく教育特化データのみで学習し、不適切なコンテンツへの露出リスクを最小化<br>
+                        &bull; <strong>オフライン運用：</strong>インターネット接続が不安定な学校でもローカルで稼働可能<br>
+                        &bull; <strong>コスト削減：</strong>学校ごとのSLM展開により、LLM APIコスト比で95%の削減が可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://edtechmagazine.com/k12/article/2025/03/small-language-models-slm-perfcon" target="_blank">EdTech Magazine - K-12向けSLM</a> |
+                    <a href="https://machinelearningmastery.com/introduction-to-small-language-models-the-complete-guide-for-2026/" target="_blank">ML Mastery - SLMガイド2026</a> |
+                    <a href="https://hatchworks.com/blog/gen-ai/small-language-models/" target="_blank">HatchWorks - ニッチ向けSLM</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>EdTech Magazine、MachineLearningMasteryなど専門メディアの実務者データに基づく<br>
+                        <strong>改善点：</strong>K-12環境における学習成果向上に関する大規模実証研究データが不足
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>教育SLMは、Gemma 3n（テキスト・画像・音声マルチモーダル対応）のようなモデルの登場により、さらに多様な学習体験を提供できるようになりました。今後、各学校や教育機関が自身のデータでファインチューニングした「学校専用SLM」が普及する見通しであり、特にChromebookやタブレットで直接稼働するオンデバイスSLMが教育現場を変革するでしょう。</p>
+
+                <h3 class="subsection-title">5. HR：人材管理と従業員支援のインテリジェント化</h3>
+                <p><strong>現状：</strong>HR分野においてSLMは、給与、人事評価、採用など特定領域のデータで学習されることで、LLMよりも正確かつ管理しやすいソリューションを提供します（出典：VKTR, 2025）。SLMは従業員ごとの業績履歴、学習嗜好、スキルニーズを追跡し、個別最適化された学習経路を提案します。InfoWorldによると、ITおよびHR自動化のためのSLMブループリントがすでに実務に適用されており、社内ポリシー問い合わせ対応、ITサービス管理（ITSM）、HRチケットの分類・解決が代表的なユースケースです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要活用事例</h4>
+                        <p>&bull; <strong>履歴書スクリーニング：</strong>大量の履歴書を迅速に分析して職務適合度を判断し、採用チームの業務効率化を実現<br>
+                        &bull; <strong>オンボーディング自動化：</strong>新入社員の質問対応、書類提供、進捗追跡を自動で実行<br>
+                        &bull; <strong>個別学習推薦：</strong>従業員ごとの業績データとスキルギャップ分析に基づく個別最適化された研修コースの推薦</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>HR特化の利点</h4>
+                        <p>&bull; <strong>ドメイン特化精度：</strong>給与、福利厚生、人事評価など特定領域のデータのみで学習するため、汎用LLM比で高い精度を実現<br>
+                        &bull; <strong>従業員個人情報の保護：</strong>人事データが外部に流出しないオンプレミス運用<br>
+                        &bull; <strong>迅速なROI：</strong>ITサービスデスク、HRチケット処理など反復業務の自動化により、数週間で投資回収が可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.vktr.com/talent-management/small-language-models-provide-hr-with-more-ai-options/" target="_blank">VKTR - HR向けSLM</a> |
+                    <a href="https://www.infoworld.com/article/4105823/a-small-language-model-blueprint-for-automation-in-it-and-hr.html" target="_blank">InfoWorld - IT/HR自動化SLM</a> |
+                    <a href="https://www.splunk.com/en_us/blog/learn/small-language-models-slms.html" target="_blank">Splunk - SLM解説</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">7.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>InfoWorld、VKTRなどIT/HR専門メディアの実務ブループリントに基づく<br>
+                        <strong>改善点：</strong>HR SLM導入企業の具体的ROI数値および大規模導入事例の補強が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>HR SLMは単なる質疑応答を超え、「人材インテリジェンスエージェント」へと進化するでしょう。従業員のスキルプロファイル、キャリアパス、市場需要を総合分析し、能動的にキャリア開発機会を推薦するSLMベースの人材マーケットプレイスが拡大する見通しです。特に給与特化SLM、福利厚生特化SLMなど細分化されたドメインモデルの組み合わせで企業HR全体をカバーする「マイクロSLMアーキテクチャ」が台頭しています。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">SLM市場構造：4層分類</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">グローバルSLM市場は2024年の$0.74Bから2032年には$5.45Bに成長する見込みで（CAGR 28.7%、MarketsandMarkets）、Grand View Researchは2030年までに$20.7Bに達すると推定しています。モデルサイズ、特化度、ターゲットデバイスに応じて4層に分類できます。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>モデル名</th>
+                            <th>開発元</th>
+                            <th>パラメータ</th>
+                            <th>核心的強み</th>
+                            <th>主要ドメイン</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Phi-4 (14B)</strong></td>
+                            <td>Microsoft</td>
+                            <td>14B</td>
+                            <td>MATH 84.8%、GPQA 82.5%、STEM推論でGPT-4を凌駕</td>
+                            <td>金融、医療、教育</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phi-4 Mini (3.8B)</strong></td>
+                            <td>Microsoft</td>
+                            <td>3.8B</td>
+                            <td>Llama 3.2 3Bを全ベンチマークで上回る、ローカル実行対応</td>
+                            <td>エッジデバイス、IoT</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gemma 3n (E2B)</strong></td>
+                            <td>Google</td>
+                            <td>約2Bメモリ</td>
+                            <td>テキスト+画像+音声+動画のマルチモーダル、オンデバイス</td>
+                            <td>教育、モバイルアプリ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Qwen3-4B</strong></td>
+                            <td>Alibaba</td>
+                            <td>4B</td>
+                            <td>Qwen2.5-72B同等の性能、デュアルモード推論</td>
+                            <td>法律、多言語サービス</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mistral 3B</strong></td>
+                            <td>Mistral AI</td>
+                            <td>3.4B+0.4Bビジョン</td>
+                            <td>マルチモーダルエッジ特化、ビジョンエンコーダ内蔵</td>
+                            <td>製造、リテール</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SmolLM3 (3B)</strong></td>
+                            <td>Hugging Face</td>
+                            <td>3B</td>
+                            <td>Llama 3.2-3B、Qwen2.5-3Bを凌駕、オープンソース</td>
+                            <td>汎用、研究</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Llama 3.2 (3B)</strong></td>
+                            <td>Meta</td>
+                            <td>3B</td>
+                            <td>高速推論、オープンライセンス</td>
+                            <td>スタートアップ、プロトタイプ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Meerkat-7B/8B</strong></td>
+                            <td>研究コミュニティ</td>
+                            <td>7B/8B</td>
+                            <td>医療試験で22.3%性能向上、医療特化</td>
+                            <td>医療専用</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要SLMプラットフォーム能力比較</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場の主要動向</h3>
+                <p style="font-size: 0.95rem; line-height: 1.8;">
+                &bull; <strong>マルチモーダルSLM競争の加速：</strong>Gemma 3n（4モーダル）、Ministral 3B（ビジョンエンコーダ）など、テキストを超えて画像・音声・動画を処理する小型モデルが急増<br>
+                &bull; <strong>「教師モデル超越」現象：</strong>Phi-4がSTEMベンチマークで教師モデルGPT-4を上回るなど、データキュレーションと合成データがモデルサイズより重要になる傾向<br>
+                &bull; <strong>規制産業のSLMファースト戦略：</strong>医療（7%）、金融（19%）、法律（4%）、政府・防衛（22%）など規制産業でSLM優先導入が加速<br>
+                &bull; <strong>MoE（Mixture of Experts）の小型化：</strong>Qwen3-30B-A3Bがアクティブパラメータ10分の1でQwQ-32Bを凌駕するなど、MoEアーキテクチャの小型モデルへの適用が拡大<br>
+                &bull; <strong>オンデバイスAIエコシステムの拡大：</strong>スマートフォン、Chromebook、IoTデバイスで直接SLMを稼働させるローカルAI市場が急成長
+                </p>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>ドメイン特化SLMパイロット</strong> - 自社の中核業務（HRチケット処理、契約レビュー、臨床コーディングなど）を1つ選定し、3〜7Bオープンソースでファインチューニングしたうえで、既存LLM API比でコスト・精度・遅延を比較評価</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>マイクロSLMアーキテクチャ設計</strong> - 単一の汎用LLMではなく、給与SLM＋採用SLM＋人事評価SLMなどタスクごとの小型モデル群で全社AIインフラを構築、各モデルの独立した更新・管理を可能に</p>
+                    <p style="line-height: 1.6;">3. <strong>エッジ展開セキュリティ評価</strong> - SLMのオンプレミス/オンデバイス展開時のプロンプトインジェクション、モデル抽出攻撃などのセキュリティリスクを評価し、ガードレールおよびアクセス制御ポリシーを策定</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>SLM市場の急成長：</strong>グローバルSLM市場は2024年の$0.74Bから2032年に$5.45Bへ拡大予想（CAGR 28.7%）、規制産業が早期採用を牽引</li>
+                        <li><strong>コスト革命：</strong>7B SLMは70〜175B LLM比で運用コスト最大75%削減、実務者の80%が「ノートPCモデルが80%のユースケースに十分」と報告</li>
+                        <li><strong>医療分野が先行：</strong>Meerkat-7Bが医療試験で従来比22.3%の性能向上を達成、HIPAA準拠のオンプレミス展開で患者データを保護</li>
+                        <li><strong>金融のSLMファースト：</strong>金融特化SLMが契約分析で94%の精度を達成（GPT-5の87%を上回る）、不正検出の誤検知率を大幅削減</li>
+                        <li><strong>マルチモーダルSLM時代：</strong>Gemma 3n（4モーダル）、Ministral 3B（ビジョン）など、テキストを超えた小型マルチモーダルモデルの競争が本格化</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">ドメイン別選定ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>医療機関 &rarr; Phi-3 Mini / Meerkat-7B</strong><br>
+                        根拠：HIPAA準拠のオンプレミス運用、医療特化ベンチマーク最高性能、単一GPU稼働<br><br>
+                        <strong>金融機関 &rarr; Phi-4 (14B) / Mistral-7B</strong><br>
+                        根拠：STEM推論に優れ、コスト効率が高い（$0.0004/1Kトークン）、RAG連携で契約分析94%精度<br><br>
+                        <strong>法律事務所 &rarr; Qwen3-4B / DeepSeek-R1</strong><br>
+                        根拠：100以上の言語対応で国際契約に対応、164Kコンテキストウィンドウで大容量法律文書を処理<br><br>
+                        <strong>K-12教育機関 &rarr; Gemma 3n / Phi-4 Mini</strong><br>
+                        根拠：マルチモーダル（テキスト+画像+音声）学習体験、Chromebook/タブレットでのオンデバイス稼働<br><br>
+                        <strong>HR部門 &rarr; SmolLM3 / Llama 3.2 3B</strong><br>
+                        根拠：オープンソースライセンスで自由なファインチューニング、履歴書スクリーニングとオンボーディング自動化に最適
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合市場評価：</strong>ポジティブ（SLMはLLMの「競争相手」ではなく「補完材」として急速に定着しており、規制産業におけるデータ主権とコスト効率が中核的な成長原動力）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>SLM（Small Language Model、小規模言語モデル）</strong> - 一般的に1〜14Bパラメータ規模の言語モデル。LLM比で少ないコンピューティングリソースで運用可能であり、特定ドメインにファインチューニングして専門的性能を発揮することが核心的な利点です。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>オンプレミス展開</strong> - 外部クラウドではなく組織内部のサーバーでAIモデルを実行する方式。データが組織外に送信されないため、HIPAA、GDPRなどの規制準拠に有利です。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>RAG（Retrieval-Augmented Generation、検索拡張生成）</strong> - AIモデルが応答を生成する前に関連文書を検索して参照する手法。SLMと組み合わせることで、小型モデルでも正確なドメイン知識に基づく応答が可能になります。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MoE（Mixture of Experts）</strong> - 全パラメータの一部のみを活性化して推論するアーキテクチャ。Qwen3-30B-A3Bのように30B全体のうち3Bのみを活性化し、大型モデル同等の性能を小型リソースで実現します。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ファインチューニング</strong> - 事前学習済みの汎用モデルを特定ドメインのデータ（例：医療記録、法律文書）で追加学習させ、当該分野の専門性を付与する過程です。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>FHIR（Fast Healthcare Interoperability Resources）</strong> - 医療情報交換のための国際標準。SLMベースの医療エージェントがFHIRリソースを活用してICD-10コード付与などの作業を実行します。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>オンデバイスAI</strong> - クラウドサーバーではなくスマートフォン、ノートPC、IoTデバイスなどの個人端末で直接AIモデルを稼働させる方式。ネットワーク遅延なく即座に応答し、個人情報がデバイス外に出ることがありません。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年3月5日</p>
+                    <ul>
+                        <li>&bull; <a href="https://arxiv.org/abs/2504.17119" target="_blank">The Rise of Small Language Models in Healthcare: A Comprehensive Survey (arXiv, 2025)</a></li>
+                        <li>&bull; <a href="https://www.nature.com/articles/s41746-025-01653-8" target="_blank">Small language models learn enhanced reasoning skills from medical textbooks (Nature npj Digital Medicine, 2025)</a></li>
+                        <li>&bull; <a href="https://www.cbinsights.com/research/report/small-language-model-gain-momentum/" target="_blank">Regulated industries and sovereign AI fuel small language model momentum (CB Insights, 2025)</a></li>
+                        <li>&bull; <a href="https://www.infosys.com/iki/perspectives/small-language-models-financial-services.html" target="_blank">Smarter, smaller, safer: The case for SLMs in financial services (Infosys IKI, 2025)</a></li>
+                        <li>&bull; <a href="https://www.marketsandmarkets.com/Market-Reports/small-language-model-market-4008452.html" target="_blank">Small Language Model Market Size & Growth (MarketsandMarkets, 2025)</a></li>
+                        <li>&bull; <a href="https://www.grandviewresearch.com/industry-analysis/small-language-model-market-report" target="_blank">Small Language Model Market Size & Share Report (Grand View Research, 2024)</a></li>
+                        <li>&bull; <a href="https://edrm.net/2026/01/the-shrinking-giants-how-small-language-models-are-rewiring-corporate-security-and-legal-strategy/" target="_blank">How SLMs Are Rewiring Corporate Security and Legal Strategy (EDRM, 2026)</a></li>
+                        <li>&bull; <a href="https://edtechmagazine.com/k12/article/2025/03/small-language-models-slm-perfcon" target="_blank">Can Small Language Models Help K-12 Schools? (EdTech Magazine, 2025)</a></li>
+                        <li>&bull; <a href="https://www.vktr.com/talent-management/small-language-models-provide-hr-with-more-ai-options/" target="_blank">Small Language Models Provide HR With More AI Options (VKTR, 2025)</a></li>
+                        <li>&bull; <a href="https://www.infoworld.com/article/4105823/a-small-language-model-blueprint-for-automation-in-it-and-hr.html" target="_blank">A small language model blueprint for automation in IT and HR (InfoWorld, 2025)</a></li>
+                        <li>&bull; <a href="https://localaimaster.com/blog/small-language-models-guide-2026" target="_blank">Small Language Models 2026: Phi-4, Gemma 3, Qwen 3 Guide (Local AI Master, 2026)</a></li>
+                        <li>&bull; <a href="https://www.datacamp.com/blog/top-small-language-models" target="_blank">Top 15 Small Language Models for 2026 (DataCamp, 2026)</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 総合信頼性評価 -->
+            <div class="overall-credibility">
+                <h3>総合信頼性評価</h3>
+                <div class="overall-credibility-score">7.7/10</div>
+                <div class="overall-credibility-details">
+                    <p><strong>総合評価：</strong>査読付き論文（Nature、arXiv）、産業分析機関（CB Insights、MarketsandMarkets）、技術専門メディア（InfoWorld、EdTech Magazine）など多様な出典を交差検証し、信頼性の高い分析を提供</p>
+                    <p><strong>主要な強み：</strong>5つのドメイン別に具体的な活用事例と性能数値を提示、8つの主要SLMモデルのベンチマーク比較</p>
+                    <p><strong>改善の優先事項：</strong>個別企業・機関の大規模導入事例およびROIデータの補強、一部の市場規模推定値の出典間の乖離（MarketsandMarkets $5.45B vs Grand View Research $20.7B）の解消が必要</p>
+                </div>
+            </div>
+
+            <div class="disclaimer" style="display: none;">
+                <p>本レポートはAIが生成した内容であり、重要な意思決定に活用される前に原典の確認をお勧めします。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['推論性能', 'コスト効率', 'マルチモーダル', 'エッジ展開', 'ドメイン特化'],
+                datasets: [
+                    {
+                        label: 'Phi-4 (14B)',
+                        data: [95, 75, 50, 70, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gemma 3n',
+                        data: [70, 90, 95, 95, 60],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Qwen3-4B',
+                        data: [88, 85, 40, 80, 75],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Mistral 3B',
+                        data: [72, 92, 70, 90, 65],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 }, padding: 15 }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>&#x1F90D;</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>

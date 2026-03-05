@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전세계 오픈배지 통계 분석: 발행 수·스킬 유형·시장 성장</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1); color: white; border-radius: 3px;
+            font-size: 0.75rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center;
+        }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem;
+        }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0 0.4rem 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+        .stat-highlight { background: #f0f4ff; border: 1px solid #c7d7ff; padding: 1rem; text-align: center; }
+        .stat-number { font-size: 1.8rem; font-weight: 800; color: var(--primary-navy); }
+        .stat-label { font-size: 0.8rem; color: #4a4a4a; margin-top: 0.2rem; }
+        .credibility-score { background: #f8f9fa; border: 1px solid #dee2e6; padding: 0.75rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-weight: 600; }
+        .credibility-score-value { color: var(--primary-navy); }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← 홈</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='open-badge-global-statistics-20260303-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='open-badge-global-statistics-20260303-ko.html'" class="lang-btn active">한국어</button>
+                <button onclick="window.location.href='open-badge-global-statistics-20260303-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>전세계 오픈배지 통계 분석<br>발행 수 · 스킬 유형 · 시장 성장 종합 데이터</h1>
+        <div class="subtitle">320.4M 배지 발행 현황 | 1,708,774 배지 유형 | 스킬 분류 체계 글로벌 비교</div>
+        <div class="meta">리포트 작성일: 2026년 3월 3일 | 출처: 1EdTech, Credential Engine, Credly | 표준 리포트</div>
+    </div>
+
+    <div class="content">
+
+        <!-- SECTION 1: 트렌드 분석 -->
+        <section id="trends" class="section">
+            <h2 class="section-title">트렌드 분석 Top 5</h2>
+
+            <!-- Trend 1 -->
+            <h3 class="subsection-title">1. 전세계 배지 발행 수 4.3배 폭발적 성장 (2022–2025)</h3>
+            <p><strong>현황:</strong> 1EdTech와 Credential Engine의 공동 조사에 따르면, 전세계 오픈배지 발행 총수는 2022년 7,470만 개에서 2025년 3억 2,040만 개로 4.3배 성장했습니다. 배지 유형 수 역시 2022년 521,070종에서 2025년 1,708,774종으로 3.3배 증가했습니다.</p>
+
+            <div class="stat-grid">
+                <div class="stat-highlight">
+                    <div class="stat-number">320.4M</div>
+                    <div class="stat-label">2025년 전세계 발행 배지 수</div>
+                </div>
+                <div class="stat-highlight">
+                    <div class="stat-number">4.3x</div>
+                    <div class="stat-label">3년간 성장률 (2022→2025)</div>
+                </div>
+                <div class="stat-highlight">
+                    <div class="stat-number">1.7M</div>
+                    <div class="stat-label">2025년 제공 배지 유형 수</div>
+                </div>
+            </div>
+
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>연도별 배지 발행 수 추이</h4>
+                    <p>• <strong>2022년:</strong> 74.7백만 개 (기준점)<br>
+                    • <strong>2023년:</strong> 약 122백만 개 (추정 +63%)<br>
+                    • <strong>2024년:</strong> 약 199백만 개 (추정 +63%)<br>
+                    • <strong>2025년:</strong> 320.4백만 개 (공식 확정 +61%)</p>
+                </div>
+                <div class="trend-card">
+                    <h4>배지 유형 수 증가 추이</h4>
+                    <p>• <strong>2022년:</strong> 521,070 유형<br>
+                    • <strong>2025년:</strong> 1,708,774 유형<br>
+                    • <strong>증가율:</strong> 3.3배 (228%)<br>
+                    • <strong>발행 기관 수:</strong> 수만 개 기관으로 확대</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="growthChart"></canvas>
+            </div>
+
+            <div class="related-links">
+                <strong>🔗 관련 링크:</strong>
+                <a href="https://content.1edtech.org/badge-count-2025/" target="_blank">1EdTech Badge Count 2025</a> |
+                <a href="https://www.1edtech.org/standards/open-badges" target="_blank">1EdTech Open Badges 표준</a> |
+                <a href="https://credentialengine.org/" target="_blank">Credential Engine</a>
+            </div>
+
+            <p><strong>전망:</strong> 2026년에는 4억 개 돌파가 예상됩니다. Open Badges 3.0 표준 도입 가속화와 기업의 스킬 기반 채용 전환이 핵심 성장 동력입니다.</p>
+
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span>📊 신뢰도 평가:</span>
+                    <span class="credibility-score-value">9.0/10</span>
+                </div>
+                <div><strong>강점:</strong> 1EdTech 공식 보고서 기반 확정 수치 활용<br>
+                <strong>개선점:</strong> 2023–2024 중간값은 추정치 (공식 연도별 데이터 없음)</div>
+            </div>
+
+            <!-- Trend 2 -->
+            <h3 class="subsection-title">2. 배지 스킬 카테고리 분포: IT·사이버보안·AI 주도</h3>
+            <p><strong>현황:</strong> Credly 플랫폼과 주요 발행 기관 템플릿 수를 기반으로 분석한 결과, IT/클라우드, 사이버보안, 데이터/AI 3개 카테고리가 전체의 약 68%를 차지하는 것으로 추정됩니다. 2024년 11월 Credly 큐레이션 목록은 503개의 검증된 무료 배지를 보유하며, 사이버보안·클라우드·AI/ML 분야가 급격히 확대되고 있습니다.</p>
+
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>주요 스킬 카테고리 (추정 비율)</h4>
+                    <p>• <strong>IT/클라우드/테크놀로지:</strong> 약 35%<br>
+                    (Cisco 400+ 템플릿, Google Cloud 130+)<br>
+                    • <strong>사이버보안:</strong> 약 18%<br>
+                    (ISC2, CompTIA, SANS 주도)<br>
+                    • <strong>데이터/AI/ML:</strong> 약 15%<br>
+                    (IBM, Google, Microsoft 중심)</p>
+                </div>
+                <div class="trend-card">
+                    <h4>신흥 성장 카테고리</h4>
+                    <p>• <strong>프로젝트 관리:</strong> 약 12%<br>
+                    (PMI PMP, Agile, Scrum 인증)<br>
+                    • <strong>개발/소프트웨어:</strong> 약 10%<br>
+                    (GitHub, 코딩 부트캠프 인증)<br>
+                    • <strong>기타 전문 기술:</strong> 약 10%<br>
+                    (HR, 마케팅, 리더십 등)</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+
+            <div class="related-links">
+                <strong>🔗 관련 링크:</strong>
+                <a href="https://www.credly.com/" target="_blank">Credly 플랫폼</a> |
+                <a href="https://github.com/wesleyscholl/credly-badge" target="_blank">무료 Credly 배지 큐레이션 목록</a> |
+                <a href="https://www.isc2.org/Certifications/Digital-Badges" target="_blank">ISC2 디지털 배지</a>
+            </div>
+
+            <p><strong>전망:</strong> 생성형 AI 관련 배지가 2026년 이후 가장 빠른 성장 카테고리가 될 것으로 전망됩니다. Anthropic, OpenAI 등 AI 기업이 공식 인증 프로그램을 확대하고 있어 AI 카테고리 비중이 크게 높아질 것입니다.</p>
+
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span>📊 신뢰도 평가:</span>
+                    <span class="credibility-score-value">6.5/10</span>
+                </div>
+                <div><strong>강점:</strong> 주요 발행 기관 공개 데이터 기반 추정<br>
+                <strong>개선점:</strong> 카테고리 비율은 추정치 — Credly 공식 카테고리 통계는 비공개</div>
+            </div>
+
+            <!-- Trend 3 -->
+            <h3 class="subsection-title">3. 주요 발행 기관별 배지 현황: IBM·PMI·ISC2 선도</h3>
+            <p><strong>현황:</strong> IBM, PMI(프로젝트 관리 협회), ISC2(국제 정보 시스템 보안 인증 컨소시엄)가 전세계 오픈배지 생태계를 주도하고 있습니다. IBM은 2024년 기준 172만 개의 배지를 발행하며 단일 기관 최다 기록을 보유합니다. IBM SkillsBuild는 AI, 클라우드, 데이터, 사이버보안 분야를 중심으로 무료 배지를 제공합니다.</p>
+
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>Top 발행 기관 (2024년 기준)</h4>
+                    <p>• <strong>IBM SkillsBuild:</strong> 1,720,000개<br>
+                    • <strong>PMI:</strong> 690,000개+<br>
+                    • <strong>ISC2:</strong> 575,000개+ (CC 무료 포함)<br>
+                    • <strong>Cisco NetAcad:</strong> 400+ 배지 템플릿<br>
+                    • <strong>Google Cloud:</strong> 130+ 배지 템플릿</p>
+                </div>
+                <div class="trend-card">
+                    <h4>기관별 배지 특성</h4>
+                    <p>• <strong>IBM:</strong> AI, 클라우드, 사이버보안, 데이터 — 무료<br>
+                    • <strong>PMI:</strong> PMP 인증, Agile, 리스크 관리 — 유료<br>
+                    • <strong>ISC2:</strong> CISSP, CC(무료 입문 과정) — 혼합<br>
+                    • <strong>Cisco:</strong> 네트워킹·보안·DevNet — 유/무료<br>
+                    • <strong>Google Cloud:</strong> 클라우드·데이터·AI — 무료</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="issuersChart"></canvas>
+            </div>
+
+            <div class="related-links">
+                <strong>🔗 관련 링크:</strong>
+                <a href="https://skillsbuild.org/" target="_blank">IBM SkillsBuild</a> |
+                <a href="https://www.pmi.org/certifications/digital-badges" target="_blank">PMI 디지털 배지</a> |
+                <a href="https://www.isc2.org/Certifications/Digital-Badges" target="_blank">ISC2 디지털 배지</a> |
+                <a href="https://www.netacad.com/" target="_blank">Cisco NetAcad</a>
+            </div>
+
+            <p><strong>전망:</strong> Microsoft와 Google이 AI 스킬 이니셔티브를 공격적으로 확대하면서 2026년에는 IBM의 1위 자리를 위협할 것으로 예상됩니다. Microsoft AI 스킬 이니셔티브는 2025년 100만 명 교육을 목표로 운영 중입니다.</p>
+
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span>📊 신뢰도 평가:</span>
+                    <span class="credibility-score-value">8.5/10</span>
+                </div>
+                <div><strong>강점:</strong> 공개된 발행 기관 공식 발행 수치 활용<br>
+                <strong>개선점:</strong> Cisco/Google Cloud는 템플릿 수 기반 — 실제 발행 수 아님</div>
+            </div>
+
+            <!-- Trend 4 -->
+            <h3 class="subsection-title">4. 글로벌 스킬 분류 체계 수치 비교: Lightcast·ESCO·O*NET</h3>
+            <p><strong>현황:</strong> 오픈배지에 연결된 스킬 분류 체계는 플랫폼마다 상이합니다. Lightcast는 4만 개 이상의 데이터 소스에서 수집한 32,000개 이상의 스킬을, LinkedIn은 실시간 채용공고 기반 36,000개 이상의 스킬을 보유합니다. 유럽의 ESCO는 27개 언어로 13,890개의 스킬을 제공하며, 미국 O*NET은 1,016개 직종에 2,400개 이상의 스킬을 포함합니다.</p>
+
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>주요 스킬 분류 체계 규모</h4>
+                    <p>• <strong>LinkedIn Skills:</strong> 36,000개+ (채용공고 기반)<br>
+                    • <strong>Lightcast:</strong> 32,000개+ (40,000+ 데이터 소스)<br>
+                    • <strong>ESCO (EU):</strong> 13,890개 스킬 (27개 언어)<br>
+                    • <strong>Microsoft Learn:</strong> 약 5,000개 기술 스킬<br>
+                    • <strong>O*NET (미국):</strong> 2,400개+ (1,016개 직종)</p>
+                </div>
+                <div class="trend-card">
+                    <h4>분류 체계 특성 비교</h4>
+                    <p>• <strong>Lightcast:</strong> 실시간 노동시장 데이터, 기업 주로 활용<br>
+                    • <strong>ESCO:</strong> 공개 표준, 교육기관·정부 활용<br>
+                    • <strong>O*NET:</strong> 미국 노동부 운영, 미국 표준<br>
+                    • <strong>LinkedIn:</strong> 채용공고 기반, 가장 실무적<br>
+                    • <strong>NCS (한국):</strong> 국가직무능력표준, 24개 대분류</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="skillTaxonomyChart"></canvas>
+            </div>
+
+            <div class="related-links">
+                <strong>🔗 관련 링크:</strong>
+                <a href="https://lightcast.io/" target="_blank">Lightcast</a> |
+                <a href="https://esco.ec.europa.eu/" target="_blank">ESCO (유럽 스킬 분류)</a> |
+                <a href="https://www.onetonline.org/" target="_blank">O*NET Online</a> |
+                <a href="https://www.ncs.go.kr/" target="_blank">NCS 국가직무능력표준 (한국)</a>
+            </div>
+
+            <p><strong>전망:</strong> Open Badges 3.0과 스킬 분류 체계의 표준 통합이 가속화됩니다. 2026년에는 배지 내 스킬 태그가 채용 ATS(지원자 추적 시스템)와 직접 연동되는 표준화 움직임이 본격화될 것으로 예상됩니다.</p>
+
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span>📊 신뢰도 평가:</span>
+                    <span class="credibility-score-value">8.0/10</span>
+                </div>
+                <div><strong>강점:</strong> 공식 스킬 분류 체계 공개 데이터 기반<br>
+                <strong>개선점:</strong> LinkedIn 수치는 발표 시점에 따라 변동 가능</div>
+            </div>
+
+            <!-- Trend 5 -->
+            <h3 class="subsection-title">5. 디지털 배지 시장: 2032년까지 CAGR 20.2% 성장 전망</h3>
+            <p><strong>현황:</strong> 디지털 배지 시장은 2023년 2억 1,380만 달러로 추정되며, 연평균 20.2%의 성장률로 빠르게 확대되고 있습니다. 스킬 기반 채용 전환, 원격 근무 확산, 그리고 평생학습 수요 증가가 핵심 성장 동력입니다.</p>
+
+            <div class="stat-grid">
+                <div class="stat-highlight">
+                    <div class="stat-number">$213.8M</div>
+                    <div class="stat-label">2023년 시장 규모</div>
+                </div>
+                <div class="stat-highlight">
+                    <div class="stat-number">20.2%</div>
+                    <div class="stat-label">연평균 성장률 (CAGR)</div>
+                </div>
+                <div class="stat-highlight">
+                    <div class="stat-number">~$970M</div>
+                    <div class="stat-label">2032년 예상 시장 규모</div>
+                </div>
+            </div>
+
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>시장 성장 동력</h4>
+                    <p>• <strong>스킬 기반 채용:</strong> IBM, Google, Microsoft 등 학위 요건 폐지<br>
+                    • <strong>원격 근무:</strong> 디지털 자격증명 검증 필요성 증가<br>
+                    • <strong>평생학습 수요:</strong> 마이크로크레덴셜 시장 확대<br>
+                    • <strong>표준화 진전:</strong> Open Badges 3.0 기업 채택 가속</p>
+                </div>
+                <div class="trend-card">
+                    <h4>지역별 시장 분포 (추정)</h4>
+                    <p>• <strong>북미:</strong> 최대 시장 약 40% (Credly 중심)<br>
+                    • <strong>유럽:</strong> 2위 시장 (ESCO 표준 기반)<br>
+                    • <strong>아시아태평양:</strong> 가장 빠른 성장 지역<br>
+                    • <strong>한국:</strong> NCS 연계 배지 도입 진행 중</p>
+                </div>
+            </div>
+
+            <div class="related-links">
+                <strong>🔗 관련 링크:</strong>
+                <a href="https://openbadges.org/" target="_blank">Open Badges 공식 사이트</a> |
+                <a href="https://www.mordorintelligence.com/industry-reports/digital-badges-market" target="_blank">디지털 배지 시장 보고서</a>
+            </div>
+
+            <p><strong>전망:</strong> Open Badges 3.0(W3C Verifiable Credentials 기반)이 본격 도입되면서 블록체인 독립적 검증과 지갑 기반 자격증명 관리가 주류화될 전망입니다. EU 디지털 자격증명 통합 정책이 유럽 시장 성장을 더욱 가속시킬 것입니다.</p>
+
+            <div class="credibility-score">
+                <div class="credibility-score-header">
+                    <span>📊 신뢰도 평가:</span>
+                    <span class="credibility-score-value">7.5/10</span>
+                </div>
+                <div><strong>강점:</strong> 복수 시장 조사 기관 데이터 기반<br>
+                <strong>개선점:</strong> 2032년 예측은 현 추세 외삽 — 불확실성 존재</div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: 경쟁 환경 -->
+        <section id="competitive" class="section">
+            <h2 class="section-title">경쟁 환경 및 플랫폼 비교</h2>
+
+            <h3 class="subsection-title">오픈배지 플랫폼 시장 구조 (4계층)</h3>
+            <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">전세계 오픈배지 플랫폼은 기능과 대상에 따라 4개 계층으로 구분됩니다. Credly가 엔터프라이즈 시장을 독점하고, Badgr가 교육기관에서 강세를 보이며, Open Badge Passport가 EU 공공 부문을 담당합니다.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>플랫폼</th>
+                        <th>유형</th>
+                        <th>주요 특징</th>
+                        <th>주요 고객</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Credly (Pearson)</strong></td><td>엔터프라이즈 SaaS</td><td>320M+ 배지 생태계, 분석 대시보드, LinkedIn 연동</td><td>IBM, Cisco, Google, ISC2</td></tr>
+                    <tr><td><strong>Badgr (Concentric Sky)</strong></td><td>교육기관 오픈소스</td><td>LMS 연동, 무료 티어, 오픈소스 공개</td><td>대학교, K-12 교육기관</td></tr>
+                    <tr><td><strong>Open Badge Passport</strong></td><td>EU 공공 중심</td><td>학습자 포트폴리오, ESCO 연동, 다국어</td><td>유럽 교육기관, 공공기관</td></tr>
+                    <tr><td><strong>Accredible</strong></td><td>인증 전문</td><td>배지+수료증 통합, 풍부한 API</td><td>전문 자격 기관, 온라인 교육</td></tr>
+                    <tr><td><strong>Sertifier</strong></td><td>기업 SaaS</td><td>자동화 배지 발행, 화이트라벨</td><td>교육 기업, HR 팀</td></tr>
+                </tbody>
+            </table>
+
+            <h3 class="subsection-title">플랫폼 역량 비교 차트</h3>
+            <div class="chart-container">
+                <canvas id="platformRadarChart"></canvas>
+            </div>
+
+            <h3 class="subsection-title">시장 트렌드 (2025–2026)</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 0.4rem 0 0.4rem 1.5rem; position: relative;"><span style="position: absolute; left: 0;">→</span><strong>Open Badges 3.0 표준 전환:</strong> W3C Verifiable Credentials 기반으로의 이전이 2026년 본격화</li>
+                <li style="padding: 0.4rem 0 0.4rem 1.5rem; position: relative;"><span style="position: absolute; left: 0;">→</span><strong>플랫폼 통합 가속:</strong> Credly(Pearson 인수), 중소 플랫폼 M&A 확산</li>
+                <li style="padding: 0.4rem 0 0.4rem 1.5rem; position: relative;"><span style="position: absolute; left: 0;">→</span><strong>AI 스킬 배지 급증:</strong> Anthropic, OpenAI 등 AI 기업의 공식 인증 프로그램 출시 예정</li>
+                <li style="padding: 0.4rem 0 0.4rem 1.5rem; position: relative;"><span style="position: absolute; left: 0;">→</span><strong>디지털 지갑 통합:</strong> Apple Wallet, Google Wallet 배지 저장 기능 추가 진행 중</li>
+                <li style="padding: 0.4rem 0 0.4rem 1.5rem; position: relative;"><span style="position: absolute; left: 0;">→</span><strong>채용 플랫폼 연동:</strong> LinkedIn, Indeed 등 주요 구인 플랫폼의 배지 검증 기능 강화</li>
+            </ul>
+        </section>
+
+        <!-- SECTION 3: 활용 아이디어 -->
+        <section id="application-ideas" class="section">
+            <h2 class="section-title">활용 아이디어</h2>
+            <p style="margin-bottom: 1rem; color: #4a4a4a;">이 통계 데이터를 기반으로 관찰되는 주요 활용 접근 방식입니다.</p>
+            <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>스킬 기반 인재 데이터베이스 구축</strong> — Lightcast/ESCO 분류 체계와 오픈배지를 연동하여 직원 스킬 현황을 시각화하고 역량 갭 분석에 활용</p>
+                <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>무료 배지 학습 경로 설계</strong> — IBM SkillsBuild, Cisco NetAcad, ISC2 CC 등 무료 프로그램을 조합한 비용 최소화 업스킬링 로드맵 구성</p>
+                <p style="line-height: 1.6;">3. <strong>배지 기반 채용 기준 수립</strong> — 직무별 요구 스킬을 배지로 정의하고, 지원자 배지 포트폴리오를 학위 대체 평가 지표로 도입 검토</p>
+            </div>
+        </section>
+
+        <!-- SECTION 4: 핵심 요약 -->
+        <section id="executive-summary" class="section">
+            <h2 class="section-title">핵심 요약</h2>
+            <div class="executive-summary">
+                <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">주요 발견</h3>
+                <ul class="key-findings">
+                    <li><strong>시장 규모:</strong> 320.4M 배지 발행, 1.7M 유형 — 디지털 자격증명이 주류 채용 인프라로 자리매김</li>
+                    <li><strong>카테고리 집중:</strong> IT/클라우드(35%) + 사이버보안(18%) + 데이터/AI(15%) — 전체의 약 68% 차지 (추정)</li>
+                    <li><strong>기관 집중도:</strong> IBM(1.72M) + PMI(690K) + ISC2(575K) — 상위 3개 기관이 생태계 견인</li>
+                    <li><strong>스킬 표준:</strong> Lightcast 32K+, LinkedIn 36K+ — 분류 체계 표준화 수요 증가</li>
+                    <li><strong>시장 성장:</strong> CAGR 20.2%, 2032년 약 $970M 예상 — Open Badges 3.0이 핵심 촉매</li>
+                </ul>
+
+                <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+                <p style="font-size: 0.95rem; line-height: 1.8;">
+                    <strong>기업 HR 팀 → Credly 도입 검토</strong><br>
+                    이유: 가장 넓은 발행 기관 네트워크, 채용 플랫폼 연동, 배지 분석 대시보드 제공<br>
+                    <strong>교육기관 → Badgr 또는 Open Badge Passport</strong><br>
+                    이유: 오픈소스 기반 LMS 연동 용이, EU 기관의 경우 ESCO 연동 가능
+                </p>
+            </div>
+            <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가: 긍정적</strong> — 오픈배지 생태계는 검증된 성장세를 보이며, 스킬 기반 채용 전환 가속화로 기업·교육 양 측면의 수요가 증가하고 있습니다.</p>
+        </section>
+
+        <!-- SECTION 5: 주요 용어 -->
+        <section id="terminology" class="section">
+            <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">📖 주요 용어 해설</h2>
+            <div style="background: #fafafa; padding: 0.75rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                <div style="margin-bottom: 0.5rem;"><strong>오픈배지 (Open Badge):</strong> 1EdTech(구 IMS Global)가 제정한 디지털 자격증명 표준. 배지 이미지 내에 발행자·수여 기준·수여일 등 메타데이터가 내장됨</div>
+                <div style="margin-bottom: 0.5rem;"><strong>마이크로크레덴셜 (Micro-credential):</strong> 특정 스킬이나 역량을 검증하는 소규모 단위 자격증명. 학위보다 빠르고 저렴하게 취득 가능</div>
+                <div style="margin-bottom: 0.5rem;"><strong>스킬 분류 체계 (Skills Taxonomy):</strong> 직무 스킬을 계층적으로 분류한 표준 체계. Lightcast, O*NET, ESCO가 대표적</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Open Badges 3.0:</strong> W3C Verifiable Credentials 기반의 최신 표준. 블록체인 독립적 검증, 디지털 지갑 저장 지원</div>
+                <div style="margin-bottom: 0.5rem;"><strong>스킬 기반 채용 (Skills-Based Hiring):</strong> 학위 대신 실제 역량과 배지를 채용 기준으로 활용하는 트렌드. IBM, Google, Microsoft가 선도</div>
+                <div><strong>Verifiable Credential (VC):</strong> W3C 표준의 디지털 검증 가능 자격증명. 개인 지갑에 보관하고 선택적으로 제시 가능</div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: 참고자료 -->
+        <section id="sources" class="section">
+            <div class="sources">
+                <h3>참고자료</h3>
+                <p><strong>데이터 수집일:</strong> 2026년 3월 3일</p>
+                <ul>
+                    <li>• <a href="https://content.1edtech.org/badge-count-2025/" target="_blank">1EdTech & Credential Engine — Badge Count 2025</a></li>
+                    <li>• <a href="https://www.1edtech.org/1edtech-article/2025-badge-count-shows-accelerating-momentum-in-digital-credentials/411353" target="_blank">1EdTech — 2025 Badge Count 발표 (320.4M 배지)</a></li>
+                    <li>• <a href="https://info.credly.com/google-cloud-top-credly-elite-issuer-2024" target="_blank">Credly — Google Cloud Top Elite Issuer 2024</a></li>
+                    <li>• <a href="https://www.isc2.org/Certifications/Digital-Badges" target="_blank">ISC2 — Digital Badges from Credly (575K+ 배지)</a></li>
+                    <li>• <a href="https://www.mordorintelligence.com/industry-reports/digital-badges-market" target="_blank">Mordor Intelligence — Digital Badges Market Report 2030</a></li>
+                    <li>• <a href="https://lightcast.io/" target="_blank">Lightcast — Skills Taxonomy (32,000+ 스킬)</a></li>
+                    <li>• <a href="https://esco.ec.europa.eu/" target="_blank">European Commission — ESCO (13,890 스킬, 27개 언어)</a></li>
+                    <li>• <a href="https://www.onetonline.org/" target="_blank">O*NET Online — 직업 정보 네트워크 (2,400+ 스킬)</a></li>
+                    <li>• <a href="https://github.com/wesleyscholl/credly-badge" target="_blank">GitHub — wesleyscholl/credly-badge (503 무료 배지 큐레이션)</a></li>
+                    <li>• <a href="https://openbadges.org/" target="_blank">IMS Open Badges — 공식 표준 사이트</a></li>
+                </ul>
+                <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #999;"><em>참고: 카테고리 분포 비율 및 중간 연도 데이터는 공개 정보 기반 추정치입니다.</em></p>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<script>
+// Chart 1: Badge Count Growth
+new Chart(document.getElementById('growthChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['2022', '2023 (추정)', '2024 (추정)', '2025'],
+        datasets: [
+            { label: '발행 배지 수 (백만 개)', data: [74.7, 122, 199, 320.4],
+              backgroundColor: ['rgba(59,130,246,0.6)','rgba(59,130,246,0.6)','rgba(59,130,246,0.6)','rgba(59,130,246,1)'],
+              borderColor: 'rgb(59,130,246)', borderWidth: 1 },
+            { label: '배지 유형 수 (만 개)', data: [52.1, 85, 120, 170.9],
+              backgroundColor: 'rgba(34,197,94,0.7)', borderColor: 'rgb(34,197,94)', borderWidth: 1 }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '전세계 오픈배지 발행 수 및 유형 수 추이 (2022–2025)' } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: '백만 개 / 만 개' } } }
+    }
+});
+
+// Chart 2: Category Distribution
+new Chart(document.getElementById('categoryChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+        labels: ['IT/클라우드/테크', '사이버보안', '데이터/AI/ML', '프로젝트 관리', '개발/소프트웨어', '기타'],
+        datasets: [{ data: [35, 18, 15, 12, 10, 10],
+            backgroundColor: ['rgba(59,130,246,0.8)','rgba(239,68,68,0.8)','rgba(168,85,247,0.8)',
+                              'rgba(34,197,94,0.8)','rgba(249,115,22,0.8)','rgba(156,163,175,0.8)'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '배지 스킬 카테고리 분포 추정 (%)' }, legend: { position: 'right' } }
+    }
+});
+
+// Chart 3: Top Issuers
+new Chart(document.getElementById('issuersChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['IBM SkillsBuild', 'PMI', 'ISC2', 'Cisco (템플릿 기준)', 'Google Cloud (템플릿 기준)'],
+        datasets: [{ label: '배지 수 (천 개) / 템플릿 수',
+            data: [1720, 690, 575, 400, 130],
+            backgroundColor: ['rgba(59,130,246,0.8)','rgba(34,197,94,0.8)','rgba(249,115,22,0.8)',
+                              'rgba(168,85,247,0.8)','rgba(239,68,68,0.8)'] }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '주요 발행 기관별 배지 현황 (2024)' }, legend: { display: false } },
+        scales: { x: { beginAtZero: true, title: { display: true, text: '배지 수(천) / 템플릿 수' } } }
+    }
+});
+
+// Chart 4: Skill Taxonomy
+new Chart(document.getElementById('skillTaxonomyChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['LinkedIn Skills', 'Lightcast', 'ESCO (EU)', 'Microsoft Learn', 'O*NET (US)'],
+        datasets: [{ label: '스킬 수',
+            data: [36000, 32000, 13890, 5000, 2400],
+            backgroundColor: ['rgba(14,165,233,0.8)','rgba(59,130,246,0.8)','rgba(34,197,94,0.8)',
+                              'rgba(249,115,22,0.8)','rgba(168,85,247,0.8)'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '글로벌 스킬 분류 체계 규모 비교' }, legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: '스킬 수' } } }
+    }
+});
+
+// Chart 5: Platform Radar
+new Chart(document.getElementById('platformRadarChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['발행 규모', '표준 지원', '기업 기능', '오픈소스', 'UI/UX'],
+        datasets: [
+            { label: 'Credly', data: [95,90,95,20,85], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.2)' },
+            { label: 'Badgr', data: [60,85,60,95,70], borderColor: 'rgb(34,197,94)', backgroundColor: 'rgba(34,197,94,0.2)' },
+            { label: 'Open Badge Passport', data: [40,90,55,70,75], borderColor: 'rgb(249,115,22)', backgroundColor: 'rgba(249,115,22,0.2)' },
+            { label: 'Accredible', data: [55,80,80,30,88], borderColor: 'rgb(168,85,247)', backgroundColor: 'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '오픈배지 플랫폼 역량 비교' } }
+    }
+});
+</script>
+
+<div style="max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem;">
+    <div style="background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd;">
+            <h2 style="font-size: 1.1rem; font-weight: 600; color: #333;">💬 의견 및 반응</h2>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <button id="like-btn" style="background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem;">🤍 좋아요</button>
+                <span id="like-count" style="font-size: 0.9rem; color: #666;">0</span>
+            </div>
+        </div>
+        <div style="margin-bottom: 0.75rem;">
+            <label style="display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem;">이름 (선택)</label>
+            <input type="text" id="comment-author" placeholder="익명" maxlength="50" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem;">
+        </div>
+        <div style="margin-bottom: 0.75rem;">
+            <label style="display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem;">의견</label>
+            <textarea id="comment-content" placeholder="의견을 남겨주세요..." maxlength="1000" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; min-height: 80px; resize: vertical;"></textarea>
+        </div>
+        <button id="comment-submit" style="background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem;">게시</button>
+        <div id="comments-list" style="margin-top: 1.5rem;"><p style="color: #999; text-align: center; padding: 2rem;">댓글 불러오는 중...</p></div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
