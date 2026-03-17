@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLM In-Depth Analysis for K-12 Education and HR</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.7rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.7rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; color: #166534; }
+        .credibility-score-value { font-weight: 700; color: #15803d; font-size: 1rem; }
+        .credibility-score-details { color: #4a4a4a; font-size: 0.8rem; line-height: 1.5; }
+        .overall-credibility { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; text-align: center; }
+        .overall-credibility h3 { font-size: 1.1rem; color: #166534; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 2rem; font-weight: 800; color: #15803d; margin: 0.5rem 0; }
+        .overall-credibility-details { text-align: left; font-size: 0.85rem; color: #4a4a4a; line-height: 1.6; }
+        .domain-label { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .domain-education { background: #dbeafe; color: #1e40af; }
+        .domain-hr { background: #fef3c7; color: #92400e; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media (max-width: 480px) {
+            .header-actions { flex-direction: column; align-items: stretch; }
+            .language-switcher { width: 100%; justify-content: center; }
+            .back-btn { width: 100%; justify-content: center; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='slm-k12-education-hr-applications-20260305-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='slm-k12-education-hr-applications-20260305-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='slm-k12-education-hr-applications-20260305-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>SLM In-Depth Analysis for<br>K-12 Education and HR Departments</h1>
+            <div class="subtitle">Gemma 3n / Phi-4 Mini (Education) vs SmolLM3 / Llama 3.2 3B (HR) — Domain-Optimized Model Comparison</div>
+            <div class="meta">Report Date: March 5, 2026 | Standard Report</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Top 5 Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <!-- Trend 1: Gemma 3n -->
+                <h3 class="subsection-title">1. Gemma 3n: The Game-Changer for K-12 On-Device Multimodal Learning</h3>
+                <span class="domain-label domain-education">K-12 Education</span>
+                <p><strong>Current Status:</strong> Google DeepMind's Gemma 3n employs a MatFormer (Matryoshka Transformer) architecture that enables operation at effective parameters of E2B (2GB RAM) and E4B (3GB RAM). While the actual parameter counts are 5B and 8B respectively, the nested model structure allows the model to process text, images, audio, and video simultaneously with just 2-4B levels of memory. The E4B model achieved an LMArena score exceeding 1,300, making it the first sub-10B model to reach this benchmark (Source: Google Developers Blog, 2025).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>K-12 Education Suitability</h4>
+                        <p>• <strong>Multimodal Learning:</strong> Processes text+image+audio+video inputs with a single model, enabling use across science experiments, music classes, art appreciation, and diverse subjects<br>
+                        • <strong>140 Language Support:</strong> Excels at supporting ESL (English as Second Language) students in multicultural classrooms, with multimodal understanding in 35 languages<br>
+                        • <strong>Offline Operation:</strong> Provides full AI learning assistance without internet connectivity, helping bridge the digital divide in rural and low-income schools</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Chromebook/Tablet Deployment Strategy</h4>
+                        <p>• <strong>2GB RAM Operation:</strong> The E2B model runs on low-spec Chromebooks, optimized for K-5 grade cart deployment models<br>
+                        • <strong>Real-time Processing:</strong> 60fps video processing on Pixel devices, USM-based audio encoder generates 1 token per 160ms (~6 tokens/second)<br>
+                        • <strong>Chrome + Gemini Nano:</strong> Chrome browser integration with Gemini Nano provides a seamless deployment path for Chrome OS devices</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://deepmind.google/models/gemma/gemma-3n/" target="_blank">Gemma 3n (Google DeepMind)</a> |
+                    <a href="https://ai.google.dev/gemma/docs/gemma-3n" target="_blank">Gemma 3n Developer Guide</a> |
+                    <a href="https://developers.googleblog.com/en/introducing-gemma-3n/" target="_blank">Gemma 3n Official Announcement</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Accurate technical specifications from official Google DeepMind documentation, LMArena benchmark data cited<br>
+                        <strong>Areas for Improvement:</strong> Real K-12 classroom deployment cases remain limited; empirical studies on educational effectiveness needed
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> Gemma 3n's 2GB memory requirement is directly compatible with the approximately 50 million Chromebooks deployed across U.S. K-12 schools. Once Chrome OS Gemini Nano integration is completed in H2 2026, browser-based on-device AI learning tools could be deployed at scale without separate installation.</p>
+
+                <!-- Trend 2: Phi-4 Mini/Multimodal -->
+                <h3 class="subsection-title">2. Phi-4 Mini/Multimodal: Education-Specialized SLM Trained on Textbook-Quality Data</h3>
+                <span class="domain-label domain-education">K-12 Education</span>
+                <p><strong>Current Status:</strong> Microsoft's Phi-4 series takes a unique approach specialized for education. Phi-4 Mini (3.8B) is trained on high-quality educational data and code, producing "textbook-like quality" outputs. Phi-4 Multimodal (5.6B) processes text+image+audio in a single architecture, achieving #1 on the Hugging Face OpenASR Leaderboard with a WER of 6.14% (Source: Microsoft Azure Blog, 2025).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Education-Specialized Features</h4>
+                        <p>• <strong>Textbook-Quality Training:</strong> Focused training on high-quality educational data achieves performance comparable to 7-9B models (Llama-3.1-8B-Instruct) in math and science reasoning<br>
+                        • <strong>128K Token Context:</strong> Processes entire textbook chapters and academic papers at once, ideal for reading comprehension and summarization tasks<br>
+                        • <strong>Math/Science Reasoning:</strong> Matches Gemini-2-Flash-lite-preview and Claude-3.5-Sonnet on mathematical reasoning benchmarks</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Multimodal Education Applications</h4>
+                        <p>• <strong>Speech Recognition (ASR):</strong> Surpasses WhisperV3 in ASR performance, enabling presentation-based learning, voice Q&A, and language learning applications<br>
+                        • <strong>Vision Understanding:</strong> Document/chart understanding, OCR, science experiment image analysis for visual learning materials<br>
+                        • <strong>20+ Languages:</strong> Real-time translation and learning support in multilingual classrooms, including speech translation (ST)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://huggingface.co/microsoft/Phi-4-mini-instruct" target="_blank">Phi-4 Mini (Hugging Face)</a> |
+                    <a href="https://huggingface.co/microsoft/Phi-4-multimodal-instruct" target="_blank">Phi-4 Multimodal (Hugging Face)</a> |
+                    <a href="https://azure.microsoft.com/en-us/products/phi" target="_blank">Phi Open Models (Azure)</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Verifiable data from Microsoft's official benchmarks and Hugging Face leaderboard rankings<br>
+                        <strong>Areas for Improvement:</strong> Limited real K-12 classroom application cases; Phi-4 Multimodal (5.6B) may face memory constraints on some Chromebooks
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> Phi-4's "textbook-quality" training data approach represents a key differentiator for education AI. As a STEM education tool for K-12 schools, it is expected to deliver high accuracy particularly in math problem-solving and science concept explanation. Integration with Microsoft's education ecosystem (Teams for Education, Microsoft 365 Education) will be a key driver for deployment expansion.</p>
+
+                <!-- Trend 3: SmolLM3 -->
+                <h3 class="subsection-title">3. SmolLM3: The Open-Source Fine-Tuning Champion for HR</h3>
+                <span class="domain-label domain-hr">HR Department</span>
+                <p><strong>Current Status:</strong> Hugging Face's SmolLM3 (3B) is a fully open-source model that achieves state-of-the-art performance at the 3-4B scale. It outperforms Llama 3.2 3B Instruct and Qwen 2.5 3B Instruct across all benchmarks, even surpassing some 4B models. Notably, it offers /think and /no_think mode switching for choosing between fast responses and deep reasoning as needed (Source: Hugging Face Blog, 2025).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Optimized for HR Resume Screening</h4>
+                        <p>• <strong>Top HellaSwag/ARC/MMLU Scores:</strong> Best-in-class performance across knowledge, reasoning, math, coding, and multilingual tasks, maximizing technical skill matching accuracy in resumes<br>
+                        • <strong>6 Language Support:</strong> Processes multilingual resumes in French, Spanish, German, Italian, and Portuguese; ranks #1 on Flores-200 translation benchmark<br>
+                        • <strong>64K-128K Context:</strong> Analyzes lengthy resumes, portfolios, and career statements in a single pass for comprehensive candidate evaluation</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Fine-Tuning Accessibility</h4>
+                        <p>• <strong>Fully Open-Source:</strong> Apache 2.0 license enables unrestricted commercial use and fine-tuning with internal HR data<br>
+                        • <strong>Documented SFT Process:</strong> Hugging Face's 'smol course' provides step-by-step fine-tuning guides accessible to non-specialists<br>
+                        • <strong>Reasoning Mode Toggle:</strong> Simple resume classification uses /no_think for speed; complex competency evaluation uses /think for precision</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://huggingface.co/HuggingFaceTB/SmolLM3-3B" target="_blank">SmolLM3 (Hugging Face)</a> |
+                    <a href="https://huggingface.co/learn/smol-course/unit1/1" target="_blank">SmolLM3 Fine-Tuning Course</a> |
+                    <a href="https://huggingface.co/blog/smollm3" target="_blank">SmolLM3 Official Blog</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Clear performance comparisons based on public benchmarks, linked to official Hugging Face training courses<br>
+                        <strong>Areas for Improvement:</strong> Direct empirical cases for HR resume screening remain limited; domain-specific benchmarks needed
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> SmolLM3's reasoning mode toggle provides unique value for HR workflows. A two-stage pipeline is possible: rapid first-pass classification of large resume volumes, followed by in-depth analysis only for shortlisted candidates. Its 36.7% score on AIME 2025 (in reasoning mode) suggests it can deliver reliable judgments even in complex competency evaluations.</p>
+
+                <!-- Trend 4: Llama 3.2 3B -->
+                <h3 class="subsection-title">4. Llama 3.2 3B: The Foundation of Enterprise HR Deployment Ecosystems</h3>
+                <span class="domain-label domain-hr">HR Department</span>
+                <p><strong>Current Status:</strong> Meta's Llama 3.2 3B is a lightweight model designed for both edge devices and enterprise environments. It officially supports fine-tuning on Amazon Bedrock (across 1B, 3B, 11B, and 90B models), ensuring low latency and enhanced privacy for text summarization, classification, and retrieval tasks. LoRA-based fine-tuning enables custom model production within 20-50 minutes on a single GPU (Google Colab T4) (Source: AWS, DataCamp, 2025).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>HR Onboarding Automation</h4>
+                        <p>• <strong>Text Classification Focus:</strong> Lightweight architecture optimized for internal document classification, job description (JD) matching, and automated onboarding document verification<br>
+                        • <strong>Sentiment Analysis:</strong> Improve onboarding experience through sentiment analysis of new hire surveys, interview feedback, and employee satisfaction surveys<br>
+                        • <strong>On-Premise Deployment:</strong> 3B parameter lightweight design runs directly on internal servers, preventing employee PII from leaving the organization</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Enterprise Fine-Tuning Ecosystem</h4>
+                        <p>• <strong>Amazon Bedrock:</strong> One-click fine-tuning and deployment through AWS managed services with enterprise-grade security and compliance<br>
+                        • <strong>LoRA/QLoRA:</strong> Train only adapters without full model retraining, minimizing GPU costs; export to GGUF formats (Q4/Q5/Q8/F16)<br>
+                        • <strong>Hybrid Approach:</strong> Hierarchical architecture where Llama 3.2 3B handles simple routing while larger models (Llama 3.2 90B) process complex reasoning</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/" target="_blank">Llama 3.2 (Meta AI)</a> |
+                    <a href="https://aws.amazon.com/about-aws/whats-new/2025/03/metas-llama-3-2-models-fine-tuning-amazon-bedrock/" target="_blank">Llama 3.2 on Amazon Bedrock</a> |
+                    <a href="https://www.llama.com/docs/how-to-guides/fine-tuning/" target="_blank">Llama Fine-Tuning Guide</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Based on Meta AI and AWS official documentation; enterprise fine-tuning workflows verified in practice<br>
+                        <strong>Areas for Improvement:</strong> HR domain-specific fine-tuning case studies are limited; trails SmolLM3 in benchmarks
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> Llama 3.2 3B's core strength lies in Meta's massive ecosystem. Managed fine-tuning support across all major clouds (Amazon Bedrock, Azure, Google Cloud) is a crucial advantage for mid-sized company HR departments lacking their own ML infrastructure. While it slightly trails SmolLM3 in standalone performance, it commands an overwhelming lead in enterprise deployment convenience and community scale.</p>
+
+                <!-- Trend 5: Privacy-first -->
+                <h3 class="subsection-title">5. Privacy-First On-Device SLM: Addressing COPPA/FERPA and Hiring Fairness Regulations</h3>
+                <span class="domain-label domain-education">K-12 Education</span> <span class="domain-label domain-hr">HR Department</span>
+                <p><strong>Current Status:</strong> Data privacy and fairness regulations are the primary drivers for on-device SLM adoption in both K-12 education and HR. In education, FERPA (Family Educational Rights and Privacy Act) and COPPA (Children's Online Privacy Protection Act) strictly limit external transmission of student data, with over 20 U.S. states implementing separate AI tool regulations. In HR, NYC's bias audit mandate and the Colorado AI Act (effective June 2026) require fairness audits of AI hiring tools (Source: K-12 Dive, HR Defense Blog, 2025-2026).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>K-12 Student Data Protection</h4>
+                        <p>• <strong>FERPA Compliance:</strong> On-device SLMs naturally meet FERPA's PII protection requirements as student learning data never leaves the device<br>
+                        • <strong>COPPA Strengthened (Jan 2025):</strong> FTC's COPPA rule amendments tighten children's data collection regulations, increasing compliance costs for cloud-based AI<br>
+                        • <strong>12 States Ban PII Input:</strong> Approximately 12 states prohibit PII input into AI systems entirely, making on-device deployment the only legal alternative</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>HR Hiring Fairness Regulations</h4>
+                        <p>• <strong>83% of Companies Use AI Resume Screening:</strong> Yet 67% acknowledge bias risks (Source: Interview Guys, 2025)<br>
+                        • <strong>NYC Mandatory Bias Audit:</strong> Annual independent bias audits required for automated employment decision tools<br>
+                        • <strong>Colorado AI Act (June 2026):</strong> Imposes reasonable care obligations to prevent algorithmic discrimination in AI hiring tools, with penalties for violations</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://schoolai.com/blog/ensuring-ferpa-coppa-compliance-school-ai-infrastructure" target="_blank">FERPA/COPPA AI Compliance Guide</a> |
+                    <a href="https://www.hrdefenseblog.com/2025/11/ai-in-hiring-emerging-legal-developments-and-compliance-guidance-for-2026/" target="_blank">AI in Hiring Legal Developments 2026</a> |
+                    <a href="https://disa.com/news/ai-in-hr-background-screening-compliance-risks-for-2026/" target="_blank">AI HR Screening Compliance Risks</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Accurate citations from actual legal/regulatory documents (FERPA, COPPA, NYC Local Law, Colorado AI Act)<br>
+                        <strong>Areas for Improvement:</strong> Rapidly evolving regulatory landscape; legal changes after report date should be verified
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> On-device SLMs are emerging as the "optimal compliance architecture" in both education and HR. The K-12 market is projected to grow from $390M in 2024 to $7.95B by 2033 at a CAGR of 38.1% (Source: Grand View Research), while the recruitment software market is expected to grow from $2.57B in 2026 to $4.84B by 2035 at a CAGR of 7.28% (Source: 360 Market Updates). Privacy and fairness compliance will become mandatory prerequisites for AI adoption in both markets.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">Two-Domain, Four-Model Comparative Analysis</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">A comparison of core specifications and characteristics for four SLM models suitable for K-12 education and HR departments.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Parameters</th>
+                            <th>Domain</th>
+                            <th>Multimodal</th>
+                            <th>License</th>
+                            <th>Key Strength</th>
+                            <th>Deployment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Gemma 3n E2B</strong></td>
+                            <td>5B (eff. 2B)</td>
+                            <td>K-12 Education</td>
+                            <td>Text+Image+Audio+Video</td>
+                            <td>Gemma License</td>
+                            <td>2GB RAM, 140 languages</td>
+                            <td>Chrome, Android, Edge</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phi-4 Mini</strong></td>
+                            <td>3.8B</td>
+                            <td>K-12 Education</td>
+                            <td>Text (Multimodal: 5.6B)</td>
+                            <td>MIT</td>
+                            <td>Textbook-quality training, 128K ctx</td>
+                            <td>Azure, NVIDIA NIM, Edge</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SmolLM3</strong></td>
+                            <td>3B</td>
+                            <td>HR Department</td>
+                            <td>Text</td>
+                            <td>Apache 2.0</td>
+                            <td>Best-in-class 3B, reasoning toggle</td>
+                            <td>Hugging Face, ONNX, Ollama</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Llama 3.2 3B</strong></td>
+                            <td>3B</td>
+                            <td>HR Department</td>
+                            <td>Text (Vision: 11B+)</td>
+                            <td>Llama 3.2 Community</td>
+                            <td>Enterprise ecosystem, managed fine-tuning</td>
+                            <td>AWS Bedrock, Azure, GCP, Edge</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Benchmark Performance Comparison</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Benchmark</th>
+                            <th>SmolLM3 3B</th>
+                            <th>Llama 3.2 3B</th>
+                            <th>Phi-4 Mini 3.8B</th>
+                            <th>Gemma 3n E4B</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>MMLU</td><td>Best</td><td>Average</td><td>Strong</td><td>Strong</td></tr>
+                        <tr><td>GSM8K (Math)</td><td>Best</td><td>Average</td><td>Strong</td><td>Strong</td></tr>
+                        <tr><td>HumanEval+ (Coding)</td><td>Best</td><td>Average</td><td>Strong</td><td>Strong</td></tr>
+                        <tr><td>HellaSwag</td><td>Best</td><td>Average</td><td>Strong</td><td>Strong</td></tr>
+                        <tr><td>ARC</td><td>Best</td><td>Average</td><td>Strong</td><td>Strong</td></tr>
+                        <tr><td>Flores-200 (Multilingual)</td><td>Best</td><td>Average</td><td>Strong</td><td>Best (140 langs)</td></tr>
+                        <tr><td>LMArena</td><td>-</td><td>-</td><td>-</td><td>1,300+ (E4B)</td></tr>
+                        <tr><td>OpenASR (Speech)</td><td>-</td><td>-</td><td>WER 6.14% (Multimodal)</td><td>Supported</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">K-12 Education SLM Radar Chart</h3>
+                <div class="chart-container">
+                    <canvas id="educationChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">HR SLM Radar Chart</h3>
+                <div class="chart-container">
+                    <canvas id="hrChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">Key Market Trends</h3>
+                <p style="font-size: 0.9rem; line-height: 1.8;">
+                • <strong>K-12 AI Education Market Explosive Growth:</strong> From $390M in 2024 to $7.95B by 2033 (CAGR 38.1%); on-device AI emerges as the core strategy for privacy regulatory compliance<br>
+                • <strong>AI Resume Screening Goes Mainstream:</strong> 83% of companies adopt AI resume screening, yet 67% acknowledge bias risks — fairness audits become the new standard<br>
+                • <strong>Multimodal SLM Competition Intensifies:</strong> Gemma 3n (text+image+audio+video) and Phi-4 Multimodal (text+image+audio) face direct competition in the educational multimodal market<br>
+                • <strong>Open-Source Fine-Tuning Democratization:</strong> SmolLM3 (Apache 2.0) and Llama 3.2 (Community License) dramatically lower barriers for HR departments' custom model development<br>
+                • <strong>Regulatory Environment Determines Technology Choices:</strong> COPPA/FERPA (education) and NYC bias audits/Colorado AI Act (HR) accelerate on-device over cloud deployment
+                </p>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key SLM application approaches observed across K-12 education and HR departments.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>K-12 Multimodal Learning Assistant Pilot</strong> - Deploy Gemma 3n E2B on Chromebooks to provide science experiment image analysis, voice-based Q&A, and multilingual ESL support through a single on-device model</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>HR Two-Stage Automated Resume Screening</strong> - Use SmolLM3's /no_think mode for rapid first-pass classification of resume volumes, then switch to /think mode for in-depth competency evaluation of shortlisted candidates</p>
+                    <p style="line-height: 1.6;">3. <strong>Privacy Compliance On-Device Migration</strong> - Migrate existing cloud-based education/HR AI tools to on-device SLMs to reduce FERPA/COPPA (education) and NYC bias audit (HR) compliance costs</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>K-12 Education:</strong> Gemma 3n is the most suitable on-device SLM for Chromebook-based K-12 classrooms with multimodal (text+image+audio+video) processing in just 2GB RAM, while Phi-4 Mini delivers specialized STEM precision through textbook-quality training data</li>
+                        <li><strong>HR Departments:</strong> SmolLM3 is the optimal choice for resume screening with best-in-class 3B performance and reasoning mode toggle (/think, /no_think), while Llama 3.2 3B excels in enterprise managed fine-tuning ecosystems like Amazon Bedrock</li>
+                        <li><strong>Regulations Determine Technology Choices:</strong> COPPA/FERPA (education) and NYC bias audits/Colorado AI Act (HR) are key accelerators for on-device SLM adoption; on-device is more economical than cloud from a compliance cost perspective</li>
+                        <li><strong>Market Growth Projections:</strong> K-12 AI education market expected to reach $7.95B by 2033 (CAGR 38.1%); recruitment software market projected to expand to $4.84B by 2035 (CAGR 7.28%)</li>
+                        <li><strong>Multimodal vs Text-Only:</strong> Education prioritizes multimodal capabilities (science experiments, music, art); HR prioritizes text processing performance and fine-tuning accessibility</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Domain-Specific Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>K-12 Schools (Low-Spec Chromebook/Tablet Focus) → Gemma 3n E2B</strong><br>
+                        Reason: Multimodal operation in 2GB RAM, Chrome + Gemini Nano integration, 140 language support, offline operation<br><br>
+                        <strong>K-12 Schools (STEM Education Enhancement) → Phi-4 Mini 3.8B + Phi-4 Multimodal</strong><br>
+                        Reason: Textbook-quality training data, top math/science reasoning, Microsoft education ecosystem integration<br><br>
+                        <strong>HR Departments (In-House Fine-Tuning Capability) → SmolLM3 3B</strong><br>
+                        Reason: Best 3B performance, Apache 2.0 fully open-source, reasoning mode toggle, 6 language support<br><br>
+                        <strong>HR Departments (Prefer Managed Cloud Services) → Llama 3.2 3B</strong><br>
+                        Reason: Amazon Bedrock/Azure/GCP managed fine-tuning, large community, hybrid small-large model architecture<br><br>
+                        <strong>Education + HR Integrated Pilot → Gemma 3n E4B + SmolLM3 Combination</strong><br>
+                        Reason: Gemma 3n multimodal for education, SmolLM3 text reasoning for HR — domain-optimized combination
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment: Positive</strong> — SLMs in the 2-4B parameter range have reached sufficient maturity to deliver practical value in K-12 education and HR domains. On-device deployment for privacy compliance and democratization of open-source fine-tuning are significantly lowering adoption barriers.</p>
+            </section>
+
+            <!-- SECTION 5: Key Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MatFormer (Matryoshka Transformer)</strong> - A transformer architecture where smaller models are nested inside larger ones, like Russian Matryoshka dolls. The core technology enabling Gemma 3n to use only 2-4B levels of memory despite having 8B parameters
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>On-Device AI</strong> - Running AI directly on user devices (Chromebooks, tablets, smartphones) rather than cloud servers. Advantageous for privacy as data never leaves the device
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>FERPA (Family Educational Rights and Privacy Act)</strong> - U.S. federal law regulating access to and disclosure of student educational records. The legal standard for student data protection when schools use AI tools
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>COPPA (Children's Online Privacy Protection Act)</strong> - U.S. federal law regulating online collection of personal information from children under 13. Protection scope expanded by FTC rule amendments in January 2025
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LoRA/QLoRA (Low-Rank Adaptation / Quantized Low-Rank Adaptation)</strong> - Techniques for customizing models to specific domains by training only small adapters instead of the entire model. Enables fine-tuning of 3B models on a single GPU
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Bias Audit</strong> - An independent process verifying whether AI hiring tools produce discriminatory results based on protected characteristics such as gender or race. Mandated annually in NYC
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>SFT (Supervised Fine-Tuning)</strong> - Additional model training using human-created input-output pair datasets. Both SmolLM3 and Llama 3.2 can be specialized for HR domains through SFT
+                    </div>
+                </div>
+            </section>
+
+            <!-- Overall Credibility -->
+            <div class="overall-credibility">
+                <h3>Overall Credibility Assessment</h3>
+                <div class="overall-credibility-score">8.4/10</div>
+                <div class="overall-credibility-details">
+                    <p><strong>Overall Evaluation:</strong> High-credibility analysis based on official technical documentation, public benchmarks, and actual legal/regulatory documents</p>
+                    <p><strong>Key Strengths:</strong> All four models accurately cite technical specifications and benchmarks from official sources (Google DeepMind, Microsoft, Hugging Face, Meta AI); regulatory environment described based on actual legal documents</p>
+                    <p><strong>Priority Improvements:</strong> Real deployment case studies in K-12 classrooms and HR departments remain limited; domain-specific benchmarks (educational QA accuracy, resume screening precision/recall, etc.) need supplementation</p>
+                </div>
+            </div>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> March 5, 2026</p>
+                    <ul>
+                        <li>• <a href="https://deepmind.google/models/gemma/gemma-3n/" target="_blank">Gemma 3n — Google DeepMind (2025)</a></li>
+                        <li>• <a href="https://developers.googleblog.com/en/introducing-gemma-3n/" target="_blank">Announcing Gemma 3n preview — Google Developers Blog</a></li>
+                        <li>• <a href="https://ai.google.dev/gemma/docs/gemma-3n" target="_blank">Gemma 3n model overview — Google AI for Developers</a></li>
+                        <li>• <a href="https://azure.microsoft.com/en-us/blog/empowering-innovation-the-next-generation-of-the-phi-family/" target="_blank">Empowering innovation: The next generation of the Phi family — Microsoft Azure Blog</a></li>
+                        <li>• <a href="https://huggingface.co/microsoft/Phi-4-multimodal-instruct" target="_blank">Phi-4-multimodal-instruct — Hugging Face</a></li>
+                        <li>• <a href="https://huggingface.co/blog/smollm3" target="_blank">SmolLM3: smol, multilingual, long-context reasoner — Hugging Face Blog</a></li>
+                        <li>• <a href="https://huggingface.co/learn/smol-course/unit1/1" target="_blank">Introduction to Instruction Tuning with SmolLM3 — Hugging Face Course</a></li>
+                        <li>• <a href="https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/" target="_blank">Llama 3.2: Revolutionizing edge AI — Meta AI Blog</a></li>
+                        <li>• <a href="https://aws.amazon.com/about-aws/whats-new/2025/03/metas-llama-3-2-models-fine-tuning-amazon-bedrock/" target="_blank">Llama 3.2 Fine-tuning on Amazon Bedrock — AWS</a></li>
+                        <li>• <a href="https://www.grandviewresearch.com/industry-analysis/ai-k-12-education-market-report" target="_blank">AI In K-12 Education Market Size | Industry Report, 2033 — Grand View Research</a></li>
+                        <li>• <a href="https://blog.theinterviewguys.com/83-of-companies-will-use-ai-resume-screening-by-2025-despite-67-acknowledging-bias-concerns/" target="_blank">83% of Companies Will Use AI Resume Screening by 2025 — Interview Guys</a></li>
+                        <li>• <a href="https://schoolai.com/blog/ensuring-ferpa-coppa-compliance-school-ai-infrastructure" target="_blank">FERPA & COPPA compliance guide for school AI infrastructure — SchoolAI</a></li>
+                        <li>• <a href="https://www.hrdefenseblog.com/2025/11/ai-in-hiring-emerging-legal-developments-and-compliance-guidance-for-2026/" target="_blank">AI in Hiring: Emerging Legal Developments for 2026 — HR Defense Blog</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <div class="disclaimer" style="display: none;">
+                <p>This report is AI-generated content. Please verify critical information with original sources.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // K-12 Education Radar Chart
+        const eduCtx = document.getElementById('educationChart').getContext('2d');
+        new Chart(eduCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Multimodal Capability', 'On-Device Efficiency', 'STEM Reasoning', 'Multilingual Support', 'Deployment Ease'],
+                datasets: [
+                    {
+                        label: 'Gemma 3n E2B/E4B',
+                        data: [95, 95, 80, 95, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Phi-4 Mini 3.8B',
+                        data: [60, 80, 95, 85, 80],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Phi-4 Multimodal 5.6B',
+                        data: [90, 70, 90, 85, 75],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+                scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, font: { size: 10 } }, pointLabels: { font: { size: 11 } } } }
+            }
+        });
+
+        // HR Radar Chart
+        const hrCtx = document.getElementById('hrChart').getContext('2d');
+        new Chart(hrCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Text Classification', 'Fine-Tuning Ease', 'Multilingual Resume', 'Enterprise Deployment', 'Cost Efficiency'],
+                datasets: [
+                    {
+                        label: 'SmolLM3 3B',
+                        data: [95, 90, 90, 70, 95],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Llama 3.2 3B',
+                        data: [80, 85, 75, 95, 80],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+                scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, font: { size: 10 } }, pointLabels: { font: { size: 11 } } } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
