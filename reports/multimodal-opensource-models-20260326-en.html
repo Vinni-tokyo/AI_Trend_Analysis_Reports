@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open-Source Multimodal AI Models: Specialized Model Guide & Best Practices</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.7rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.7rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: var(--primary-navy); font-size: 1rem; }
+        .overall-credibility { background: #f0f7ff; border: 2px solid var(--accent-navy); border-radius: 6px; padding: 1.5rem; margin: 1.5rem 0; text-align: center; }
+        .overall-credibility h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 2rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.9rem; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; } .header { padding-top: 1rem; text-align: center; } .language-switcher { justify-content: center; } .back-btn { order: -1; } }
+        @media (max-width: 480px) { .header-actions { flex-direction: column; align-items: stretch; } .language-switcher { width: 100%; justify-content: center; } .back-btn { width: 100%; justify-content: center; } }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">&larr; Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='multimodal-opensource-models-20260326-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='multimodal-opensource-models-20260326-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='multimodal-opensource-models-20260326-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>Open-Source Multimodal AI Models:<br>Specialized Model Guide &amp; Best Practices</h1>
+            <div class="subtitle">Complete Guide to Open-Source Models Across Vision-Language, Image Generation, Video Generation &amp; Speech Synthesis</div>
+            <div class="meta">Report Date: March 26, 2026 | Standard Report (5-8 pages)</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Top 5 Key Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Key Trends</h2>
+
+                <h3 class="subsection-title">1. Vision-Language Models (VLMs): Qwen3-VL and InternVL3 Challenge Commercial Models</h3>
+                <p><strong>Current Status:</strong> Open-source vision-language models (VLMs) have reached performance parity with commercial offerings. Alibaba's Qwen3-VL-235B now matches Gemini 2.5 Pro and GPT-5 on multimodal benchmarks, while InternVL3 delivers expanded capabilities including tool use, GUI agents, industrial image analysis, and 3D vision.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Models</h4>
+                        <p>&bull; <strong>Qwen3-VL-235B:</strong> 235B parameters (22B active), top-tier in general Q&amp;A, 2D/3D grounding, video understanding, OCR, and document comprehension<br>
+                        &bull; <strong>InternVL3:</strong> Major improvements in perception and reasoning over its predecessor, with support for tool use/GUI agents/industrial image analysis/3D vision<br>
+                        &bull; <strong>GLM-4.5V:</strong> Best-in-class 3D reasoning performance, ranked #1 on the latest benchmarks<br>
+                        &bull; <strong>Qwen2.5-VL-32B:</strong> Optimal cost-performance ratio at 32B size, ideal for local deployment</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Advantages of Open-Source VLMs</h4>
+                        <p>&bull; <strong>Data Privacy:</strong> Runs on your own infrastructure, ensuring data never leaves your environment<br>
+                        &bull; <strong>Fine-Tuning:</strong> Customize models with domain-specific data to optimize for particular tasks<br>
+                        &bull; <strong>No Vendor Lock-In:</strong> Deploy freely without risk of API price changes or service disruptions<br>
+                        &bull; <strong>Customization:</strong> Embed brand voice, domain expertise, and user behavior patterns directly into the model</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://qwenlm.github.io/" target="_blank">Qwen (Alibaba)</a> |
+                    <a href="https://github.com/OpenGVLab/InternVL" target="_blank">InternVL</a> |
+                    <a href="https://github.com/THUDM/GLM-4" target="_blank">GLM-4</a> |
+                    <a href="https://ollama.com/library" target="_blank">Ollama (Local Deployment)</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Benchmark data verified across multiple technical sources including BentoML, DataCamp, and SiliconFlow<br>
+                        <strong>Areas for Improvement:</strong> Detailed per-benchmark scores could be added
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> In the second half of 2026, VLM agent capabilities are expected to mature significantly, enabling real-world applications such as screen-understanding-based GUI automation, industrial image analysis on the factory floor, and video-based real-time decision-making.</p>
+
+
+                <h3 class="subsection-title">2. Image Generation: FLUX.2 Sets a New Standard for Photorealism</h3>
+                <p><strong>Current Status:</strong> Black Forest Labs' FLUX.2 (released November 2025) has established a new standard for open-source image generation. It renders skin texture, lighting, reflections, fabric folds, and environmental details with remarkable accuracy, with particularly outstanding in-image text rendering quality. Meanwhile, Stable Diffusion XL (SDXL) maintains its practical edge through its vast LoRA ecosystem and compatibility with mid-to-low-range hardware.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>FLUX.2 vs SDXL Comparison</h4>
+                        <p>&bull; <strong>FLUX.2 Pro:</strong> Top-tier image quality on par with commercial proprietary models. Leads in photorealism<br>
+                        &bull; <strong>FLUX.2 Dev:</strong> 32B open-weight model for research/development. Requires 24GB+ VRAM<br>
+                        &bull; <strong>SDXL:</strong> Largest LoRA/custom model ecosystem. Runs on 8GB VRAM<br>
+                        &bull; <strong>SD 1.5 Family:</strong> Runs on as little as 4GB VRAM, broadest hardware compatibility</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Best Choice by Use Case</h4>
+                        <p>&bull; <strong>Photorealism:</strong> FLUX.2 is the clear leader &mdash; ideal for product photography, portraits, and realistic imagery<br>
+                        &bull; <strong>Text Rendering:</strong> A core strength of FLUX &mdash; capable of accurate text generation where SDXL struggles<br>
+                        &bull; <strong>Customization:</strong> SDXL is optimal &mdash; beginner-friendly tools like A1111 and ComfyUI plus a vast LoRA library<br>
+                        &bull; <strong>Low-Spec Local:</strong> SD 1.5-based models are ideal &mdash; run in environments with just 4GB VRAM</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://blackforestlabs.ai/" target="_blank">Black Forest Labs (FLUX)</a> |
+                    <a href="https://stability.ai/" target="_blank">Stability AI (SDXL)</a> |
+                    <a href="https://github.com/comfyanonymous/ComfyUI" target="_blank">ComfyUI</a> |
+                    <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui" target="_blank">A1111 WebUI</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Based on concrete, verifiable technical specs including actual VRAM requirements and LoRA compatibility<br>
+                        <strong>Areas for Improvement:</strong> More detailed licensing terms for FLUX.2 Pro needed
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> The FLUX ecosystem's LoRA and custom model offerings are growing rapidly, narrowing the gap with SDXL. By the second half of 2026, FLUX is expected to become the open-source image generation standard in both practicality and quality.</p>
+
+
+                <h3 class="subsection-title">3. Video Generation: Wan 2.2 and HunyuanVideo Bring Cinema-Grade Quality to Open Source</h3>
+                <p><strong>Current Status:</strong> Open-source video generation models have achieved quality approaching that of commercial services. Alibaba's Wan 2.2 delivers cinematic quality through a Mixture-of-Experts (MoE) diffusion backbone, while Tencent's HunyuanVideo stands as the largest open-source text-to-video model at 13B parameters.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Models</h4>
+                        <p>&bull; <strong>Wan 2.2:</strong> MoE diffusion backbone, best cinematic quality. Available in 1.3B (8GB VRAM) to 14B variants<br>
+                        &bull; <strong>HunyuanVideo 1.5:</strong> 13B parameters, spatiotemporal latent space with 3D VAE. Largest open-source video model<br>
+                        &bull; <strong>LTX-Video:</strong> Speed-optimized model &mdash; near-real-time generation speed is its core strength<br>
+                        &bull; <strong>CogVideoX-5B:</strong> Lightweight model, generates 6-second clips at 720x480 resolution. Runs on mid-to-low-range hardware</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Selection Guide by Use Case</h4>
+                        <p>&bull; <strong>Cinematic Output:</strong> Wan 2.2 &mdash; optimal for cinematic realism and multi-shot sequences<br>
+                        &bull; <strong>Architectural Flexibility:</strong> HunyuanVideo &mdash; largest parameter count with diverse extensibility<br>
+                        &bull; <strong>Generation Speed:</strong> LTX-Video &mdash; near-real-time speeds, ideal for prototyping<br>
+                        &bull; <strong>License Freedom:</strong> Mochi 1 &mdash; Apache 2.0 license with no commercial restrictions</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://github.com/Wan-Video/Wan2.1" target="_blank">Wan Video</a> |
+                    <a href="https://github.com/Tencent-Hunyuan/HunyuanVideo" target="_blank">HunyuanVideo (Tencent)</a> |
+                    <a href="https://github.com/Lightricks/LTX-Video" target="_blank">LTX-Video</a> |
+                    <a href="https://github.com/genmoai/mochi" target="_blank">Mochi 1</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Specific model specifications (parameter counts, VRAM requirements) with verifiable GitHub-based sources<br>
+                        <strong>Areas for Improvement:</strong> Quantitative video quality benchmark comparisons needed
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> As hardware requirements for open-source video models continue to decline (Wan 2.2's 1.3B model runs on 8GB VRAM), accessibility for small-to-medium businesses and individual creators is set to improve dramatically.</p>
+
+
+                <h3 class="subsection-title">4. Speech Synthesis (TTS) and Recognition (STT): Fish Audio S2 and Whisper V3</h3>
+                <p><strong>Current Status:</strong> Open-source speech AI has reached commercial-grade naturalness and expressiveness. Fish Audio S2 Pro, trained on over 10 million hours of speech data, supports 80+ languages and enables fine-grained prosody control through emotion tags ([whisper], [excited], [angry]).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Text-to-Speech (TTS)</h4>
+                        <p>&bull; <strong>Fish Audio S2 Pro:</strong> Most natural synthesis using Dual-AR + reinforcement learning. Fine-grained control via emotion tags<br>
+                        &bull; <strong>Bark (Suno AI):</strong> Generates non-verbal sounds such as laughter, sighs, and crying. Ideal for storytelling and character voices<br>
+                        &bull; <strong>S1-mini (Fish Audio):</strong> Lightweight 500M-parameter model with multilingual voice cloning support. Suitable for local deployment</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Speech-to-Text (STT) and Beyond</h4>
+                        <p>&bull; <strong>Whisper Large V3:</strong> 1.55B parameters, supports 99+ languages. Excels in diverse acoustic environments and rare vocabulary handling<br>
+                        &bull; <strong>Stable Audio Open 1.0:</strong> Generates sound effects and background music from text. Used for audio content production<br>
+                        &bull; <strong>MusicGen (Meta):</strong> Text-to-music model that generates music from text descriptions</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://fish.audio/" target="_blank">Fish Audio</a> |
+                    <a href="https://github.com/suno-ai/bark" target="_blank">Bark (Suno AI)</a> |
+                    <a href="https://github.com/openai/whisper" target="_blank">Whisper (OpenAI)</a> |
+                    <a href="https://github.com/facebookresearch/audiocraft" target="_blank">MusicGen (Meta)</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Accurate model specifications sourced from official GitHub repositories and technical blogs<br>
+                        <strong>Areas for Improvement:</strong> Quantitative comparisons such as MOS (Mean Opinion Score) for voice quality needed
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> Open-source TTS is rapidly emerging as a viable alternative to commercial services like ElevenLabs, now supporting emotional expression, multi-speaker dialogue, and real-time voice cloning. Adoption is expected to accelerate particularly in multilingual content creation and education.</p>
+
+
+                <h3 class="subsection-title">5. Deployment Best Practices: Fine-Tuning, Quantization, and Orchestration</h3>
+                <p><strong>Current Status:</strong> The key trends in open-source multimodal AI for 2026 can be summarized as: multimodality (simultaneous support for text, images, and structured data), efficiency (sparse architectures that reduce infrastructure costs), and enterprise readiness (maturing RAG, fine-tuning, and deployment tooling).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Fine-Tuning Strategies</h4>
+                        <p>&bull; <strong>Domain-Specific Fine-Tuning:</strong> Smaller open-source models + proprietary data can outperform general-purpose frontier models in specific domains<br>
+                        &bull; <strong>LoRA/QLoRA:</strong> Train less than 1% of total parameters to minimize GPU costs<br>
+                        &bull; <strong>Platform Options:</strong> SiliconFlow (3-stage pipeline), Hugging Face (AutoTrain), BentoML (serving optimization), and more</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Deployment Optimization</h4>
+                        <p>&bull; <strong>Quantization:</strong> INT4/INT8 quantization reduces VRAM requirements by 50&ndash;75% with minimal quality loss<br>
+                        &bull; <strong>MoE Architecture:</strong> Activates only a subset of total parameters for significant compute savings (e.g., Qwen3-VL: 235B total, 22B active)<br>
+                        &bull; <strong>Ollama/vLLM:</strong> Ollama for local deployment, vLLM for production serving &mdash; simplifying infrastructure<br>
+                        &bull; <strong>Security Considerations:</strong> Air-gapped deployment, data locality guarantees, and compliance automation</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>Related Links:</strong>
+                    <a href="https://ollama.com/" target="_blank">Ollama</a> |
+                    <a href="https://github.com/vllm-project/vllm" target="_blank">vLLM</a> |
+                    <a href="https://www.siliconflow.com/" target="_blank">SiliconFlow</a> |
+                    <a href="https://www.bentoml.com/" target="_blank">BentoML</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">Credibility Assessment:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Presents field-proven tools (Ollama, vLLM) and specific optimization techniques<br>
+                        <strong>Areas for Improvement:</strong> Real-world enterprise deployment case studies and ROI data needed
+                    </div>
+                </div>
+
+                <p><strong>Outlook:</strong> With the democratization of fine-tuning and advances in quantization, mid-sized enterprises can now operate frontier-level multimodal AI on their own infrastructure. By the second half of 2026, "one-click deployment" tools are expected to become even more widespread.</p>
+
+            </section>
+
+
+            <!-- SECTION 2: Competitive Landscape & Market Positioning -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape &amp; Market Positioning</h2>
+
+                <h3 class="subsection-title">Market Structure Across Four Domains</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The open-source multimodal AI market is segmented into four domains: vision-language, image generation, video generation, and speech synthesis/recognition. Each domain has clear frontrunner models.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Domain</th>
+                            <th>Core Strength</th>
+                            <th>VRAM Requirement</th>
+                            <th>License</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Qwen3-VL-235B</strong></td><td>Vision-Language</td><td>Commercial-grade multimodal benchmarks</td><td>80GB+ (FP16)</td><td>Apache 2.0</td></tr>
+                        <tr><td><strong>InternVL3</strong></td><td>Vision-Language</td><td>Industrial image / 3D vision</td><td>40GB+ (FP16)</td><td>MIT</td></tr>
+                        <tr><td><strong>Qwen2.5-VL-32B</strong></td><td>Vision-Language</td><td>Best cost-performance ratio</td><td>16GB+ (INT4)</td><td>Apache 2.0</td></tr>
+                        <tr><td><strong>FLUX.2 Dev</strong></td><td>Image Generation</td><td>Photorealism, text rendering</td><td>24GB+</td><td>Non-commercial</td></tr>
+                        <tr><td><strong>SDXL</strong></td><td>Image Generation</td><td>Largest LoRA ecosystem</td><td>8GB+</td><td>CreativeML Open RAIL++-M</td></tr>
+                        <tr><td><strong>Wan 2.2 (14B)</strong></td><td>Video Generation</td><td>Cinematic quality, MoE architecture</td><td>24GB+</td><td>Apache 2.0</td></tr>
+                        <tr><td><strong>HunyuanVideo 1.5</strong></td><td>Video Generation</td><td>Largest scale (13B), 3D VAE</td><td>40GB+</td><td>Tencent Hunyuan</td></tr>
+                        <tr><td><strong>Fish Audio S2</strong></td><td>Speech Synthesis</td><td>Emotion tag control, 80 languages</td><td>8GB+</td><td>CC BY-NC-SA 4.0</td></tr>
+                        <tr><td><strong>Whisper V3</strong></td><td>Speech Recognition</td><td>99 languages, multi-environment robustness</td><td>4GB+</td><td>MIT</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Key Market Trends</h3>
+                <p style="font-size: 0.95rem; line-height: 1.8;">
+                    &bull; <strong>Widespread MoE Adoption:</strong> Models like Qwen3-VL and Wan 2.2 adopt MoE to maintain performance while dramatically reducing execution costs<br>
+                    &bull; <strong>Rise of Lightweight Models:</strong> Rapid growth in consumer-GPU-capable models such as Wan 2.2 1.3B (8GB), CogVideoX-5B, and S1-mini<br>
+                    &bull; <strong>Ecosystem Maturity:</strong> Deployment tools like ComfyUI, Ollama, and vLLM have matured, significantly lowering the developer barrier to entry<br>
+                    &bull; <strong>Dominance of Chinese Models:</strong> Chinese-origin models (Qwen, Wan, HunyuanVideo, CogVideo, GLM) lead across all domains<br>
+                    &bull; <strong>License Diversification:</strong> Ranging from Apache 2.0 to non-commercial &mdash; verifying the license before commercial use is essential
+                </p>
+
+                <h3 class="subsection-title">Domain-Specific Model Capability Comparison</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Here are key application approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Internal Document &amp; Image Analysis Pipeline</strong> &mdash; Deploy Qwen2.5-VL-32B with INT4 quantization locally to build a system for analyzing confidential documents, product images, and engineering drawings. Data never leaves your infrastructure, ensuring security.</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>AI Video Content Production Studio</strong> &mdash; Integrate Wan 2.2 (1.3B) into a ComfyUI workflow to automatically generate educational and marketing short-form videos on an 8GB GPU setup.</p>
+                    <p style="line-height: 1.6;">3. <strong>Multilingual Audio Content Automation</strong> &mdash; Combine Fish Audio S2 + Whisper V3 to build an end-to-end pipeline: automatic lecture transcription, multilingual translation, and natural speech synthesis.</p>
+                </div>
+            </section>
+
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>VLMs Reach Commercial Parity:</strong> Qwen3-VL-235B matches Gemini 2.5 Pro/GPT-5 on benchmarks, making real-world deployment of open-source VLMs a practical reality</li>
+                        <li><strong>FLUX.2 Replaces the Image Generation Standard:</strong> Dominant in photorealism and text rendering, while SDXL coexists through ecosystem richness</li>
+                        <li><strong>Democratization of Open-Source Video Generation:</strong> Wan 2.2's 1.3B model runs on 8GB VRAM, dramatically lowering the barrier to entry</li>
+                        <li><strong>TTS/STT Maturity Achieved:</strong> Fish Audio S2's emotion tag control and Whisper V3's 99-language support make them viable replacements for commercial services</li>
+                        <li><strong>Chinese Models in a Dominant Position:</strong> Chinese-origin models (Alibaba, Tencent, Zhipu) hold leading positions across all four domains</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Image/Document Understanding &rarr; Qwen2.5-VL-32B (16GB+ VRAM)</strong><br>
+                        Why: Best cost-performance ratio, Apache 2.0 license, runs on consumer GPUs with INT4 quantization<br>
+                        <strong>High-Quality Image Generation &rarr; FLUX.2 Dev (24GB+ VRAM)</strong><br>
+                        Why: Best-in-class photorealism and text rendering among open-source options<br>
+                        <strong>Low-Spec Image Generation &rarr; SDXL (8GB VRAM)</strong><br>
+                        Why: Largest LoRA ecosystem, mid-to-low-range GPU compatible, best community support<br>
+                        <strong>Video Generation &rarr; Wan 2.2 (8GB&ndash;24GB VRAM)</strong><br>
+                        Why: Cinematic quality, MoE architecture, flexible model sizes from 1.3B to 14B<br>
+                        <strong>Multilingual Speech &rarr; Fish Audio S2 + Whisper V3</strong><br>
+                        Why: 80-language TTS + 99-language STT combination for an end-to-end voice pipeline
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Highly positive (Open-source multimodal AI has reached a level where it can challenge commercial services across all domains. Accessibility has improved dramatically, with video generation now possible on 8GB VRAM setups. The key question has shifted from "which model to use" to "how to optimize it for your specific domain.")</p>
+            </section>
+
+
+            <!-- SECTION 5: Key Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Vision-Language Model (VLM)</strong> &mdash; An AI model that simultaneously understands and generates both images and text. Example: describing an image or extracting data from a document photo.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LoRA (Low-Rank Adaptation)</strong> &mdash; A technique for fine-tuning only a small subset of parameters rather than retraining an entire large model. Significantly reduces GPU costs while enabling customization.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Quantization</strong> &mdash; A technique that reduces a model's numerical precision (e.g., FP16 to INT4) to lower memory usage and compute costs. Quality loss is minimal.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MoE (Mixture of Experts)</strong> &mdash; An architecture that activates only a subset of "expert" modules from the total parameters. Maintains the performance of large-scale models while reducing execution costs (e.g., 22B active out of 235B total).
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Diffusion Model</strong> &mdash; A method that progressively generates images or video from noise. The dominant architecture behind current image/video generation models such as FLUX, SDXL, and Wan.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>3D VAE (Variational Autoencoder)</strong> &mdash; An encoder-decoder structure that transforms spatiotemporal video information into a compressed latent space. A core component of video models like HunyuanVideo.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>ComfyUI</strong> &mdash; A node-based visual workflow tool. Build image/video generation pipelines via drag-and-drop. Popular among both developers and artists.
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Overall Credibility Assessment -->
+            <div class="overall-credibility">
+                <h3>Overall Credibility Assessment</h3>
+                <div class="overall-credibility-score">8.4/10</div>
+                <div class="overall-credibility-details">
+                    <p><strong>Overall Assessment:</strong> Verifiable analysis based on multiple technical blogs (BentoML, SiliconFlow, Pixazo, DataCamp) and official GitHub repositories</p>
+                    <p><strong>Key Strengths:</strong> Presents data directly needed for practical use, including specific VRAM requirements, model parameter counts, and license information</p>
+                    <p><strong>Improvement Priorities:</strong> Strengthen quantitative benchmark comparison tables per domain; add real enterprise deployment case studies and ROI data</p>
+                </div>
+            </div>
+
+            <div class="disclaimer" style="display: none;">
+                <p>This report contains AI-generated content. Please verify important information against original sources.</p>
+            </div>
+
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data Collection:</strong> March 26, 2026</p>
+                    <ul>
+                        <li>&bull; <a href="https://www.bentoml.com/blog/multimodal-ai-a-guide-to-open-source-vision-language-models" target="_blank">BentoML - Multimodal AI: Best Open-Source VLMs in 2026</a></li>
+                        <li>&bull; <a href="https://www.siliconflow.com/articles/en/best-open-source-multimodal-models-2025" target="_blank">SiliconFlow - Ultimate Guide: Best Open Source Multimodal Models</a></li>
+                        <li>&bull; <a href="https://www.datacamp.com/blog/top-vision-language-models" target="_blank">DataCamp - Top 10 Vision Language Models in 2026</a></li>
+                        <li>&bull; <a href="https://www.pixazo.ai/blog/top-open-source-image-generation-models" target="_blank">Pixazo - Best Open-Source AI Image Generation Models 2026</a></li>
+                        <li>&bull; <a href="https://apatero.com/blog/flux-2-vs-stable-diffusion-xl-comparison-2026" target="_blank">Apatero - FLUX 2 vs Stable Diffusion XL: Full Comparison 2026</a></li>
+                        <li>&bull; <a href="https://www.pixazo.ai/blog/best-open-source-ai-video-generation-models" target="_blank">Pixazo - Best Open Source AI Video Generation Models 2026</a></li>
+                        <li>&bull; <a href="https://www.hyperstack.cloud/blog/case-study/best-open-source-video-generation-models" target="_blank">Hyperstack - 7 Best Open Source Video Generation Models 2026</a></li>
+                        <li>&bull; <a href="https://github.com/Tencent-Hunyuan/HunyuanVideo" target="_blank">GitHub - Tencent HunyuanVideo</a></li>
+                        <li>&bull; <a href="https://fish.audio/s2/" target="_blank">Fish Audio S2 - Most Expressive Open-Source TTS</a></li>
+                        <li>&bull; <a href="https://northflank.com/blog/best-open-source-speech-to-text-stt-model-in-2026-benchmarks" target="_blank">Northflank - Best Open Source STT Model 2026 (Benchmarks)</a></li>
+                        <li>&bull; <a href="https://www.siliconflow.com/articles/en/the-best-fine-tuning-platforms-for-open-source-models" target="_blank">SiliconFlow - Best Fine-Tuning Platforms for Open Source Models</a></li>
+                        <li>&bull; <a href="https://www.siliconflow.com/articles/en/fastest-open-source-multimodal-models" target="_blank">SiliconFlow - Fastest Open Source Multimodal Models 2026</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Image Understanding', 'Image Generation', 'Video Generation', 'Speech Processing', 'Ease of Deployment'],
+                datasets: [
+                    {
+                        label: 'Qwen3-VL-235B',
+                        data: [98, 20, 20, 20, 40],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'FLUX.2 Dev',
+                        data: [20, 95, 20, 20, 55],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Wan 2.2',
+                        data: [20, 30, 92, 20, 70],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Fish Audio S2',
+                        data: [20, 20, 20, 90, 75],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 }, padding: 15 }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>&#x1F90D;</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
