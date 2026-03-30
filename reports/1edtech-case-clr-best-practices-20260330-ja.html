@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1EdTech CASE & CLR グローバル活用事例分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.7rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.7rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: #166534; font-size: 1rem; }
+        .overall-credibility { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; text-align: center; }
+        .overall-credibility h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .overall-credibility-score { font-size: 2rem; font-weight: 800; color: #166534; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.9rem; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='1edtech-case-clr-best-practices-20260330-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='1edtech-case-clr-best-practices-20260330-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='1edtech-case-clr-best-practices-20260330-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>1EdTech CASE & CLR<br>グローバル活用事例とベストプラクティス分析</h1>
+            <div class="subtitle">能力・学術標準交換（CASE）と包括的学習者記録（CLR）のグローバル導入状況</div>
+            <div class="meta">レポート作成日：2026年3月30日 | 標準レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <!-- Trend 1 -->
+                <h3 class="subsection-title">1. CASE 1.1標準とCASE Global Ecosystem：世界の学習標準のデジタル統合</h3>
+                <p><strong>現状：</strong>2025年4月にCASE 1.1標準が公式にリリースされ、学習標準、学術的能力、スキルフレームワークを機械可読なデジタル形式で公開・交換するための標準的な方法が確立されました。2026年Digital Credentials Summitでは「CASE Network 2」の名称が「CASE Global Ecosystem」に変更され、グローバル展開戦略が本格化しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>核心機能</h4>
+                        <p>• <strong>JSON + REST APIによる交換：</strong>CASEフレームワークをJSON形式とREST APIを介してシステム間で交換<br>
+                        • <strong>GUID固有識別子：</strong>各学習標準・能力にグローバル固有識別子（GUID）を付与し、プラットフォーム間の一貫性を保証<br>
+                        • <strong>階層的フレームワーク：</strong>従来のPDF/Word/HTML文書を階層構造のデジタルフォーマットに変換</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>グローバル展開状況</h4>
+                        <p>• <strong>米国50州カバー：</strong>K-12の英語・数学標準をすべての州で検証・公開完了<br>
+                        • <strong>PK-12+の5つの新科目：</strong>2025年に新しい教科領域へ拡大<br>
+                        • <strong>30カ国以上の「Core Four」カリキュラム：</strong>核心的な学習成果を30以上の国・地域に追加</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.1edtech.org/standards/case" target="_blank">1EdTech CASE標準</a> |
+                    <a href="https://www.1edtech.org/case-global-ecosystem" target="_blank">CASE Global Ecosystem</a> |
+                    <a href="https://satchel.commongoodlt.com/" target="_blank">Satchel Rosetta Exchange</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong> 1EdTech公式発表に基づく具体的データ（50州、30カ国以上）、JSON/REST APIの技術詳細記述<br>
+                        <strong>改善点：</strong> CASE Global Ecosystem移行の具体的な参加機関数の追加が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>2026年のCASE Global Ecosystem立ち上げにより、米国中心から国際標準体系への転換が加速しています。フランスの「デジタル教育サービスの相互運用性フレームワーク」法令のように、国家レベルでの相互運用性義務化が広がりつつあります。</p>
+
+                <!-- Trend 2 -->
+                <h3 class="subsection-title">2. CLR 2.0標準：次世代の検証可能な包括的学習者記録</h3>
+                <p><strong>現状：</strong>2025年3月にCLR Standard 2.0が公式にリリースされました。W3C検証可能な資格証明（Verifiable Credentials）標準を採用し、セキュリティ、ポータビリティ、検証可能性が大幅に向上しました。学習者は自身の資格証明を完全に管理し、必要な時に必要な場所で共有できるようになります。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>CLR 2.0の主要特徴</h4>
+                        <p>• <strong>W3C VCベースのセキュリティ：</strong>改ざん防止のための検証可能な資格証明データ標準を適用<br>
+                        • <strong>学習者の所有権：</strong>学習者が資格証明を直接管理・キュレーション・共有可能<br>
+                        • <strong>包括的な記録範囲：</strong>正規の学業、課外活動、スキル、能力、マイルストーンすべてを含む</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Open Badges 3.0との統合</h4>
+                        <p>• <strong>バッジへのCASE GUID埋め込み：</strong>Open BadgesにCASE識別子を内蔵し、能力マッピングを自動化<br>
+                        • <strong>CLR内でのバッジ統合：</strong>CLRがバッジ、コース、認定証、非公式学習活動をすべて包含<br>
+                        • <strong>相互運用エコシステム：</strong>CASE + Open Badges + CLRの三位一体のデジタル資格証明体系を構築</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.1edtech.org/standards/clr" target="_blank">1EdTech CLR標準</a> |
+                    <a href="https://www.imsglobal.org/spec/clr/v2p0" target="_blank">CLR 2.0仕様書</a> |
+                    <a href="https://www.1edtech.org/standards/open-badges" target="_blank">Open Badges 3.0</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong> W3C VC標準採用の事実が正確、CLR 2.0リリース日（2025年3月）の公式確認、Open Badges統合の技術説明が明確<br>
+                        <strong>改善点：</strong> CLR 2.0の早期採用機関の具体的な数値の補強が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>CLR 2.0はデジタルウォレット技術と組み合わせることで、学習者が生涯にわたって蓄積した学習・業務成果を安全に管理・共有できる基盤を整備しています。雇用主のスキルベース採用（Skills-Based Hiring）が拡大する中、CLRの活用価値は一層高まっています。</p>
+
+                <!-- Trend 3 -->
+                <h3 class="subsection-title">3. 教育と雇用の架け橋：LER-RSとHR Open Standardsの提携</h3>
+                <p><strong>現状：</strong>1EdTechとHR Open Standards Consortiumが共同でLearning and Employment Resume Standard（LER-RS）を推進しています。この標準はOpen Badges 3.0とCLR 2.0を基盤に構築された機械可読な履歴書形式で、学習記録と採用システム間の共通言語を作り、スキルベース採用の障壁を解消します。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LER-RSの核心的価値</h4>
+                        <p>• <strong>教育と雇用の架け橋：</strong>バッジとCLRが学習・能力を記録し、LER-RSが採用の文脈で活用可能に変換<br>
+                        • <strong>デジタル検証可能な履歴書：</strong>学業成績、スキル、キャリアのマイルストーンをデジタルで検証・共有可能<br>
+                        • <strong>公平性・信頼・効率：</strong>学習者の検証済みの成果を雇用主が容易に特定</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>市場データ</h4>
+                        <p>• <strong>デジタルバッジ市場の成長：</strong>2025年3.12億ドル→2034年11.95億ドル（CAGR 15.8%）（出典：Fortune Business Insights）<br>
+                        • <strong>バッジ発行数4倍増：</strong>2022年の7,470万個から2025年の3億2,040万個へ（出典：1EdTech Badge Count 2025）<br>
+                        • <strong>米国の大学94%が代替資格証明を提供：</strong>バッジ、マイクロクレデンシャル、修了証がすでに主流に（出典：UPCEA 2024）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.1edtech.org/1edtech-article/bridging-education-and-employment-through-open-standards/411286" target="_blank">1EdTech-HR Open提携</a> |
+                    <a href="https://credentialengine.org/" target="_blank">Credential Engine</a> |
+                    <a href="https://www.t3networkhub.org/" target="_blank">T3 Innovation Network</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong> Fortune Business Insights、1EdTech Badge Count、UPCEAなど複数の権威ある出典を引用、具体的な数値を提示<br>
+                        <strong>改善点：</strong> LER-RSの実際の導入企業事例を追加するとさらに強化
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>米国商工会議所財団のT3 Innovation Network（400以上の組織が参加）を通じて、教育・労働・資格データの統合が加速しています。米国内のCredential Engineに登録されたユニークな資格証明は185万件以上（出典：Credential Engine 2025年レポート）に達し、エコシステムが急成長しています。</p>
+
+                <!-- Trend 4 -->
+                <h3 class="subsection-title">4. Satchel Rosetta ExchangeとCASEフレームワーク公開インフラ</h3>
+                <p><strong>現状：</strong>Common Good Learning Tools（CGLT）が2026年2月18日にSatchel Rosetta Exchangeをアップグレード版としてリリースしました。世界中の発行機関が公開した1,000以上のPK-12+標準・能力フレームワークに無料でアクセスできる最も包括的なハブです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Satchelプラットフォームの機能</h4>
+                        <p>• <strong>1,000以上のフレームワークをミラーリング：</strong>米国・国際標準をCASE形式でミラーリングし、リアルタイムアクセスを提供<br>
+                        • <strong>無料で探索可能：</strong>誰でもコストなしにフレームワークを検索・閲覧可能<br>
+                        • <strong>自動同期：</strong>発行機関の更新をそのまま反映するミラーサービス</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>州レベルの活用事例</h4>
+                        <p>• <strong>ジョージア州：</strong>州の教科コードをSOC・CIPコードにマッピングし、教育からキャリア経路への連結を実現<br>
+                        • <strong>サウスカロライナ州：</strong>高校の教科を労働力スキルと連携する能力経路パイロットを実施<br>
+                        • <strong>テキサス州：</strong>テキサス教育庁（TEA）がCASE認定サービスを運営</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://satchel.commongoodlt.com/" target="_blank">Satchel Rosetta Exchange</a> |
+                    <a href="https://commongoodlt.com/" target="_blank">Common Good Learning Tools</a> |
+                    <a href="https://edgate.com/services/1edtech-case" target="_blank">EdGate CASEサービス</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong> Satchelリリース日（2026年2月18日）、1,000以上のフレームワーク数値を明示、3つの州の具体的な活用事例を提示<br>
+                        <strong>改善点：</strong> エコシステム自動化の展望に対するEdTech企業の導入事例や数値根拠の追加が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>CASEフレームワークの公開インフラが成熟するにつれ、教科書出版社、LMS（学習管理システム）、LOR（学習オブジェクトリポジトリ）などのEdTechプラットフォームが、CASE APIを通じて標準データを直接活用する自動化されたエコシステムが形成されつつあります。</p>
+
+                <!-- Trend 5 -->
+                <h3 class="subsection-title">5. 大学におけるCLR導入事例：IUPUI、ミズーリ大学、WGUの革新的アプローチ</h3>
+                <p><strong>現状：</strong>AACRAOとNASPAがLumina Foundationの支援を受けて、複数の大学でCLRパイロットプロジェクトを展開しており、各機関が独自のアプローチで包括的学習者記録を実装しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>主要大学の実装事例</h4>
+                        <p>• <strong>IUPUI：</strong>Lumina Foundationの支援によるCLRモデルの開発・実装、体験学習に基づく豊富な学習履歴の記録<br>
+                        • <strong>ミズーリ大学（MU）：</strong>CLRのビジョン・目的の定義、キャンパス目標に整合したフレームワーク開発、プラットフォーム・データ統合の特定<br>
+                        • <strong>ノーステキサス大学（UNT）：</strong>Parchmentデジタルバッジに基づくCLRの導入、市場価値のあるスキルをバッジ・資格として収集</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>WGU Achievement Wallet</h4>
+                        <p>• <strong>学習者所有のLER：</strong>Western Governors Universityが全国の学生にLearning and Employment Recordを提供<br>
+                        • <strong>Achievement Walletの配布：</strong>WGU学生およびインディアナ州内の教育機関に在籍する勤労学生が対象<br>
+                        • <strong>CTDL連携：</strong>Credential Transparency Description Languageの情報を使用してコースレベルの成果を発行</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.parchment.com/platform/higher-education/clr-services/" target="_blank">Parchment CLR Services</a> |
+                    <a href="https://www.naspa.org/project/comprehensive-learner-record" target="_blank">NASPA CLRプロジェクト</a> |
+                    <a href="https://registrar.missouri.edu/comprehensive-learner-record/" target="_blank">ミズーリ大学CLR</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong> IUPUI、MU、UNT、WGUの4大学の具体的な実装事例、Lumina/Gates Foundationの支援金額を明示<br>
+                        <strong>改善点：</strong> CLR導入後の学習者成果（就職率、単位互換成功率など）の定量的データの補強が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>AACRAO-Parchment CLR Servicesの提携とBill & Melinda Gates Foundationの120万ドルの追加助成により、単位互換性（Credit Mobility）の実現が加速しています。大学ごとのカスタマイズCLR実装モデルが業界標準の事例として広がっています。</p>
+
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層エコシステム構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">1EdTechのCASE＆CLRエコシステムは、標準策定、インフラ提供、プラットフォーム活用、最終利用の4つの層で構成されています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>階層</th>
+                            <th>役割</th>
+                            <th>主要プレーヤー</th>
+                            <th>対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>標準策定機関</strong></td>
+                            <td>CASE/CLR/OBの標準開発</td>
+                            <td>1EdTech、W3C、HR Open Standards</td>
+                            <td>全業界</td>
+                        </tr>
+                        <tr>
+                            <td><strong>インフラ提供者</strong></td>
+                            <td>フレームワークの公開・配信</td>
+                            <td>Satchel/CGLT、EdGate、Credential Engine</td>
+                            <td>教育機関・出版社</td>
+                        </tr>
+                        <tr>
+                            <td><strong>プラットフォーム利用者</strong></td>
+                            <td>CASE/CLRデータの統合</td>
+                            <td>Canvas、Schoology、PowerSchool、Parchment</td>
+                            <td>学校・大学</td>
+                        </tr>
+                        <tr>
+                            <td><strong>最終利用者</strong></td>
+                            <td>資格証明の発行・検証・活用</td>
+                            <td>Credly、WGU、Territorium、HelioCampus</td>
+                            <td>学習者・雇用主</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場トレンド</h3>
+                <p style="font-size: 0.95rem; line-height: 1.8;">
+                    • デジタルバッジ市場は2025年の3.12億ドルから2034年の11.95億ドルへ年平均15.8%成長の見通し（出典：Fortune Business Insights）<br>
+                    • 教育用デジタルバッジ市場は2024年の16.2億ドルから2034年の68.4億ドルへ年平均15.5%成長予想（出典：Market.us）<br>
+                    • 1EdTechのバッジ発行数が2022年の7,470万個から2025年の3億2,040万個へ4倍以上増加<br>
+                    • 米国内134,000以上の機関が185万件のユニークな資格証明を提供（出典：Credential Engine 2025）<br>
+                    • CASE-CLR-Open Badgesの三位一体体系が教育と雇用の連携における標準インフラとして台頭
+                </p>
+
+                <h3 class="subsection-title">主要プラットフォーム能力比較</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">グローバルな事例から観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>教育からキャリアへの経路マッピング</strong> - ジョージア州やサウスカロライナ州のように、CASEを用いて学校の教科コードを職業標準（SOC/CIP）にマッピングし、K-12から労働市場まで一貫したスキル追跡体系を構築</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>CLRに基づく包括的な学生記録管理</strong> - WGU Achievement Walletモデルを参考に、学業・課外活動・インターンシップ・資格をCLR 2.0で統合管理し、デジタルウォレットを通じて学習者自身がキュレーション・共有</p>
+                    <p style="line-height: 1.6;">3. <strong>LMSとCASE APIの標準整合自動化</strong> - CanvasやSchoologyなどのLMSにCASE APIを連携させ、教科書・学習リソースを学習標準に自動整合し、能力ベースの報告体系を実現</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>三位一体エコシステムの完成：</strong>CASE 1.1、CLR 2.0、Open Badges 3.0の3つの標準が教育と雇用の連携における相互運用可能な基盤インフラを形成。CASEが能力の文脈を、Open Badgesが個別の成果を、CLRが包括的なナラティブを担当</li>
+                        <li><strong>グローバル展開の加速：</strong>米国50州のK-12標準公開完了、30カ国以上にCore Fourカリキュラムを追加、フランスの相互運用性義務化法令など国家レベルの政策的支援が拡大</li>
+                        <li><strong>スキルベース採用の現実化：</strong>LER-RSを通じた教育資格証明の採用システムへの直接連携が可能となり、学位よりも検証済みスキルと能力を重視する労働市場へのパラダイム転換が進行中</li>
+                        <li><strong>大学CLR導入のモメンタム：</strong>Lumina Foundation、Gates Foundationなどの支援により、IUPUI、WGU、ミズーリ大学などの先行大学によるCLRパイロットが業界標準の事例として拡散</li>
+                        <li><strong>バッジ市場の爆発的成長：</strong>2022年から2025年にかけてバッジ発行数が4倍増加（7,470万→3億2,040万）、米国の大学94%が代替資格証明を提供中</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">導入ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>K-12教育機関 → CASEフレームワーク標準の採用</strong><br>
+                        根拠：米国50州の標準公開完了、無料でCASE Networkに参加可能、教科書・LMSとの標準整合による一貫した学習追跡の実現<br><br>
+                        <strong>高等教育機関 → CLR 2.0に基づく包括的学習者記録</strong><br>
+                        根拠：Parchment CLR ServicesやAACRAOコンサルティングとの提携を活用可能、W3C VCベースの検証による単位互換性の実現<br><br>
+                        <strong>企業・人事部門 → LER-RSに基づくスキルベース採用</strong><br>
+                        根拠：HR Open Standardsと1EdTechの共同標準により、検証済み資格証明を採用システムに直接連携、学位中心からスキル中心の採用へ転換
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>非常にポジティブ — CASE、CLR、Open Badgesの三位一体標準体系が成熟段階に入り、教育と雇用の連携におけるグローバルインフラが本格的に稼働し始めました。2026年は「実験」から「インフラ」への転換点です。</p>
+
+                <div class="overall-credibility">
+                    <h3>総合信頼性評価</h3>
+                    <div class="overall-credibility-score">8.2/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong> 1EdTech公式文書と権威ある市場調査機関のデータに基づく高い信頼性の分析レポート</p>
+                        <p><strong>主要な強み：</strong> 14の公式出典を引用、Fortune Business Insights・UPCEA・Credential Engineなど複数のデータポイント、具体的な事例（ジョージア州・IUPUI・WGU）</p>
+                        <p><strong>改善の優先順位：</strong> CLR 2.0導入機関の成果指標の補強、LER-RSの実際の採用連携事例の追加、アジア・欧州地域の事例拡大</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CASE（能力・学術標準交換：Competency and Academic Standards Exchange）</strong> - 学習標準、能力、学習成果を機械可読なデジタル形式で交換するための1EdTechのオープン技術標準。JSONとREST APIを使用し、各能力にGUIDを付与します。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CLR（包括的学習者記録：Comprehensive Learner Record）</strong> - 学習者の全学習過程をデジタルで記録する包括的な学習者記録の標準。正規の学業成果だけでなく、課外活動、スキル、能力、キャリアのマイルストーンも含みます。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Open Badges 3.0</strong> - W3C検証可能な資格証明（Verifiable Credentials）を採用したデジタルバッジの標準。学習成果を視覚的・検証可能な形で認証し、CASE GUIDを埋め込むことで能力と紐付けます。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LER-RS（学習・雇用履歴書標準：Learning and Employment Resume Standard）</strong> - HR Open Standardsと1EdTechが共同開発した機械可読な履歴書の標準。Open BadgesとCLRを採用システムで活用可能にする架け橋の役割を果たします。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>GUID（グローバル固有識別子：Globally Unique Identifier）</strong> - CASEフレームワーク内で各学習標準・能力に付与される固有の識別子。異なるシステム間で同一の能力を正確に参照できるようにします。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>W3C Verifiable Credentials（W3C検証可能な資格証明）</strong> - ワールドワイドウェブコンソーシアム（W3C）が定義したデジタル資格証明のデータ標準。CLR 2.0とOpen Badges 3.0がこの標準を採用し、改ざん防止と検証可能性を保証します。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CTDL（資格証明透明性記述言語：Credential Transparency Description Language）</strong> - Credential Engineが開発した資格証明の透明性のための技術言語。CLRと互換性があり、資格証明の詳細情報（スキル、要件、費用など）を構造化して記録します。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年3月30日</p>
+                    <ul>
+                        <li>• <a href="https://www.1edtech.org/standards/case" target="_blank">1EdTech CASE標準公式ページ</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/clr" target="_blank">1EdTech CLR標準公式ページ</a></li>
+                        <li>• <a href="https://www.imsglobal.org/spec/clr/v2p0" target="_blank">CLR 2.0仕様書 — IMS Global</a></li>
+                        <li>• <a href="https://www.imsglobal.org/spec/CASE/v1p1/impl" target="_blank">CASE 1.1ベストプラクティスおよび実装ガイド</a></li>
+                        <li>• <a href="https://www.1edtech.org/blog/building-a-bridge-of-trust-three-pillars-of-the-1edtech-digital-credentials-ecosystem" target="_blank">デジタル資格証明エコシステムの3本柱 — 1EdTech Blog</a></li>
+                        <li>• <a href="https://www.1edtech.org/blog/connecting-classrooms-to-careers-states-leverage-case-for-workforce-development" target="_blank">各州がCASEを活用した労働力開発 — 1EdTech Blog</a></li>
+                        <li>• <a href="https://www.1edtech.org/1edtech-article/bridging-education-and-employment-through-open-standards/411286" target="_blank">オープン標準で教育と雇用を架け橋する — 1EdTech</a></li>
+                        <li>• <a href="https://www.1edtech.org/blog/three-trends-were-watching-in-2026" target="_blank">2026年に注目すべき3つのトレンド — 1EdTech Blog</a></li>
+                        <li>• <a href="https://satchel.commongoodlt.com/" target="_blank">Satchel Rosetta Exchange — Common Good Learning Tools</a></li>
+                        <li>• <a href="https://www.1edtech.org/1edtech-article/2025-badge-count-shows-accelerating-momentum-in-digital-credentials/411353" target="_blank">2025年バッジ数がデジタル資格証明の加速的成長を示す — 1EdTech</a></li>
+                        <li>• <a href="https://www.parchment.com/platform/higher-education/clr-services/" target="_blank">Parchment CLR Services</a></li>
+                        <li>• <a href="https://credentialengine.org/" target="_blank">Credential Engine</a></li>
+                        <li>• <a href="https://www.naspa.org/project/comprehensive-learner-record" target="_blank">NASPA CLRプロジェクト</a></li>
+                        <li>• <a href="https://www.fortunebusinessinsights.com/digital-badge-market-108605" target="_blank">デジタルバッジ市場分析 — Fortune Business Insights</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <div class="disclaimer" style="display: none;">
+                <p>本レポートはAIにより生成された内容です。重要な情報は元の出典をご確認ください。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['標準カバレッジ', 'グローバル到達', 'プラットフォーム統合', 'API成熟度', 'コミュニティ'],
+                datasets: [
+                    {
+                        label: 'CASE 1.1',
+                        data: [95, 80, 85, 90, 75],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'CLR 2.0',
+                        data: [85, 70, 80, 85, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Open Badges 3.0',
+                        data: [80, 90, 90, 80, 95],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'Credential Engine',
+                        data: [75, 65, 70, 75, 80],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 } } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
