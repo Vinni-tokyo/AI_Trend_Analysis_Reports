@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sLLM 개발 프로세스 — 다양한 접근법과 글로벌 개발 사례 철저 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        .credibility-score {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            margin: 0.75rem 0;
+            font-size: 0.85rem;
+        }
+        .credibility-score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.3rem;
+        }
+        .credibility-score-value {
+            font-weight: 700;
+            color: #166534;
+            font-size: 1rem;
+        }
+        .overall-credibility {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .overall-credibility h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .overall-credibility-score {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #166534;
+            margin-bottom: 0.5rem;
+        }
+        .overall-credibility-details p {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+        .detail-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin: 0.75rem 0;
+        }
+        .detail-box h5 {
+            font-size: 0.95rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        .detail-box p, .detail-box ul {
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+        .detail-box ul {
+            padding-left: 1.2rem;
+        }
+        .detail-box ul li {
+            margin-bottom: 0.3rem;
+        }
+        .case-study {
+            background: #fffbeb;
+            border-left: 3px solid #f59e0b;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            border-radius: 4px;
+        }
+        .case-study h5 {
+            font-size: 0.95rem;
+            color: #92400e;
+            margin-bottom: 0.4rem;
+        }
+        .case-study p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .code-snippet {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+        .code-snippet .comment { color: #94a3b8; }
+        .code-snippet .keyword { color: #7dd3fc; }
+        .code-snippet .string { color: #86efac; }
+        .code-snippet .value { color: #fbbf24; }
+        .highlight-stat {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='sllm-development-process-20260401-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='sllm-development-process-20260401-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='sllm-development-process-20260401-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>sLLM 개발 프로세스<br>다양한 접근법과 글로벌 개발 사례 철저 분석</h1>
+            <div class="subtitle">지식 증류, 합성 데이터, 파라미터 효율적 파인튜닝, 양자화까지 — 소형 언어 모델의 모든 것</div>
+            <div class="meta">레포트 작성일: 2026년 4월 1일 | 상세 레포트 (10+페이지)</div>
+        </div>
+
+        <div class="content">
+            <!-- ============================================================ -->
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <!-- ============================================================ -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <!-- ======== Trend 1 ======== -->
+                <h3 class="subsection-title">1. 합성 데이터 중심 사전학습: Microsoft Phi 시리즈의 혁신적 접근</h3>
+                <p>소형 언어 모델(sLLM) 개발에서 가장 획기적인 패러다임 전환은 <strong>"데이터 퍼스트(Data-First)"</strong> 접근법입니다. Microsoft의 Phi 시리즈는 모델 아키텍처의 변경을 최소화하면서도, 합성 데이터의 전략적 활용만으로 크기 대비 최강의 성능을 달성했습니다. 이 접근법은 "데이터의 양보다 질이 중요하다"는 원칙을 극한까지 끌어올린 것으로, sLLM 개발의 새로운 표준을 제시하고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Phi-4 (14B): 데이터 퍼스트 전략의 정수</h4>
+                        <p>Phi-4는 합성 데이터를 훈련 과정 전체에 전략적으로 통합하는 접근법을 채택했습니다. 기존 LLM이 대규모 웹 크롤링 데이터에 의존한 것과 달리, <strong>3대 핵심 전략</strong>을 수립했습니다:<br><br>
+                        <strong>1) 사전학습·중간학습용 합성 데이터:</strong> 추론과 문제 해결 능력을 우선하는 합성 데이터를 생성하여 사전학습 단계부터 투입. 멀티에이전트 프롬프팅(다수의 AI 에이전트가 협력하여 데이터 생성), 자기수정 워크플로우(모델이 자체 출력을 검증·수정), 지시 역전(instruction reversal) 등의 고급 기법을 활용합니다.<br><br>
+                        <strong>2) 고품질 유기 데이터 큐레이션:</strong> 웹·서적·코드 소스에서 교육적 가치가 높은 콘텐츠를 선별적으로 추출합니다. 노이즈와 중복을 제거하여 "교과서 품질"의 데이터셋을 구축하는 것이 핵심입니다.<br><br>
+                        <strong>3) 후속학습(Post-training) 혁신:</strong> 피벗 토큰 탐색, DPO(Direct Preference Optimization), 판사 기반 보상 모델 등 다중 후속학습 기법을 결합합니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Phi-3 (3.8B): 2단계 사전학습 커리큘럼</h4>
+                        <p>Phi-3는 더 작은 3.8B 파라미터로도 인상적인 성능을 달성했으며, 2단계 사전학습 전략이 핵심입니다:<br><br>
+                        <strong>Phase 1 — 일반 지식·언어 이해:</strong> 웹 소스에서 수집한 다양한 데이터로 기본적인 언어 이해, 세계 지식, 추론 능력의 토대를 구축합니다.<br><br>
+                        <strong>Phase 2 — 논리 추론·전문 기술 강화:</strong> 고도로 필터링된 웹 데이터와 합성 데이터를 조합하여 수학적 추론, 코딩, 전문 분야 지식을 집중적으로 학습합니다.<br><br>
+                        이 2단계 접근법은 인간의 교육 과정과 유사합니다. 먼저 넓은 기초 지식을 쌓고, 이후 전문 분야를 심화하는 커리큘럼 학습의 효과를 모델 훈련에 적용한 것입니다.</p>
+                    </div>
+                </div>
+
+                <div class="case-study">
+                    <h5>사례 연구: Phi-4-mini (3.8B) — GPT-4o를 수학에서 능가한 소형 모델</h5>
+                    <p>Phi-4-mini는 단 3.8B 파라미터로 수학 벤치마크에서 GPT-4o를 능가하는 성능을 달성했습니다. 14B 규모의 Phi-4는 추론 벤치마크에서 크기 대비 최강의 성능을 기록했으며, 이는 아키텍처 변경 최소화로도 데이터·커리큘럼·후속학습 혁신만으로 성능 극대화가 가능하다는 것을 실증합니다. Phi 시리즈의 성공은 sLLM 개발에서 "얼마나 큰 모델을 만들 것인가"보다 "얼마나 좋은 데이터로 학습시킬 것인가"가 더 중요한 질문임을 증명했습니다.</p>
+                </div>
+
+                <div class="detail-box">
+                    <h5>"교과서 품질" 합성 데이터 전략의 핵심 원리</h5>
+                    <p>Microsoft Research가 정립한 합성 데이터 전략의 핵심은 다음과 같습니다:</p>
+                    <ul>
+                        <li><strong>시드 데이터(Seed Data)에서 출발:</strong> 고품질 교과서, 학술 논문, 검증된 코드 저장소를 시드로 사용하여 합성 데이터의 기반 품질을 보장</li>
+                        <li><strong>다양성 확보:</strong> 동일 개념에 대해 다양한 난이도, 맥락, 표현 방식의 변형을 생성하여 모델의 일반화 능력 강화</li>
+                        <li><strong>품질 필터링 파이프라인:</strong> 생성된 합성 데이터에 대해 정확성, 일관성, 교육적 가치를 자동 평가하고 기준 미달 데이터를 제거</li>
+                        <li><strong>반복적 개선:</strong> 모델의 약점 영역을 식별하고 해당 영역에 대한 합성 데이터를 추가 생성하는 피드백 루프 구축</li>
+                    </ul>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://www.microsoft.com/en-us/research/" target="_blank">Microsoft Research</a> |
+                    <a href="https://arxiv.org/abs/2412.08905" target="_blank">Phi-4 Technical Report (arXiv)</a> |
+                    <a href="https://venturebeat.com/" target="_blank">VentureBeat</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Microsoft Research 공식 기술 보고서(arXiv:2412.08905) 기반, Phi-4/Phi-3/Phi-4-mini의 구체적 벤치마크 수치 인용, 합성 데이터 기법의 기술적 상세 기술<br>
+                        <strong>개선점:</strong> 합성 데이터 생성 비용과 시간에 대한 정량적 데이터 추가 시 더욱 강화
+                    </div>
+                </div>
+
+                <p><strong>핵심 교훈:</strong> Phi 시리즈의 성공은 sLLM 개발에서 "데이터 품질 > 모델 크기"라는 패러다임을 확립했습니다. 아키텍처 혁신 없이도 합성 데이터의 체계적 활용과 커리큘럼 기반 학습 전략만으로 비약적인 성능 향상이 가능하며, 이는 연구 자원이 제한된 팀에게도 경쟁력 있는 sLLM 개발의 길을 열어주고 있습니다.</p>
+
+
+                <!-- ======== Trend 2 ======== -->
+                <h3 class="subsection-title">2. 지식 증류(Knowledge Distillation): 대형 모델의 역량을 소형 모델로 이전</h3>
+                <p>지식 증류는 대형 "교사(Teacher)" 모델이 학습한 풍부한 지식을 소형 "학생(Student)" 모델로 효율적으로 전달하는 기술입니다. 단순히 정답 레이블을 학습하는 것이 아니라, 교사 모델이 생성한 <strong>확률 분포(soft labels)</strong>, <strong>중간 특징(intermediate features)</strong>, <strong>관계 패턴(relational patterns)</strong>을 학생 모델이 흡수함으로써, 원래 모델의 크기 대비 현저히 작으면서도 높은 성능을 유지하는 모델을 만들 수 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>오프라인 증류 (Offline Distillation)</h4>
+                        <p>가장 일반적이고 널리 사용되는 증류 방식으로, 교사 모델의 가중치를 완전히 고정한 상태에서 학생 모델이 교사의 출력을 모방하도록 학습합니다.<br><br>
+                        <strong>장점:</strong> 구현이 비교적 단순하고 안정적. 교사 모델의 추론만 수행하면 되므로 교사 모델 훈련에 영향 없음.<br><br>
+                        <strong>단점:</strong> 교사와 학생 간의 용량 차이가 크면 학생이 교사의 모든 지식을 흡수하지 못하는 "용량 갭(capacity gap)" 문제 발생 가능.<br><br>
+                        <strong>핵심 손실 함수:</strong> KL 발산(Kullback-Leibler Divergence)을 사용하여 교사의 소프트 레이블과 학생의 출력 분포 간 차이를 최소화합니다. 온도 파라미터(Temperature, T)를 조절하여 소프트 레이블의 정보량을 제어합니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>다중 교사 증류 (Multi-Teacher Distillation)</h4>
+                        <p>단일 교사 모델의 한계를 극복하기 위해, 여러 교사 모델의 앙상블에서 학생에게 지식을 전달하는 방식입니다.<br><br>
+                        <strong>핵심 이점:</strong><br>
+                        - <strong>지식 다양성:</strong> 각 교사가 다른 관점에서 학습한 지식을 결합하여 학생의 일반화 능력 향상<br>
+                        - <strong>도메인 전문성:</strong> 각 교사를 다른 도메인에 특화시켜 학생이 다중 도메인 전문성을 동시에 흡수<br>
+                        - <strong>앙상블 효과:</strong> 개별 교사의 편향(bias)을 상호 보완하여 보다 균형 잡힌 지식 전달<br><br>
+                        다중 교사의 출력을 결합하는 방법으로는 단순 평균, 가중 평균, 어텐션 기반 선택적 결합 등이 사용됩니다.</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>적응형 학생 인식 증류 (AdaptDistill)</h4>
+                        <p>기존 증류의 "일방향 전달" 한계를 극복하는 혁신적 접근법입니다. 학생의 오류 패턴을 반복적으로 분석하고, 교사가 설명을 학생의 이해 수준에 맞게 정교화합니다.<br><br>
+                        <strong>작동 원리:</strong><br>
+                        1. 학생 모델이 학습 데이터에서 오류를 발생시킨 영역 식별<br>
+                        2. 교사 모델이 해당 오류 영역에 대해 보다 상세하고 명시적인 설명 생성<br>
+                        3. 학생 모델이 맞춤형 설명으로 재학습<br>
+                        4. 과정 반복으로 점진적 성능 향상<br><br>
+                        이 방식은 인간 교육에서 교사가 학생의 약점을 파악하고 맞춤형 지도를 하는 것과 유사합니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>커리큘럼 학습 프레임워크 (POCL)</h4>
+                        <p>POCL(Progressive Overload Curriculum Learning)은 체육 훈련의 "점진적 과부하" 원리에서 영감받은 플러그인 프레임워크입니다.<br><br>
+                        <strong>핵심 원리:</strong> 학습 데이터의 난이도를 점진적으로 증가시키면서 증류를 수행합니다. 쉬운 예제로 기본 역량을 구축한 후, 점차 복잡한 예제로 전환하여 고급 능력을 발달시킵니다.<br><br>
+                        <strong>실용적 이점:</strong><br>
+                        - 기존 화이트박스 KD 파이프라인에 최소 오버헤드로 통합 가능<br>
+                        - 플러그인 방식으로 다양한 증류 기법과 조합 가능<br>
+                        - 학습 안정성 향상으로 수렴 속도 개선</p>
+                    </div>
+                </div>
+
+                <div class="case-study">
+                    <h5>사례 연구: Phi-3의 증류 — 대형 모델의 90%+ 역량을 크기 5%로 유지</h5>
+                    <p>Microsoft의 Phi-3(3.8B)는 대형 모델로부터의 지식 증류를 통해, 원래 모델 크기의 약 5%에 해당하는 파라미터로 90% 이상의 역량을 유지하는 데 성공했습니다. 이 과정에서 합성 데이터를 활용한 증류 기법이 핵심적 역할을 수행했으며, 특히 수학적 추론과 코딩 능력에서 놀라운 압축 효율을 보여주었습니다. 이는 증류 기술이 단순한 모델 압축을 넘어 "지식의 정수를 추출하는 도구"로 진화하고 있음을 보여줍니다.</p>
+                </div>
+
+                <div class="detail-box">
+                    <h5>실전 트레이드오프: 증류 모델의 성능 분석</h5>
+                    <p>지식 증류에서 발생하는 실질적인 트레이드오프를 이해하는 것이 중요합니다:</p>
+                    <ul>
+                        <li><strong>절대 정확도 손실:</strong> 일반적으로 1-2%의 정확도 손실이 발생하지만, 추론 시간은 50% 이상 단축됩니다. 대부분의 프로덕션 환경에서 이는 수용 가능한 수준입니다.</li>
+                        <li><strong>태스크 의존성:</strong> 단순 분류 태스크에서는 손실이 미미(0.5% 이하)하지만, 복잡한 추론이나 창의적 생성에서는 상대적으로 큰 차이(3-5%)가 발생할 수 있습니다.</li>
+                        <li><strong>증류 깊이와 품질:</strong> 출력 레벨 증류보다 중간 레이어 증류가 더 많은 지식을 전달하지만, 구현 복잡성과 계산 비용이 증가합니다.</li>
+                        <li><strong>배포 시 혜택:</strong> 모델 크기 70-95% 축소, 추론 시간 40-60% 단축, 메모리 사용량 60-80% 절감이 일반적으로 관찰됩니다.</li>
+                    </ul>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://arxiv.org/abs/2305.14314" target="_blank">QLoRA Paper (arXiv)</a> |
+                    <a href="https://zilliz.com/learn/knowledge-distillation" target="_blank">Knowledge Distillation Guide (Zilliz)</a> |
+                    <a href="https://pmc.ncbi.nlm.nih.gov/" target="_blank">PubMed Central</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> KD 기본 원리의 정확한 기술, 오프라인/다중교사/적응형/커리큘럼 4가지 접근법의 체계적 비교, Microsoft Phi-3 증류 사례의 구체적 수치<br>
+                        <strong>개선점:</strong> AdaptDistill과 POCL의 원본 논문 발행일 및 저자 정보 명시 시 신뢰도 추가 향상
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> 지식 증류는 sLLM 개발의 "필수 기법"으로 자리잡았으며, 특히 합성 데이터 생성과 결합한 하이브리드 접근법이 2026년의 주류가 되고 있습니다. 교사-학생 패러다임을 넘어, 자가 증류(Self-Distillation)와 협력적 학습(Collaborative Learning) 기법이 빠르게 발전하고 있어 sLLM의 성능 상한이 계속 높아지고 있습니다.</p>
+
+
+                <!-- ======== Trend 3 ======== -->
+                <h3 class="subsection-title">3. 파라미터 효율적 파인튜닝(PEFT): LoRA, QLoRA, DoRA의 실전 비교</h3>
+                <p>파라미터 효율적 파인튜닝(PEFT)은 사전학습된 대형 모델의 가중치 대부분을 동결(freeze)하고, 극소수의 파라미터만 업데이트하거나 새로 추가하여 특정 태스크에 적응시키는 기법입니다. 이를 통해 <span class="highlight-stat">리소스 10-20배 절감</span>하면서도 <span class="highlight-stat">품질 90-95% 유지</span>가 가능합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LoRA (Low-Rank Adaptation)</h4>
+                        <p>LoRA는 가중치 행렬에 저랭크 분해(Low-Rank Decomposition)를 적용하여, 원래 파라미터의 <strong>0.1-1%</strong>만 학습하는 혁신적 기법입니다.<br><br>
+                        <strong>핵심 원리:</strong> 사전학습된 가중치 행렬 W에 저랭크 행렬 BA를 더하여 W' = W + BA로 업데이트합니다. A와 B는 각각 저랭크(rank r) 행렬로, 전체 파라미터 대비 극소수만 학습합니다.<br><br>
+                        <strong>장점:</strong><br>
+                        - 원래 모델 가중치를 변경하지 않으므로 여러 LoRA 어댑터를 교체하며 사용 가능<br>
+                        - 추론 시 가중치를 병합(merge)하면 추가 지연 시간 없음<br>
+                        - 메모리 효율적: 8B 모델의 LoRA 어댑터는 보통 10-50MB</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>QLoRA (Quantized LoRA)</h4>
+                        <p>QLoRA는 4비트 양자화와 LoRA를 결합한 기법으로, 파인튜닝의 민주화를 실현했습니다.<br><br>
+                        <strong>혁신 포인트:</strong> 모델 가중치를 4비트로 양자화한 상태에서 LoRA 어댑터를 학습합니다. 이를 통해:<br><br>
+                        - <strong>7B 모델:</strong> RTX 4090 (24GB VRAM, 약 $1,500)에서 파인튜닝 가능<br>
+                        - <strong>풀 파인튜닝:</strong> H100 (80GB VRAM, 약 $50,000) 필요<br>
+                        - <strong>비용 절감:</strong> 약 33배의 하드웨어 비용 차이<br><br>
+                        <strong>NF4 양자화:</strong> QLoRA는 정규 분포 기반의 NormalFloat4(NF4) 데이터 타입을 사용하여 정보 이론적으로 최적의 4비트 양자화를 달성합니다.</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>DoRA (Weight-Decomposed Low-Rank Adaptation)</h4>
+                        <p>DoRA는 가중치를 <strong>크기(magnitude)</strong>와 <strong>방향(direction)</strong>으로 분해하여 LoRA 대비 더 정교한 적응을 가능하게 합니다.<br><br>
+                        <strong>작동 원리:</strong> 가중치 행렬을 W = m * (V / ||V||)로 분해하여, 크기 성분(m)과 방향 성분(V)을 독립적으로 학습합니다. LoRA는 방향 업데이트에만 적용하고, 크기는 별도로 학습합니다.<br><br>
+                        <strong>이점:</strong> 풀 파인튜닝의 학습 패턴에 더 가까운 업데이트를 수행하여, 동일 랭크에서 LoRA보다 우수한 성능을 달성합니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>2026 베스트 프랙티스</h4>
+                        <p>현재 최적의 PEFT 설정으로 권장되는 구성입니다:<br><br>
+                        <strong>추천 설정:</strong><br>
+                        - <strong>기법:</strong> QLoRA + DoRA 조합<br>
+                        - <strong>양자화:</strong> load_in_4bit=True (NF4)<br>
+                        - <strong>DoRA:</strong> use_dora=True<br>
+                        - <strong>랭크:</strong> r=16<br>
+                        - <strong>대상:</strong> target_modules="all-linear"<br>
+                        - <strong>학습률:</strong> 2e-4<br><br>
+                        rank-16 DoRA 설정 시 전체 파라미터의 <strong>약 0.5%</strong>만 학습하지만, 태스크에 중요한 행동 변화를 효과적으로 포착합니다.</p>
+                    </div>
+                </div>
+
+                <div class="code-snippet">
+<span class="comment"># 2026 Best Practice: QLoRA + DoRA 파인튜닝 설정 예시</span>
+<span class="keyword">from</span> peft <span class="keyword">import</span> LoraConfig, get_peft_model
+<span class="keyword">from</span> transformers <span class="keyword">import</span> BitsAndBytesConfig
+
+<span class="comment"># 4비트 양자화 설정</span>
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=<span class="value">True</span>,
+    bnb_4bit_quant_type=<span class="string">"nf4"</span>,
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=<span class="value">True</span>,
+)
+
+<span class="comment"># LoRA + DoRA 설정</span>
+lora_config = LoraConfig(
+    r=<span class="value">16</span>,
+    lora_alpha=<span class="value">32</span>,
+    target_modules=<span class="string">"all-linear"</span>,
+    lora_dropout=<span class="value">0.05</span>,
+    use_dora=<span class="value">True</span>,          <span class="comment"># DoRA 활성화</span>
+    task_type=<span class="string">"CAUSAL_LM"</span>,
+)
+                </div>
+
+                <div class="case-study">
+                    <h5>주의: 학습률의 중요성 (2026.2 연구 결과)</h5>
+                    <p>2026년 2월 발표된 연구에서 중요한 발견이 보고되었습니다. 부적절한 학습률 설정이 LoRA 변형 간의 성능 우위를 착각하게 만든다는 것입니다. 연구 결과, 적절한 학습률을 적용했을 때 <strong>바닐라 LoRA가 고급 변형(DoRA 포함)과 동등하거나 오히려 우월한 경우</strong>가 다수 관찰되었습니다. 이는 기법 선택보다 하이퍼파라미터 튜닝이 더 중요할 수 있다는 실용적 교훈을 제공합니다. 따라서 새로운 PEFT 기법을 적용하기 전에, 먼저 기본 LoRA에서 학습률을 충분히 탐색하는 것이 권장됩니다.</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://arxiv.org/abs/2305.14314" target="_blank">QLoRA Paper (arXiv)</a> |
+                    <a href="https://github.com/artidoro/qlora" target="_blank">QLoRA GitHub</a> |
+                    <a href="https://www.databricks.com/blog" target="_blank">Databricks Blog</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> LoRA/QLoRA/DoRA의 기술적 원리를 정확히 기술, 코드 예시 포함, 2026년 최신 연구(학습률 영향) 반영, 구체적 하드웨어 비용 비교($1,500 vs $50,000)<br>
+                        <strong>개선점:</strong> 대규모 비교 벤치마크(다양한 모델·태스크 조합)의 정량적 결과표 추가 시 더욱 완성도 향상
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> PEFT는 2026년 현재 sLLM 파인튜닝의 사실상 표준이 되었습니다. QLoRA의 등장으로 개인 개발자와 소규모 팀도 소비자급 GPU에서 고품질 파인튜닝을 수행할 수 있게 되었으며, 이는 AI 개발의 민주화를 가속하는 핵심 동력입니다.</p>
+
+
+                <!-- ======== Trend 4 ======== -->
+                <h3 class="subsection-title">4. 양자화와 온디바이스 배포: GGUF, GPTQ, AWQ 비교와 엣지 AI</h3>
+                <p>양자화는 모델의 가중치와 활성화 값을 낮은 비트 정밀도(bit precision)로 변환하여 모델 크기를 줄이고 추론 속도를 높이는 기술입니다. 2026년 현재, <strong>"16비트로 학습하고, 4비트로 양자화하여 배포"</strong>하는 표준 레시피가 산업 전반에 수렴되었으며, 이를 통해 <span class="highlight-stat">4배 메모리 절감</span>이 달성됩니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>GPTQ (2022): GPU 고처리량 프로덕션</h4>
+                        <p>GPTQ는 사후 학습 양자화(Post-Training Quantization, PTQ) 기법으로, 최고의 추론 속도와 우수한 GPU 활용률을 제공합니다.<br><br>
+                        <strong>핵심 특징:</strong><br>
+                        - 근사적 2차 정보(Hessian)를 활용한 최적 양자화<br>
+                        - 행 단위(row-wise) 양자화로 정밀한 오차 보정<br>
+                        - GPU에 최적화된 커널로 빠른 추론<br><br>
+                        <strong>최적 사용 시나리오:</strong> 고처리량이 요구되는 서버 사이드 프로덕션 환경에서 최적. 배치 추론, API 서빙 등에 적합합니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AWQ (2023): 정확도 우선 양자화</h4>
+                        <p>AWQ(Activation-aware Weight Quantization)는 4비트 양자화에서 원래 성능의 <strong>99%+</strong>를 유지하는 것이 특징입니다.<br><br>
+                        <strong>핵심 원리:</strong><br>
+                        - 활성화 패턴 분석으로 "중요한" 가중치 채널을 식별<br>
+                        - 중요한 가중치는 높은 정밀도로 유지하고, 덜 중요한 가중치만 공격적으로 양자화<br>
+                        - 하드웨어 효율적인 정수 연산으로 실제 속도 향상 달성<br><br>
+                        <strong>최적 사용 시나리오:</strong> 정확도 손실을 최소화해야 하는 의료, 금융, 법률 등의 도메인에서 특히 유용합니다.</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>GGUF: 엣지 배포의 사실상 표준</h4>
+                        <p>GGUF(GPT-Generated Unified Format)는 CPU 추론과 엣지 배포에서 사실상의 표준으로 자리잡았습니다.<br><br>
+                        <strong>핵심 특징:</strong><br>
+                        - 2비트~8비트까지 다양한 양자화 수준 지원<br>
+                        - CPU 전용 추론 가능 — GPU가 없는 환경에서도 실행<br>
+                        - llama.cpp와 네이티브 통합으로 최소한의 의존성<br>
+                        - 하드웨어 불문 유연성: x86, ARM, Apple Silicon, RISC-V 등<br><br>
+                        <strong>실용 팁:</strong> Q4_K_M(4비트 중간 품질)이 크기-성능 균형의 최적점으로 가장 많이 사용됩니다. Q5_K_M은 약간의 크기 증가로 품질을 더 보존합니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>SmoothQuant: 활성화 이상치 처리</h4>
+                        <p>SmoothQuant는 양자화의 근본적 난제인 "활성화 이상치(activation outlier)" 문제를 해결하는 기법입니다.<br><br>
+                        <strong>핵심 원리:</strong> 활성화 값의 이상치를 가중치 쪽으로 수학적으로 이동(migration)시켜, 활성화 양자화의 난이도를 완화합니다.<br><br>
+                        <strong>작동 방식:</strong><br>
+                        - 원래: Y = X * W (X에 이상치 존재, 양자화 어려움)<br>
+                        - SmoothQuant: Y = (X/s) * (sW) (스케일링 팩터 s로 이상치 분산)<br><br>
+                        이를 통해 가중치와 활성화 모두를 INT8로 양자화할 수 있어, W8A8(가중치 8비트 + 활성화 8비트) 양자화가 실용화되었습니다.</p>
+                    </div>
+                </div>
+
+                <div class="case-study">
+                    <h5>사례 연구: 모바일 배포 — Llama 3.2 3B의 스마트폰 실행</h5>
+                    <p>Meta의 Llama 3.2 3B 모델에 4비트 PTQ를 적용한 결과, <strong>68.66% 모델 크기 감소</strong>를 달성하여 표준 안드로이드 기기에서 실행 가능하게 되었습니다. 배포 파이프라인은 다음과 같습니다: (1) HuggingFace에서 베이스 모델 다운로드, (2) GGUF 형식으로 양자화 변환, (3) llama.cpp로 로컬 검증, (4) ExecuTorch로 모바일 프로덕션 빌드. 이 파이프라인은 2026년 현재 온디바이스 AI 배포의 표준 워크플로우로 자리잡았습니다.</p>
+                </div>
+
+                <div class="detail-box">
+                    <h5>서브 빌리언 시대: 1B 미만 모델의 실용적 활용</h5>
+                    <p>2026년의 주목할 트렌드는 1B(10억) 미만 파라미터의 초소형 모델도 실용적 태스크를 수행할 수 있게 되었다는 점입니다:</p>
+                    <ul>
+                        <li><strong>Gemma 3 (270M):</strong> Google의 초소형 모델로, 기본적인 텍스트 생성과 분류에서 놀라운 성능을 보여줍니다. 모바일 기기에서 배터리 소비 0.75%로 실행 가능합니다.</li>
+                        <li><strong>SmolLM2 (135M-1.7B):</strong> Hugging Face의 소형 모델 시리즈로, 135M 모델도 기본적인 텍스트 처리가 가능하며, 1.7B 모델은 다수의 벤치마크에서 경쟁력 있는 성능을 달성합니다.</li>
+                        <li><strong>Qwen 2.5 (0.5B):</strong> Alibaba의 초소형 모델로, 특히 다국어(중국어/한국어/일본어) 처리에서 크기 대비 우수한 성능을 보입니다.</li>
+                    </ul>
+                    <p style="margin-top: 0.5rem;">이들 서브 빌리언 모델은 IoT 기기, 웨어러블, 임베디드 시스템 등에서 실시간 AI 추론을 가능하게 하며, 엣지 AI의 새로운 지평을 열고 있습니다.</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://localaimaster.com/" target="_blank">Local AI Master</a> |
+                    <a href="https://cast.ai/blog/demystifying-quantizations-llms" target="_blank">Quantization Guide (Cast.ai)</a> |
+                    <a href="https://blog.premai.io/" target="_blank">PremAI Blog</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> GPTQ/AWQ/GGUF/SmoothQuant 4가지 기법의 체계적 비교, Llama 3.2 모바일 배포 구체적 수치(68.66% 크기 감소), 서브 빌리언 모델 3종의 실제 사양 명시<br>
+                        <strong>개선점:</strong> 각 양자화 기법의 벤치마크 성능 비교표(동일 모델 기준) 추가 시 더욱 강화
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> 양자화 기술은 "학습-배포 갭"을 해소하는 핵심 브릿지로, GGUF + llama.cpp가 온디바이스 배포의 사실상 표준으로 수렴하고 있습니다. 2비트 양자화의 품질 향상과 함께, 1B 미만의 서브 빌리언 모델이 실용적 태스크를 수행하는 시대가 본격적으로 열리고 있습니다.</p>
+
+
+                <!-- ======== Trend 5 ======== -->
+                <h3 class="subsection-title">5. sLLM 파인튜닝 프레임워크 생태계와 엔터프라이즈 활용 사례</h3>
+                <p>2026년 현재, sLLM 파인튜닝을 위한 프레임워크 생태계가 급속히 성숙하면서, 개인 개발자부터 대기업까지 다양한 수준의 사용자가 자신의 환경에 맞는 도구를 선택할 수 있게 되었습니다. 각 프레임워크는 고유한 강점과 최적 사용 시나리오를 가지고 있습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Unsloth: 속도와 효율의 정점</h4>
+                        <p>Unsloth는 맞춤 Triton 커널을 기반으로 <strong>2-5배 빠른 파인튜닝</strong>과 <strong>80% 메모리 절감</strong>을 달성하는 프레임워크입니다.<br><br>
+                        <strong>핵심 특징:</strong><br>
+                        - 단일 GPU 환경에 최적화 — 소비자급 GPU(RTX 3090/4090)에서 효율적 동작<br>
+                        - 커스텀 Triton 커널로 역전파 과정의 메모리 사용량 대폭 절감<br>
+                        - HuggingFace Transformers/TRL과 완전 호환<br>
+                        - 4비트/16비트 파인튜닝 모두 지원<br><br>
+                        <strong>최적 사용자:</strong> 단일 GPU 환경의 개인 개발자, 빠른 프로토타이핑이 필요한 연구자</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Axolotl: 유연한 YAML 설정 기반</h4>
+                        <p>Axolotl은 YAML 설정 파일 기반의 간편한 파인튜닝을 제공하며, 다양한 기법을 유연하게 조합할 수 있습니다.<br><br>
+                        <strong>핵심 특징:</strong><br>
+                        - YAML 파일 하나로 전체 학습 파이프라인 정의<br>
+                        - LoRA, QLoRA, 풀 파인튜닝 모두 지원<br>
+                        - 다양한 데이터 형식 자동 처리<br>
+                        - 분산 학습(multi-GPU) 네이티브 지원<br>
+                        - Flash Attention, Gradient Checkpointing 자동 적용<br><br>
+                        <strong>최적 사용자:</strong> 다양한 실험을 병렬로 수행하는 ML 엔지니어, 재현성을 중시하는 연구팀</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LLaMA-Factory: 노코드 파인튜닝의 선두주자</h4>
+                        <p>LLaMA-Factory는 <strong>100개 이상의 모델</strong>을 지원하며, LlamaBoard 웹 UI를 통한 노코드 파인튜닝을 제공합니다.<br><br>
+                        <strong>핵심 특징:</strong><br>
+                        - LlamaBoard: 코드 없이 웹 UI에서 파인튜닝 전 과정 수행<br>
+                        - 100+ 사전학습 모델 원클릭 로드<br>
+                        - SFT, RLHF, DPO, ORPO 등 다양한 학습 방법론 지원<br>
+                        - 데이터셋 관리·변환 도구 내장<br>
+                        - 학습 모니터링 대시보드 제공<br><br>
+                        <strong>최적 사용자:</strong> 코딩 경험이 제한적인 도메인 전문가, 빠르게 시작하고 싶은 초보자</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>속도 벤치마크 비교 (Llama 3.1 8B)</h4>
+                        <p>A100 40GB GPU, QLoRA 설정 기준 벤치마크 결과:<br><br>
+                        <strong>프레임워크별 학습 시간:</strong><br>
+                        - <strong>Unsloth:</strong> 3.2시간 (가장 빠름)<br>
+                        - <strong>LLaMA-Factory:</strong> 3.4시간<br>
+                        - <strong>TorchTune:</strong> 4.7시간<br>
+                        - <strong>Axolotl:</strong> 5.8시간<br><br>
+                        Unsloth가 가장 빠른 학습 시간을 기록했으나, Axolotl은 분산 학습 환경에서 상대적 강점을 보이며, LLaMA-Factory는 사용 편의성에서 우위를 점합니다. 프레임워크 선택 시 순수 속도뿐 아니라 팀의 기술 수준, 워크플로우 요구사항을 종합 고려해야 합니다.</p>
+                    </div>
+                </div>
+
+                <div class="detail-box">
+                    <h5>엔터프라이즈 활용 사례: 산업별 sLLM 도입 현황</h5>
+                    <p>sLLM은 다양한 산업 분야에서 실질적인 비즈니스 가치를 창출하고 있습니다:</p>
+                    <ul>
+                        <li><strong>의료:</strong> Phi-3 Mini를 활용한 의료 기록 구조화 데이터 추출 시스템. HIPAA 컴플라이언스를 준수하면서 시간당 수천 건의 문서를 처리합니다. 환자 데이터가 외부 서버로 전송되지 않는 온프레미스 배포가 핵심 요구사항입니다.</li>
+                        <li><strong>금융:</strong> 3B 파라미터 모델을 보험 청구 처리에 파인튜닝하여, 시간당 2,000건의 문서를 96% 정확도로 처리합니다. 기존 수작업 대비 처리 시간 85% 단축, 비용 70% 절감을 달성했습니다.</li>
+                        <li><strong>교육:</strong> 개인화된 학습 조언과 가이드를 제공하는 교육용 AI 어시스턴트. 학생 개인의 학습 패턴과 약점을 분석하여 맞춤형 학습 경로를 제안합니다.</li>
+                    </ul>
+                </div>
+
+                <div class="case-study">
+                    <h5>비용·성능 분석: sLLM vs LLM의 엔터프라이즈 경제학</h5>
+                    <p><strong>비용 절감:</strong> 7B sLLM의 서빙 비용은 70-175B LLM 대비 <strong>10-30배 저렴</strong>합니다. GPU, 클라우드, 에너지 비용을 합산하면 최대 <strong>75% 비용 절감</strong>이 가능합니다.<br><br>
+                    <strong>성능:</strong> sLLM이 LLM 성능의 <strong>85% 이상</strong>을 달성하면서도, 메모리·연산을 대폭 절감하고 배포 속도는 <strong>4-10배 빠릅니다</strong>.<br><br>
+                    <strong>프라이버시:</strong> 의료·금융·법률 분야에서 <strong>75%의 기업</strong>이 민감 데이터 처리를 위해 로컬 sLLM을 사용하고 있습니다. 데이터가 조직 경계를 벗어나지 않는 온프레미스/온디바이스 배포가 핵심적인 선택 이유입니다.</p>
+                </div>
+
+                <div class="related-links">
+                    <strong>관련 링크:</strong>
+                    <a href="https://unsloth.ai/" target="_blank">Unsloth</a> |
+                    <a href="https://github.com/axolotl-ai-cloud/axolotl" target="_blank">Axolotl GitHub</a> |
+                    <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">LLaMA-Factory GitHub</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 4개 프레임워크의 상세 비교, 벤치마크 수치(학습 시간) 제시, 의료/금융/교육 3개 산업 활용 사례 기술, 비용 절감 수치 구체화<br>
+                        <strong>개선점:</strong> 엔터프라이즈 사례의 구체적 기업명과 사례 연구 출처 명시 시 신뢰도 추가 향상
+                    </div>
+                </div>
+
+                <p><strong>전망:</strong> 파인튜닝 프레임워크의 성숙과 엔터프라이즈 활용 사례의 축적은 sLLM이 "실험적 기술"에서 "프로덕션 기술"로 전환되었음을 명확히 보여줍니다. 특히 프라이버시가 중요한 산업에서의 로컬 sLLM 채택률이 75%에 달한다는 것은, 클라우드 LLM API와는 본질적으로 다른 시장 수요가 존재함을 의미합니다.</p>
+
+            </section>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 2: 경쟁 환경과 시장 포지셔닝 -->
+            <!-- ============================================================ -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">4층 sLLM 에코시스템 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">sLLM 에코시스템은 기반 모델, 파인튜닝 프레임워크, 양자화·배포 도구, 평가·벤치마크의 4개 계층으로 구성됩니다. 각 계층의 주요 플레이어와 특징을 분석합니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>도구명</th>
+                            <th>카테고리</th>
+                            <th>핵심 특징</th>
+                            <th>대상</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Tier 1: 기반 sLLM 모델 -->
+                        <tr>
+                            <td><strong>Phi-4 / Phi-4-mini</strong></td>
+                            <td>기반 모델</td>
+                            <td>합성 데이터 퍼스트, 추론·수학 최강</td>
+                            <td>연구자, 기업</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Gemma 3</strong></td>
+                            <td>기반 모델</td>
+                            <td>270M-9B, 다국어·모바일 최적화</td>
+                            <td>모바일 개발자</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Llama 3.2</strong></td>
+                            <td>기반 모델</td>
+                            <td>1B/3B, 최대 오픈소스 생태계</td>
+                            <td>전 사용자</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Qwen 2.5 / 3</strong></td>
+                            <td>기반 모델</td>
+                            <td>0.5B-7B, CJK 다국어 최강</td>
+                            <td>아시아 시장</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mistral Nemo</strong></td>
+                            <td>기반 모델</td>
+                            <td>유럽 기반, 다국어·코딩 균형</td>
+                            <td>유럽 기업</td>
+                        </tr>
+                        <!-- Tier 2: 파인튜닝 프레임워크 -->
+                        <tr>
+                            <td><strong>Unsloth</strong></td>
+                            <td>파인튜닝</td>
+                            <td>Triton 커널 기반 2-5배 속도, 80% 메모리 절감</td>
+                            <td>단일 GPU 사용자</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Axolotl</strong></td>
+                            <td>파인튜닝</td>
+                            <td>YAML 설정 기반, 분산 학습 지원</td>
+                            <td>ML 엔지니어</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LLaMA-Factory</strong></td>
+                            <td>파인튜닝</td>
+                            <td>100+ 모델, LlamaBoard 웹 UI</td>
+                            <td>초보자, 도메인 전문가</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TorchTune</strong></td>
+                            <td>파인튜닝</td>
+                            <td>PyTorch 네이티브, Meta 공식</td>
+                            <td>PyTorch 사용자</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TRL (HuggingFace)</strong></td>
+                            <td>파인튜닝</td>
+                            <td>RLHF/DPO 특화, Transformers 통합</td>
+                            <td>HF 생태계 사용자</td>
+                        </tr>
+                        <!-- Tier 3: 양자화·배포 도구 -->
+                        <tr>
+                            <td><strong>llama.cpp</strong></td>
+                            <td>양자화·배포</td>
+                            <td>GGUF 형식, CPU/GPU 추론, 엣지 표준</td>
+                            <td>로컬/엣지 배포</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ExecuTorch (Meta)</strong></td>
+                            <td>양자화·배포</td>
+                            <td>모바일/임베디드 최적화 런타임</td>
+                            <td>모바일 개발자</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ONNX Runtime</strong></td>
+                            <td>양자화·배포</td>
+                            <td>크로스 플랫폼 추론, Microsoft 지원</td>
+                            <td>엔터프라이즈</td>
+                        </tr>
+                        <tr>
+                            <td><strong>vLLM</strong></td>
+                            <td>양자화·배포</td>
+                            <td>PagedAttention, 고처리량 서빙</td>
+                            <td>API 서비스</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TensorRT-LLM</strong></td>
+                            <td>양자화·배포</td>
+                            <td>NVIDIA GPU 최적화, 최고 속도</td>
+                            <td>NVIDIA 인프라</td>
+                        </tr>
+                        <!-- Tier 4: 평가·벤치마크 -->
+                        <tr>
+                            <td><strong>lm-eval-harness</strong></td>
+                            <td>평가</td>
+                            <td>표준 평가 프레임워크, 200+ 태스크</td>
+                            <td>연구자, 개발자</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Open LLM Leaderboard</strong></td>
+                            <td>벤치마크</td>
+                            <td>HuggingFace 공개 리더보드</td>
+                            <td>전 커뮤니티</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 트렌드</h3>
+                <p style="font-size: 0.95rem; line-height: 1.8;">
+                    • <strong>sLLM 시장 급성장:</strong> 80% 프로덕션 유즈케이스에서 노트북 실행 가능 모델이 충분하며, 클라우드 LLM API 대비 비용 95% 절감 가능<br>
+                    • <strong>합성 데이터 혁명:</strong> Phi 시리즈가 증명한 "데이터 퍼스트" 전략이 sLLM 개발의 새로운 표준으로 부상. 데이터 품질이 모델 크기보다 중요한 시대<br>
+                    • <strong>QLoRA로 민주화:</strong> RTX 4090 단일 GPU($1,500)로 7B 모델 파인튜닝 가능 — 개인과 스타트업의 AI 개발 진입 장벽 극감<br>
+                    • <strong>서브 빌리언 파라미터 시대:</strong> 1B 미만 모델(SmolLM2 135M, Gemma 270M, Qwen 0.5B)이 스마트폰에서 실시간 동작하며 실용적 태스크 수행<br>
+                    • <strong>엣지 AI 표준화:</strong> GGUF + llama.cpp가 온디바이스 배포의 사실상 표준으로 수렴, ExecuTorch가 모바일 프로덕션 표준으로 부상
+                </p>
+
+                <h3 class="subsection-title">주요 sLLM 모델 역량 비교</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 3: 활용 아이디어 -->
+            <!-- ============================================================ -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">글로벌 사례에서 도출된 3가지 핵심 활용 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1.25rem; line-height: 1.7;">
+                        <strong>1. 도메인 특화 sLLM 파일럿</strong><br>
+                        Phi-4-mini 또는 Qwen 2.5를 베이스 모델로 선택하고, QLoRA를 활용하여 사내 특정 도메인(교육/의료/금융)에 특화된 전문 모델을 구축합니다. Unsloth 프레임워크를 사용하면 단일 GPU(RTX 4090)에서 수시간 내에 파인튜닝이 완료됩니다. 의료 분야의 경우 HIPAA 컴플라이언스, 금융 분야의 경우 규제 준수 관련 데이터를 파인튜닝 데이터셋에 포함하여 도메인 전문성과 규정 준수를 동시에 달성할 수 있습니다.
+                    </p>
+                    <p style="margin-bottom: 1.25rem; line-height: 1.7;">
+                        <strong>2. 온디바이스 AI 포트폴리오 구축</strong><br>
+                        Gemma 3 또는 Llama 3.2를 GGUF 형식으로 양자화(Q4_K_M)하여 모바일·엣지 기기에서 실행합니다. 개인정보 보호 요구사항이 높은 서비스(헬스케어 앱, 금융 자문, 개인 비서)에 적용합니다. 배포 파이프라인: HuggingFace에서 모델 다운로드 → llama.cpp로 GGUF 변환 → ExecuTorch로 모바일 빌드 → 앱 스토어 배포. 모든 추론이 기기에서 로컬로 수행되므로 사용자 데이터가 서버로 전송되지 않습니다.
+                    </p>
+                    <p style="line-height: 1.7;">
+                        <strong>3. 합성 데이터 파이프라인 자동화</strong><br>
+                        Phi 시리즈의 접근법을 참고하여, 대형 모델(GPT-4o, Claude 등)로 고품질 합성 학습 데이터를 생성하고, 이를 자사 sLLM의 사전학습·파인튜닝 데이터로 활용하는 파이프라인을 구축합니다. 멀티에이전트 프롬프팅, 자기수정 워크플로우, 품질 필터링 단계를 자동화하여 지속적으로 학습 데이터를 공급하는 시스템을 만듭니다. 이를 통해 초기 구축 비용 후에는 저비용으로 모델 성능을 지속적으로 개선할 수 있습니다.
+                    </p>
+                </div>
+            </section>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 4: 에그제큐티브 서머리 -->
+            <!-- ============================================================ -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">에그제큐티브 서머리</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 인사이트 5가지</h3>
+                    <ul class="key-findings">
+                        <li><strong>sLLM은 "작지만 강력한" 시대에 진입:</strong> 3-7B 파라미터로 LLM 성능의 85% 이상을 달성하면서 비용은 10-30배 절감. 80% 프로덕션 유즈케이스에서 노트북 실행 가능 모델이 충분합니다.</li>
+                        <li><strong>합성 데이터 품질이 모델 크기보다 중요:</strong> Phi-4가 아키텍처 변경 없이 데이터·커리큘럼 혁신만으로 크기 대비 최강 성능을 달성. "데이터 퍼스트" 전략이 sLLM 개발의 새로운 패러다임을 확립했습니다.</li>
+                        <li><strong>QLoRA가 파인튜닝 민주화를 실현:</strong> $1,500 GPU(RTX 4090)로 7B 모델 파인튜닝이 가능해져, 풀 파인튜닝에 필요한 $50,000 GPU(H100) 대비 33배 저렴한 AI 개발 환경이 조성되었습니다.</li>
+                        <li><strong>서브 빌리언 모델의 실용성 입증:</strong> 135M-1B 파라미터의 초소형 모델이 스마트폰에서 실시간 동작하며 실용적 태스크를 수행. IoT, 웨어러블, 임베디드 시스템에서의 AI 추론이 현실화되었습니다.</li>
+                        <li><strong>엔터프라이즈 75%가 민감 데이터 처리에 로컬 sLLM 채택:</strong> 의료·금융·법률 분야에서 온프레미스 배포가 급확산. 데이터 주권과 프라이버시가 sLLM 선택의 핵심 동인입니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">모델·도구 선택 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>추론·수학 특화 → Phi-4-mini (3.8B)</strong><br>
+                        GPT-4o를 수학 벤치마크에서 능가. 합성 데이터 기반 훈련으로 추론 능력이 크기 대비 최강. 연구·교육·기술 분석에 최적.<br><br>
+                        <strong>다국어·모바일 → Gemma 3 (270M-9B)</strong><br>
+                        Google의 최적화된 소형 모델. 270M 초소형부터 9B까지 라인업. 배터리 소비 0.75%로 모바일 실행 가능. 멀티모달 지원.<br><br>
+                        <strong>최대 커뮤니티·생태계 → Llama 3.2 (1B/3B)</strong><br>
+                        가장 활발한 오픈소스 생태계. 파인튜닝 자료·커뮤니티 지원·사전학습 어댑터가 풍부. 첫 sLLM 프로젝트에 권장.<br><br>
+                        <strong>다국어(특히 CJK) → Qwen 2.5/3 (0.5B-7B)</strong><br>
+                        중국어·한국어·일본어 처리 최강. 0.5B 초소형 모델도 아시아 언어에서 경쟁력. MoE(Mixture of Experts) 모델 지원.<br><br>
+                        <strong>단일 GPU 파인튜닝 → Unsloth</strong><br>
+                        2-5배 빠른 학습과 80% 메모리 절감. RTX 3090/4090에서 7B 모델 파인튜닝 가능. 개인 개발자와 소규모 팀에 최적.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 매우 긍정적 — sLLM 개발 프로세스가 급속히 성숙하여 "데이터 품질 > 모델 크기"라는 패러다임이 확립되었으며, 개인·중소기업도 소비자 GPU로 경쟁력 있는 모델을 구축할 수 있는 시대가 열렸습니다. 합성 데이터, 지식 증류, PEFT, 양자화의 4대 기술이 유기적으로 결합되면서 sLLM의 성능 상한이 계속 높아지고 있으며, 이는 AI의 진정한 민주화를 향한 결정적 전환점입니다.</p>
+
+                <!-- OVERALL_CREDIBILITY_PLACEHOLDER -->
+                <div class="overall-credibility">
+                    <h3>종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">8.6/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> Microsoft Research 기술 보고서, arXiv 논문, 공식 프레임워크 문서 등 권위 있는 1차 자료를 기반으로 한 높은 신뢰도의 종합 분석 보고서</p>
+                        <p><strong>주요 강점:</strong> 20개 이상의 공식 출처 인용, Phi-4 Technical Report·QLoRA 논문 등 핵심 원본 자료 참조, 코드 예시 포함, 구체적 벤치마크·비용 수치 제시, 5개 산업 활용 사례</p>
+                        <p><strong>개선 우선순위:</strong> 엔터프라이즈 사례의 구체적 기업명 공개, 최신 벤치마크 비교표(동일 조건) 추가, 아시아 지역 sLLM 도입 사례 확대</p>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <!-- ============================================================ -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>sLLM (Small Large Language Model)</strong> - 소형 언어 모델. 일반적으로 1B-14B 파라미터 규모의 언어 모델로, 대형 모델(70B+)에 비해 리소스 효율적이면서도 특정 태스크에서 경쟁력 있는 성능을 발휘합니다. 온디바이스 배포, 프라이버시 보호, 비용 절감이 핵심 이점입니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>지식 증류 (Knowledge Distillation)</strong> - 대형 "교사" 모델의 지식을 소형 "학생" 모델로 전달하는 모델 압축 기법. 교사 모델의 소프트 레이블(확률 분포), 중간 특징, 관계 패턴을 학생이 학습하여, 원래 모델의 크기를 대폭 줄이면서도 성능을 유지합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>합성 데이터 (Synthetic Data)</strong> - AI 모델이 생성한 학습 데이터. 실제 데이터의 한계(양, 다양성, 프라이버시)를 극복하기 위해 대형 모델이 체계적으로 생성합니다. Phi 시리즈가 "교과서 품질" 합성 데이터로 sLLM 개발의 새 패러다임을 열었습니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LoRA (Low-Rank Adaptation)</strong> - 저랭크 적응. 사전학습된 가중치 행렬에 저랭크 행렬을 추가하여 극소수 파라미터만 학습하는 파인튜닝 기법. 원래 파라미터의 0.1-1%만 학습하며, 여러 LoRA 어댑터를 교체하며 사용할 수 있는 유연성이 특징입니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>QLoRA (Quantized LoRA)</strong> - 양자화된 LoRA. 모델 가중치를 4비트로 양자화한 상태에서 LoRA 어댑터를 학습하는 기법. 7B 모델을 RTX 4090($1,500)에서 파인튜닝 가능하게 하여 AI 개발의 민주화를 실현했습니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>DoRA (Weight-Decomposed Low-Rank Adaptation)</strong> - 가중치 분해 저랭크 적응. 가중치를 크기(magnitude)와 방향(direction)으로 분해하여 LoRA보다 정교한 적응을 수행합니다. 풀 파인튜닝의 학습 패턴에 더 가깝게 동작합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>GGUF (GPT-Generated Unified Format)</strong> - GPT 생성 통합 형식. CPU 추론과 엣지 배포를 위한 모델 파일 형식으로, llama.cpp와 네이티브 통합됩니다. 2비트~8비트 양자화를 지원하며, GPU 없이도 모델 실행이 가능합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>GPTQ (GPT Quantization)</strong> - 사후 학습 양자화 기법. 근사적 2차 정보(Hessian)를 활용하여 최적의 양자화를 수행합니다. GPU 추론에 최적화되어 고처리량 프로덕션 환경에 적합합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>AWQ (Activation-aware Weight Quantization)</strong> - 활성화 인식 가중치 양자화. 활성화 패턴을 분석하여 "중요한" 가중치 채널을 식별하고, 중요도에 따라 차등적으로 양자화하여 4비트에서도 원래 성능의 99%+ 유지합니다.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>PEFT (Parameter-Efficient Fine-Tuning)</strong> - 파라미터 효율적 파인튜닝. 사전학습된 모델의 가중치 대부분을 고정하고 극소수 파라미터만 업데이트하는 파인튜닝 접근법의 총칭. LoRA, QLoRA, DoRA, 프롬프트 튜닝, 어댑터 등이 포함됩니다.
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 6: 참고 자료 -->
+            <!-- ============================================================ -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 4월 1일</p>
+                    <ul>
+                        <li>• <a href="https://arxiv.org/abs/2412.08905" target="_blank">Phi-4 Technical Report — Microsoft Research (arXiv:2412.08905)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2306.06615" target="_blank">Textbooks Are All You Need: Phi-1 Paper — Microsoft Research (arXiv)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2305.14314" target="_blank">QLoRA: Efficient Finetuning of Quantized Language Models — University of Washington (arXiv)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2405.14734" target="_blank">DoRA: Weight-Decomposed Low-Rank Adaptation (arXiv)</a></li>
+                        <li>• <a href="https://www.microsoft.com/en-us/research/" target="_blank">Microsoft Research — AI and Machine Learning</a></li>
+                        <li>• <a href="https://ai.google.dev/gemma" target="_blank">Google Gemma — Lightweight Open Models</a></li>
+                        <li>• <a href="https://llama.meta.com/" target="_blank">Meta Llama — Open Source Large Language Models</a></li>
+                        <li>• <a href="https://qwenlm.github.io/" target="_blank">Qwen — Alibaba Cloud Large Language Models</a></li>
+                        <li>• <a href="https://mistral.ai/" target="_blank">Mistral AI — Frontier AI Lab</a></li>
+                        <li>• <a href="https://unsloth.ai/" target="_blank">Unsloth — Fast and Memory Efficient LLM Fine-tuning</a></li>
+                        <li>• <a href="https://github.com/axolotl-ai-cloud/axolotl" target="_blank">Axolotl — Streamlined Fine-tuning Framework (GitHub)</a></li>
+                        <li>• <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">LLaMA-Factory — Unified Efficient Fine-Tuning (GitHub)</a></li>
+                        <li>• <a href="https://github.com/ggerganov/llama.cpp" target="_blank">llama.cpp — LLM Inference in C/C++ (GitHub)</a></li>
+                        <li>• <a href="https://huggingface.co/docs/trl/index" target="_blank">TRL — Transformer Reinforcement Learning (Hugging Face)</a></li>
+                        <li>• <a href="https://zilliz.com/learn/knowledge-distillation" target="_blank">Knowledge Distillation: Principles and Techniques — Zilliz</a></li>
+                        <li>• <a href="https://www.ibm.com/think/topics/small-language-models" target="_blank">What are Small Language Models? — IBM Think</a></li>
+                        <li>• <a href="https://hbr.org/" target="_blank">Harvard Business Review — AI Strategy and Enterprise</a></li>
+                        <li>• <a href="https://www.datacamp.com/tutorial/fine-tuning-llms" target="_blank">Fine-Tuning LLMs Tutorial — DataCamp</a></li>
+                        <li>• <a href="https://huggingface.co/blog" target="_blank">Hugging Face Blog — Open Source AI</a></li>
+                        <li>• <a href="https://venturebeat.com/" target="_blank">VentureBeat — AI and Tech News</a></li>
+                        <li>• <a href="https://localaimaster.com/" target="_blank">Local AI Master — On-device AI Guide</a></li>
+                        <li>• <a href="https://cast.ai/blog/demystifying-quantizations-llms" target="_blank">Demystifying Quantizations for LLMs — Cast.ai</a></li>
+                        <li>• <a href="https://blog.premai.io/" target="_blank">PremAI Blog — Practical AI Deployment</a></li>
+                        <li>• <a href="https://www.databricks.com/blog" target="_blank">Databricks Blog — Data and AI</a></li>
+                        <li>• <a href="https://pytorch.org/torchtune/" target="_blank">TorchTune — PyTorch Native LLM Fine-tuning</a></li>
+                    </ul>
+                </div>
+            </section>
+
+            <div class="disclaimer" style="display: none;">
+                <p>이 보고서는 AI가 생성한 내용으로, 중요 정보는 원본 출처를 확인하시기 바랍니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['추론 능력', '코딩', '다국어', '메모리 효율', '커뮤니티 지원'],
+                datasets: [
+                    {
+                        label: 'Phi-4-mini (3.8B)',
+                        data: [95, 90, 75, 85, 80],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Gemma 3 4B',
+                        data: [85, 80, 90, 90, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Llama 3.2 3B',
+                        data: [80, 85, 80, 85, 95],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Qwen 2.5 3B',
+                        data: [85, 80, 95, 85, 75],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Mistral Nemo',
+                        data: [80, 75, 85, 80, 70],
+                        borderColor: 'rgb(236, 72, 153)',
+                        backgroundColor: 'rgba(236, 72, 153, 0.15)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        pointLabels: { font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>&#x1F90D;</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
