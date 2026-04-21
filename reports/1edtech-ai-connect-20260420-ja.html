@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1EdTech AI-Connect 1.0：教育AIの文脈理解を標準化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1); color: white; border-radius: 3px;
+            cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1); color: white; border-radius: 3px;
+            cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.75rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='1edtech-ai-connect-20260420-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='1edtech-ai-connect-20260420-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='1edtech-ai-connect-20260420-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>1EdTech AI-Connect 1.0：<br>教育AIの文脈理解を標準化する新仕様</h1>
+            <div class="subtitle">MCPベースの教育コンテキスト共有フレームワークの全容</div>
+            <div class="meta">レポート作成日：2026年4月20日 | 標準版レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. AI-Connect 1.0：教育AIの新たな標準化パラダイム</h3>
+                <p><strong>現状：</strong>1EdTechコンソーシアムは2025年10月22日、教育分野のAI活用を責任ある形で支える新フレームワーク「AI-Connect」（正式名称：AI Data Context Standard 1.0）の策定に向けたK-20業界横断協働イニシアチブを発表しました。AnthropicのModel Context Protocol（MCP）を基盤とし、AIモデルに信頼できる教育コンテキストを提供する初のオープンフレームワークです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>中核的な機能</h4>
+                        <p>• <strong>教育文脈の標準化共有：</strong>学習者・カリキュラム・成果に関する情報をAIに安全に伝達<br>
+                        • <strong>MCPベース設計：</strong>業界標準プロトコルを活用した柔軟な拡張性<br>
+                        • <strong>プライバシー保護：</strong>共有可能／非共有データの明確な境界定義</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>開発体制</h4>
+                        <p>• <strong>K-20協働：</strong>初等・中等・高等教育から職業訓練まで横断<br>
+                        • <strong>1EdTech Labs：</strong>技術作業部会で実証とベストプラクティス確立<br>
+                        • <strong>早期公開：</strong>2025年10月23日に初回ウェビナー実施済み</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.1edtech.org/1edtech-article/1edtech-leads-collaborative-effort-to-shape-responsible-ai-in-education/411336" target="_blank">1EdTech公式発表</a> |
+                    <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol</a> |
+                    <a href="https://www.1edtech.org" target="_blank">1EdTech Consortium</a>
+                </div>
+
+                <p><strong>展望：</strong>正式仕様は2026年中の発行が見込まれ、2026年1月20日のロンドン・サミット、6月1-3日のサンフランシスコLearning Impact Conference、9月15-17日のテッサロニキ（Learning Impact Europe）を通じて段階的に詳細が公開される見通しです。</p>
+
+                <h3 class="subsection-title">2. 既存1EdTech標準との統合アーキテクチャ</h3>
+                <p><strong>現状：</strong>AI-Connectは既存のオープン標準と深く連携することで、教育機関が既に保有するデータ資産を最大限に活用できるよう設計されています。CASE（コンピテンシーと学習標準の交換）、OneRoster（名簿データ交換）、Edu-API（管理データ連携）、Caliper Analytics（学習分析）がAIへ提供する文脈の主要な情報源となります。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>活用される既存標準</h4>
+                        <p>• <strong>CASE®：</strong>全米50州のカリキュラム基準、NGSS、CCSSに対応<br>
+                        • <strong>OneRoster® 1.2：</strong>名簿・コース・成績の安全な交換<br>
+                        • <strong>Edu-API™：</strong>学生情報システム（SIS）との統合</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>追加データ連携</h4>
+                        <p>• <strong>Caliper Analytics® 1.2：</strong>学習行動ログの標準化<br>
+                        • <strong>CLR 2.0：</strong>包括的な学習記録（検証可能デジタル）<br>
+                        • <strong>Open Badges 3.0：</strong>W3C検証可能クレデンシャル準拠</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.1edtech.org/standards/case" target="_blank">CASE Standard</a> |
+                    <a href="https://www.1edtech.org/standards/oneroster" target="_blank">OneRoster</a> |
+                    <a href="https://www.1edtech.org/standards/edu-api" target="_blank">Edu-API</a> |
+                    <a href="https://www.1edtech.org/standards/roadmap" target="_blank">Product Roadmap</a>
+                </div>
+
+                <p><strong>展望：</strong>AI-Connectは「AIを新たに作る」のではなく「既存の信頼基盤を活かしてAIを安全に埋め込む」方針を取っています。これにより導入機関は、既存のシステム投資を無駄にすることなくAI対応へ移行できます。</p>
+
+                <h3 class="subsection-title">3. プライバシー・セキュリティ・ガバナンスの三本柱</h3>
+                <p><strong>現状：</strong>AI-Connectの中核思想は、「AIが何を知ってよく、何を知るべきでないか」を機関が制御できる仕組みの提供にあります。2026年は教育AIが「実験段階」から「ガバナンス段階」へ移行する転換点であり、この標準はその中心的役割を担います（出典：1EdTech "Three Trends We're Watching in 2026"）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>統合される保護フレームワーク</h4>
+                        <p>• <strong>TrustEd Apps AI Data Rubric：</strong>プライバシー評価<br>
+                        • <strong>Security Framework v1.1：</strong>情報セキュリティ実践<br>
+                        • <strong>AI Preparedness Checklist：</strong>導入前の準備確認</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>制御可能な要素</h4>
+                        <p>• <strong>データ境界：</strong>共有／非共有のフィールド単位制御<br>
+                        • <strong>同意管理：</strong>オプトイン／オプトアウトの明示<br>
+                        • <strong>監査対応：</strong>AIが参照した文脈の記録と透明化</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">TrustEd Apps AI Rubric</a> |
+                    <a href="https://www.1edtech.org/resource/ai-checklist" target="_blank">AI Preparedness Checklist</a>
+                </div>
+
+                <p><strong>展望：</strong>2026年初頭には拡張版Generative AI Rubricが公開予定で、プライバシーに加えてデータ品質・妥当性・所有権に関する評価項目が追加される予定です。これによりAI-Connectの実装評価基準が整備されます。</p>
+
+                <h3 class="subsection-title">4. 教育特化型MCPサーバーエコシステムの台頭</h3>
+                <p><strong>現状：</strong>MCPは2024年11月にAnthropicが公開したプロトコルで、2026年3月にはLinux Foundation配下の業界標準へと昇格しました。これに伴い教育分野でも、Canvas LMS、Moodle、Google Classroom、OneRoster APIなどに対応するMCPサーバーが相次いで登場しています。AI-Connectはこのエコシステムに「教育に特化した共通文脈レイヤー」を加える位置づけです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>既存の教育MCPサーバー例</h4>
+                        <p>• <strong>OneRoster MCP：</strong>TypeScript SDK経由の名簿連携<br>
+                        • <strong>Canvas・Moodle連携：</strong>LMS操作の自動化<br>
+                        • <strong>O'Reilly MCP：</strong>学習コンテンツを直接ワークフローへ</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>AI-Connectが補完する領域</h4>
+                        <p>• <strong>意味的文脈：</strong>単なるAPIでなく「教育の意味」を伝達<br>
+                        • <strong>標準準拠：</strong>CASE/CLRなどの意味体系を統一<br>
+                        • <strong>ガバナンス：</strong>どのデータを渡すかの機関レベル制御</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://modelcontextprotocol.io/" target="_blank">MCP公式</a> |
+                    <a href="https://github.com/modelcontextprotocol/servers" target="_blank">MCP Servers GitHub</a>
+                </div>
+
+                <p><strong>展望：</strong>AI-Connectが業界標準として採用されれば、EdTechベンダーはMCPサーバー実装時に「1EdTech準拠」をアピールでき、教育機関は相互運用性を保証された状態でAIを導入できます。</p>
+
+                <h3 class="subsection-title">5. 拡張版Generative AI Rubricと評価フレームワーク</h3>
+                <p><strong>現状：</strong>1EdTechは2026年初頭に拡張版Generative AI Data Rubricの公開を予定しています。現行版（プライバシーセクションのみ）に加え、データ品質、妥当性、所有権、バイアス制御などを評価項目として追加。AI-Connect 1.0を実装するベンダー・機関が自己評価できる共通基準として機能します（出典：1EdTech AI Rubric公式ページ）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>現行Rubricの評価軸（Privacy）</h4>
+                        <p>• <strong>開示方針：</strong>AI利用の明示<br>
+                        • <strong>オプトイン／アウト：</strong>利用者選択の保証<br>
+                        • <strong>データ所有権：</strong>学習者データの帰属</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>拡張予定の評価軸</h4>
+                        <p>• <strong>データ品質：</strong>訓練データの信頼性<br>
+                        • <strong>バイアス制御：</strong>公平性の担保<br>
+                        • <strong>検証可能性：</strong>AI出力の妥当性評価</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">Generative AI Data Rubric</a> |
+                    <a href="https://www.1edtech.org/sites/default/files/media/docs/2023/Data-Privacy_AI-Rubric.pdf" target="_blank">Rubric PDF</a>
+                </div>
+
+                <p><strong>展望：</strong>Rubricの拡張は、EdTech調達プロセスの標準化にもつながり、学校区や大学がAI製品を選定する際の共通言語となることが期待されます。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層構造の教育AI標準化市場</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AI-Connect 1.0は、教育AI標準化の市場における「教育特化型コンテキスト層」という独自のポジションを占めます。汎用MCPと既存教育標準の橋渡し役として機能します。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>フレームワーク／標準</th>
+                            <th>カテゴリ</th>
+                            <th>特徴</th>
+                            <th>対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1EdTech AI-Connect 1.0</strong></td>
+                            <td>教育特化AI文脈層</td>
+                            <td>MCPベース、CASE/OneRoster統合</td>
+                            <td>K-20教育機関・EdTech供給者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Anthropic MCP</strong></td>
+                            <td>汎用AI文脈プロトコル</td>
+                            <td>オープン標準、Linux Foundation配下</td>
+                            <td>全業界のAI開発者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TrustEd Apps AI Rubric</strong></td>
+                            <td>AI評価フレームワーク</td>
+                            <td>自己評価型、プライバシー中心</td>
+                            <td>EdTech供給者・教育機関</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CTDL / CTDL-ASN</strong></td>
+                            <td>資格・学習連結語彙</td>
+                            <td>W3C準拠、労働力データ連携</td>
+                            <td>資格認証機関・求人システム</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EdSAFE AI Alliance</strong></td>
+                            <td>AI政策・安全性連合</td>
+                            <td>SAFE枠組み（Safety, Accountability, Fairness, Efficacy）</td>
+                            <td>教育政策立案者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IEEE P7015（AIリテラシー）</strong></td>
+                            <td>AI人材育成標準</td>
+                            <td>データ・AIスキル読み書き能力</td>
+                            <td>カリキュラム策定者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ed-Fi Alliance</strong></td>
+                            <td>K-12データ標準</td>
+                            <td>統合された学習者データモデル</td>
+                            <td>米国K-12学校区</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場の主要な動向（5つのシフト）</h3>
+                <ul style="list-style: disc; padding-left: 1.5rem; font-size: 0.95rem; line-height: 1.8;">
+                    <li><strong>汎用→専門領域：</strong>汎用MCPから教育・医療・金融など領域特化型のコンテキスト標準への分化</li>
+                    <li><strong>実験→ガバナンス：</strong>AIの「何ができるか」から「どう制御するか」へ関心が移動</li>
+                    <li><strong>単独標準→統合エコシステム：</strong>CASE・OneRoster・Open Badgesの横断活用が前提</li>
+                    <li><strong>技術ベンダー主導→コンソーシアム主導：</strong>K-20の集合的合意形成を重視する流れ</li>
+                    <li><strong>データ保護→文脈品質：</strong>プライバシーに加えデータ品質・バイアス評価が新たな論点に</li>
+                </ul>
+
+                <h3 class="subsection-title">主要フレームワーク比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>パイロット導入の検討</strong> - 自社LMS（OneRoster準拠）とAI-ConnectブリッジによるAIアシスタント連携の検証</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>既存CASE資産の活用</strong> - 既にCASEで管理しているコンピテンシーをAIへ文脈提供し個別最適化へ接続</p>
+                    <p style="line-height: 1.6;">3. <strong>ガバナンス基準の確立</strong> - 拡張版AI Rubricを参照し、自社のAIデータ境界とオプトイン方針を整備</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>標準化の節目：</strong>AI-Connect 1.0は、教育分野初のMCPベース業界標準であり、「AI×教育」の相互運用性を一段引き上げる転換点</li>
+                        <li><strong>既存資産の活用：</strong>CASE・OneRoster・Edu-API・Caliperといった既存1EdTech標準を文脈情報源として再活用できる</li>
+                        <li><strong>ガバナンス重視：</strong>2026年は教育AIが「実験」から「ガバナンス」へ移行する年で、AI-Connectはその中核に位置する</li>
+                        <li><strong>段階的公開：</strong>2026年のロンドン・サミット、Learning Impact Conference、Europe Conferenceを通じて仕様詳細が順次発表される</li>
+                        <li><strong>自己評価基準の整備：</strong>拡張版Generative AI Rubricが2026年初頭公開予定で、実装ベンダー・機関の共通評価尺度として機能</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>既に1EdTech標準を多く活用している組織 → AI-Connect 1.0パイロット検討</strong><br>
+                        理由：既存CASE/OneRoster資産をそのままAIコンテキスト層として再利用でき投資効率が高い。<br>
+                        <strong>AIガバナンス整備が最優先の組織 → 拡張版AI Rubric + AI-Connect併用</strong><br>
+                        理由：プライバシーに加えデータ品質・バイアス評価の共通尺度を得られる。<br>
+                        <strong>独自AIを開発中の組織 → 汎用MCP + AI-Connect準拠プロファイル</strong><br>
+                        理由：汎用MCPの柔軟性と教育分野の相互運用性を両立できる。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（既存投資を保護しつつ教育AIの信頼性・相互運用性を底上げする意義が大きい。正式仕様公開後のリファレンス実装登場速度が採用拡大の鍵）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>AI-Connect 1.0</strong> - 1EdTechが策定中のMCPベース教育AI文脈共有標準。正式名称はAI Data Context Standard。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MCP（Model Context Protocol）</strong> - Anthropicが2024年に発表したAIアプリと外部データ・ツールを接続するオープン標準。2026年よりLinux Foundation管理下。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>CASE®（Competencies and Academic Standards Exchange）</strong> - 学習基準・コンピテンシーをデジタルで交換する1EdTech標準。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>OneRoster®</strong> - 名簿・コース・成績情報を学校システム間で交換する1EdTech標準。現行版は1.2。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Edu-API™</strong> - 学生情報システム（SIS）と教育アプリケーションを連携する1EdTech標準。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>K-20</strong> - 幼稚園（K）から大学院（20年目）までの教育全体を指す表現。
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>TrustEd Apps Rubric</strong> - EdTech製品の信頼性を評価するための1EdTech自己評価基準（プライバシー、セキュリティ、アクセシビリティ等）。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年4月20日</p>
+                    <ul>
+                        <li>• <a href="https://www.1edtech.org/1edtech-article/1edtech-leads-collaborative-effort-to-shape-responsible-ai-in-education/411336" target="_blank">1EdTech Leads Collaborative Effort to Shape Responsible AI in Education（公式発表）</a></li>
+                        <li>• <a href="https://www.1edtech.org/blog/three-trends-were-watching-in-2026" target="_blank">Three Trends We're Watching in 2026（1EdTechブログ）</a></li>
+                        <li>• <a href="https://www.1edtech.org/events/1edtech-london-summit-2026-why-ai-in-learning-needs-standards" target="_blank">1EdTech London Summit 2026</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/roadmap" target="_blank">1EdTech Product Roadmap</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">TrustEd Apps Generative AI Data Rubric</a></li>
+                        <li>• <a href="https://www.1edtech.org/blog/one-year-of-impact-reflecting-on-progress-partnership-and-the-power-of-open-standards-at" target="_blank">One Year of Impact at 1EdTech</a></li>
+                        <li>• <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol 公式</a></li>
+                        <li>• <a href="https://thejournal.com/articles/2025/10/22/1edtech-announces-k-20-collaboration-to-shape-responsible-ai-in-education.aspx" target="_blank">THE Journal: K-20 Collaboration Announcement</a></li>
+                        <li>• <a href="https://campustechnology.com/articles/2025/10/22/1edtech-launches-k-20-collaboration-to-shape-responsible-ai-in-education.aspx" target="_blank">Campus Technology報道</a></li>
+                        <li>• <a href="https://www.prnewswire.com/news-releases/1edtech-leads-collaborative-effort-to-shape-responsible-ai-in-education-302590030.html" target="_blank">PR Newswire: 1EdTech Announcement</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['教育特化度', '相互運用性', 'ガバナンス成熟度', 'エコシステム規模', '導入容易性'],
+                datasets: [
+                    {
+                        label: '1EdTech AI-Connect 1.0',
+                        data: [95, 92, 78, 70, 75],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Anthropic MCP（汎用）',
+                        data: [35, 85, 65, 95, 85],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'TrustEd Apps AI Rubric',
+                        data: [85, 50, 85, 60, 80],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'EdSAFE AI Alliance',
+                        data: [78, 45, 80, 55, 60],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">お名前（任意）</label>
+                    <input type="text" id="comment-author" placeholder="匿名" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">コメント</label>
+                    <textarea id="comment-content" placeholder="ご意見をお聞かせください..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">コメントを投稿</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">コメントを読み込み中...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
