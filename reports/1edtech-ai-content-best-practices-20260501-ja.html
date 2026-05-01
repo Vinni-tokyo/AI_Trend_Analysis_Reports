@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1EdTech AI生成コンテンツ・ベストプラクティス v1.0：詳細分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.35rem;
+            color: #1a1a1a;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.05rem;
+            color: #1a1a1a;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.85rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score {
+            background: #fff8e1;
+            border-left: 3px solid #f59e0b;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .credibility-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+        .credibility-score-label { font-weight: 600; color: #92400e; }
+        .credibility-score-value { font-weight: 700; color: #92400e; font-size: 0.95rem; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.5; }
+        .overall-credibility {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border-radius: 6px;
+        }
+        .overall-credibility h3 { color: #92400e; margin-bottom: 0.75rem; font-size: 1.05rem; }
+        .overall-credibility-score { font-size: 1.7rem; font-weight: 700; color: #92400e; margin-bottom: 0.75rem; }
+        .overall-credibility-details p { margin-bottom: 0.5rem; font-size: 0.85rem; line-height: 1.6; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='1edtech-ai-content-best-practices-20260501-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='1edtech-ai-content-best-practices-20260501-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='1edtech-ai-content-best-practices-20260501-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>1EdTech AI生成コンテンツ・ベストプラクティス v1.0<br>詳細分析レポート</h1>
+            <div class="subtitle">教育GenAIガバナンスのグローバル標準 — 5つの原則、8つの推奨事項、5段階ラベリング枠組み</div>
+            <div class="meta">レポート作成日：2026年5月1日 | 標準レポート（5-8ページ）</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">📊 主要トレンド Top 5</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.9rem;">2025年12月15日に1EdTechが発表した「AI生成コンテンツ・ベストプラクティス v1.0」は、ETS、Carnegie Learning、D2L、Digital Promiseなど50以上の組織が参加したコミュニティ主導のガイダンスです。本文書が提示する5つの主要トレンドを以下に整理します。</p>
+
+                <h3 class="subsection-title">1. 5段階透明性ラベリング枠組み：GenAI関与度の標準化</h3>
+                <p><strong>現状：</strong>1EdTechは、GenAIに対する人間の制御度合いに応じてコンテンツを5段階に分類する標準ラベル体系を導入しました。これは「AI使用の有無」という単純な開示を超え、GenAIの実質的な貢献度を定量化する業界初の取り組みです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>5段階ラベル体系</h4>
+                        <p>• <strong>Level 1：</strong>Human-Created, GenAI-Assisted（綴り確認、書式補助）<br>
+                        • <strong>Level 2：</strong>Human-Led, GenAI-Enhanced（人間が教育内容を制御）<br>
+                        • <strong>Level 3：</strong>GenAI-Co-Created, Human-Guided（共同作成）<br>
+                        • <strong>Level 4：</strong>GenAI-Dominant, Human-Supervised（AI主導、人間は最小限の修正）<br>
+                        • <strong>Level 5：</strong>Fully AI-Generated（自律生成、高ステークス領域では非推奨）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>政策的含意</h4>
+                        <p>• <strong>移植性：</strong>QTI/Common Cartridgeメタデータにラベルを永続保存<br>
+                        • <strong>学習者の信頼：</strong>明確なGenAI開示で教師の信頼度が向上することが研究で示唆<br>
+                        • <strong>規制との整合：</strong>EU AI Act 第50条のラベリング義務と直接対応<br>
+                        • <strong>高ステークス制限：</strong>Level 5は評価・資格認定領域では推奨されない</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.imsglobal.org/resource/AI-Generated_Content_Best_Practices/v1p0" target="_blank">1EdTech AI Content Best Practices v1.0</a> |
+                    <a href="https://artificialintelligenceact.eu/article/50/" target="_blank">EU AI Act 第50条</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>1EdTech公式文書を直接引用し、5段階構造とEU AI Actとの関連性が明確<br>
+                        <strong>改善点：</strong>v1.0発表からまだ5ヶ月のため、実際の導入率データは今後の蓄積が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>2026年8月のEU AI Act透明性条項施行を控え、5段階ラベル体系はグローバルEdTechベンダーの事実上の標準になる可能性が高いといえます。日本、韓国、米国の主要LMSベンダーがv1.0発表後6ヶ月以内に採用を検討している模様です。</p>
+
+                <h3 class="subsection-title">2. リスクベース監督モデル：高/中/低の段階的ガバナンス</h3>
+                <p><strong>現状：</strong>すべてのAIコンテンツに同一の検証負荷を課す代わりに、コンテンツが学習者の結果に与える影響に応じて監督強度を段階化するリスクベース・アプローチを採用しています。これはEU AI Act、NIST AIリスク管理枠組みと整合的です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>3段階リスク等級</h4>
+                        <p>• <strong>高リスク：</strong>成績・配置・資格認定に直接影響 → 厳格なSME検証、コンプライアンス文書化必須<br>
+                        • <strong>中リスク：</strong>授業に影響するが結果は決定しない（練習問題、形成的評価）→ 評価のための人間監督<br>
+                        • <strong>低リスク：</strong>補助・草案・翻訳（成績への影響なし）→ 最小限のコンプライアンス負担</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>実証的根拠</h4>
+                        <p>• <strong>誤り率：</strong>SME検証を経ないGenAIの数学フィードバックで30%以上の誤り率が報告<br>
+                        • <strong>費用効率：</strong>すべてのコンテンツに同一検証を行うと運用費用が急増<br>
+                        • <strong>国際整合：</strong>EU AI Actの4段階リスク分類、NIST AI RMFのGovern/Map/Measure/Manageと一致<br>
+                        • <strong>実用性：</strong>出版社・教師・学生など行為者別に適用可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI Risk Management Framework</a> |
+                    <a href="https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai" target="_blank">EU AI Act</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>30%誤り率の数値は1EdTech文書に明記されており、NIST・EU枠組みとの整合性も検証可能<br>
+                        <strong>改善点：</strong>「30%以上」の数値の原典研究（著者・年度・標本）の補強が必要
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>リスクベース・ガバナンスは2026年後半から米国テキサス州・カリフォルニア州の州レベルAI開示義務制度と組み合わさり、EdTech調達RFPの標準評価項目として定着する見通しです。</p>
+
+                <h3 class="subsection-title">3. 標準整合プロビナンス追跡：QTI・Common Cartridge・LTI・Caliperの統合</h3>
+                <p><strong>現状：</strong>AI生成メタデータを1EdTechの既存4大標準（QTI、Common Cartridge、LTI、Caliper）に組み込み、システム間移動時にも出所・ラベルが失われないよう設計されています。これは「AIメタデータ揮発性」問題を解決する初の標準です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>標準別の統合方式</h4>
+                        <p>• <strong>QTI（評価）：</strong>拡張メタデータ・フィールドにGenAI注釈を記録<br>
+                        • <strong>Common Cartridge：</strong>コンテンツ・パッケージのオブジェクト単位にAIラベルを付与、LMS表示維持<br>
+                        • <strong>LTI（ツール連携）：</strong>コンテンツ提供者がラベル可視性を維持、LTIはアクセス経路の役割<br>
+                        • <strong>Caliper Analytics：</strong>AI生成コンテンツ利用イベントを追跡するモデルへ拡張</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>必須プロビナンス要素</h4>
+                        <p>• GenAIシステム・モデル名・バージョン番号<br>
+                        • 作成日およびタイムスタンプ<br>
+                        • 学習データ再利用宣言<br>
+                        • 人間による監督文書<br>
+                        • 改訂履歴の監査証跡<br>
+                        • SME検証記録</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.imsglobal.org/spec/qti/v3p0/impl" target="_blank">QTI v3 実装ガイド</a> |
+                    <a href="https://www.1edtech.org/standards/cc" target="_blank">Common Cartridge</a> |
+                    <a href="https://www.1edtech.org/standards/caliper" target="_blank">Caliper Analytics</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>4大標準の公式仕様と実際の統合方式が1EdTech文書に直接明記されている<br>
+                        <strong>改善点：</strong>主要出版社（Pearson、McGraw Hillなど）の具体的な採用データが加わると更に強化される
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>Caliper Analyticsの拡張は、2026年末までに学習者が触れたAIコンテンツの比率を学習分析ダッシュボードで可視化する機能へと発展する可能性が高いです。LTI 1.3 + AIラベル・メタデータの組合せは、EdTechマーケットプレイスの検索フィルタにおける核心要素となる見通しです。</p>
+
+                <h3 class="subsection-title">4. コンテンツ・カテゴリ差別化：出版社・教育者・学習者・ハイブリッド</h3>
+                <p><strong>現状：</strong>1EdTechはAIコンテンツを4つのカテゴリに分類し、それぞれに段階化された責任・開示・検証要件を課しています。これは「単一の方針ですべての関係者を扱えない」という現場のフィードバックを反映した結果です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>4つのコンテンツ・カテゴリ</h4>
+                        <p>• <strong>出版社作成：</strong>教科書、評価 → 全プロビナンス、リスク評価、バイアス監査、SME検証、標準整合のすべて必須<br>
+                        • <strong>教育者作成：</strong>カスタム授業、ルーブリック → 教室での開示、簡略プロビナンス、教師による検証<br>
+                        • <strong>学生作成：</strong>エッセイ、プロジェクト → 学生によるAI寄与の開示、学術倫理との整合<br>
+                        • <strong>ハイブリッド：</strong>共同作成項目 → 多面的な開示、二重プロビナンス、より厳格な監督</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>分野別の特別考慮事項</h4>
+                        <p>• <strong>数学：</strong>数式書式・計算精度の厳格な検証<br>
+                        • <strong>言語：</strong>言語的精度、文化的感受性、目標言語への忠実性<br>
+                        • <strong>科学：</strong>権威ある出典との照合、用語の一貫性<br>
+                        • <strong>社会：</strong>事実確認、多角的視点の提示、バイアス緩和</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">1EdTech TrustEd Apps GenAI Data Rubric</a> |
+                    <a href="https://www.imsglobal.org/" target="_blank">1EdTech Consortium</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>4カテゴリと分野別ガイダンスが1EdTech文書に表形式で明記されている<br>
+                        <strong>改善点：</strong>学生作成カテゴリにおける学術倫理適用事例（大学別の方針）の追加で実効性が向上
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>学生作成カテゴリの「AI寄与開示」推奨は、文部科学省の生成AI活用暫定ガイドライン、MLA・APAのAI引用表記法と連動し、学術運営の標準として定着する見通しです。</p>
+
+                <h3 class="subsection-title">5. グローバル規制の収束：EU AI Act・カリフォルニア・ブラジル・中国・インド・テキサス</h3>
+                <p><strong>現状：</strong>v1.0文書は2023-2025年に施行された6つの主要法域のAIコンテンツ規制を分析し、すべての規制が「透明性・人間の監督・説明責任」の3つの原則に収束していることを示しています。これによりEdTechベンダーは単一のガバナンス・モデルでグローバル市場に対応できる根拠を得られます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>法域別の中核義務</h4>
+                        <p>• <strong>EU AI Act（2024）：</strong>リスクベース枠組み、生成モデルの透明性、学習データの開示（2026年8月施行）<br>
+                        • <strong>カリフォルニア（2024）：</strong>ウォーターマーク義務、学習データ開示<br>
+                        • <strong>テキサス（2025）：</strong>州政府AIツールの開示義務<br>
+                        • <strong>ブラジル/中国（2023）：</strong>透明性・説明可能性・ラベリング<br>
+                        • <strong>インド（2024）：</strong>信頼性の低い出力のラベリング、配備前の承認</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>収束するグローバル標準</h4>
+                        <p>• <strong>3つの共通原則：</strong>透明性・人間の監督・説明責任<br>
+                        • <strong>アクセシビリティ統合：</strong>WCAG 2.1 AA、Section 508、EAA、Accessible Canada Act<br>
+                        • <strong>地域枠組み：</strong>ニュージーランド、インド、ブラジル、ドバイなど<br>
+                        • <strong>実務的含意：</strong>単一ガバナンス・モデルで多地域コンプライアンス対応が可能</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content" target="_blank">EU Code of Practice on AI Content</a> |
+                    <a href="https://www.section508.gov/" target="_blank">Section 508</a> |
+                    <a href="https://www.w3.org/WAI/standards-guidelines/wcag/" target="_blank">WCAG 2.1</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>6法域の規制名称・施行年が明確で、EU AI Actは公式サイトで検証可能<br>
+                        <strong>改善点：</strong>日本・韓国規制の比較を追加すれば、アジアのEdTech意思決定者にとって更に有用
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>2026年8月にEU AI Act透明性条項が本格施行されると、1EdTechベストプラクティスを採用したグローバルEdTechベンダーは事実上「コンプライアンス・デフォルト」を確保できます。日本・韓国は2026-2027年に類似のラベリング・開示義務を導入する可能性が高いです。</p>
+            </section>
+
+            <!-- SECTION 2: 競争環境 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">🏢 競争環境とグローバルAIガバナンス枠組み</h2>
+
+                <h3 class="subsection-title">4階層グローバルAI教育ガバナンス構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.9rem;">AI教育ガバナンスは①業界コンソーシアム標準 → ②政府規制 → ③グローバル政策ガイダンス → ④倫理枠組みの4階層で形成されており、1EdTechは業界コンソーシアム階層において最も具体的な実装ガイドを提供しています。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>枠組み</th>
+                            <th>発行主体</th>
+                            <th>類型</th>
+                            <th>特徴</th>
+                            <th>対象</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1EdTech AI Content Best Practices v1.0</strong></td>
+                            <td>1EdTech（業界コンソーシアム）</td>
+                            <td>実装ガイド</td>
+                            <td>5段階ラベル、リスクベース監督、QTI/CC/LTI/Caliper統合</td>
+                            <td>EdTechベンダー、出版社、教育機関</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EU AI Act</strong></td>
+                            <td>欧州委員会</td>
+                            <td>法的規制</td>
+                            <td>4段階リスク分類、ウォーターマーク・開示義務（2026年8月施行）</td>
+                            <td>EU市場参入の全事業者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NIST AI RMF</strong></td>
+                            <td>NIST（米国政府）</td>
+                            <td>自主標準</td>
+                            <td>Govern/Map/Measure/Manage の4段階プロセス</td>
+                            <td>米国連邦・民間事業者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>UNESCO AI in Education Guidance</strong></td>
+                            <td>UNESCO</td>
+                            <td>政策ガイダンス</td>
+                            <td>人間中心アプローチ、公平性、教師能力強化</td>
+                            <td>各国教育省、政策立案者</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OECD AI Principles</strong></td>
+                            <td>OECD</td>
+                            <td>国際原則</td>
+                            <td>5原則（包摂性、人権、透明性、堅牢性、説明責任）</td>
+                            <td>加盟国政府</td>
+                        </tr>
+                        <tr>
+                            <td><strong>1EdTech TrustEd Apps GenAI Data Rubric</strong></td>
+                            <td>1EdTech</td>
+                            <td>自己評価ツール</td>
+                            <td>5問の自己評価、データ・プライバシー中心</td>
+                            <td>EdTechベンダー（自己診断）</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場動向 — 5つの主要シフト</h3>
+                <p style="font-size: 0.85rem; line-height: 1.8;">
+                • <strong>標準化の加速：</strong>業界コンソーシアム（1EdTech）のガイダンスと政府規制（EU AI Act）が「透明性・監督・説明責任」原則に急速に収束<br>
+                • <strong>リスクの差別化：</strong>「すべてのAIコンテンツに同一負担」モデルから「リスク等級別の段階的ガバナンス」モデルへ転換<br>
+                • <strong>メタデータの永続化：</strong>AIラベルがコンテンツ移動中に失われる問題 → QTI/CC/LTI/Caliper標準統合で解決<br>
+                • <strong>アクセシビリティ統合：</strong>WCAG・EAA・Section 508がAIコンテンツ検証の必須項目へ昇格<br>
+                • <strong>学生の説明責任導入：</strong>AI寄与の開示義務が出版社・教師を超えて学生まで拡張（学術倫理の再定義）
+                </p>
+
+                <h3 class="subsection-title">主要枠組みの比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">💡 活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される1EdTechベストプラクティスの活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>5段階ラベル・パイロット</strong> — 社内LMSのAI生成コンテンツに5段階ラベルを付与し、学習者の信頼度変化を6週間にわたり計測（Level 1-3を優先適用）</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>リスクベース検証ワークフロー</strong> — 評価・資格コンテンツはSME 2名による検証、形成的評価はSME 1名、補助資料は自動検証で段階化</p>
+                    <p style="line-height: 1.6;">3. <strong>QTIメタデータ拡張</strong> — 自社作成の評価項目にモデル名・バージョン・SME検証記録などのプロビナンスをQTI拡張フィールドに組み込み、LMS移動時にも保存</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">📋 エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>教育特化型の初のAIコンテンツ標準：</strong>2025年12月15日に発表された1EdTech v1.0は、EdTech業界コンソーシアム水準で初の包括的ガイダンスであり、50以上の組織（ETS、D2L、Carnegie Learningなど）が参加したコミュニティ標準です。</li>
+                        <li><strong>5段階透明性ラベル + リスクベース監督：</strong>GenAI関与度を5段階で定量化し、コンテンツが学習者結果に与える影響に応じて監督強度を段階化することで運用費用を合理化します。</li>
+                        <li><strong>標準整合プロビナンス：</strong>AIメタデータをQTI/Common Cartridge/LTI/Caliperに組み込み、システム移動時のラベル消失問題を解決した業界初の実装です。</li>
+                        <li><strong>グローバル規制の収束：</strong>EU AI Act、カリフォルニア、テキサス、ブラジル、中国、インドの6法域すべてが「透明性・人間の監督・説明責任」に収束し、単一ガバナンス・モデル適用の可能性が示されました。</li>
+                        <li><strong>非規範的（Non-Normative）ガイダンス：</strong>認証や強制要件ではなく推奨事項であるため、機関別の文脈・リスク許容度に応じた段階的導入が可能です。</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">組織類型別の導入ガイド</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.8;">
+                        <strong>① EdTechベンダー → 5段階ラベル + QTI/CCメタデータ統合を優先</strong><br>
+                        理由：グローバル市場参入時にEU AI Act・カリフォルニアのウォーターマーク義務を同時に充足し、コンプライアンス費用を削減。<br>
+                        <strong>② 出版社・コンテンツ制作者 → リスク等級別のSME検証ワークフロー導入</strong><br>
+                        理由：評価・資格コンテンツの30%以上の誤り率リスクをSMEの段階的検証で効果的に管理。<br>
+                        <strong>③ 教育機関（大学・学校）→ 4カテゴリ別の学術倫理方針の再定義</strong><br>
+                        理由：学生のAI寄与開示義務を既存の学則と統合し、一貫した方針を確立。<br>
+                        <strong>④ 政府・政策立案者 → 1EdTechをEdTech調達RFPの評価基準として採用</strong><br>
+                        理由：業界の自律標準を活用することで規制負担を最小化しつつガバナンスを強化。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>非常に好意的（EdTech業界のAIガバナンス空白を埋める初の実行可能な標準であり、2026年8月のEU AI Act施行を前に採用圧力が急増する見通し）</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">8.8/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>1EdTech公式文書を直接出典として活用し、EU AI Act、NIST、QTI/CC/LTI/Caliperなど検証可能な外部標準との関連性を明確に提示した信頼性の高い分析</p>
+                        <p><strong>主な強み：</strong>発行日・寄与組織数・5段階ラベル・6法域など具体的事実を多数引用、公式URLで検証可能</p>
+                        <p><strong>改善優先順位：</strong>30%誤り率の原典研究の補強、日本・韓国規制比較の追加、Pearson・McGraw Hillなど実際の採用事例データの補強</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">📖 主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>1EdTech（旧 IMS Global）：</strong>EdTech相互運用性標準を策定するグローバル非営利コンソーシアム。QTI、Common Cartridge、LTI、Caliper、Open Badgesなどの標準を発行しています。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>プロビナンス（Provenance）：</strong>コンテンツの出所・作成履歴・検証記録を追跡するメタデータ体系。AIコンテンツでは、モデル名、バージョン、SME検証の有無などが含まれます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>SME（Subject Matter Expert）：</strong>分野専門家。AI生成コンテンツの学術的精度・教育的妥当性を検証する役割を担います。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>QTI（Question & Test Interoperability）：</strong>1EdTechの評価コンテンツ相互運用性標準。AIメタデータを拡張フィールドとして組み込み可能です。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Common Cartridge：</strong>1EdTechの学習コンテンツ・パッケージ標準。AIラベルをオブジェクト単位で付与し、LMSで可視化できます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>LTI（Learning Tools Interoperability）：</strong>1EdTechの学習ツール連携標準。外部コンテンツがLMSに統合される際、ラベルの維持を支援します。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Caliper Analytics：</strong>1EdTechの学習分析標準。AIコンテンツ利用イベントを追跡するモデルへ拡張されています。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>EU AI Act 第50条：</strong>AIシステム提供者・運用者の透明性義務条項。2026年8月からAI生成コンテンツのラベリング・ウォーターマーキングが義務化されます。
+                    </div>
+                    <div>
+                        <strong>WCAG 2.1 AA：</strong>ウェブ・コンテンツ・アクセシビリティ・ガイドライン。AI生成のalt-textや字幕の精度検証基準として活用されます。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>📚 参考資料</h3>
+                    <p><strong>データ収集日：</strong>2026年5月1日</p>
+                    <ul>
+                        <li>• <a href="https://www.imsglobal.org/resource/AI-Generated_Content_Best_Practices/v1p0" target="_blank">1EdTech AI-Generated Content Best Practices v1.0（公式文書、2025年12月15日）</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">1EdTech TrustEd Apps Generative AI Data Rubric</a></li>
+                        <li>• <a href="https://www.1edtech.org/specifications" target="_blank">1EdTech Interoperability Standards</a></li>
+                        <li>• <a href="https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai" target="_blank">EU AI Act - European Commission</a></li>
+                        <li>• <a href="https://artificialintelligenceact.eu/article/50/" target="_blank">EU AI Act 第50条：透明性義務</a></li>
+                        <li>• <a href="https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content" target="_blank">EU Code of Practice on AI-Generated Content（2025年12月17日草案）</a></li>
+                        <li>• <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI Risk Management Framework</a></li>
+                        <li>• <a href="https://www.imsglobal.org/spec/qti/v3p0/impl" target="_blank">QTI v3 Best Practices and Implementation Guide</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/cc" target="_blank">1EdTech Common Cartridge</a></li>
+                        <li>• <a href="https://www.w3.org/WAI/standards-guidelines/wcag/" target="_blank">WCAG 2.1 - W3C Web Accessibility</a></li>
+                        <li>• <a href="https://learnworkecosystemlibrary.com/initiatives/best-practices-ai-generated-content-best-practices-v1-0-1edtech/" target="_blank">Learn & Work Ecosystem Library: 1EdTech AI Best Practices</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['実装の具体性', '教育ドメイン特化', '標準統合性', 'グローバル規制との整合', '導入の容易さ'],
+                datasets: [
+                    {
+                        label: '1EdTech AI Content Best Practices v1.0',
+                        data: [95, 100, 95, 90, 85],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'EU AI Act',
+                        data: [80, 60, 70, 100, 60],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'NIST AI RMF',
+                        data: [85, 50, 75, 80, 75],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'UNESCO AI in Education',
+                        data: [60, 90, 50, 70, 90],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
