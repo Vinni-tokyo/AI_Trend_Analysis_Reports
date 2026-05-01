@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1EdTech AI Content Best Practices v1.0：文書詳細解剖</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            font-size: 16px;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn, .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover, .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.6rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .doc-callout {
+            background: #eef4ff;
+            border-left: 4px solid #0052b8;
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .doc-callout strong { color: #001e5c; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.9rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 360px; margin: 1rem 0; padding: 1rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.85rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.85rem; }
+        .related-links strong { color: #001e5c; font-size: 0.8rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #fff8e1; border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.8rem; }
+        .credibility-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+        .credibility-score-label { font-weight: 600; color: #92400e; }
+        .credibility-score-value { font-weight: 700; color: #92400e; font-size: 0.95rem; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.5; }
+        .overall-credibility { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; padding: 1.25rem; margin: 1.5rem 0; border-radius: 6px; }
+        .overall-credibility h3 { color: #92400e; margin-bottom: 0.75rem; font-size: 1.05rem; }
+        .overall-credibility-score { font-size: 1.7rem; font-weight: 700; color: #92400e; margin-bottom: 0.75rem; }
+        .overall-credibility-details p { margin-bottom: 0.5rem; font-size: 0.85rem; line-height: 1.6; }
+        .tier-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; }
+        .tier-1 { background: #dcfce7; color: #166534; }
+        .tier-2 { background: #dbeafe; color: #1e40af; }
+        .tier-3 { background: #fef3c7; color: #92400e; }
+        .tier-4 { background: #fed7aa; color: #9a3412; }
+        .tier-5 { background: #fecaca; color: #991b1b; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='1edtech-ai-content-bp-v1-deep-dive-20260501-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='1edtech-ai-content-bp-v1-deep-dive-20260501-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='1edtech-ai-content-bp-v1-deep-dive-20260501-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>1EdTech AI Content Best Practices v1.0<br>文書詳細解剖レポート</h1>
+            <div class="subtitle">5つの原則・8つの推奨事項・5段階ラベル・4カテゴリ・リスクベース監督を一気に整理</div>
+            <div class="meta">レポート作成日：2026年5月1日 | 標準レポート（5-8ページ） | 単一文書集中分析</div>
+        </div>
+
+        <div class="content">
+            <div class="doc-callout">
+                <strong>📄 分析対象文書：</strong>1EdTech AI-Generated Content Best Practices v1.0<br>
+                <strong>📅 発行日：</strong>2025年12月15日<br>
+                <strong>🏛️ 発行元：</strong>1EdTech Consortium（旧 IMS Global Learning Consortium）<br>
+                <strong>👥 寄与組織：</strong>ETS、Carnegie Learning、D2L、Digital Promiseなど50以上の組織<br>
+                <strong>📋 文書性格：</strong>Informative（非規範的・推奨事項）。認証要件や強制力なし。
+            </div>
+
+            <!-- SECTION 1: Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">📊 v1.0文書の5つの中核構成要素</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.9rem;">本レポートでは、1EdTech AI生成コンテンツ・ベストプラクティス v1.0文書を5つの中核構成要素に分解し、各要素の詳細・適用方法・想定される利用シナリオを整理します。</p>
+
+                <h3 class="subsection-title">1. 5つのガイディング原則 (Five Guiding Principles)</h3>
+                <p><strong>現状：</strong>v1.0は、すべての推奨事項の土台となる5つの原則を明示しています。これは単なるスローガンではなく、8つの推奨事項それぞれに対応する実装ガイダンスです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>5つの原則の定義</h4>
+                        <p>• <strong>Transparency（透明性）：</strong>GenAI関与および人間監督の水準を明確に開示<br>
+                        • <strong>Accountability（説明責任）：</strong>人間の専門家が精度・適切性を検証<br>
+                        • <strong>Fairness & Non-Discrimination（公平性）：</strong>不公平な結果を防ぐ意図的なレビュー<br>
+                        • <strong>Accessibility（アクセシビリティ）：</strong>WCAG・EN 301 549・WAI-ARIA標準への準拠<br>
+                        • <strong>Trust（信頼）：</strong>プロビナンス追跡とSMEレビューによる信頼性強化</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>原則と推奨事項の対応関係</h4>
+                        <p>• <strong>透明性 ↔ 推奨1・8：</strong>ラベリング + 公開ポリシー<br>
+                        • <strong>説明責任 ↔ 推奨4：</strong>SMEレビューの義務化<br>
+                        • <strong>公平性 ↔ 推奨5：</strong>バイアス監査 + 評価検証<br>
+                        • <strong>アクセシビリティ ↔ 推奨5：</strong>alt-text・字幕・支援技術との互換性<br>
+                        • <strong>信頼 ↔ 推奨2・6：</strong>プロビナンス + メタデータ保持</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.imsglobal.org/resource/AI-Generated_Content_Best_Practices/v1p0" target="_blank">v1.0公式文書</a> |
+                    <a href="https://www.w3.org/WAI/standards-guidelines/wcag/" target="_blank">WCAG 2.1</a> |
+                    <a href="https://www.w3.org/TR/wai-aria/" target="_blank">WAI-ARIA</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>5つの原則名はすべてv1.0公式文書から直接引用可能。マッピング関係も文書構造と一致<br>
+                        <strong>改善点：</strong>各原則の優先順位や重みづけはv1.0に明示されておらず、本マッピングは分析者の解釈
+                    </div>
+                </div>
+
+                <p><strong>解釈：</strong>5つの原則はEU AI Act、NIST AI RMF、OECD AI Principlesとほぼ同じ価値観を採用していますが、「教育」ドメインに特化した表現（SMEレビュー、alt-textなど）を用いている点が差別化要素です。</p>
+
+                <h3 class="subsection-title">2. 8つのベストプラクティス推奨事項 (Eight Best Practice Recommendations)</h3>
+                <p><strong>現状：</strong>v1.0で最も実行志向の強い部分。5つの原則を、出版社・教育者・EdTechベンダーなど多様な関係者に適用可能な8つの具体的行動指針へと変換しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>8つの推奨事項（前半）</h4>
+                        <p>• <strong>① Transparency & Labeling：</strong>GenAI寄与の表示、プラットフォーム間の移植性<br>
+                        • <strong>② Provenance Tracking：</strong>モデル・バージョン・日付・人間監督・トークン使用量の文書化<br>
+                        • <strong>③ Risk-Based Oversight：</strong>高・中・低リスクの段階的扱い<br>
+                        • <strong>④ Subject Matter Expert Review：</strong>精度・厳密性・標準整合の検証</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>8つの推奨事項（後半）</h4>
+                        <p>• <strong>⑤ Bias & Accessibility Checks：</strong>公平性監査 + alt-text・字幕・支援技術テスト<br>
+                        • <strong>⑥ Metadata & Storage：</strong>コンテンツとともに保存、バージョン管理、監査証跡<br>
+                        • <strong>⑦ Standards Alignment：</strong>QTI・Common Cartridge・LTI・Caliperの活用<br>
+                        • <strong>⑧ Public GenAI-Use Statements：</strong>組織レベルの公開ポリシー掲示</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://learnworkecosystemlibrary.com/initiatives/best-practices-ai-generated-content-best-practices-v1-0-1edtech/" target="_blank">v1.0要約</a> |
+                    <a href="https://www.1edtech.org/specifications" target="_blank">1EdTech標準</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>8つの推奨事項の名称と中核内容はすべて公式文書で直接確認可能<br>
+                        <strong>改善点：</strong>推奨事項ごとの優先順位や規範レベル（MUST/SHOULD/MAY）はv1.0で明示されていない
+                    </div>
+                </div>
+
+                <p><strong>解釈：</strong>8つの推奨事項は、推奨①（ラベリング）から推奨⑧（公開ポリシー）へとミクロからマクロへの順に並んでいます。推奨⑦（標準整合）は1EdTechが自前の標準を持つコンソーシアムだからこそ可能な差別化要素であり、NISTやEU AI Actのガイダンスには見られません。</p>
+
+                <h3 class="subsection-title">3. 5段階透明性ラベリング枠組み (Five-Tier Transparency Labels)</h3>
+                <p><strong>現状：</strong>推奨①を具体化した中核ツール。「AI使用の有無」という二値表示ではなく、人間の制御度合いを5段階で定量化します。ラベルはQTI・Common Cartridgeのメタデータに永続的に組み込まれ、システム間移動でも維持されます。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>レベル</th>
+                            <th>名称</th>
+                            <th>人間 vs AI 比重</th>
+                            <th>代表的な利用事例</th>
+                            <th>高ステークスでの利用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="tier-badge tier-1">L1</span></td>
+                            <td><strong>Human-Created, GenAI-Assisted</strong></td>
+                            <td>人間 95% / AI 5%</td>
+                            <td>綴り確認、書式補助、類義語提案</td>
+                            <td>✅ 推奨</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-2">L2</span></td>
+                            <td><strong>Human-Led, GenAI-Enhanced</strong></td>
+                            <td>人間 75% / AI 25%</td>
+                            <td>人間が教育的流れを制御、AIが表現を洗練</td>
+                            <td>✅ 推奨</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-3">L3</span></td>
+                            <td><strong>GenAI-Co-Created, Human-Guided</strong></td>
+                            <td>人間 50% / AI 50%</td>
+                            <td>AIが原案を生成、専門家が検査・再構成</td>
+                            <td>⚠️ 条件付き</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-4">L4</span></td>
+                            <td><strong>GenAI-Dominant, Human-Supervised</strong></td>
+                            <td>人間 25% / AI 75%</td>
+                            <td>AIが大半を生成、人間は最小限の修正</td>
+                            <td>⚠️ 非推奨</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tier-badge tier-5">L5</span></td>
+                            <td><strong>Fully AI-Generated</strong></td>
+                            <td>人間 ≤5% / AI ≥95%</td>
+                            <td>AI自律生成（監督最小）</td>
+                            <td>❌ 高ステークス領域では非推奨</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.imsglobal.org/spec/qti/v3p0/impl" target="_blank">QTI v3実装ガイド</a> |
+                    <a href="https://www.1edtech.org/standards/cc" target="_blank">Common Cartridge</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>5段階の名称と定義はすべてv1.0公式文書からの直接引用<br>
+                        <strong>改善点：</strong>「人間 vs AI 比重」のパーセンテージは本レポートの視覚的解釈であり、v1.0には明記されていない
+                    </div>
+                </div>
+
+                <p><strong>解釈：</strong>Level 5の「高ステークス領域では非推奨」というガイダンスは、評価・資格認定・診断のように学習者の結果に直接影響を与えるコンテンツに適用されます。補助資料（要約、翻訳、学習ヒント）にはLevel 5も許容されます。</p>
+
+                <h3 class="subsection-title">4. リスクベース監督モデル + 分野別考慮事項</h3>
+                <p><strong>現状：</strong>推奨③を運用可能な形に実装した部分。コンテンツが学習者の結果に与える影響に応じて3段階のリスク等級に分類し、さらに5つの学問分野ごとの特別検証項目を提示しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>3段階リスク等級と検証強度</h4>
+                        <p>• <strong>高リスク：</strong>成績・配置・資格認定 → 複数SMEによる検証、コンプライアンス文書化、定量的な精度指標が必須<br>
+                        • <strong>中リスク：</strong>練習問題・形成的評価 → SME単独検証、サンプルベースの整合性確認<br>
+                        • <strong>低リスク：</strong>補助・翻訳・原案 → 自動検証、事後モニタリング</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>5分野ごとの特別検証項目</h4>
+                        <p>• <strong>数学：</strong>数式の書式・段階的解法の正確性<br>
+                        • <strong>言語：</strong>言語的精度・文化的感受性・対象言語への忠実性<br>
+                        • <strong>科学：</strong>権威ある情報源との照合、用語の一貫性<br>
+                        • <strong>社会：</strong>事実確認、多角的視点、バイアス緩和<br>
+                        • <strong>その他分野：</strong>分野適合のSMEレビュー、技術的正確性・真正性の確認</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">TrustEd Apps GenAI Data Rubric</a> |
+                    <a href="https://www.imsglobal.org/" target="_blank">1EdTech</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>3段階リスク等級と5分野はすべてv1.0文書に明示<br>
+                        <strong>改善点：</strong>「複数SMEレビュー」「SME単独検証」など検証強度の運用的定義は本分析者の解釈
+                    </div>
+                </div>
+
+                <p><strong>解釈：</strong>v1.0がリスクと分野を分けて扱っているのは意図的です。同じ「高リスク」でも、数学（数式精度）と社会（多角的視点）に必要な検証は異なるため、両軸（リスク × 分野）をマトリクスとして運用することが想定された使い方です。</p>
+
+                <h3 class="subsection-title">5. 4つのコンテンツ・カテゴリ + メタデータ + アクセシビリティ + 学術的誠実性（統合ガイダンス）</h3>
+                <p><strong>現状：</strong>v1.0の後半は、コンテンツ作成主体ごとの責任分担（4カテゴリ）と運用基盤（メタデータ・アクセシビリティ・学術的誠実性）を統合的に扱います。これがガイダンスを「実際に運用可能」にする最後のピースです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>4つのコンテンツ・カテゴリ別責任</h4>
+                        <p>• <strong>出版社作成：</strong>全プロビナンス、リスク評価、バイアス監査、SME検証、標準整合のすべてが必須<br>
+                        • <strong>教育者作成：</strong>教室での開示、簡略プロビナンス、教師による検証、メタデータ保持<br>
+                        • <strong>学生作成：</strong>学生のAI寄与の開示、高ステークス課題の慎重な検査、学術的誠実性との整合<br>
+                        • <strong>ハイブリッド：</strong>多面的開示、二重プロビナンス、より厳格な監督基準</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>メタデータ・アクセシビリティ・誠実性</h4>
+                        <p>• <strong>必須メタデータ要素：</strong>モデル・バージョン・日付・学習データ再利用・人間監督・監査証跡・SME記録<br>
+                        • <strong>アクセシビリティ標準：</strong>WCAG 2.1 AA + Section 508 + EAA + Accessible Canada Act<br>
+                        • <strong>アクセシビリティ検証：</strong>AI生成のalt-text・字幕・支援技術との互換性テスト<br>
+                        • <strong>学術的誠実性：</strong>出版社・教師・学生のすべてに役割別の開示義務</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://www.section508.gov/" target="_blank">Section 508</a> |
+                    <a href="https://accessible.canada.ca/" target="_blank">Accessible Canada Act</a> |
+                    <a href="https://www.w3.org/WAI/policies/european-union/" target="_blank">European Accessibility Act</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>4カテゴリ・メタデータ7要素・アクセシビリティ4標準はすべてv1.0に明示<br>
+                        <strong>改善点：</strong>学生作成カテゴリの運用事例（大学別ポリシー）はv1.0の後続資料での補強が必要
+                    </div>
+                </div>
+
+                <p><strong>解釈：</strong>学生作成カテゴリの「AI寄与開示」義務は、v1.0が提示する最も新しい論点です。出版社・教師の責任はEdTech業界に馴染みがありますが、学生を責任主体として明示するガイドは稀で、学術運営の再定義を促す可能性が高いといえます。</p>
+            </section>
+
+            <!-- SECTION 2: 内部比較 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">🏢 v1.0内部要素の比較（5段階ラベル × 4カテゴリ × 3段階リスク）</h2>
+
+                <h3 class="subsection-title">3軸マトリクス：ラベル × カテゴリ × リスク</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.9rem;">v1.0の真の価値は、5段階ラベル・4カテゴリ・3段階リスクという3軸マトリクスを併せて運用できる点にあります。下表は3軸が実運用でどう組み合わさるかを整理したものです。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>シナリオ</th>
+                            <th>コンテンツ・カテゴリ</th>
+                            <th>リスク等級</th>
+                            <th>推奨ラベル</th>
+                            <th>適用推奨事項（8項目中）</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>大学入試の試験問題</td>
+                            <td>出版社作成</td>
+                            <td>高リスク</td>
+                            <td>L1 ~ L2</td>
+                            <td>①②③④⑤⑥⑦⑧</td>
+                        </tr>
+                        <tr>
+                            <td>形成的評価の練習問題</td>
+                            <td>出版社/教育者</td>
+                            <td>中リスク</td>
+                            <td>L1 ~ L3</td>
+                            <td>①②③④⑤⑥⑦</td>
+                        </tr>
+                        <tr>
+                            <td>教師作成の議論テーマ</td>
+                            <td>教育者作成</td>
+                            <td>低リスク</td>
+                            <td>L2 ~ L4</td>
+                            <td>①③⑤⑥</td>
+                        </tr>
+                        <tr>
+                            <td>学生エッセイ（AI補助）</td>
+                            <td>学生作成</td>
+                            <td>中リスク（成績評価）</td>
+                            <td>L1 ~ L3</td>
+                            <td>①③⑤ + 学術的誠実性ポリシー</td>
+                        </tr>
+                        <tr>
+                            <td>多言語補助資料の翻訳</td>
+                            <td>出版社/ハイブリッド</td>
+                            <td>低リスク</td>
+                            <td>L3 ~ L5 許容</td>
+                            <td>①②⑤（アクセシビリティ優先）</td>
+                        </tr>
+                        <tr>
+                            <td>適応学習の推薦</td>
+                            <td>出版社作成</td>
+                            <td>中~高リスク</td>
+                            <td>L2 ~ L3</td>
+                            <td>①②③④⑤⑥⑦</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">v1.0が強調する5つの主要シフト</h3>
+                <p style="font-size: 0.85rem; line-height: 1.8;">
+                • <strong>二値 → 5段階：</strong>「AI使用の有無」から「GenAI関与度の5段階」への表現精緻化<br>
+                • <strong>一律 → リスク段階：</strong>すべてのコンテンツに同一検証から、リスク等級別の段階的ガバナンスへ転換<br>
+                • <strong>揮発性 → 永続メタデータ：</strong>AIラベルの消失問題 → QTI・CC・LTI・Caliperへの統合保存で解決<br>
+                • <strong>提供者責任 → 学生まで拡大：</strong>出版社・教師を超えて学生のAI開示義務まで導入<br>
+                • <strong>アクセシビリティ別個処理 → 統合検証：</strong>WCAG・EAA・Section 508をAIコンテンツ検証ワークフローに組込み
+                </p>
+
+                <h3 class="subsection-title">5段階ラベル別の負担強度比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">💡 活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">v1.0文書を組織内で実際に適用するための出発点をご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>自己評価チェックリストの作成</strong> — 8つの推奨事項をチェックリスト化し、自社のAIコンテンツ・ワークフローの充足度を1-5の尺度で点検</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>3軸マトリクスの試験適用</strong> — 1つの教育コンテンツ・ラインナップ（例：形成的評価100問）にラベル × カテゴリ × リスクのマトリクスを適用し、運用影響を計測</p>
+                    <p style="line-height: 1.6;">3. <strong>公開GenAI使用ステートメントの起草</strong> — 推奨⑧に沿って、自社サイトに掲示する「AI利用ポリシー」を5つの原則の構成で1ページ程度で作成</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">📋 エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>5つの原則が8つの推奨事項の土台：</strong>抽象的な価値観（透明性・説明責任・公平性・アクセシビリティ・信頼）が8つの実行指針へ変換され、EdTech業界初の「運用可能な」AIガバナンス・ガイダンスを提供。</li>
+                        <li><strong>5段階ラベルが最も革新的：</strong>二値表示（AI有/無）から5段階定量化への転換がv1.0最大の差別化要素であり、EU AI Act 第50条と自然に接続。</li>
+                        <li><strong>3軸マトリクスが運用の核心：</strong>5段階ラベル × 4カテゴリ × 3段階リスクを併せて運用してこそv1.0の価値が発揮される。単一軸のみの適用では効果は限定的。</li>
+                        <li><strong>学生をAI開示の主体へ格上げ：</strong>出版社・教師に加え、学生にもAI寄与開示を求める推奨は学術的誠実性ポリシーの再設計を要する。</li>
+                        <li><strong>標準整合が差別化要素：</strong>推奨⑦（QTI・CC・LTI・Caliperの活用）は1EdTechが自前の標準コンソーシアムだからこそ可能な優位性で、NIST・EUガイダンスにはない特徴。</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">シナリオ別の導入優先順位</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.8;">
+                        <strong>① 評価・資格認定事業者 → 5段階ラベル + 複数SME検証を優先</strong><br>
+                        理由：高ステークス・コンテンツの比重が高く、推奨①・④の即時導入が最大のリスク低減効果。<br>
+                        <strong>② LMS・LXPベンダー → 推奨⑦（標準整合） + 推奨⑥（メタデータ）を優先</strong><br>
+                        理由：複数システム間でのコンテンツ移動が頻繁なため、メタデータの永続化が中核の差別化要素。<br>
+                        <strong>③ 大学・学校 → 4カテゴリ + 学術的誠実性ポリシーを優先</strong><br>
+                        理由：学生のAI寄与開示義務が最大の運用変化を要求。<br>
+                        <strong>④ コンテンツ出版社 → 8つの推奨事項全体 + 分野別SMEマトリクス</strong><br>
+                        理由：出版社カテゴリはv1.0で最も重い責任が課されるため、段階的に全面導入が必要。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>非常に好意的（v1.0は抽象的原則を8つの実行可能な推奨事項と3軸マトリクスへ変換したEdTech業界初の総合ガイダンス。非規範的な性格による導入負担の低さも普及加速の追い風となる見通し。）</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">9.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>1EdTech v1.0公式文書の5つの原則・8つの推奨事項・5段階ラベル・3段階リスク・4カテゴリなど中核構成要素を正確に特定し、相互関係をマトリクスで整理した分析</p>
+                        <p><strong>主な強み：</strong>すべての主要名称・構造はv1.0公式文書で直接検証可能。1EdTech自前の標準（QTI・CC・LTI・Caliper）との統合ポイントも正確</p>
+                        <p><strong>改善優先順位：</strong>「人間 vs AI 比重 %」の数値化は分析者解釈であることを明示、学生カテゴリの大学導入事例の補強が必要</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">📖 主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>1EdTech Consortium：</strong>EdTechの相互運用性標準を発行するグローバル非営利コンソーシアム。旧名称はIMS Global Learning Consortium。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Informative（非規範的）文書：</strong>認証や強制要件ではなく推奨性格のガイダンス。機関別の文脈に応じて選択的に導入可能。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>5段階透明性ラベル：</strong>GenAI関与度をHuman-CreatedからFully AI-Generatedまで5段階で定量化したv1.0の中核ツール。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>リスクベース監督：</strong>コンテンツが学習者の結果に与える影響に応じて検証強度を段階化するガバナンス・モデル。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>SME（Subject Matter Expert）：</strong>分野専門家。AI生成コンテンツの学術的精度・教育的妥当性の検証を担当。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>プロビナンス（Provenance）：</strong>コンテンツの作成履歴を追跡するメタデータ。モデル・バージョン・日付・人間監督・SME記録などを含む。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>QTI・Common Cartridge・LTI・Caliper：</strong>1EdTechの4大標準。それぞれ評価・コンテンツ・パッケージ・ツール連携・学習分析を担当し、推奨⑦の中核基盤。
+                    </div>
+                    <div>
+                        <strong>WCAG 2.1 AA・Section 508・EAA・Accessible Canada Act：</strong>AIコンテンツのアクセシビリティ検証における4大グローバル標準。推奨⑤の必須適用基準。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>📚 参考資料</h3>
+                    <p><strong>データ収集日：</strong>2026年5月1日 | <strong>分析対象：</strong>1EdTech AI Content Best Practices v1.0 単一文書集中</p>
+                    <ul>
+                        <li>• <a href="https://www.imsglobal.org/resource/AI-Generated_Content_Best_Practices/v1p0" target="_blank">1EdTech AI-Generated Content Best Practices v1.0（公式文書、2025年12月15日）</a> ★ 一次資料</li>
+                        <li>• <a href="https://learnworkecosystemlibrary.com/initiatives/best-practices-ai-generated-content-best-practices-v1-0-1edtech/" target="_blank">Learn & Work Ecosystem Library: v1.0登録ページ</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">1EdTech TrustEd Apps Generative AI Data Rubric（関連自己評価ツール）</a></li>
+                        <li>• <a href="https://www.1edtech.org/specifications" target="_blank">1EdTech Interoperability Standards（全体一覧）</a></li>
+                        <li>• <a href="https://www.imsglobal.org/spec/qti/v3p0/impl" target="_blank">QTI v3 Best Practices and Implementation Guide</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/cc" target="_blank">Common Cartridge標準</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/caliper" target="_blank">Caliper Analytics標準</a></li>
+                        <li>• <a href="https://www.w3.org/WAI/standards-guidelines/wcag/" target="_blank">WCAG 2.1 - W3C Web Accessibility</a></li>
+                        <li>• <a href="https://www.section508.gov/" target="_blank">Section 508（米国政府アクセシビリティ標準）</a></li>
+                        <li>• <a href="https://accessible.canada.ca/" target="_blank">Accessible Canada Act</a></li>
+                        <li>• <a href="https://artificialintelligenceact.eu/article/50/" target="_blank">EU AI Act 第50条（参考：v1.0のラベリング推奨と連動）</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['プロビナンス負担', 'SMEレビュー強度', 'バイアス監査強度', '開示義務強度', 'メタデータ保持負担'],
+                datasets: [
+                    { label: 'Level 1 (Human-Created)', data: [20, 20, 20, 30, 25], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)', borderWidth: 2 },
+                    { label: 'Level 2 (Human-Led)', data: [40, 35, 35, 50, 45], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 2 },
+                    { label: 'Level 3 (Co-Created)', data: [65, 65, 60, 70, 65], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)', borderWidth: 2 },
+                    { label: 'Level 4 (AI-Dominant)', data: [85, 85, 85, 90, 85], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)', borderWidth: 2 },
+                    { label: 'Level 5 (Fully AI)', data: [100, 100, 100, 100, 100], borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.2)', borderWidth: 2 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    </script>
+</body>
+</html>
