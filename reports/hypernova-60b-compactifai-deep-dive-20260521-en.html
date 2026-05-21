@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HyperNova 60B 2605 Deep Dive — CompactifAI Quantum-Inspired Model Compression</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; font-weight: 400; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.6rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .highlight { color: #0052b8; font-weight: 700; }
+        .chart-container { position: relative; height: 340px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f6faf6; border: 1px solid #d6e8d6; border-left: 3px solid #2e9e44; padding: 0.6rem 0.9rem; margin: 0.75rem 0; border-radius: 4px; font-size: 0.82rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: #2e9e44; }
+        .overall-credibility { background: #001e5c; color: white; padding: 1.25rem 1.5rem; border-radius: 6px; margin: 1rem 0; }
+        .overall-credibility h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .overall-credibility-score { font-size: 1.8rem; font-weight: 800; color: #6ec3ff; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; margin-bottom: 0.3rem; opacity: 0.95; }
+        p { margin-bottom: 0.6rem; }
+        @media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; } .content { padding: 1.5rem; } }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='hypernova-60b-compactifai-deep-dive-20260521-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='hypernova-60b-compactifai-deep-dive-20260521-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='hypernova-60b-compactifai-deep-dive-20260521-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>HyperNova 60B 2605 Deep Dive<br>The State of CompactifAI Quantum-Inspired Compression</h1>
+            <div class="subtitle">Halving a 120B model — how tensor-network compression rewrites the economics of LLM inference</div>
+            <div class="meta">Report date: May 21, 2026 | Deep-Dive Analysis | Data collected: May 21, 2026</div>
+        </div>
+
+        <div class="content">
+
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+                <p style="color:#4a4a4a; font-size:0.95rem;">Released on Hugging Face on February 26, 2026 by San Sebastián–based Multiverse Computing, <strong>HyperNova 60B 2605</strong> is a compressed version of OpenAI's <strong>gpt-oss-120b</strong>, produced with the quantum-inspired tensor-network technology <strong>CompactifAI</strong>. This report analyzes the model's technical essence, benchmarks, inference economics, and the global trajectory of the compressed-LLM market.</p>
+
+                <h3 class="subsection-title">1. CompactifAI: Quantum-Inspired Tensor-Network Compression</h3>
+                <p><strong>Status:</strong> CompactifAI uses <strong>tensor-network</strong> mathematics, a discipline rooted in quantum physics, to identify mathematical redundancy inside a neural network and rebuild the model while retaining only its most information-rich components. Unlike pruning (removing weights) or quantization (lowering bit width), it is described as "rewriting the blueprint, not removing bricks" (Source: TechRadar, 2026).</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Core Principle</h4>
+                        <p>• <strong>Tensor decomposition:</strong> weight matrices factorized into low-rank tensor networks to strip redundancy<br>
+                        • <strong>Information retention:</strong> only high-information correlations are kept<br>
+                        • <strong>Compression rate:</strong> up to 95% size reduction with 2–3% precision loss (Source: Multiverse Computing)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Applied to HyperNova</h4>
+                        <p>• <strong>Parameters:</strong> 120B → 59–60B (MoE: 4.8B active/token)<br>
+                        • <strong>Weight footprint:</strong> 121.54GB → 31.81GB<br>
+                        • <strong>License:</strong> Apache 2.0 (commercial use allowed)<br>
+                        • <strong>Format:</strong> Safetensors, BF16/U8 tensor types</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility Assessment:</span><span class="credibility-score-value">8.5/10</span></div>
+                    <div><strong>Strengths:</strong> Concrete figures cross-verified by the Hugging Face model card and multiple press reports<br><strong>Weaknesses:</strong> The compression algorithm's implementation is proprietary (patented), limiting independent reproduction</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://huggingface.co/MultiverseComputingCAI/Hypernova-60B-2605" target="_blank">HyperNova 60B 2605 (Hugging Face)</a> |
+                    <a href="https://multiversecomputing.com/compactifai" target="_blank">CompactifAI</a> |
+                    <a href="https://multiversecomputing.com/" target="_blank">Multiverse Computing</a>
+                </div>
+                <p><strong>Outlook:</strong> If tensor-network compression establishes itself as "the step beyond quantization," adoption is likely to accelerate in memory-constrained on-prem and edge environments.</p>
+
+                <h3 class="subsection-title">2. HyperNova 60B 2605: Recovering Intelligence at Half the Size</h3>
+                <p><strong>Status:</strong> Compared with the prior <strong>2602</strong> build, 2605 recovers significant ground on most benchmarks, moving closer to the original 120B. Gains are especially clear on HLE (7.28→14.97), GPQA:d (65.56→71.92), and IFBench (59.40→66.57) — suggesting that post-compression fine-tuning cycles can effectively "win back" capability lost during compression.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Intelligence Benchmarks (vs original 120B)</h4>
+                        <p>• <strong>MMLU-Pro:</strong> 76.77 (original 79.64, ~96%)<br>
+                        • <strong>AIME25 (math):</strong> 90.00 (original 93.67)<br>
+                        • <strong>GPQA:d (grad-level science):</strong> 71.92 (original 74.64)<br>
+                        • <strong>HLE:</strong> 14.97 (original 18.50)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>2602 → 2605 Improvement</h4>
+                        <p>• <strong>HLE:</strong> +7.69 (more than doubled)<br>
+                        • <strong>GPQA:d:</strong> +6.36<br>
+                        • <strong>IFBench:</strong> +7.17<br>
+                        • <strong>AIDER (coding):</strong> 26.2 → 34.2</p>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="benchmarkRadar"></canvas></div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+                    <div><strong>Strengths:</strong> Evaluation frameworks (NeMo-Skills, EvalScope), hardware (H200), and config values disclosed<br><strong>Weaknesses:</strong> Vendor-measured; independent third-party benchmarking is needed</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://huggingface.co/openai/gpt-oss-120b" target="_blank">gpt-oss-120b (base)</a> |
+                    <a href="https://arxiv.org/abs/2508.10925" target="_blank">gpt-oss Model Card (arXiv)</a>
+                </div>
+                <p><strong>Outlook:</strong> Shipping the same model as rapid dated builds (2602, 2605) shows that compressed models can keep raising quality through continuous updates.</p>
+
+                <h3 class="subsection-title">3. Inference Efficiency: 64% Less Memory, 36% Higher Throughput</h3>
+                <p><strong>Status:</strong> Measured at concurrency 128 on an NVIDIA H200, HyperNova 60B 2605 leads on nearly every metric that determines inference cost. Total memory drops from <span class="highlight">123.55GB to 38.83GB (≈ -69%)</span> and model weights from <span class="highlight">121.54GB to 31.81GB (≈ -74%)</span> — comfortably fitting a single H200 (141GB) or one 80GB-class GPU.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Speed & Latency</h4>
+                        <p>• <strong>Throughput:</strong> 3,821 → 5,210 tok/s (+36%)<br>
+                        • <strong>Output speed:</strong> 57.79 → 69.31 tok/s<br>
+                        • <strong>E2E latency:</strong> 24.05s → 14.74s (-38%)<br>
+                        • <strong>Time to first token (TTFT):</strong> 7.04s → 4.85s (-31%)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Cost & Infrastructure Implications</h4>
+                        <p>• More concurrent requests per GPU → lower cost per token<br>
+                        • Runs on a single 80GB GPU → avoids multi-GPU overhead<br>
+                        • Multiverse claims <strong>50–80% inference cost reduction</strong> (Source: Multiverse Computing)</p>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="memoryBar"></canvas></div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility Assessment:</span><span class="credibility-score-value">8.5/10</span></div>
+                    <div><strong>Strengths:</strong> Measurement conditions (vLLM 0.13.0, batch size 64) stated, supporting reproducibility<br><strong>Weaknesses:</strong> The 50–80% cost claim varies widely by model and workload</div>
+                </div>
+                <p><strong>Outlook:</strong> As compute-cost pressure mounts across the AI supply chain, "same performance, half the memory" becomes a decisive differentiator in unit-cost competition for inference-heavy services.</p>
+
+                <h3 class="subsection-title">4. Agentic & Coding Skills: Beating the Original on Some Metrics</h3>
+                <p><strong>Status:</strong> The most striking result is <strong>LiveCodeBench at 68.68, surpassing the original 120B (62.75)</strong>. A compressed model beating its source on some tasks shows CompactifAI is not merely lossy compression — compression plus retraining can strengthen specific capabilities. With native tool calling (OpenAI function schemas), structured outputs, and configurable reasoning effort (low/medium/high), the model fits coding-agent use cases well.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Agentic / Coding Benchmarks</h4>
+                        <p>• <strong>LiveCodeBench:</strong> 68.68 (beats original 62.75) ✅<br>
+                        • <strong>Tau2-bench (Telecom):</strong> 61.70 (original 63.74)<br>
+                        • <strong>SciCode:</strong> 36.00<br>
+                        • <strong>Terminal Bench:</strong> 15.91 (original 24.24, a weakness)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Agent Capabilities</h4>
+                        <p>• Native tool calling (function calling)<br>
+                        • Structured outputs<br>
+                        • Configurable reasoning effort (low/medium/high)<br>
+                        • Chain-of-thought debugging</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility Assessment:</span><span class="credibility-score-value">7.5/10</span></div>
+                    <div><strong>Strengths:</strong> The model card transparently discloses per-benchmark strengths and weaknesses<br><strong>Weaknesses:</strong> Some agentic tasks (Terminal Bench, AA-LCR) still trail the original</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://multiversecomputing.com/papers/hypernova-60b-2602-same-intelligence-half-the-size-improved-tool-calling-capability" target="_blank">HyperNova 2602 Technical Note</a> |
+                    <a href="https://www.vllm.ai/" target="_blank">vLLM</a>
+                </div>
+                <p><strong>Outlook:</strong> By overturning the "compression = degradation" assumption, this can accelerate adoption of lightweight models for agentic coding workloads.</p>
+
+                <h3 class="subsection-title">5. Global Trend: Edge Deployment and the Mainstreaming of Compressed LLMs</h3>
+                <p><strong>Status:</strong> Multiverse Computing raised a <strong>$215M (€189M) Series B</strong> in June 2025 (led by Bullhound Capital, with HP Tech Ventures, Toshiba, Santander and others), and is reportedly raising <strong>€500M at a €1.5B valuation</strong>. It has accumulated roughly €216M in funding, 160+ patents, and 100+ customers including Iberdrola, Bosch, and the Bank of Canada (Sources: TechCrunch, The Quantum Insider).</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Business & Market Context</h4>
+                        <p>• Compression lineup expanding to OpenAI, Meta, DeepSeek, and Mistral models<br>
+                        • Launched the <strong>CompactifAI API portal</strong> (developer self-serve)<br>
+                        • Edge app <strong>Gilda</strong> (local, offline, privacy-oriented)<br>
+                        • Targets connectivity-uncertain settings like drones and satellites</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Why Now</h4>
+                        <p>• AI supply-chain instability → cloud-dependency risk in focus<br>
+                        • Local execution removes reliance on external compute<br>
+                        • Rising pressure to cut inference cost and power usage<br>
+                        • Expanding open-weight (gpt-oss) ecosystem</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+                    <div><strong>Strengths:</strong> Funding and customer details cross-confirmed across TechCrunch, Tech.eu, and SiliconANGLE<br><strong>Weaknesses:</strong> The €500M round is "in progress" and unconfirmed</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://techcrunch.com/2026/03/19/multiverse-computing-pushes-its-compressed-ai-models-into-the-mainstream/" target="_blank">TechCrunch (Mar 2026)</a> |
+                    <a href="https://thequantuminsider.com/2025/06/12/multiverse-computing-raises-215-million-to-scale-technology-that-compresses-llms-by-up-to-95/" target="_blank">$215M Funding Report</a>
+                </div>
+                <p><strong>Outlook:</strong> As compressed models move beyond lab demos into commercial APIs and edge devices, 2026 looks likely to be an inflection point where lightweight, high-efficiency LLMs enter the mainstream.</p>
+            </section>
+
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape & Market Positioning</h2>
+                <p style="color:#4a4a4a; font-size:0.95rem;">The LLM efficiency market can be divided into four tiers by approach. CompactifAI sits in Tier 1 with its proprietary quantum-inspired tensor-network technology.</p>
+
+                <h3 class="subsection-title">Four-Tier Market Structure</h3>
+                <table>
+                    <thead><tr><th>Tier</th><th>Approach</th><th>Representative Tech/Products</th><th>Characteristics</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Tier 1<br>Tensor-Network Compression</strong></td><td>Quantum-inspired structural rebuild</td><td><strong>Multiverse CompactifAI (HyperNova)</strong></td><td>Redesigns the structure itself; up to 95% compression, 2–3% precision loss</td></tr>
+                        <tr><td><strong>Tier 2<br>Quantization</strong></td><td>Reduce weight bit-width</td><td>GPTQ, AWQ, GGUF (llama.cpp), bitsandbytes</td><td>Most widespread; 4-bit/8-bit; mature, free tooling</td></tr>
+                        <tr><td><strong>Tier 3<br>Distillation & Pruning</strong></td><td>Knowledge distillation / pruning</td><td>NVIDIA Minitron, DistilBERT family</td><td>Transfers knowledge to smaller models; high retraining cost</td></tr>
+                        <tr><td><strong>Tier 4<br>Natively Small Models</strong></td><td>Designed small from scratch</td><td>Microsoft Phi, Google Gemma, small Qwen/Llama</td><td>Native, not compressed; rich ecosystem</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Platform Capability Comparison</h3>
+                <div class="chart-container"><canvas id="competitiveRadar"></canvas></div>
+
+                <h3 class="subsection-title">Five Market Trends</h3>
+                <ul class="key-findings">
+                    <li><strong>Rise of structural compression:</strong> Beyond plain quantization, tensor-network methods that redesign model structure are emerging as a new category.</li>
+                    <li><strong>Open-weight compression race:</strong> Who can best compress open models (gpt-oss, Llama, DeepSeek) is becoming a core competitive axis.</li>
+                    <li><strong>Edge / on-device demand:</strong> Memory savings translate directly into on-device and offline feasibility, expanding demand.</li>
+                    <li><strong>Inference unit-cost competition:</strong> With inference dominating operating cost over training, efficiency is central to cost strategy.</li>
+                    <li><strong>API-ization & self-serve:</strong> Consuming compressed models via APIs (e.g., the CompactifAI API) — without self-hosting — is spreading.</li>
+                </ul>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility Assessment:</span><span class="credibility-score-value">7.5/10</span></div>
+                    <div><strong>Strengths:</strong> The four-tier structure is a reasonable classification reflecting the real tooling ecosystem<br><strong>Weaknesses:</strong> Radar-chart scores are qualitative estimates from public information, not absolute values</div>
+                </div>
+            </section>
+
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key adoption approaches observed in the market.</p>
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>On-prem coding agent</strong> - Load on a single 80GB GPU to automate code generation and review inside a secure internal environment (leveraging the LiveCodeBench strength).</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Inference-cost optimization PoC</strong> - Route a share of an existing 120B service's traffic to the 60B model and A/B-validate memory and unit-cost savings.</p>
+                    <p style="line-height: 1.6;">3. <strong>Edge / offline assistant</strong> - Run a local LLM for RAG and tool-calling assistance in connectivity-limited field settings (manufacturing, logistics).</p>
+                </div>
+            </section>
+
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Half the size, comparable intelligence:</strong> Compressing 120B to ~60B (31.81GB of weights) while holding core metrics like MMLU-Pro in the ~90% range of the original.</li>
+                        <li><strong>Inference economics:</strong> ~69% less memory, +36% throughput, -38% latency structurally lower the cost per token.</li>
+                        <li><strong>Surpassing on some metrics:</strong> Beating the original on LiveCodeBench refutes the notion that compression always means degradation.</li>
+                        <li><strong>Proprietary moat:</strong> Quantum-inspired tensor networks are a category distinct from quantization/distillation, protected by 160+ patents.</li>
+                        <li><strong>Commercial momentum:</strong> $215M raised, 100+ customers, plus an API portal and edge app — the mainstreaming of compressed LLMs is underway.</li>
+                    </ul>
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Inference cost / memory is the key constraint → consider HyperNova 60B</strong><br>
+                        Why: Apache 2.0 allows self-hosting; runs on a single 80GB GPU.<br>
+                        <strong>Peak accuracy is the absolute priority → keep the original gpt-oss-120b</strong><br>
+                        Why: Some tasks (HLE, Terminal Bench) still favor the original.<br>
+                        <strong>You already run a quantization pipeline → decide via direct benchmarking</strong><br>
+                        Why: Real gains over GPTQ/AWQ must be validated per workload.
+                    </p>
+                </div>
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall sentiment: Positive</strong> — a flagship case of compressed LLMs pushing the cost/performance trade-off to a practical level. As figures are vendor-measured, validate against your own workloads before adopting.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">8.1/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> A high-credibility analysis, cross-verified by concrete figures in the Hugging Face model card and multiple global media reports.</p>
+                        <p><strong>Key strengths:</strong> Measurement conditions disclosed (H200, vLLM 0.13.0, concurrency 128); strengths and weaknesses shown transparently.</p>
+                        <p><strong>Priorities to improve:</strong> Absence of third-party independent benchmarks, undisclosed compression algorithm, workload variance in cost-savings claims.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1.1rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;"><strong>Tensor Networks:</strong> A mathematical toolset from quantum physics for efficiently representing complex data structures; used here to find and compress redundancy in neural networks.</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>CompactifAI:</strong> Multiverse Computing's compression technology that uses tensor networks to shrink LLMs by up to 95%.</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>Quantization:</strong> A common efficiency technique that represents weights in fewer bits (e.g., 4-bit) to reduce footprint.</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>MoE (Mixture of Experts):</strong> An architecture that activates only some expert sub-networks per token to cut computation. HyperNova activates 4.8B of 60B.</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>Tool Calling:</strong> The model invoking external functions/tools via a defined schema — central to building agents.</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>TTFT (Time To First Token):</strong> Time from request to the first output token; drives perceived responsiveness.</div>
+                    <div><strong>gpt-oss-120b:</strong> OpenAI's open-weight 120-billion-parameter model, the base for HyperNova.</div>
+                </div>
+            </section>
+
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> May 21, 2026</p>
+                    <ul>
+                        <li>• <a href="https://huggingface.co/MultiverseComputingCAI/Hypernova-60B-2605" target="_blank">HyperNova 60B 2605 Model Card — Hugging Face</a></li>
+                        <li>• <a href="https://multiversecomputing.com/compactifai" target="_blank">CompactifAI — Multiverse Computing</a></li>
+                        <li>• <a href="https://techcrunch.com/2026/03/19/multiverse-computing-pushes-its-compressed-ai-models-into-the-mainstream/" target="_blank">TechCrunch — Compressed AI into the mainstream (Mar 19, 2026)</a></li>
+                        <li>• <a href="https://www.techradar.com/pro/rewriting-the-blueprint-not-removing-bricks-multiverse-computing-says-it-can-shrink-large-ai-models-and-cut-memory-use-in-half" target="_blank">TechRadar — Rewriting the blueprint, not removing bricks</a></li>
+                        <li>• <a href="https://thequantuminsider.com/2025/06/12/multiverse-computing-raises-215-million-to-scale-technology-that-compresses-llms-by-up-to-95/" target="_blank">The Quantum Insider — $215M raise (Jun 2025)</a></li>
+                        <li>• <a href="https://tech.eu/2025/06/12/multiverse-computing-lands-eur189m-to-rewire-the-llm-ecosystem/" target="_blank">Tech.eu — €189M raise</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/06/12/multiverse-computing-raises-215m-for-tech-that-could-radically-slim-ai-costs/" target="_blank">TechCrunch — $215M for slimming AI costs</a></li>
+                        <li>• <a href="https://multiversecomputing.com/resources/multiverse-computing-opens-full-access-to-hypernova-60b-2602-on-hugging-face" target="_blank">Multiverse — HyperNova 60B 2602 release</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Multiverse_Computing" target="_blank">Multiverse Computing — Wikipedia</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2508.10925" target="_blank">OpenAI — gpt-oss Model Card (arXiv:2508.10925)</a></li>
+                    </ul>
+                    <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #808080;"><em>Benchmark figures are based on the model card as measured by Multiverse Computing on H200, vLLM 0.13.0, at concurrency 128.</em></p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const radarOpts = { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100 } } };
+        new Chart(document.getElementById('benchmarkRadar').getContext('2d'), {
+            type: 'radar',
+            data: { labels: ['MMLU-Pro', 'AIME25', 'GPQA:d', 'IFBench', 'LiveCodeBench', 'HLE'],
+                datasets: [
+                    { label: 'GPT-OSS-120B (original)', data: [79.64, 93.67, 74.64, 67.01, 62.75, 18.50], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.2)' },
+                    { label: 'HyperNova 2602', data: [74.25, 86.00, 65.56, 59.40, 51.53, 7.28], borderColor: 'rgb(249,115,22)', backgroundColor: 'rgba(249,115,22,0.15)' },
+                    { label: 'HyperNova 2605', data: [76.77, 90.00, 71.92, 66.57, 68.68, 14.97], borderColor: 'rgb(34,197,94)', backgroundColor: 'rgba(34,197,94,0.2)' }
+                ] },
+            options: { ...radarOpts, plugins: { title: { display: true, text: 'Benchmarks: Original vs Compressed Builds' } } }
+        });
+        new Chart(document.getElementById('memoryBar').getContext('2d'), {
+            type: 'bar',
+            data: { labels: ['Total Memory (GB)', 'Model Weights (GB)', 'Throughput (tok/s)', 'E2E Latency (s)', 'TTFT (s)'],
+                datasets: [
+                    { label: 'GPT-OSS-120B', data: [123.55, 121.54, 3821, 24.05, 7.04], backgroundColor: 'rgba(59,130,246,0.7)' },
+                    { label: 'HyperNova 2605', data: [38.83, 31.81, 5210, 14.74, 4.85], backgroundColor: 'rgba(34,197,94,0.7)' }
+                ] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { type: 'logarithmic', title: { display: true, text: 'log scale' } } }, plugins: { title: { display: true, text: 'Inference Metrics (concurrency 128, H200)' } } }
+        });
+        new Chart(document.getElementById('competitiveRadar').getContext('2d'), {
+            type: 'radar',
+            data: { labels: ['Compression', 'Precision Retention', 'Tooling Maturity', 'Cost Efficiency', 'Edge Fit'],
+                datasets: [
+                    { label: 'CompactifAI (Tensor NW)', data: [95, 85, 60, 90, 88], borderColor: 'rgb(34,197,94)', backgroundColor: 'rgba(34,197,94,0.2)' },
+                    { label: 'Quantization (GPTQ/AWQ)', data: [75, 80, 95, 85, 80], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)' },
+                    { label: 'Distillation/Pruning', data: [70, 75, 70, 70, 75], borderColor: 'rgb(168,85,247)', backgroundColor: 'rgba(168,85,247,0.15)' }
+                ] },
+            options: { ...radarOpts, plugins: { title: { display: true, text: 'Efficiency Approaches Compared (qualitative)' } } }
+        });
+    </script>
+
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>

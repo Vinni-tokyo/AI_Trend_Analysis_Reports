@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HyperNova 60B 2605 詳細分析 — CompactifAI 量子着想モデル圧縮</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; font-weight: 400; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.6rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .highlight { color: #0052b8; font-weight: 700; }
+        .chart-container { position: relative; height: 340px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f6faf6; border: 1px solid #d6e8d6; border-left: 3px solid #2e9e44; padding: 0.6rem 0.9rem; margin: 0.75rem 0; border-radius: 4px; font-size: 0.82rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: #2e9e44; }
+        .overall-credibility { background: #001e5c; color: white; padding: 1.25rem 1.5rem; border-radius: 6px; margin: 1rem 0; }
+        .overall-credibility h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .overall-credibility-score { font-size: 1.8rem; font-weight: 800; color: #6ec3ff; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; margin-bottom: 0.3rem; opacity: 0.95; }
+        p { margin-bottom: 0.6rem; }
+        @media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; } .content { padding: 1.5rem; } }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='hypernova-60b-compactifai-deep-dive-20260521-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='hypernova-60b-compactifai-deep-dive-20260521-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='hypernova-60b-compactifai-deep-dive-20260521-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>HyperNova 60B 2605 詳細分析<br>CompactifAI 量子着想モデル圧縮の現在地</h1>
+            <div class="subtitle">120Bモデルを半分のサイズへ — テンソルネットワーク圧縮が変えるLLM推論の経済性</div>
+            <div class="meta">レポート作成日：2026年5月21日 | 詳細分析レポート | データ収集：2026年5月21日</div>
+        </div>
+
+        <div class="content">
+
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+                <p style="color:#4a4a4a; font-size:0.95rem;">スペイン・サンセバスティアンに本拠を置くMultiverse Computingが2026年2月26日にHugging Faceで公開した<strong>HyperNova 60B 2605</strong>は、OpenAIの<strong>gpt-oss-120b</strong>を量子着想（quantum-inspired）テンソルネットワーク技術<strong>CompactifAI</strong>で圧縮したモデルです。本レポートでは、モデルの技術的本質、ベンチマーク、推論の経済性、そして圧縮LLM市場のグローバル動向を総合的に分析します。</p>
+
+                <h3 class="subsection-title">1. CompactifAI：量子着想テンソルネットワーク圧縮</h3>
+                <p><strong>現状：</strong>CompactifAIは量子物理学に由来する<strong>テンソルネットワーク（Tensor Networks）</strong>の数学を用いて、ニューラルネットワーク内部の数学的な冗長性（redundancy）を特定し、情報密度の高い構成要素のみを保持してモデルを再構築します。単に重みを削るプルーニングやビット数を下げる量子化とは異なり、「ブロックを抜くのではなく設計図を書き直す」アプローチと説明されています（出典：TechRadar, 2026）。</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>核心原理</h4>
+                        <p>• <strong>テンソル分解：</strong>重み行列を低次元テンソルネットワークに分解し冗長性を除去<br>
+                        • <strong>情報保持：</strong>情報量の大きい相関のみを維持<br>
+                        • <strong>圧縮率：</strong>最大95%のサイズ削減、精度損失は2〜3%以内（出典：Multiverse Computing）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>HyperNovaへの適用結果</h4>
+                        <p>• <strong>パラメータ：</strong>120B → 59〜60B（MoE有効4.8B/トークン）<br>
+                        • <strong>重み容量：</strong>121.54GB → 31.81GB<br>
+                        • <strong>ライセンス：</strong>Apache 2.0（商用利用可）<br>
+                        • <strong>形式：</strong>Safetensors、BF16/U8テンソル型</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 信頼性評価：</span><span class="credibility-score-value">8.5/10</span></div>
+                    <div><strong>強み：</strong>Hugging Faceのモデルカードと複数メディア報道で相互検証された具体的数値<br><strong>改善点：</strong>圧縮アルゴリズムの詳細実装は非公開（特許）で独立再現の検証に限界</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://huggingface.co/MultiverseComputingCAI/Hypernova-60B-2605" target="_blank">HyperNova 60B 2605 (Hugging Face)</a> |
+                    <a href="https://multiversecomputing.com/compactifai" target="_blank">CompactifAI</a> |
+                    <a href="https://multiversecomputing.com/" target="_blank">Multiverse Computing</a>
+                </div>
+                <p><strong>展望：</strong>テンソルネットワーク圧縮が「量子化の次の段階」として定着すれば、GPUメモリ制約の大きいオンプレミス・エッジ環境での採用が加速する可能性が高いです。</p>
+
+                <h3 class="subsection-title">2. HyperNova 60B 2605：半分のサイズで知能を回復</h3>
+                <p><strong>現状：</strong>同一モデルの旧版<strong>2602</strong>と比べ、2605は大半のベンチマークで大きく点数を回復し、オリジナル120Bにさらに接近しました。特にHLE（7.28→14.97）、GPQA:d（65.56→71.92）、IFBench（59.40→66.57）で顕著な改善を示しました。これは圧縮後の追加ファインチューニングを通じて「圧縮で失った能力を取り戻す」反復改善サイクルが有効であることを示唆します。</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>知能ベンチマーク（vs オリジナル120B）</h4>
+                        <p>• <strong>MMLU-Pro：</strong>76.77（オリジナル79.64、96%水準）<br>
+                        • <strong>AIME25（数学）：</strong>90.00（オリジナル93.67）<br>
+                        • <strong>GPQA:d（大学院科学）：</strong>71.92（オリジナル74.64）<br>
+                        • <strong>HLE：</strong>14.97（オリジナル18.50）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>2602 → 2605 の改善幅</h4>
+                        <p>• <strong>HLE：</strong>+7.69（2倍以上）<br>
+                        • <strong>GPQA:d：</strong>+6.36<br>
+                        • <strong>IFBench：</strong>+7.17<br>
+                        • <strong>AIDER（コーディング）：</strong>26.2 → 34.2</p>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="benchmarkRadar"></canvas></div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 信頼性評価：</span><span class="credibility-score-value">8.0/10</span></div>
+                    <div><strong>強み：</strong>評価フレームワーク（NeMo-Skills、EvalScope）、ハードウェア（H200）、設定値まで公開<br><strong>改善点：</strong>ベンダー自社測定値であり、第三者の独立ベンチマーク比較が必要</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://huggingface.co/openai/gpt-oss-120b" target="_blank">gpt-oss-120b（オリジナル）</a> |
+                    <a href="https://arxiv.org/abs/2508.10925" target="_blank">gpt-oss モデルカード (arXiv)</a>
+                </div>
+                <p><strong>展望：</strong>同一モデルを日付バージョン（2602、2605）として迅速に反復公開する戦略は、圧縮モデルも継続的アップデートで品質を高められることを示しています。</p>
+
+                <h3 class="subsection-title">3. 推論効率：メモリ64%削減、スループット36%向上</h3>
+                <p><strong>現状：</strong>同時実行数（concurrency）128、NVIDIA H200環境での測定基準で、HyperNova 60B 2605は推論コストを左右するほぼ全ての指標で優位に立ちます。総メモリ使用量は<span class="highlight">123.55GB → 38.83GB（約-69%）</span>、モデル重みは<span class="highlight">121.54GB → 31.81GB（約-74%）</span>に減り、単一H200（141GB）や80GB級GPU1枚にも余裕を持って搭載できます。</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>速度・遅延指標</h4>
+                        <p>• <strong>スループット：</strong>3,821 → 5,210 tok/s（+36%）<br>
+                        • <strong>出力速度：</strong>57.79 → 69.31 tok/s<br>
+                        • <strong>E2E遅延：</strong>24.05s → 14.74s（-38%）<br>
+                        • <strong>初トークンまで(TTFT)：</strong>7.04s → 4.85s（-31%）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>コスト・インフラへの示唆</h4>
+                        <p>• 同一GPUでより多くの同時リクエストを処理 → トークン単価削減<br>
+                        • 80GB GPU1枚で運用可能 → マルチGPUコストを回避<br>
+                        • Multiverseは推論コスト<strong>50〜80%削減</strong>を主張（出典：Multiverse Computing）</p>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="memoryBar"></canvas></div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 信頼性評価：</span><span class="credibility-score-value">8.5/10</span></div>
+                    <div><strong>強み：</strong>vLLM 0.13.0、バッチ64など測定条件を明示し再現性が高い<br><strong>改善点：</strong>50〜80%のコスト削減はモデル・ワークロードにより差が大きい</div>
+                </div>
+                <p><strong>展望：</strong>AIサプライチェーンの計算コスト圧力が高まる中、「同等性能・半分のメモリ」は推論中心（inference-heavy）サービスの単価競争で重要な差別化要因になります。</p>
+
+                <h3 class="subsection-title">4. エージェント・コーディング能力：一部指標でオリジナルを超える</h3>
+                <p><strong>現状：</strong>最も注目すべき結果は<strong>LiveCodeBenchで68.68点を記録し、オリジナル120B（62.75）を上回った</strong>点です。圧縮モデルが一部のタスクでオリジナルを凌駕するのは、CompactifAIが単なる損失圧縮ではなく、圧縮＋再学習によって特定能力を強化できることを示しています。ネイティブのツール呼び出し（OpenAI関数スキーマ）、構造化出力、調整可能な推論強度（low/medium/high）に対応し、コーディングエージェントに適しています。</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>エージェント・コーディングベンチマーク</h4>
+                        <p>• <strong>LiveCodeBench：</strong>68.68（オリジナル62.75を上回る）✅<br>
+                        • <strong>Tau2-bench（通信）：</strong>61.70（オリジナル63.74）<br>
+                        • <strong>SciCode：</strong>36.00<br>
+                        • <strong>Terminal Bench：</strong>15.91（オリジナル24.24、弱点）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>エージェント機能</h4>
+                        <p>• ネイティブツール呼び出し（function calling）<br>
+                        • 構造化出力（Structured Outputs）<br>
+                        • 推論強度の調整（low/medium/high）<br>
+                        • Chain-of-thoughtデバッグ対応</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 信頼性評価：</span><span class="credibility-score-value">7.5/10</span></div>
+                    <div><strong>強み：</strong>ベンチマークごとの強み・弱みをモデルカードが透明に公開<br><strong>改善点：</strong>Terminal Bench・AA-LCRなど一部エージェントタスクはオリジナルとの差が残る</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://multiversecomputing.com/papers/hypernova-60b-2602-same-intelligence-half-the-size-improved-tool-calling-capability" target="_blank">HyperNova 2602 技術ノート</a> |
+                    <a href="https://www.vllm.ai/" target="_blank">vLLM</a>
+                </div>
+                <p><strong>展望：</strong>「圧縮モデル＝性能低下」という通念を覆す事例であり、エージェント型コーディングのワークロードで軽量モデルの採用を後押しする可能性があります。</p>
+
+                <h3 class="subsection-title">5. グローバル動向：エッジ展開と圧縮LLMの主流化</h3>
+                <p><strong>現状：</strong>Multiverse Computingは2025年6月に<strong>2億1,500万ドル（1億8,900万ユーロ）のシリーズB</strong>を調達し（主導：Bullhound Capital、参加：HP Tech Ventures・東芝・Santanderなど）、報道によれば<strong>15億ユーロの評価額で5億ユーロ</strong>の追加調達を進めています。累計約2億1,600万ユーロ、特許160件以上、Iberdrola・Bosch・カナダ銀行など100社超の顧客を確保しています（出典：TechCrunch、The Quantum Insider）。</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>事業・市場の文脈</h4>
+                        <p>• OpenAI・Meta・DeepSeek・Mistralのモデルまで圧縮ラインナップを拡大<br>
+                        • <strong>CompactifAI APIポータル</strong>を公開（開発者セルフサーブ）<br>
+                        • エッジアプリ<strong>Gilda</strong>（ローカル動作、オフライン・プライバシー）<br>
+                        • ドローン・衛星など接続性が不確実な環境を狙う</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>なぜ今なのか</h4>
+                        <p>• AIサプライチェーンの不安定化 → クラウド依存リスクが顕在化<br>
+                        • ローカル実行で外部計算への依存を排除<br>
+                        • 推論コスト・電力使用量の削減圧力が増大<br>
+                        • オープンウェイト（gpt-oss）エコシステムの拡大</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 信頼性評価：</span><span class="credibility-score-value">8.0/10</span></div>
+                    <div><strong>強み：</strong>資金調達・顧客情報が複数メディア（TechCrunch、Tech.eu、SiliconANGLE）で相互確認<br><strong>改善点：</strong>5億ユーロの追加調達は「進行中」段階で未確定</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 関連リンク：</strong>
+                    <a href="https://techcrunch.com/2026/03/19/multiverse-computing-pushes-its-compressed-ai-models-into-the-mainstream/" target="_blank">TechCrunch (2026.3)</a> |
+                    <a href="https://thequantuminsider.com/2025/06/12/multiverse-computing-raises-215-million-to-scale-technology-that-compresses-llms-by-up-to-95/" target="_blank">$215M 調達報道</a>
+                </div>
+                <p><strong>展望：</strong>圧縮モデルが「研究室のデモ」を超えて商用APIやエッジデバイスへ広がる中、2026年は軽量・高効率LLMが主流に入る変曲点となる可能性が高いです。</p>
+            </section>
+
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+                <p style="color:#4a4a4a; font-size:0.95rem;">LLM軽量化市場はアプローチによって4つの階層に分けられます。CompactifAIは量子着想テンソルネットワークという独自技術でTier 1に位置します。</p>
+
+                <h3 class="subsection-title">4階層の市場構造</h3>
+                <table>
+                    <thead><tr><th>階層</th><th>アプローチ</th><th>代表技術/製品</th><th>特徴</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Tier 1<br>テンソルNW圧縮</strong></td><td>量子着想の構造再構築</td><td><strong>Multiverse CompactifAI (HyperNova)</strong></td><td>構造自体を再設計、最大95%圧縮・精度損失2〜3%</td></tr>
+                        <tr><td><strong>Tier 2<br>量子化</strong></td><td>重みのビット数削減</td><td>GPTQ, AWQ, GGUF(llama.cpp), bitsandbytes</td><td>最も普及、4-bit/8-bit、ツール成熟・無料</td></tr>
+                        <tr><td><strong>Tier 3<br>蒸留・プルーニング</strong></td><td>知識蒸留 / 枝刈り</td><td>NVIDIA Minitron, DistilBERT系</td><td>小型モデルへ知識転移、再学習コスト大</td></tr>
+                        <tr><td><strong>Tier 4<br>小型モデル自社開発</strong></td><td>最初から小さく設計</td><td>Microsoft Phi, Google Gemma, Qwen・Llama小型</td><td>圧縮でなく原生の軽量、エコシステム豊富</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要プラットフォーム能力比較</h3>
+                <div class="chart-container"><canvas id="competitiveRadar"></canvas></div>
+
+                <h3 class="subsection-title">市場トレンド5つ</h3>
+                <ul class="key-findings">
+                    <li><strong>構造的圧縮の台頭：</strong>単純な量子化を超え、モデル構造自体を再設計するテンソルネットワーク方式が新カテゴリとして台頭。</li>
+                    <li><strong>オープンウェイト圧縮競争：</strong>gpt-oss・Llama・DeepSeekなどのオープンモデルをいかにうまく圧縮するかが競争の核心に。</li>
+                    <li><strong>エッジ・オンデバイス需要：</strong>メモリ削減がオンデバイス・オフライン実行の可否に直結し需要が拡大。</li>
+                    <li><strong>推論単価競争：</strong>学習より推論コストが運用負担の大半を占め、軽量化がコスト戦略の鍵に。</li>
+                    <li><strong>API化・セルフサーブ：</strong>圧縮モデルを自前でホストせずAPIで消費する流れ（CompactifAI API等）が拡大。</li>
+                </ul>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 信頼性評価：</span><span class="credibility-score-value">7.5/10</span></div>
+                    <div><strong>強み：</strong>4階層構造は実際のツールエコシステムを反映した合理的な分類<br><strong>改善点：</strong>レーダーチャートの点数は公開情報に基づく定性評価で絶対値ではない</div>
+                </div>
+            </section>
+
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>オンプレミスのコーディングエージェント</strong> - 80GB GPU1枚に搭載し、社内セキュア環境でコード生成・レビューを自動化（LiveCodeBenchの強みを活用）。</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>推論コスト最適化のPoC</strong> - 既存120Bサービスの一部トラフィックを60Bにルーティングし、メモリ・単価削減効果をA/B検証。</p>
+                    <p style="line-height: 1.6;">3. <strong>エッジ・オフラインアシスタント</strong> - 接続性が限られる現場（製造・物流）でローカルLLMによるRAG・ツール呼び出し型の補助ツールを運用。</p>
+                </div>
+            </section>
+
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>半分のサイズで同等の知能：</strong>120Bを約60B（重み31.81GB）に圧縮しつつ、MMLU-Proなど主要指標をオリジナルの90%台に維持。</li>
+                        <li><strong>推論の経済性：</strong>メモリ約69%削減、スループット+36%、遅延-38%でトークン単価を構造的に低減。</li>
+                        <li><strong>一部指標で逆転：</strong>LiveCodeBenchでオリジナルを上回り、圧縮＝性能低下という通念を反証。</li>
+                        <li><strong>独自技術の堀：</strong>量子着想テンソルネットワークは量子化・蒸留と差別化されたカテゴリで、特許160件以上に保護される。</li>
+                        <li><strong>商用モメンタム：</strong>2.15億ドル調達、100社超の顧客、APIポータル・エッジアプリで圧縮LLMの主流化が進行。</li>
+                    </ul>
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem;">選定ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>推論コスト・メモリが主要制約 → HyperNova 60Bを検討</strong><br>
+                        理由：Apache 2.0ライセンスで自前ホスティング可、80GB GPU1枚で運用。<br>
+                        <strong>最高精度が絶対優先 → オリジナルgpt-oss-120bを維持</strong><br>
+                        理由：HLE・Terminal Benchなど一部タスクは依然オリジナル優位。<br>
+                        <strong>既に量子化パイプラインを保有 → ベンチマーク直接比較で判断</strong><br>
+                        理由：GPTQ/AWQ比の実利益はワークロードごとの検証が必要。
+                    </p>
+                </div>
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：ポジティブ</strong> — 圧縮LLMがコスト・性能のトレードオフを実用水準に引き上げた代表例。ただしベンダー測定値のため、導入前の自社ワークロード検証を推奨。</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">8.1/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>Hugging Faceモデルカードの具体的数値と複数のグローバルメディア報道で相互検証された信頼性の高い分析。</p>
+                        <p><strong>主な強み：</strong>測定条件（H200、vLLM 0.13.0、同時実行128）を明示、強み・弱みを透明に公開。</p>
+                        <p><strong>改善の優先順位：</strong>第三者の独立ベンチマーク不在、圧縮アルゴリズム非公開、コスト削減率のワークロード差。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1.1rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;"><strong>テンソルネットワーク（Tensor Networks）：</strong>複雑なデータ構造を効率的に表現する量子物理由来の数学的ツール。ニューラルネットワークの冗長性を見つけて圧縮するのに活用されます。</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>CompactifAI：</strong>Multiverse Computingの圧縮技術で、テンソルネットワークを用いてLLMのサイズを最大95%まで削減します。</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>量子化（Quantization）：</strong>重みをより少ないビット（例：4-bit）で表現し容量を減らす一般的な軽量化手法。</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>MoE（専門家混合）：</strong>トークンごとに一部の専門家ネットワークのみを有効化して計算を減らす構造。HyperNovaは60Bのうち4.8Bのみ有効。</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>ツール呼び出し（Tool Calling）：</strong>モデルが外部の関数/ツールを定義済みスキーマで呼び出す機能。エージェント実装の中核。</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>TTFT（Time To First Token）：</strong>リクエスト後、最初のトークンが出るまでの時間。体感応答性を左右します。</div>
+                    <div><strong>gpt-oss-120b：</strong>OpenAIが公開したオープンウェイトの1,200億パラメータモデルで、HyperNovaのベース（base）モデル。</div>
+                </div>
+            </section>
+
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年5月21日</p>
+                    <ul>
+                        <li>• <a href="https://huggingface.co/MultiverseComputingCAI/Hypernova-60B-2605" target="_blank">HyperNova 60B 2605 モデルカード — Hugging Face</a></li>
+                        <li>• <a href="https://multiversecomputing.com/compactifai" target="_blank">CompactifAI — Multiverse Computing</a></li>
+                        <li>• <a href="https://techcrunch.com/2026/03/19/multiverse-computing-pushes-its-compressed-ai-models-into-the-mainstream/" target="_blank">TechCrunch — Compressed AI into the mainstream (2026.3.19)</a></li>
+                        <li>• <a href="https://www.techradar.com/pro/rewriting-the-blueprint-not-removing-bricks-multiverse-computing-says-it-can-shrink-large-ai-models-and-cut-memory-use-in-half" target="_blank">TechRadar — Rewriting the blueprint, not removing bricks</a></li>
+                        <li>• <a href="https://thequantuminsider.com/2025/06/12/multiverse-computing-raises-215-million-to-scale-technology-that-compresses-llms-by-up-to-95/" target="_blank">The Quantum Insider — $215M 調達 (2025.6)</a></li>
+                        <li>• <a href="https://tech.eu/2025/06/12/multiverse-computing-lands-eur189m-to-rewire-the-llm-ecosystem/" target="_blank">Tech.eu — €189M 調達</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/06/12/multiverse-computing-raises-215m-for-tech-that-could-radically-slim-ai-costs/" target="_blank">TechCrunch — $215M for slimming AI costs</a></li>
+                        <li>• <a href="https://multiversecomputing.com/resources/multiverse-computing-opens-full-access-to-hypernova-60b-2602-on-hugging-face" target="_blank">Multiverse — HyperNova 60B 2602 公開</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Multiverse_Computing" target="_blank">Multiverse Computing — Wikipedia</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2508.10925" target="_blank">OpenAI — gpt-oss モデルカード (arXiv:2508.10925)</a></li>
+                    </ul>
+                    <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #808080;"><em>ベンチマーク数値はMultiverse ComputingがH200・vLLM 0.13.0・同時実行128環境で測定したモデルカードに基づきます。</em></p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const radarOpts = { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100 } } };
+        new Chart(document.getElementById('benchmarkRadar').getContext('2d'), {
+            type: 'radar',
+            data: { labels: ['MMLU-Pro', 'AIME25', 'GPQA:d', 'IFBench', 'LiveCodeBench', 'HLE'],
+                datasets: [
+                    { label: 'GPT-OSS-120B（オリジナル）', data: [79.64, 93.67, 74.64, 67.01, 62.75, 18.50], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.2)' },
+                    { label: 'HyperNova 2602', data: [74.25, 86.00, 65.56, 59.40, 51.53, 7.28], borderColor: 'rgb(249,115,22)', backgroundColor: 'rgba(249,115,22,0.15)' },
+                    { label: 'HyperNova 2605', data: [76.77, 90.00, 71.92, 66.57, 68.68, 14.97], borderColor: 'rgb(34,197,94)', backgroundColor: 'rgba(34,197,94,0.2)' }
+                ] },
+            options: { ...radarOpts, plugins: { title: { display: true, text: 'ベンチマーク比較：オリジナル vs 圧縮版' } } }
+        });
+        new Chart(document.getElementById('memoryBar').getContext('2d'), {
+            type: 'bar',
+            data: { labels: ['総メモリ(GB)', 'モデル重み(GB)', 'スループット(tok/s)', 'E2E遅延(s)', 'TTFT(s)'],
+                datasets: [
+                    { label: 'GPT-OSS-120B', data: [123.55, 121.54, 3821, 24.05, 7.04], backgroundColor: 'rgba(59,130,246,0.7)' },
+                    { label: 'HyperNova 2605', data: [38.83, 31.81, 5210, 14.74, 4.85], backgroundColor: 'rgba(34,197,94,0.7)' }
+                ] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { type: 'logarithmic', title: { display: true, text: '対数スケール' } } }, plugins: { title: { display: true, text: '推論性能指標（同時実行128、H200）' } } }
+        });
+        new Chart(document.getElementById('competitiveRadar').getContext('2d'), {
+            type: 'radar',
+            data: { labels: ['圧縮率', '精度保持', 'ツール成熟度', 'コスト効率', 'エッジ適合性'],
+                datasets: [
+                    { label: 'CompactifAI（テンソルNW）', data: [95, 85, 60, 90, 88], borderColor: 'rgb(34,197,94)', backgroundColor: 'rgba(34,197,94,0.2)' },
+                    { label: '量子化（GPTQ/AWQ）', data: [75, 80, 95, 85, 80], borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)' },
+                    { label: '蒸留/プルーニング', data: [70, 75, 70, 70, 75], borderColor: 'rgb(168,85,247)', backgroundColor: 'rgba(168,85,247,0.15)' }
+                ] },
+            options: { ...radarOpts, plugins: { title: { display: true, text: '軽量化アプローチの能力比較（定性評価）' } } }
+        });
+    </script>
+
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 コメント & リアクション</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> いいね</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">名前（任意）</label>
+                    <input type="text" id="comment-author" placeholder="匿名" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">コメント</label>
+                    <textarea id="comment-content" placeholder="ご意見をお聞かせください..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">コメントを投稿</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">コメントを読み込み中...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
