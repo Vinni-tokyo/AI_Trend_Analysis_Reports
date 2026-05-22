@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>역량 지식그래프(Competency Graph): 글로벌 연구 및 시장 동향</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Malgun Gothic", sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 320px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f6fbf6; border: 1px solid #cfe8cf; border-left: 3px solid #2e9e44; padding: 0.6rem 0.9rem; margin: 0.75rem 0; border-radius: 4px; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: #2e9e44; }
+        .overall-credibility { background: #f0f7ff; border: 1px solid #cfe0f5; padding: 1rem 1.25rem; border-radius: 6px; margin-top: 1rem; }
+        .overall-credibility h3 { color: #001e5c; margin-bottom: 0.4rem; font-size: 1.05rem; }
+        .overall-credibility-score { font-size: 1.6rem; font-weight: 800; color: #0052b8; margin-bottom: 0.4rem; }
+        @media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; } }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='competency-graph-research-trends-20260522-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='competency-graph-research-trends-20260522-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='competency-graph-research-trends-20260522-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>역량 지식그래프(Competency Graph): 글로벌 연구 및 시장 동향</h1>
+            <div class="subtitle">직업·스킬·자격을 잇는 지식그래프 — 연구·상용·표준의 현재</div>
+            <div class="meta">보고서 작성일: 2026년 5월 22일 | 표준 보고서 | ID: TR-20260522-001</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <h3 class="subsection-title">1. 공개 역량 온톨로지의 표준화 — ESCO·O*NET·WEF</h3>
+                <p><strong>현황:</strong> 직업·스킬·자격을 형식적으로 정의한 공개 온톨로지가 사실상의 글로벌 좌표계로 자리 잡았습니다. EU의 ESCO는 27개 언어로 직업·스킬·자격을 SKOS/RDF로 발행하며, 미 노동부의 O*NET은 약 1,016개 직업의 속성을 표준화합니다. WEF의 Global Skills Taxonomy까지 더해, 이들은 기업 HR과 학계 모두에서 competency-graph의 기반 노드로 채택되고 있습니다.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 특징</h4>
+                        <p>• <strong>ESCO:</strong> 27개 언어, SKOS/RDF 공개, 직업-스킬-자격 연결<br>
+                        • <strong>O*NET:</strong> 美 정부 표준, 직무 속성 데이터베이스<br>
+                        • <strong>WEF:</strong> 글로벌 스킬 분류, 미래 직무 신호</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>왜 중요한가</h4>
+                        <p>• 출처가 다른 데이터를 잇는 <strong>공통 어휘</strong> 제공<br>
+                        • 키워드 매칭이 아닌 <strong>의미 기반 탐색</strong> 가능<br>
+                        • 온톨로지(틀)와 데이터(인스턴스)를 합쳐 <strong>지식그래프</strong>로 확장</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 신뢰도 평가:</span> <span class="credibility-score-value">9/10</span></div>
+                    <div><strong>강점:</strong> ESCO/O*NET은 정부·EU 공식 1차 출처로 검증 가능 · <strong>개선점:</strong> WEF 분류의 채택률 수치는 추가 근거 필요</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO</a> |
+                    <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine</a> |
+                    <a href="https://www.weforum.org/" target="_blank">World Economic Forum</a>
+                </div>
+                <p><strong>전망:</strong> 공개 온톨로지는 "링크드 오픈 데이터"로 상호 연결되며, 자체 competency-graph를 구축하려는 조직의 표준 출발점이 될 것입니다.</p>
+
+                <h3 class="subsection-title">2. 상용 competency-graph 경쟁 — Talent Intelligence</h3>
+                <p><strong>현황:</strong> 주요 HR테크 기업들이 각자 독자 그래프를 핵심 자산으로 내세우며 경쟁하고 있습니다. Eightfold는 16억 경력 궤적에서 추출한 160만 스킬을 주장하고, Gloat은 'Workforce Graph(Loomra)', Beamery는 'Talent Graph', LinkedIn은 'Skills Graph'를 운영합니다. 그래프가 곧 경쟁 우위가 된 구조입니다.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>주요 플레이어</h4>
+                        <p>• <strong>Eightfold:</strong> 160만 스킬, 인재 인텔리전스<br>
+                        • <strong>Gloat:</strong> Workforce Graph, 사내 인재 마켓플레이스<br>
+                        • <strong>Beamery / LinkedIn:</strong> Talent Graph / Skills Graph</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>시장 규모</h4>
+                        <p>• 인재 인텔리전스 SW: <strong>2023년 $8.98B → 2033년 $27.82B</strong> (CAGR 11.97%)<br>
+                        • 스킬 인텔리전스 플랫폼: 2023년 $3.5B → 2029년 $9.2B<br>
+                        • Gartner: 2025년까지 대기업 60%가 AI 스킬 마켓플레이스 도입 전망</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 신뢰도 평가:</span> <span class="credibility-score-value">8/10</span></div>
+                    <div><strong>강점:</strong> 복수 시장조사 기관의 규모·CAGR 수치 인용 · <strong>개선점:</strong> 기관별 시장 정의 차이로 수치 범위가 넓음</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold</a> |
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://beamery.com/" target="_blank">Beamery</a> |
+                    <a href="https://www.linkedin.com/talent/" target="_blank">LinkedIn Talent</a>
+                </div>
+                <p><strong>전망:</strong> 데이터 규모 경쟁과 함께, 그래프 위에서 동작하는 GNN·LLM 추천 품질이 차기 차별화 축이 될 것입니다.</p>
+
+                <h3 class="subsection-title">3. GNN 기반 개인화 추천 연구의 부상</h3>
+                <p><strong>현황:</strong> 직업-스킬 그래프 위에 그래프 신경망(GNN)을 얹어 직무·학습을 개인화 추천하는 연구가 활발합니다. 2024년 HRGraph는 LLM으로 엔티티를 추출해 HR 지식그래프를 만들고 정보전파 기반 직무 추천을 수행했고, ReCareer는 하이브리드 GNN에 동적 게이팅 재랭킹을 결합했습니다. RecSysHR 2024에서는 ISCO/ESCO/O*NET 위의 동적 Jobs-Skills KG가 발표됐습니다.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>대표 연구</h4>
+                        <p>• <strong>HRGraph (arXiv 2024):</strong> LLM 엔티티 추출 → HR KG → 직무 추천<br>
+                        • <strong>ReCareer (Springer):</strong> 하이브리드 GNN + 동적 게이팅 재랭킹<br>
+                        • <strong>Dynamic Jobs-Skills KG (RecSysHR 2024)</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>핵심 기법</h4>
+                        <p>• <strong>링크 예측:</strong> 스킬-직업 관련성 정량화<br>
+                        • <strong>경로 탐색:</strong> 최단경로로 진로 경로 설계<br>
+                        • <strong>이종 그래프:</strong> 직업·스킬·배지를 한 그래프에서 학습</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 신뢰도 평가:</span> <span class="credibility-score-value">9/10</span></div>
+                    <div><strong>강점:</strong> arXiv·Springer·CEUR 등 동료심사/공개 논문 직접 인용 · <strong>개선점:</strong> 산업 적용 성능 지표는 논문별 편차</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://arxiv.org/html/2408.13521v1" target="_blank">HRGraph (arXiv)</a> |
+                    <a href="https://ceur-ws.org/Vol-3788/RecSysHR2024-paper_1.pdf" target="_blank">Dynamic Jobs-Skills KG</a> |
+                    <a href="https://arxiv.org/abs/2109.02554" target="_blank">Job Posting-Enriched KG</a>
+                </div>
+                <p><strong>전망:</strong> 정적 온톨로지 위의 학습형 추천이 표준이 되며, "왜 추천했는지"를 그래프 경로로 설명하는 설명가능성이 강조될 것입니다.</p>
+
+                <h3 class="subsection-title">4. 스킬 기반(Skills-First) 채용·인재 이동으로의 전환</h3>
+                <p><strong>현황:</strong> 학위 중심에서 스킬 중심으로 채용·내부 이동의 무게중심이 옮겨가고 있습니다. competency-graph는 이 전환의 엔진으로, 직무와 사람을 스킬 단위로 매칭합니다. 사내 인재 마켓플레이스 도입 시 채용 소요 최대 20일 단축, 채용비용 3~5배 절감, 가용 인재풀 6배 확대 같은 ROI가 보고됩니다.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>변화 양상</h4>
+                        <p>• 학위 요건 폐지·완화 확산<br>
+                        • 직무를 <strong>스킬 묶음</strong>으로 재정의<br>
+                        • 내부 이동·긱·멘토링을 그래프로 매칭</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>보고된 효과</h4>
+                        <p>• 채용 소요 <strong>최대 20일 단축</strong><br>
+                        • 채용비용 <strong>3~5배 절감</strong><br>
+                        • 가용 인재풀 <strong>6배 확대</strong>, 리텐션 개선</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 신뢰도 평가:</span> <span class="credibility-score-value">7/10</span></div>
+                    <div><strong>강점:</strong> 업계 도입 효과를 정량 지표로 제시 · <strong>개선점:</strong> ROI 수치는 벤더 보고 기반이라 독립 검증 여지</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://gloat.com/blog/the-talent-marketplace-explained/" target="_blank">Talent Marketplace (Gloat)</a> |
+                    <a href="https://www.mercer.com/" target="_blank">Mercer Skills Snapshot</a>
+                </div>
+                <p><strong>전망:</strong> 공공·민간 모두 스킬 우선 채용을 가속하며, 검증된 자격(배지)을 그래프에 연결하려는 수요가 커질 것입니다.</p>
+
+                <h3 class="subsection-title">5. 온톨로지 + LLM 융합 (GraphRAG·설명가능 코칭)</h3>
+                <p><strong>현황:</strong> LLM의 환각을 막기 위해, 결정론적 지식그래프로 사실을 고정하고 LLM은 서사·코칭만 담당하는 GraphRAG 패턴이 확산됩니다. 학습 개인화용 역량 온톨로지 연구(Smart Learning Environments)처럼, 그래프가 "무엇이 필요한가"를 정의하고 LLM이 "어떻게 도달하는가"를 설명하는 역할 분담이 정착되고 있습니다.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 아이디어</h4>
+                        <p>• KG = 결정론적 사실(갭·필요 스킬)<br>
+                        • LLM = 자연어 코칭·서사 생성<br>
+                        • 추천 근거를 <strong>그래프 경로</strong>로 설명</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>효과</h4>
+                        <p>• 환각 차단, 추천의 <strong>검증가능성</strong><br>
+                        • 개인 맥락(보유 스킬·목표) 반영<br>
+                        • 학습 경로 개인화로 완료율·성취 향상 가능</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 신뢰도 평가:</span> <span class="credibility-score-value">8/10</span></div>
+                    <div><strong>강점:</strong> 학술 연구 + 산업 패턴 모두 존재 · <strong>개선점:</strong> "완료율 향상"의 정량 효과는 맥락별 검증 필요</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://slejournal.springeropen.com/articles/10.1186/s40561-021-00160-z" target="_blank">Competency Ontology (SLE)</a> |
+                    <a href="https://data.europa.eu/esco/model" target="_blank">ESCO Ontology Model</a>
+                </div>
+                <p><strong>전망:</strong> 그래프-LLM 하이브리드가 진로·학습 코칭 서비스의 표준 아키텍처가 될 것입니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+                <h3 class="subsection-title">4계층 시장 구조</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">competency-graph 생태계는 공개 표준부터 기업 내장 솔루션까지 4개 계층으로 나뉩니다. 아래로 갈수록 상용·폐쇄·고가이며, 위로 갈수록 공개·표준·기반에 가깝습니다.</p>
+                <table>
+                    <thead>
+                        <tr><th>플레이어</th><th>계층</th><th>특징</th><th>대상</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>ESCO · O*NET · WEF</strong></td><td>공개 표준 온톨로지</td><td>다국어·정부/EU 발행·무료</td><td>전 세계 연구·HR·정책</td></tr>
+                        <tr><td><strong>Lightcast · TechWolf</strong></td><td>노동시장 데이터</td><td>실시간 채용공고에서 스킬 추출(3.3만+)</td><td>인사기획·노동시장 분석</td></tr>
+                        <tr><td><strong>Eightfold · Gloat · Beamery</strong></td><td>인재 인텔리전스/마켓플레이스</td><td>독자 그래프 + AI 매칭</td><td>대기업 인재 운영</td></tr>
+                        <tr><td><strong>Workday · SAP · ServiceNow</strong></td><td>HCM 내장 스킬 레이어</td><td>업무이력에서 스킬 추론</td><td>기존 HCM 고객</td></tr>
+                        <tr><td><strong>SkillPath (자사)</strong></td><td>개인 학습 경로 (B2C)</td><td>Open Badge + GNN 개인화 학습 경로</td><td>개인 학습자</td></tr>
+                    </tbody>
+                </table>
+                <h3 class="subsection-title">시장 동향 5선</h3>
+                <ul class="key-findings">
+                    <li>공개 표준(ESCO/O*NET)이 모든 상용 그래프의 공통 기반으로 수렴</li>
+                    <li>데이터 규모 경쟁(스킬 수)에서 추천 품질(GNN·설명가능성) 경쟁으로 이동</li>
+                    <li>B2B 사내 이동 중심 시장에서 B2C 개인 학습·자격 영역이 신흥 공백</li>
+                    <li>마이크로크레덴셜·디지털 배지를 그래프에 연결하려는 수요 증가</li>
+                    <li>그래프 + LLM(GraphRAG) 하이브리드가 사실성·개인화 동시 달성 수단으로 정착</li>
+                </ul>
+                <h3 class="subsection-title">주요 플랫폼 비교 차트</h3>
+                <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근을 소개합니다.</p>
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>공개 온톨로지 부트스트랩</strong> - ESCO/O*NET을 시드로 자체 competency-graph를 빠르게 구축하고 자사 데이터로 보강</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>GraphRAG 갭 분석</strong> - 그래프로 결정론적 스킬 갭을 진단하고 LLM이 개인 코칭 서사를 생성</p>
+                    <p style="line-height: 1.6;">3. <strong>자격 레이어 연결</strong> - Open Badge·마이크로크레덴셜을 스킬 노드에 매핑해 "검증된 학습 경로" 제공</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">핵심 요약</h2>
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">중요 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>검증된 개념:</strong> competency-graph는 연구·상용 모두에서 핵심 트렌드 — 메이저 HR테크가 각자 그래프를 핵심 자산화</li>
+                        <li><strong>성장하는 시장:</strong> 인재 인텔리전스 SW 2033년 $27.8B 전망(CAGR ~12%), Gartner는 2025년까지 대기업 60% AI 스킬 마켓플레이스 도입 전망</li>
+                        <li><strong>기술 수렴:</strong> 공개 온톨로지(기반) + GNN(개인화) + LLM(설명) 3단 구조로 수렴</li>
+                        <li><strong>신흥 공백:</strong> 거대 기업은 B2B 사내 이동에 집중 — B2C 개인 학습·자격 영역은 상대적 여백</li>
+                    </ul>
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">포지셔닝 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>대규모 데이터로 정면 경쟁 → 불리</strong><br>
+                        이유: 스킬 수(160만 vs 1.5만 규모) 등 데이터 규모에서 incumbent 우위<br>
+                        <strong>좁고 명확한 포지션(Open Badge 기반 개인 학습 경로) → 유망</strong><br>
+                        이유: incumbent가 덜 다루는 B2C·자격 검증·학습 경로 영역, 그래프는 차별화의 기반</p>
+                </div>
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (개념 검증 완료 + 시장 성장 + 명확한 차별화 여지)</p>
+            </section>
+
+            <!-- SECTION 5: 용어 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;"><strong>온톨로지(Ontology)</strong> - 어떤 개념이 존재하고 어떻게 관계 맺을 수 있는지의 형식 정의(스키마/T-Box).</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>지식그래프(Knowledge Graph)</strong> - 온톨로지(틀)에 실제 개체(인스턴스/A-Box)를 채운 완성된 그래프.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>택소노미(Taxonomy)</strong> - 상위·하위 계층만 있는 가벼운 분류 체계. 온톨로지는 임의 관계까지 더한 것.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>GNN(그래프 신경망)</strong> - 노드의 이웃 정보를 합쳐 표현을 학습하는 신경망. 그래프 구조 자체가 입력 피처.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>GraphRAG</strong> - 지식그래프로 사실을 고정하고 LLM이 그 위에서 답을 생성하는 검색증강 패턴.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>마이크로크레덴셜/Open Badge</strong> - 특정 스킬 습득을 증명하는 검증 가능한 디지털 자격.</div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 5월 22일</p>
+                    <div class="overall-credibility">
+                        <h3>📋 종합 신뢰도 평가</h3>
+                        <div class="overall-credibility-score">8.3/10</div>
+                        <div>
+                            <p><strong>종합 평가:</strong> 정부·EU 1차 출처와 동료심사 논문, 복수 시장조사 기관 수치를 교차 인용한 신뢰도 높은 분석.</p>
+                            <p><strong>주요 강점:</strong> ESCO/O*NET 공식 출처, arXiv/Springer 논문 직접 인용, 명확한 시장 구조화</p>
+                            <p><strong>개선 우선순위:</strong> 벤더 보고 기반 ROI 수치의 독립 검증, 시장 규모 정의 차이 명시</p>
+                        </div>
+                    </div>
+                    <ul style="margin-top: 0.75rem;">
+                        <li>• <a href="https://esco.ec.europa.eu/" target="_blank">ESCO — European Commission</a></li>
+                        <li>• <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine — US Dept. of Labor</a></li>
+                        <li>• <a href="https://data.europa.eu/esco/model" target="_blank">The ESCO Ontology Model</a></li>
+                        <li>• <a href="https://www.knowlee.ai/blog/ai-talent-intelligence" target="_blank">AI Talent Intelligence: Eightfold, Beamery, Gloat (Knowlee)</a></li>
+                        <li>• <a href="https://www.sphericalinsights.com/press-release/talent-intelligence-software-market" target="_blank">Talent Intelligence Software Market (Spherical Insights)</a></li>
+                        <li>• <a href="https://www.jobspikr.com/blog/open-skills-and-talent-graphs-2025/" target="_blank">Open Skills and Talent Graphs 2025 (JobsPikr)</a></li>
+                        <li>• <a href="https://arxiv.org/html/2408.13521v1" target="_blank">HRGraph: LLMs for HR Knowledge Graphs (arXiv 2408.13521)</a></li>
+                        <li>• <a href="https://link.springer.com/chapter/10.1007/978-981-95-7138-3_30" target="_blank">ReCareer: Hybrid GNNs for Job Recommendation (Springer)</a></li>
+                        <li>• <a href="https://ceur-ws.org/Vol-3788/RecSysHR2024-paper_1.pdf" target="_blank">A Dynamic Jobs-Skills Knowledge Graph (RecSysHR 2024)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2109.02554" target="_blank">Job Posting-Enriched KG for Skills-based Matching (arXiv 2109.02554)</a></li>
+                        <li>• <a href="https://slejournal.springeropen.com/articles/10.1186/s40561-021-00160-z" target="_blank">A new competency ontology for learning personalization (SLE)</a></li>
+                        <li>• <a href="https://www.aihr.com/blog/skills-ontology/" target="_blank">Skills Ontology: What Is It & How To Build One (AIHR)</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['데이터 규모', '실시간성', '다국어', 'AI/GNN 통합', '공개·접근성'],
+                datasets: [
+                    { label: 'ESCO (공개표준)', data: [70, 30, 95, 40, 100], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+                    { label: 'Lightcast (노동시장)', data: [90, 95, 60, 70, 40], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+                    { label: 'Eightfold (인텔리전스)', data: [100, 80, 75, 95, 30], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)' },
+                    { label: 'SkillPath (자사)', data: [40, 50, 70, 85, 75], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100 } } }
+        });
+    </script>
+
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group"><label for="comment-author">이름 (선택)</label><input type="text" id="comment-author" placeholder="Anonymous" maxlength="50"></div>
+                <div class="comment-input-group"><label for="comment-content">댓글</label><textarea id="comment-content" placeholder="의견을 남겨주세요..." maxlength="1000"></textarea></div>
+                <button id="comment-submit" class="comment-submit-btn">댓글 작성</button>
+            </div>
+            <div id="comments-list" class="comments-list"><p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p></div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>

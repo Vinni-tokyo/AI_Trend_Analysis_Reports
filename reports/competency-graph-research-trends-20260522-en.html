@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Competency Graph: Global Research and Market Trends</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 320px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score { background: #f6fbf6; border: 1px solid #cfe8cf; border-left: 3px solid #2e9e44; padding: 0.6rem 0.9rem; margin: 0.75rem 0; border-radius: 4px; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-value { font-weight: 700; color: #2e9e44; }
+        .overall-credibility { background: #f0f7ff; border: 1px solid #cfe0f5; padding: 1rem 1.25rem; border-radius: 6px; margin-top: 1rem; }
+        .overall-credibility h3 { color: #001e5c; margin-bottom: 0.4rem; font-size: 1.05rem; }
+        .overall-credibility-score { font-size: 1.6rem; font-weight: 800; color: #0052b8; margin-bottom: 0.4rem; }
+        @media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; } }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='competency-graph-research-trends-20260522-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='competency-graph-research-trends-20260522-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='competency-graph-research-trends-20260522-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>The Competency Graph: Global Research and Market Trends</h1>
+            <div class="subtitle">Knowledge graphs linking occupations, skills, and credentials — the state of research, industry, and standards</div>
+            <div class="meta">Published: May 22, 2026 | Standard Report | ID: TR-20260522-001</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <h3 class="subsection-title">1. Standardization of Open Competency Ontologies — ESCO, O*NET, WEF</h3>
+                <p><strong>Status:</strong> Open ontologies that formally define occupations, skills, and qualifications have become the de facto global coordinate system. The EU's ESCO publishes occupations, skills, and qualifications in 27 languages as SKOS/RDF; the U.S. Department of Labor's O*NET standardizes attributes for roughly 1,016 occupations. Together with the WEF Global Skills Taxonomy, these serve as the foundational nodes of competency graphs in both enterprise HR and academia.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Features</h4>
+                        <p>• <strong>ESCO:</strong> 27 languages, open SKOS/RDF, occupation-skill-qualification links<br>
+                        • <strong>O*NET:</strong> U.S. government standard, job-attribute database<br>
+                        • <strong>WEF:</strong> global skills taxonomy, future-of-work signals</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Why It Matters</h4>
+                        <p>• Provides a <strong>shared vocabulary</strong> across disparate data sources<br>
+                        • Enables <strong>semantic search</strong> rather than keyword matching<br>
+                        • Combines ontology (schema) + data (instances) into a <strong>knowledge graph</strong></p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility:</span> <span class="credibility-score-value">9/10</span></div>
+                    <div><strong>Strengths:</strong> ESCO/O*NET are verifiable government/EU primary sources · <strong>Weaknesses:</strong> WEF taxonomy adoption rates need further evidence</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO</a> |
+                    <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine</a> |
+                    <a href="https://www.weforum.org/" target="_blank">World Economic Forum</a>
+                </div>
+                <p><strong>Outlook:</strong> Open ontologies will increasingly interlink as Linked Open Data, becoming the standard starting point for any organization building its own competency graph.</p>
+
+                <h3 class="subsection-title">2. The Commercial Competency-Graph Race — Talent Intelligence</h3>
+                <p><strong>Status:</strong> Major HR-tech vendors now compete on proprietary graphs as their core asset. Eightfold claims 1.6 million skills derived from 1.6 billion career trajectories; Gloat runs the "Workforce Graph (Loomra)," Beamery the "Talent Graph," and LinkedIn the "Skills Graph." The graph itself has become the competitive moat.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Players</h4>
+                        <p>• <strong>Eightfold:</strong> 1.6M skills, talent intelligence<br>
+                        • <strong>Gloat:</strong> Workforce Graph, internal talent marketplace<br>
+                        • <strong>Beamery / LinkedIn:</strong> Talent Graph / Skills Graph</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Market Size</h4>
+                        <p>• Talent intelligence software: <strong>$8.98B (2023) → $27.82B (2033)</strong>, CAGR 11.97%<br>
+                        • Skills intelligence platforms: $3.5B (2023) → $9.2B (2029)<br>
+                        • Gartner: 60% of large enterprises to adopt AI skills marketplaces by 2025</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility:</span> <span class="credibility-score-value">8/10</span></div>
+                    <div><strong>Strengths:</strong> Size/CAGR figures cited from multiple market-research firms · <strong>Weaknesses:</strong> Wide ranges due to differing market definitions</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold</a> |
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://beamery.com/" target="_blank">Beamery</a> |
+                    <a href="https://www.linkedin.com/talent/" target="_blank">LinkedIn Talent</a>
+                </div>
+                <p><strong>Outlook:</strong> Alongside the data-scale race, the quality of GNN- and LLM-based recommendations running on top of the graph will become the next axis of differentiation.</p>
+
+                <h3 class="subsection-title">3. The Rise of GNN-Based Personalized Recommendation Research</h3>
+                <p><strong>Status:</strong> Research applying Graph Neural Networks (GNNs) on occupation-skill graphs for personalized job and learning recommendations is thriving. In 2024, HRGraph used an LLM to extract entities, build an HR knowledge graph, and perform information-propagation-based job recommendation; ReCareer combined a hybrid GNN with dynamic gating re-ranking. RecSysHR 2024 featured a dynamic Jobs-Skills KG built on ISCO/ESCO/O*NET.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Representative Work</h4>
+                        <p>• <strong>HRGraph (arXiv 2024):</strong> LLM entity extraction → HR KG → job rec<br>
+                        • <strong>ReCareer (Springer):</strong> hybrid GNN + dynamic gating re-rank<br>
+                        • <strong>Dynamic Jobs-Skills KG (RecSysHR 2024)</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Core Techniques</h4>
+                        <p>• <strong>Link prediction:</strong> quantify skill-occupation relevance<br>
+                        • <strong>Path finding:</strong> design career paths via shortest paths<br>
+                        • <strong>Heterogeneous graphs:</strong> learn over occupations, skills, and badges together</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility:</span> <span class="credibility-score-value">9/10</span></div>
+                    <div><strong>Strengths:</strong> Direct citations of peer-reviewed/open papers (arXiv, Springer, CEUR) · <strong>Weaknesses:</strong> Industry performance metrics vary by paper</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://arxiv.org/html/2408.13521v1" target="_blank">HRGraph (arXiv)</a> |
+                    <a href="https://ceur-ws.org/Vol-3788/RecSysHR2024-paper_1.pdf" target="_blank">Dynamic Jobs-Skills KG</a> |
+                    <a href="https://arxiv.org/abs/2109.02554" target="_blank">Job Posting-Enriched KG</a>
+                </div>
+                <p><strong>Outlook:</strong> Learned recommendation atop static ontologies will become standard, with growing emphasis on explainability — justifying "why" via graph paths.</p>
+
+                <h3 class="subsection-title">4. The Shift to Skills-First Hiring and Internal Mobility</h3>
+                <p><strong>Status:</strong> The center of gravity in hiring and internal mobility is shifting from degrees to skills. The competency graph is the engine of this shift, matching jobs and people at the skill level. Organizations deploying internal talent marketplaces report ROI such as up to 20 fewer days to fill a role, 3–5x lower hiring cost, and a 6x larger available talent pool.</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>What's Changing</h4>
+                        <p>• Removal/relaxation of degree requirements<br>
+                        • Roles redefined as <strong>bundles of skills</strong><br>
+                        • Internal moves, gigs, and mentoring matched via the graph</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Reported Impact</h4>
+                        <p>• Time-to-fill <strong>cut by up to 20 days</strong><br>
+                        • Hiring cost <strong>reduced 3–5x</strong><br>
+                        • Talent pool <strong>expanded 6x</strong>, improved retention</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility:</span> <span class="credibility-score-value">7/10</span></div>
+                    <div><strong>Strengths:</strong> Adoption impact stated as quantitative metrics · <strong>Weaknesses:</strong> ROI figures are vendor-reported and warrant independent validation</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://gloat.com/blog/the-talent-marketplace-explained/" target="_blank">Talent Marketplace (Gloat)</a> |
+                    <a href="https://www.mercer.com/" target="_blank">Mercer Skills Snapshot</a>
+                </div>
+                <p><strong>Outlook:</strong> Both public and private sectors will accelerate skills-first hiring, raising demand to connect verified credentials (badges) to the graph.</p>
+
+                <h3 class="subsection-title">5. Ontology + LLM Convergence (GraphRAG, Explainable Coaching)</h3>
+                <p><strong>Status:</strong> To curb LLM hallucination, the GraphRAG pattern is spreading: a deterministic knowledge graph anchors the facts while the LLM handles narrative and coaching. As in research on competency ontologies for learning personalization (Smart Learning Environments), a clear division is settling in — the graph defines "what is needed," and the LLM explains "how to get there."</p>
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Core Idea</h4>
+                        <p>• KG = deterministic facts (gaps, required skills)<br>
+                        • LLM = natural-language coaching and narrative<br>
+                        • Recommendation rationale explained via <strong>graph paths</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Benefits</h4>
+                        <p>• Hallucination control, <strong>verifiable</strong> recommendations<br>
+                        • Reflects personal context (held skills, goals)<br>
+                        • Personalized learning paths can lift completion and mastery</p>
+                    </div>
+                </div>
+                <div class="credibility-score">
+                    <div class="credibility-score-header"><span>📊 Credibility:</span> <span class="credibility-score-value">8/10</span></div>
+                    <div><strong>Strengths:</strong> Backed by both academic research and industry patterns · <strong>Weaknesses:</strong> Quantitative "completion lift" claims need context-specific validation</div>
+                </div>
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://slejournal.springeropen.com/articles/10.1186/s40561-021-00160-z" target="_blank">Competency Ontology (SLE)</a> |
+                    <a href="https://data.europa.eu/esco/model" target="_blank">ESCO Ontology Model</a>
+                </div>
+                <p><strong>Outlook:</strong> Graph-LLM hybrids will become the standard architecture for career and learning coaching services.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+                <h3 class="subsection-title">4-Tier Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The competency-graph ecosystem spans four tiers, from open standards to embedded enterprise solutions. Lower tiers are more commercial, closed, and costly; higher tiers are more open, standardized, and foundational.</p>
+                <table>
+                    <thead>
+                        <tr><th>Player</th><th>Tier</th><th>Characteristics</th><th>Target</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>ESCO · O*NET · WEF</strong></td><td>Open standard ontologies</td><td>Multilingual, government/EU-published, free</td><td>Global research, HR, policy</td></tr>
+                        <tr><td><strong>Lightcast · TechWolf</strong></td><td>Labor-market data</td><td>Skill extraction from real-time postings (33k+)</td><td>Workforce planning, labor analytics</td></tr>
+                        <tr><td><strong>Eightfold · Gloat · Beamery</strong></td><td>Talent intelligence / marketplace</td><td>Proprietary graph + AI matching</td><td>Large-enterprise talent ops</td></tr>
+                        <tr><td><strong>Workday · SAP · ServiceNow</strong></td><td>HCM-embedded skills layer</td><td>Infers skills from work history</td><td>Existing HCM customers</td></tr>
+                        <tr><td><strong>SkillPath (us)</strong></td><td>Individual learning paths (B2C)</td><td>Open Badge + GNN personalized learning path</td><td>Individual learners</td></tr>
+                    </tbody>
+                </table>
+                <h3 class="subsection-title">Five Market Trends</h3>
+                <ul class="key-findings">
+                    <li>Open standards (ESCO/O*NET) are converging as the shared base for all commercial graphs</li>
+                    <li>Competition is moving from data scale (skill counts) to recommendation quality (GNN, explainability)</li>
+                    <li>A B2C gap is emerging in individual learning and credentials beyond B2B internal mobility</li>
+                    <li>Rising demand to connect micro-credentials and digital badges to the graph</li>
+                    <li>Graph + LLM (GraphRAG) hybrids are establishing as the way to achieve factuality and personalization at once</li>
+                </ul>
+                <h3 class="subsection-title">Platform Comparison Chart</h3>
+                <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Observed approaches in the market.</p>
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Open-ontology bootstrap</strong> - Use ESCO/O*NET as seeds to quickly build a competency graph, then enrich with proprietary data</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>GraphRAG gap analysis</strong> - Diagnose skill gaps deterministically via the graph while the LLM generates personalized coaching narrative</p>
+                    <p style="line-height: 1.6;">3. <strong>Credential layer linkage</strong> - Map Open Badges and micro-credentials to skill nodes to offer "verified learning paths"</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Validated concept:</strong> The competency graph is a core trend in both research and industry — major HR-tech vendors treat their graph as a flagship asset</li>
+                        <li><strong>Growing market:</strong> Talent intelligence software projected at $27.8B by 2033 (CAGR ~12%); Gartner expects 60% of large enterprises to adopt AI skills marketplaces by 2025</li>
+                        <li><strong>Tech convergence:</strong> Open ontology (foundation) + GNN (personalization) + LLM (explanation) — a three-layer pattern</li>
+                        <li><strong>Emerging gap:</strong> Incumbents focus on B2B internal mobility — individual (B2C) learning and credentials remain relatively open space</li>
+                    </ul>
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Positioning Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Head-on competition on data scale → unfavorable</strong><br>
+                        Reason: incumbents lead on data scale (e.g., 1.6M skills vs. ~15k)<br>
+                        <strong>Narrow, distinct position (Open Badge-based individual learning paths) → promising</strong><br>
+                        Reason: B2C, credential verification, and learning paths are under-served by incumbents; the graph is the basis for differentiation</p>
+                </div>
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall sentiment:</strong> Positive (concept validated + market growth + clear room to differentiate)</p>
+            </section>
+
+            <!-- SECTION 5: Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;"><strong>Ontology</strong> - A formal definition of what concepts exist and how they may relate (schema / T-Box).</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>Knowledge Graph</strong> - An ontology (schema) populated with actual entities (instances / A-Box).</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>Taxonomy</strong> - A lightweight hierarchical classification (broader/narrower only); an ontology adds arbitrary relations.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>GNN (Graph Neural Network)</strong> - A network that learns node representations by aggregating neighbor information; graph structure itself is an input feature.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>GraphRAG</strong> - A retrieval-augmented pattern where a knowledge graph anchors facts and an LLM generates the answer on top.</div>
+                    <div style="margin-bottom: 0.4rem;"><strong>Micro-credential / Open Badge</strong> - A verifiable digital credential proving acquisition of a specific skill.</div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> May 22, 2026</p>
+                    <div class="overall-credibility">
+                        <h3>📋 Overall Credibility</h3>
+                        <div class="overall-credibility-score">8.3/10</div>
+                        <div>
+                            <p><strong>Assessment:</strong> A high-credibility analysis cross-citing government/EU primary sources, peer-reviewed papers, and multiple market-research firms.</p>
+                            <p><strong>Strengths:</strong> Official ESCO/O*NET sources, direct arXiv/Springer citations, clear market structuring</p>
+                            <p><strong>Priorities:</strong> Independent validation of vendor-reported ROI; explicit market-definition differences</p>
+                        </div>
+                    </div>
+                    <ul style="margin-top: 0.75rem;">
+                        <li>• <a href="https://esco.ec.europa.eu/" target="_blank">ESCO — European Commission</a></li>
+                        <li>• <a href="https://www.onetonline.org/" target="_blank">O*NET OnLine — US Dept. of Labor</a></li>
+                        <li>• <a href="https://data.europa.eu/esco/model" target="_blank">The ESCO Ontology Model</a></li>
+                        <li>• <a href="https://www.knowlee.ai/blog/ai-talent-intelligence" target="_blank">AI Talent Intelligence: Eightfold, Beamery, Gloat (Knowlee)</a></li>
+                        <li>• <a href="https://www.sphericalinsights.com/press-release/talent-intelligence-software-market" target="_blank">Talent Intelligence Software Market (Spherical Insights)</a></li>
+                        <li>• <a href="https://www.jobspikr.com/blog/open-skills-and-talent-graphs-2025/" target="_blank">Open Skills and Talent Graphs 2025 (JobsPikr)</a></li>
+                        <li>• <a href="https://arxiv.org/html/2408.13521v1" target="_blank">HRGraph: LLMs for HR Knowledge Graphs (arXiv 2408.13521)</a></li>
+                        <li>• <a href="https://link.springer.com/chapter/10.1007/978-981-95-7138-3_30" target="_blank">ReCareer: Hybrid GNNs for Job Recommendation (Springer)</a></li>
+                        <li>• <a href="https://ceur-ws.org/Vol-3788/RecSysHR2024-paper_1.pdf" target="_blank">A Dynamic Jobs-Skills Knowledge Graph (RecSysHR 2024)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2109.02554" target="_blank">Job Posting-Enriched KG for Skills-based Matching (arXiv 2109.02554)</a></li>
+                        <li>• <a href="https://slejournal.springeropen.com/articles/10.1186/s40561-021-00160-z" target="_blank">A new competency ontology for learning personalization (SLE)</a></li>
+                        <li>• <a href="https://www.aihr.com/blog/skills-ontology/" target="_blank">Skills Ontology: What Is It & How To Build One (AIHR)</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Data Scale', 'Real-time', 'Multilingual', 'AI/GNN Integration', 'Openness/Access'],
+                datasets: [
+                    { label: 'ESCO (open standard)', data: [70, 30, 95, 40, 100], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+                    { label: 'Lightcast (labor market)', data: [90, 95, 60, 70, 40], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+                    { label: 'Eightfold (intelligence)', data: [100, 80, 75, 95, 30], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)' },
+                    { label: 'SkillPath (us)', data: [40, 50, 70, 85, 75], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100 } } }
+        });
+    </script>
+
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group"><label for="comment-author">Name (optional)</label><input type="text" id="comment-author" placeholder="Anonymous" maxlength="50"></div>
+                <div class="comment-input-group"><label for="comment-content">Your Comment</label><textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea></div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list"><p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p></div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
