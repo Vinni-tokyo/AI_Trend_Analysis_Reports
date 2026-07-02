@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIエージェント管理・オーケストレーションプラットフォームの世界動向</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 2.5rem; }
+        .section { margin-bottom: 2rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .case-study-box { background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; margin: 1rem 0; }
+        .case-study-box h4 { font-size: 1rem; color: #001e5c; margin-bottom: 0.5rem; }
+        .case-study-box p { font-size: 0.9rem; line-height: 1.6; }
+        .metric-highlight { display: inline-block; background: #e8f4fd; color: #001e5c; padding: 0.2rem 0.5rem; border-radius: 3px; font-weight: 600; font-size: 0.85rem; }
+        .credibility-score { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
+        .credibility-score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; color: #166534; }
+        .credibility-score-value { font-weight: 700; color: #166534; font-size: 1rem; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.5; }
+        .overall-credibility { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; text-align: center; }
+        .overall-credibility h3 { color: #166534; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 2rem; font-weight: 700; color: #166534; }
+        .overall-credibility-details { text-align: left; margin-top: 1rem; font-size: 0.9rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+            .content { padding: 1.5rem; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ai-agent-management-platforms-20260701-ja.html'" class="lang-btn active">日本語</button>
+                    <button onclick="window.location.href='ai-agent-management-platforms-20260701-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='ai-agent-management-platforms-20260701-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AIエージェント管理・オーケストレーション<br>プラットフォームの世界動向</h1>
+            <div class="subtitle">Difyを軸に見るエージェンティック・ワークフロー基盤の勢力図 — ローコードからエンタープライズ・ガバナンスまで</div>
+            <div class="meta">レポート作成日：2026年7月1日 | 総合分析レポート</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <!-- Trend 1 -->
+                <h3 class="subsection-title">1. Difyの台頭：オープンソース・エージェンティックワークフロー基盤の事実上の標準化</h3>
+                <p><strong>現状：</strong>Difyは、ワークフロー、RAGパイプライン、エージェント、モデル管理、可観測性（LLMOps）を一つのインターフェースに統合したオープンソース基盤で、試作から本番運用まで一貫した開発体験を提供します。2026年3月にはHSG主導で3,000万ドル規模のSeries Pre-Aを調達し（評価額1億8,000万ドル）、世界で140万台以上のマシン上で稼働しています（出典：BusinessWire、VentureBeat、2026.3）。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>中核機能</h4>
+                        <p>• <strong>エージェンティックワークフロー：</strong>LLM Function CallingまたはReActに基づくエージェントを定義し、Google検索・DALL·E・WolframAlphaなど50以上の組み込みツールを接続（出典：Dify GitHub）<br>
+                        • <strong>Agentic RAG：</strong>一度きりの検索・生成ではなく、意図分析→ツール／出典選択→クエリ書き換え→根拠評価→再試行を繰り返すループで精度を向上<br>
+                        • <strong>マルチモーダル知識ベース：</strong>テキストと画像を一つの意味空間に統合し、視覚に基づく推論を支援<br>
+                        • <strong>Dify Triggers：</strong>スケジュール実行・イベント駆動の自動化・プラグイン連携により、受動的な応答から完全な自動化へ移行</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>エンタープライズ採用状況</h4>
+                        <p>• <strong>大規模な本番展開：</strong>商用版で2,000以上のチーム、280以上の企業が導入（出典：BusinessWire、2026.3）<br>
+                        • <strong>主要顧客：</strong>Maersk、ETS、Anker Innovations、Novartisなどのグローバル企業<br>
+                        • <strong>実利用事例：</strong>文書レビューのパイプライン、社内知識に基づくコパイロット、カスタマーサポート自動化、請求書監査など<br>
+                        • <strong>Maerskの証言：</strong>「毎回インフラを再構築することなく、実際の業務プロセスを保守可能なシステムへ転換できた」（AIソリューションエンジニアリング責任者 Mark Sear氏）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://dify.ai/" target="_blank">Dify</a> |
+                    <a href="https://github.com/langgenius/dify" target="_blank">Dify GitHub</a> |
+                    <a href="https://dify.ai/blog" target="_blank">Dify Blog</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>調達額（3,000万ドル）・評価額（1億8,000万ドル）・顧客（Maersk、Novartisなど）がBusinessWire、VentureBeatなど複数の公式発表で相互に確認可能<br>
+                        <strong>改善点：</strong>「140万台稼働」はオープンソースの配布数値であり、アクティブユーザーとの区別が必要。機能仕様の一部はDify自身の資料に依拠
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>Difyは調達資金で2026年のロードマップを加速し、中核製品に最新のエージェント機能を統合するとともに、性能・コンプライアンスに特化した専任のエンタープライズ製品チームを新設する計画です。オープンソース・ローコード陣営において、Difyが「エージェンティックワークフローの標準スタック」として定着する可能性が高いといえます。</p>
+
+                <!-- Trend 2 -->
+                <h3 class="subsection-title">2. ローコード・エージェントビルダーの三つ巴：Dify対n8n対Coze</h3>
+                <p><strong>現状：</strong>Pythonコードを書かずに視覚的なキャンバス上でエージェントを構築するローコード基盤が、市場の入口層を占めています。各基盤は異なる強みへと分化しており、セルフホスティングによるデータ主権の確保が選定の中核基準として浮上しています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>基盤ごとの位置づけ</h4>
+                        <p>• <strong>Dify：</strong>チャット中心のRAGアプリとLLMOps標準化に強み。マルチテナントとアプリ共有によりチーム協業に適する<br>
+                        • <strong>n8n：</strong>AIがより大きな自動化ワークフローの一段階となる「オペレーション中心」の自動化に最適。アプリ連携・トリガー・オーケストレーション層<br>
+                        • <strong>Coze（ByteDance）：</strong>導入時の摩擦が最も小さくテンプレートが豊富で、登録後数分で最初のエージェントを作成可能。Telegram・Discord・ウィジェット・APIで配信<br>
+                        • <strong>Flowise：</strong>LangChain風の試作を視覚キャンバス上で実現</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>データ主権とライセンス</h4>
+                        <p>• <strong>セルフホスティング：</strong>n8n・Dify・Coze Studioはいずれも自社サーバーにデータを保持でき、外部流出のリスクを最小化<br>
+                        • <strong>Cozeのオープンソース化：</strong>ByteDanceがCoze StudioとCoze Loopを寛容なライセンスで公開したが、OSS版は単一アカウントのみ対応で、複数ユーザー協業・ワークフロー共有には非対応<br>
+                        • <strong>規制リスク：</strong>ByteDanceの所有構造は、データ・レジデンシー義務やNIS2／DORAの対象となるEU企業にとって障壁<br>
+                        • <strong>Difyのライセンス：</strong>「無許可のSaaS提供禁止」条件が付加（出典：Jimmy Song オープンソース比較、2026）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://n8n.io/" target="_blank">n8n</a> |
+                    <a href="https://www.coze.com/" target="_blank">Coze</a> |
+                    <a href="https://github.com/coze-dev/coze-studio" target="_blank">Coze Studio</a> |
+                    <a href="https://flowiseai.com/" target="_blank">Flowise</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>Coze Studio／Loopのオープンソース化、単一アカウント制約、EU規制（NIS2／DORA）リスクなどが複数の独立した比較分析で裏付けられている<br>
+                        <strong>改善点：</strong>基盤間の優劣は利用目的によって変わるため定性的な判断を含み、市場シェアなどの定量データは限定的
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>ローコード陣営は「どれがより簡単か」から「どれがより安全で拡張可能か」へと競争軸が移りつつあります。データ主権を確保できるセルフホスティングの選択肢と、エンタープライズ級のガバナンスが、2026年下半期の選定を左右する決定的な変数となるでしょう。</p>
+
+                <!-- Trend 3 -->
+                <h3 class="subsection-title">3. コードファーストのフレームワーク：LangGraph・CrewAI・AutoGenによる精密な制御</h3>
+                <p><strong>現状：</strong>長時間稼働するマルチエージェントの状態管理、超低遅延、CIレベルのテストが必要になる局面で、ローコード基盤は限界を露呈します。このとき開発チームは、推論・記憶・ツール利用を完全に制御できるコードファーストのフレームワークへ移行します。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>オーケストレーションモデルの分化</h4>
+                        <p>• <strong>LangGraph（状態グラフ）：</strong>各ノードが共有状態オブジェクトを読み書きし、チェックポイント・タイムトラベル・ヒューマン・イン・ザ・ループ・エラー回復に対応。ワークフローを任意の地点で保存・再開可能<br>
+                        • <strong>CrewAI（役割ベース）：</strong>エージェントをチーム内の自律的な役割として扱い、対話的な協業で調整<br>
+                        • <strong>AutoGen（マイクロソフト）：</strong>対話に基づくマルチエージェントグラフ<br>
+                        • <strong>OpenAI Agents SDK：</strong>軽量なオーケストレーションとハンドオフのパターン</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>選定の基準</h4>
+                        <p>• <strong>精密な制御が必要なとき：</strong>LangGraphは状態の永続化・再現性・部分的な再試行に強み<br>
+                        • <strong>相互補完的な利用：</strong>n8nをオーケストレーション層に据え、複雑な意思決定のみをLangGraph／LangChainのエージェントに委ねるハイブリッド構成が実務で普及<br>
+                        • <strong>ガバナンス要件：</strong>ツールの分離や監査要件がマルチエージェント分割を正当化する場合、コードファースト基盤が有利<br>
+                        • <strong>トレードオフ：</strong>学習曲線と保守コストが高く、初期の試作には過剰となりうる</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://www.langchain.com/langgraph" target="_blank">LangGraph</a> |
+                    <a href="https://www.crewai.com/" target="_blank">CrewAI</a> |
+                    <a href="https://microsoft.github.io/autogen/" target="_blank">AutoGen</a> |
+                    <a href="https://platform.openai.com/docs/guides/agents" target="_blank">OpenAI Agents SDK</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>LangGraphの状態管理・チェックポイント・タイムトラベル機能が、LangChain公式資料および複数の比較レビューで確認できる<br>
+                        <strong>改善点：</strong>フレームワークの成熟度が急速に変化する領域で特定時点のスナップショットであり、性能数値よりアーキテクチャ特性中心の記述
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>2026年の支配的なパターンは、単一エージェントからマルチエージェント・オーケストレーションへの移行です。ローコードが入口を、コードファースト基盤が深化を担う二層構造が定着し、両層をつなぐハイブリッド・アーキテクチャがエンタープライズの標準設計となるでしょう。</p>
+
+                <!-- Trend 4 -->
+                <h3 class="subsection-title">4. エンタープライズ・クラウド基盤：Bedrock AgentCore・Vertex AI Agent Builder・Azure AI Foundry</h3>
+                <p><strong>現状：</strong>三大クラウドが、エージェントを本番規模で展開・運用するためのマネージド・ランタイムとガバナンス層を前面に打ち出しています。試作から全社的な実行へ移る企業は、記憶・セッション・アイデンティティ・可観測性を統合管理する基盤を求めています。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>クラウド別のアプローチ</h4>
+                        <p>• <strong>Amazon Bedrock AgentCore：</strong>2025年10月に正式提供されたマネージド・ランタイムで、記憶・セッション管理・ツールアクセス・アイデンティティ・可観測性を処理。強力なアクセス管理とセキュリティ統制でエンタープライズ級のエージェントシステムを構築（出典：AWS、InfoWorld）<br>
+                        • <strong>Vertex AI Agent Builder：</strong>GeminiモデルとGoogleのオーケストレーションAPIで多段階ワークフローを実行する推論エージェントを展開。中核フレームワークのAgent Development Kit（ADK）はオープンソースで公開（出典：Google Cloud）<br>
+                        • <strong>Azure AI Foundry：</strong>マイクロソフトの生態系と統合されたエージェント構築・ガバナンス基盤</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>導入時の考慮点</h4>
+                        <p>• <strong>運用ユースケース：</strong>金融・物流・製造で、業務データ連携やアプリ間の協調に適する<br>
+                        • <strong>ベンダーロックイン：</strong>マネージド基盤の利便性と特定クラウドへの依存というトレードオフが、重要な意思決定変数（出典：Kai Waehner、2026）<br>
+                        • <strong>オープン標準の併用：</strong>VertexのADKオープンソース化は、ロックインへの懸念を和らげる試み<br>
+                        • <strong>規制業界：</strong>監査可能な根拠追跡とアイデンティティ管理が採用の前提条件</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://aws.amazon.com/bedrock/agentcore/" target="_blank">Amazon Bedrock AgentCore</a> |
+                    <a href="https://cloud.google.com/products/agent-builder" target="_blank">Vertex AI Agent Builder</a> |
+                    <a href="https://azure.microsoft.com/en-us/products/ai-foundry" target="_blank">Azure AI Foundry</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>AgentCoreの2025年10月提供、ADKのオープンソース公開などの事実が、AWS・Google Cloudの公式資料およびInfoWorldで確認できる<br>
+                        <strong>改善点：</strong>Azure AI Foundry関連の詳細機能は記述が相対的に簡略で、ベンダーロックインの判断はアナリストの見解を含む
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>クラウド基盤の層は、「誰のモデルがより強いか」から「誰がエージェントをより安全に運用するか」へと競争の焦点を移しています。マネージド・ランタイム（AgentCore）とオープンフレームワーク（ADK）を併用する戦略が、2026年のエンタープライズ採用の標準的な経路となるでしょう。</p>
+
+                <!-- Trend 5 -->
+                <h3 class="subsection-title">5. ガバナンス・可観測性・相互運用の標準：MCP＋A2A＋OpenTelemetry</h3>
+                <p><strong>現状：</strong>エージェントが本番に入るにつれ、「どう作るか」と同じくらい「どう統制・追跡するか」が重要になっています。2026年には、相互運用プロトコルと可観測性の標準が、リスク管理型エージェント生態系の二本柱として定着しました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>プロトコルスタック</h4>
+                        <p>• <strong>MCP（Model Context Protocol）：</strong>エージェント対ツール、エージェント対コンテキストの連携を担う標準<br>
+                        • <strong>A2A（Agent-to-Agent）：</strong>エージェント間の通信を担い、Linux Foundationがガバナンス<br>
+                        • <strong>二層のバックボーン：</strong>典型的なマルチエージェントシステムは、オーケストレーションにA2A、各エージェントのツールアクセスにMCPを同時に使用<br>
+                        • <strong>収束の流れ：</strong>MCP・A2A・ACPなど乱立していたプロトコルが標準収束の局面へ</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>可観測性・ガバナンス基盤</h4>
+                        <p>• <strong>OpenTelemetry標準：</strong>アプリケーションのログを超え、MCPクライアント実装にOTelスパン計測を組み込むことが推奨される<br>
+                        • <strong>Langfuse：</strong>MITオープンソースで、セルフホスティング・フレームワーク中立・OTelベースのトレーシング／評価基盤<br>
+                        • <strong>LangSmith：</strong>LangChain優先の統合で、2026年3月にOpenTelemetry対応を追加<br>
+                        • <strong>Arthur／Fiddler：</strong>Vertex・Bedrock・Azure・LangGraphなどを横断するエージェント発見・ガバナンス（ADG）と監査証跡</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>関連リンク：</strong>
+                    <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol</a> |
+                    <a href="https://a2a-protocol.org/" target="_blank">A2A Protocol</a> |
+                    <a href="https://langfuse.com/" target="_blank">Langfuse</a> |
+                    <a href="https://www.langchain.com/langsmith" target="_blank">LangSmith</a> |
+                    <a href="https://www.arthur.ai/" target="_blank">Arthur AI</a>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">信頼性評価：</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>A2AのLinux Foundationガバナンス、LangSmithの2026年3月OTel対応、LangfuseのMITライセンスなど、検証可能な事実が中心<br>
+                        <strong>改善点：</strong>「プロトコルの収束」は進行中の流れであり結論ではなく、ガバナンス基盤の市場は急速に再編中
+                    </div>
+                </div>
+
+                <p><strong>展望：</strong>2026年のエージェント導入の成否は、モデル性能よりも可観測性・ガバナンス・相互運用性で決まります。企業の購買層は、意思決定の連鎖、ツール呼び出し、エージェント間の通信を追跡するエージェント特化の可観測性を基本要件として求め、これがデバッグ・コンプライアンス・継続的改善の前提となります。</p>
+
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">4層の市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">AIエージェント管理市場は、対象ユーザーとアプローチに応じて4つの層に区分されます：ローコード・ビジュアルビルダー → コードファースト・フレームワーク → エンタープライズ・クラウド基盤 → ガバナンス・可観測性層。市場規模は2025年の78.4億ドルから2030年には526.2億ドルへ成長する見通しです（CAGR 46.3%、出典：MarketsandMarkets）。</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>層</th>
+                            <th>プラットフォーム</th>
+                            <th>中核的特徴</th>
+                            <th>対象</th>
+                            <th>ライセンス／モデル</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="4"><strong>Tier 1：ローコード・ビジュアルビルダー</strong></td>
+                            <td><strong>Dify</strong></td>
+                            <td>エージェンティックワークフロー、Agentic RAG、LLMOps統合</td>
+                            <td>チーム・企業</td>
+                            <td>OSS（SaaS制限）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>n8n</strong></td>
+                            <td>オペレーション中心の自動化、アプリ連携、トリガー</td>
+                            <td>ビジネスチーム</td>
+                            <td>フェアコード／セルフホスト</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Coze</strong></td>
+                            <td>最低限の導入摩擦、マルチチャネル配信</td>
+                            <td>一般・クリエイター</td>
+                            <td>OSS（単一アカウント）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Flowise</strong></td>
+                            <td>LangChain風の視覚的試作</td>
+                            <td>開発者・市民開発者</td>
+                            <td>オープンソース</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="4"><strong>Tier 2：コードファースト・フレームワーク</strong></td>
+                            <td><strong>LangGraph</strong></td>
+                            <td>状態グラフ、チェックポイント、タイムトラベル、HITL</td>
+                            <td>エンジニアリングチーム</td>
+                            <td>オープンソース</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CrewAI</strong></td>
+                            <td>役割ベースのマルチエージェント協業</td>
+                            <td>開発者</td>
+                            <td>オープンソース</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AutoGen</strong></td>
+                            <td>対話ベースのマルチエージェント（Microsoft）</td>
+                            <td>研究・開発</td>
+                            <td>オープンソース</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OpenAI Agents SDK</strong></td>
+                            <td>軽量オーケストレーション、ハンドオフ</td>
+                            <td>開発者</td>
+                            <td>OSS SDK</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="3"><strong>Tier 3：エンタープライズ・クラウド基盤</strong></td>
+                            <td><strong>Bedrock AgentCore</strong></td>
+                            <td>マネージド・ランタイム、記憶・セッション・アイデンティティ</td>
+                            <td>大企業・規制業界</td>
+                            <td>AWSマネージド</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Vertex AI Agent Builder</strong></td>
+                            <td>Gemini推論エージェント、ADKオープンソース</td>
+                            <td>大企業</td>
+                            <td>GCPマネージド</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Azure AI Foundry</strong></td>
+                            <td>MS生態系統合、ガバナンス</td>
+                            <td>大企業</td>
+                            <td>Azureマネージド</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="3"><strong>Tier 4：ガバナンス・可観測性</strong></td>
+                            <td><strong>Langfuse</strong></td>
+                            <td>OTelベースのトレーシング・評価、セルフホスト</td>
+                            <td>AIエンジニア</td>
+                            <td>MITオープンソース</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LangSmith</strong></td>
+                            <td>LangChain優先の可観測性、評価</td>
+                            <td>LangChainチーム</td>
+                            <td>クローズド／SaaS</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Arthur／Fiddler</strong></td>
+                            <td>エージェント・ガバナンス、監査証跡</td>
+                            <td>規制業界</td>
+                            <td>エンタープライズ</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">主要ローコード／オーケストレーション基盤の比較チャート</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+
+                <h3 class="subsection-title">市場トレンドの要点5つ</h3>
+                <div style="background: #fafafa; padding: 1rem; border-left: 3px solid #e5e5e5; margin: 1rem 0;">
+                    <p style="margin-bottom: 0.5rem; font-size: 0.95rem;">1. <strong>試作から本番へ：</strong>2026年のエージェント市場の焦点は概念実証（PoC）ではなく全社的な実行と規模化であり、可観測性・ガバナンスが必須要件化</p>
+                    <p style="margin-bottom: 0.5rem; font-size: 0.95rem;">2. <strong>オープンソースの急伸：</strong>Dify、Coze Studio、n8nなどセルフホスト可能なOSSが、データ主権を前面に商用SaaSを脅かす</p>
+                    <p style="margin-bottom: 0.5rem; font-size: 0.95rem;">3. <strong>二層プロトコルの標準化：</strong>MCP（ツールアクセス）とA2A（エージェント間通信）が相互運用の事実上のバックボーンへ収束</p>
+                    <p style="margin-bottom: 0.5rem; font-size: 0.95rem;">4. <strong>ローコード＋コードファーストのハイブリッド：</strong>n8n／Difyでオーケストレーションし、複雑な推論のみLangGraphに委ねる相互補完構成が実務標準に</p>
+                    <p style="font-size: 0.95rem;">5. <strong>ガバナンスが競争軸に：</strong>ベンダーロックイン・データレジデンシー・監査可能性が、モデル性能より重要な採用変数へ浮上</p>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Difyのセルフホスティング検証</strong> - Difyを社内サーバーに展開して文書ベースの知識コパイロットを構築し、データが外部に出ない条件で、引用付きの社内QAワークフローを検証</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>MCP＋可観測性標準の導入</strong> - MCPでツールアクセスを標準化し、OpenTelemetryベースのLangfuseでエージェントのトレーシングを計測して、本番のデバッグ・コンプライアンス基盤を整備</p>
+                    <p style="line-height: 1.6;">3. <strong>ハイブリッド・オーケストレーション設計</strong> - n8n／Difyをオーケストレーション層に据え、複雑な多段階推論のみをLangGraphエージェントに委ねる二層構成で、開発速度と制御力を両立</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>市場の急成長：</strong>AIエージェント基盤市場は2025年の78.4億ドルから2030年に526.2億ドルへ成長する見通し（CAGR 46.3%、MarketsandMarkets）。北米が36.9%で牽引</li>
+                        <li><strong>Difyの標準化：</strong>3,000万ドル調達（評価額1億8,000万ドル）、140万台以上の展開、280以上の企業（Maersk・Novartisなど）採用により、オープンソース・エージェンティックワークフローの事実上の標準へ</li>
+                        <li><strong>4層の勢力図：</strong>ローコードビルダー（Dify・n8n・Coze）→ コードファースト（LangGraph・CrewAI）→ クラウド基盤（AgentCore・Vertex）→ ガバナンス（Langfuse・Arthur）へ明確に分化</li>
+                        <li><strong>データ主権が鍵：</strong>セルフホスティングの可否と規制（NIS2／DORA・データレジデンシー）対応が、商用SaaSに対するOSS採用を牽引</li>
+                        <li><strong>ガバナンス・相互運用の標準化：</strong>MCP＋A2Aの二層プロトコルとOpenTelemetryベースの可観測性が、本番採用の前提条件として定着</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選定ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>社内知識ベースのコパイロット・RAGアプリ構築 → Dify（セルフホスティング）</strong><br>
+                        理由：LLMOps統合、Agentic RAG、マルチテナントでチーム協業に適し、データ主権を確保可能<br><br>
+                        <strong>既存の業務自動化にAIを一段階として統合 → n8n</strong><br>
+                        理由：アプリ連携・トリガー・オーケストレーションに最適化され、オペレーション中心のワークフローに強み<br><br>
+                        <strong>長時間稼働・精密制御が必要なマルチエージェント → LangGraph</strong><br>
+                        理由：状態の永続化・チェックポイント・タイムトラベル・HITLで複雑な推論ワークフローを完全に制御<br><br>
+                        <strong>規制業界・全社的な大規模運用 → Bedrock AgentCore／Vertex AI Agent Builder</strong><br>
+                        理由：マネージド・ランタイム、アイデンティティ・セキュリティ統制、監査証跡でコンプライアンス要件を充足
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合市場展望：</strong>非常にポジティブ — AIエージェント管理基盤市場は、試作から本番へ移る変曲点にあり、Difyを筆頭とするオープンソース陣営と、クラウド基盤・ガバナンス層が同時に成熟しています。ただし、ベンダーロックイン、データガバナンス、可観測性の確保が、成功する導入の前提条件です。</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>エージェント・オーケストレーション（Agent Orchestration）</strong> - 複数のAIエージェントが協力して一つの目標を達成するよう、流れ・順序・役割を調整すること。指揮者がオーケストラを導くことに例えられる
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>LLMOps</strong> - 大規模言語モデル（LLM）を用いたアプリのログ・性能を監視し、プロンプト・データ・モデルを継続的に改善する運用体系
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Agentic RAG</strong> - 一度きりの検索・生成ではなく、エージェントが意図分析・ツール選択・クエリ書き換え・根拠評価を繰り返して答えを洗練させる検索拡張生成の方式
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>MCP（Model Context Protocol）</strong> - AIエージェントが外部のツール・データソースにアクセスするための接続標準（エージェント対ツール層）
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>A2A（Agent-to-Agent）</strong> - 異なるエージェントが協業して通信するための標準プロトコル（エージェント対エージェント層）。Linux Foundationがガバナンス
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>可観測性（Observability）</strong> - エージェントの意思決定の連鎖・ツール呼び出し・エージェント間の通信を追跡し、デバッグ・コンプライアンス・改善を可能にする機能
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>セルフホスティング（Self-Hosting）</strong> - 基盤を自社サーバーに設置・運用し、データを外部に出さない方式。データ主権と規制順守に有利
+                    </div>
+                    <div>
+                        <strong>ベンダーロックイン（Vendor Lock-in）</strong> - 特定の提供元の技術に依存し、乗り換えコストが高くなる現象。マネージド・クラウド基盤の採用時に重要な考慮点
+                    </div>
+                </div>
+            </section>
+
+            <!-- Overall Credibility -->
+            <div class="overall-credibility">
+                <h3>総合信頼性評価</h3>
+                <div class="overall-credibility-score">8.3/10</div>
+                <div class="overall-credibility-details">
+                    <p><strong>総合評価：</strong>公式発表（BusinessWire・AWS・Google Cloud）と複数の市場調査機関（MarketsandMarkets・Technavio）、および独立した比較分析を相互に引用した、データ中心の信頼できる分析</p>
+                    <p><strong>主要な強み：</strong>Difyの投資・顧客の事実確認、4層市場構造の明確さ、MCP／A2A・可観測性標準の検証可能な記述、クラウド基盤の提供時期の明示</p>
+                    <p><strong>改善の優先順位：</strong>オープンソース配布数値とアクティブユーザーの区別、市場規模推定値の調査機関ごとの差異の明示、急速に変わるフレームワーク成熟度の再検証</p>
+                </div>
+            </div>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年7月1日</p>
+                    <ul>
+                        <li>• <a href="https://www.businesswire.com/news/home/20260309511426/en/Dify-Raises-$30-million-Series-Pre-A-to-Power-Enterprise-Grade-Agentic-Workflows" target="_blank">BusinessWire — Dify $30M Series Pre-A 調達発表（2026.3）</a></li>
+                        <li>• <a href="https://venturebeat.com/business/dify-raises-30-million-series-pre-a-to-power-enterprise-grade-agentic-workflows" target="_blank">VentureBeat — Dify エンタープライズ・エージェンティックワークフロー</a></li>
+                        <li>• <a href="https://github.com/langgenius/dify" target="_blank">Dify GitHub — 本番級エージェンティックワークフロー基盤</a></li>
+                        <li>• <a href="https://jimmysong.io/blog/open-source-ai-agent-workflow-comparison/" target="_blank">Jimmy Song — オープンソースAIエージェント基盤の比較（2026）</a></li>
+                        <li>• <a href="https://www.marketsandmarkets.com/Market-Reports/ai-agents-market-15761548.html" target="_blank">MarketsandMarkets — AIエージェント市場レポート 2025-2030</a></li>
+                        <li>• <a href="https://www.technavio.com/report/ai-agent-platform-market-industry-analysis" target="_blank">Technavio — AIエージェント基盤市場の成長分析 2026-2030</a></li>
+                        <li>• <a href="https://www.langchain.com/resources/ai-agent-frameworks" target="_blank">LangChain — 2026年の最良のAIエージェント・フレームワーク</a></li>
+                        <li>• <a href="https://aws.amazon.com/bedrock/agentcore/" target="_blank">AWS — Amazon Bedrock AgentCore</a></li>
+                        <li>• <a href="https://cloud.google.com/blog/products/ai-machine-learning/more-ways-to-build-and-scale-ai-agents-with-vertex-ai-agent-builder" target="_blank">Google Cloud — Vertex AI Agent Builder の拡張</a></li>
+                        <li>• <a href="https://www.kai-waehner.de/blog/2026/04/06/enterprise-agentic-ai-landscape-2026-trust-flexibility-and-vendor-lock-in/" target="_blank">Kai Waehner — エンタープライズ・エージェンティックAI勢力図 2026</a></li>
+                        <li>• <a href="https://turion.ai/blog/ai-agent-protocol-stack-2026/" target="_blank">TURION.AI — AIエージェント・プロトコルスタック：MCP、A2A</a></li>
+                        <li>• <a href="https://langfuse.com/" target="_blank">Langfuse — オープンソースLLM可観測性基盤</a></li>
+                        <li>• <a href="https://www.arthur.ai/column/best-ai-governance-platforms-2026" target="_blank">Arthur AI — 2026年の最良のAIガバナンス基盤</a></li>
+                        <li>• <a href="https://www.oreateai.com/blog/analysis-of-bytedances-open-source-coze-platform-features-a-comprehensive-comparison-study-of-coze-studio-cozeloop-and-dify/9f3db81828232bd3b7c261d1f971b7d5" target="_blank">Oreate AI — Coze Studio・CozeLoop 対 Dify の比較</a></li>
+                    </ul>
+                    <p style="margin-top: 0.5rem; font-size: 0.65rem; color: #808080;"><em>本レポートはAIが生成した分析です。重要な意思決定の際は原典を直接ご確認ください。</em></p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['使いやすさ', '柔軟性/制御力', 'エンタープライズ機能', '可観測性/ガバナンス', 'データ主権', 'コミュニティ'],
+                datasets: [
+                    { label: 'Dify', data: [80, 70, 85, 80, 90, 90], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.15)', borderWidth: 2 },
+                    { label: 'n8n', data: [75, 80, 75, 70, 90, 85], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.15)', borderWidth: 2 },
+                    { label: 'Coze', data: [95, 55, 55, 50, 55, 70], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.15)', borderWidth: 2 },
+                    { label: 'LangGraph', data: [40, 98, 80, 75, 85, 80], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.15)', borderWidth: 2 },
+                    { label: 'Bedrock AgentCore', data: [55, 75, 95, 90, 60, 60], borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.15)', borderWidth: 2 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20, font: { size: 10 } }, pointLabels: { font: { size: 11 } } } },
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn"><span>&#x1f90d;</span> Like</button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/interaction.js"></script>
+</body>
+</html>
