@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph RAG Global Trends and Enterprise Adoption</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 0.6rem 0.9rem;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+        }
+        .credibility-score-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+        .credibility-score-label { font-weight: 600; color: #92400e; }
+        .credibility-score-value { font-weight: 700; color: #92400e; }
+        .credibility-score-details { color: #78716c; line-height: 1.5; }
+        .overall-credibility {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+        }
+        .overall-credibility h3 { font-size: 1rem; color: #92400e; margin-bottom: 0.4rem; }
+        .overall-credibility-score { font-size: 1.5rem; font-weight: 700; color: #92400e; margin-bottom: 0.4rem; }
+        .overall-credibility-details p { font-size: 0.85rem; color: #78716c; margin-bottom: 0.25rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media (max-width: 480px) {
+            .header-actions { flex-direction: column; align-items: stretch; }
+            .language-switcher { width: 100%; justify-content: center; }
+            .back-btn { width: 100%; justify-content: center; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='graph-rag-global-trends-20260714-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='graph-rag-global-trends-20260714-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='graph-rag-global-trends-20260714-en.html'" class="lang-btn active">English</button>
+                </div>
+            </div>
+            <h1>Graph RAG Global Trends and<br>Enterprise Adoption</h1>
+            <div class="subtitle">GraphRAG reignited by cost breakthroughs, agentic hybrids, and production-proven ROI</div>
+            <div class="meta">Report Date: July 14, 2026 | Standard Report</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: Top 5 Trends -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <h3 class="subsection-title">1. LazyGraphRAG: The Collapse of the Cost Barrier Reignites GraphRAG</h3>
+                <p><strong>Current state:</strong> Since Microsoft shipped GraphRAG 1.0 in late 2024, the biggest adoption blocker — indexing cost — has been dismantled by LazyGraphRAG (released June 2025). LazyGraphRAG's data indexing costs are identical to vector RAG, just 0.1% of the cost of full GraphRAG (source: Microsoft Research). In benchmarks it achieved a 100% win rate across 96 queries against vector RAG, RAPTOR, and LightRAG.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Core Technology</h4>
+                        <p>• <strong>Lazy indexing:</strong> Defers graph construction until query time, minimizing upfront cost<br>
+                        • <strong>Cost efficiency:</strong> Indexing at 0.1% of full GraphRAG cost, on par with vector RAG<br>
+                        • <strong>Quality retained:</strong> Outperformed vector RAG, RAPTOR, and LightRAG on 96/96 queries</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Commercial Integration</h4>
+                        <p>• <strong>Microsoft Discovery:</strong> Integrated into the Azure-based agentic platform for scientific research<br>
+                        • <strong>Azure Local:</strong> Incorporated as part of a public preview<br>
+                        • <strong>Ongoing releases:</strong> The March 2026 release added performance optimizations and new query capabilities</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Specific figures grounded in official Microsoft Research announcements and GitHub release records<br>
+                        <strong>Weaknesses:</strong> Benchmarks are Microsoft's own evaluation; third-party validation would strengthen the claims
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.microsoft.com/en-us/research/project/graphrag/" target="_blank">Microsoft GraphRAG</a> |
+                    <a href="https://github.com/microsoft/graphrag" target="_blank">GraphRAG GitHub</a> |
+                    <a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/" target="_blank">LazyGraphRAG Announcement Blog</a>
+                </div>
+
+                <p><strong>Outlook:</strong> With cost concerns resolved, the conventional wisdom that "GraphRAG is great but expensive" is breaking down, and adoption is likely to spread to mid-sized enterprises from the second half of 2026.</p>
+
+                <h3 class="subsection-title">2. Agentic GraphRAG: Hybrid Retrieval Where Agents Route Between Vectors and Graphs</h3>
+                <p><strong>Current state:</strong> The defining pattern of 2026 is not "graph versus vector" but a hybrid architecture in which AI agents analyze query structure and automatically choose between vector search and graph traversal. Industry projections suggest that by 2026, 85% of enterprises will adopt hybrid RAG systems combining vector and graph databases (source: Programming Helper Tech, 2026). At Neo4j's NODES AI 2026, Agentic GraphRAG — covering autonomous schema inference and adaptive retrieval — was featured as a headline session.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Architecture Characteristics</h4>
+                        <p>• <strong>Automatic routing:</strong> Selects vector search or graph traversal based on query structure and risk signals<br>
+                        • <strong>Autonomous schema inference:</strong> Builds knowledge graphs without manual schema design<br>
+                        • <strong>Multi-agent composition:</strong> Separates graph construction, retrieval, and verification into distinct roles</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Research and Implementation</h4>
+                        <p>• <strong>GraphSearch (arXiv):</strong> An agentic deep-search workflow improving graph retrieval quality<br>
+                        • <strong>Think-on-Graph 3.0:</strong> Multi-agent dual-evolving context retrieval<br>
+                        • <strong>Long-term memory convergence:</strong> Graphs used beyond RAG as persistent memory layers for agents</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Primary sources exist, including official Neo4j conference sessions and arXiv papers<br>
+                        <strong>Weaknesses:</strong> The "85% of enterprises" projection is cited from a single industry outlet; the original research firm needs confirmation
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://neo4j.com/videos/nodes-ai-2026-agentic-graphrag-autonomous-knowledge-graph-construction-and-adaptive-retrieval-2/" target="_blank">Neo4j NODES AI 2026</a> |
+                    <a href="https://arxiv.org/pdf/2509.22009" target="_blank">GraphSearch (arXiv)</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Integration between agent frameworks (LangGraph, CrewAI, and others) and graph databases is becoming the standard pattern, and "routing quality" is emerging as the new competitive axis for RAG systems.</p>
+
+                <h3 class="subsection-title">3. The Open-Source Framework Ecosystem: The Rise of LightRAG and HippoRAG</h3>
+                <p><strong>Current state:</strong> Beyond Microsoft GraphRAG, lightweight and specialized open-source frameworks are growing rapidly. LightRAG combines low-level (entity) and high-level (topic) retrieval in a dual-level design accessible enough to run on standard CPUs and laptops. HippoRAG, inspired by the long-term memory structure of the human hippocampus, implements associative retrieval via Personalized PageRank and delivers multi-hop reasoning 10–30x cheaper than prior approaches (source: Graph Praxis, Medium).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LightRAG</h4>
+                        <p>• <strong>Dual-level retrieval:</strong> Combines low-level (entity) and high-level (topic) search<br>
+                        • <strong>Lightweight design:</strong> Runs on standard CPUs and laptops<br>
+                        • <strong>Graph + vector integration:</strong> Manages graph structures and vector representations in a single index</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>HippoRAG / HippoRAG2</h4>
+                        <p>• <strong>Neuroscience-inspired:</strong> Designed on the hippocampal memory indexing theory<br>
+                        • <strong>Personalized PageRank:</strong> Associative multi-hop retrieval across entity, fact, and passage nodes<br>
+                        • <strong>Cost efficiency:</strong> Multi-hop reasoning 10–30x cheaper than conventional methods</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Architecture descriptions are verifiable against each framework's public papers and repositories<br>
+                        <strong>Weaknesses:</strong> The accuracy comparison (86% vs 32%) needs its benchmark conditions spelled out
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://github.com/HKUDS/LightRAG" target="_blank">LightRAG</a> |
+                    <a href="https://github.com/OSU-NLP-Group/HippoRAG" target="_blank">HippoRAG</a> |
+                    <a href="https://www.firecrawl.dev/blog/best-open-source-rag-frameworks" target="_blank">15 Best Open-Source RAG Frameworks</a>
+                </div>
+
+                <p><strong>Outlook:</strong> With Microsoft's hierarchical community approach scoring 86% accuracy on enterprise benchmarks (versus 32% for baseline RAG), the ability to compose a "GraphRAG stack" matched to cost and use case is becoming a core practitioner skill.</p>
+
+                <h3 class="subsection-title">4. Enterprise Production Deployments: LinkedIn's Quantified ROI</h3>
+                <p><strong>Current state:</strong> GraphRAG has moved past proof-of-concept and is demonstrating quantitative results in production. In the flagship case, LinkedIn's customer service system builds tree-structured knowledge graphs from historical issue tickets and combines graph queries with semantic retrieval, achieving a 77.6% improvement in retrieval accuracy (MRR) and a 28.6% reduction in median issue resolution time over six months of production use (source: arXiv 2404.17723, ZenML LLMOps Database). Across industries, adoption is strongest in fraud detection, customer 360, supply chain, and regulatory compliance.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>LinkedIn Case Highlights</h4>
+                        <p>• <strong>Structure preservation:</strong> Tickets represented as tree-structured graphs rather than plain text, retaining inter-issue relationships<br>
+                        • <strong>Rigorous validation:</strong> Real-world impact measured with a randomized controlled trial-style A/B test<br>
+                        • <strong>Fallback mechanism:</strong> Automatic reversion to text-based retrieval when graph queries fail, ensuring reliability</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Industry Expansion</h4>
+                        <p>• <strong>Regulated industries:</strong> Governance and permission structures modeled in graphs for compliance<br>
+                        • <strong>Accuracy gap:</strong> GraphRAG at 80% versus 51% for vector RAG on enterprise-domain benchmarks<br>
+                        • <strong>Gartner projection:</strong> Graph technologies used in 80% of data and analytics innovations by 2025</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Quantitative metrics grounded in a peer-reviewable arXiv paper and production operations data<br>
+                        <strong>Weaknesses:</strong> Publicly documented large-scale production cases beyond LinkedIn remain limited
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://arxiv.org/html/2404.17723v1" target="_blank">LinkedIn Paper (arXiv)</a> |
+                    <a href="https://www.zenml.io/llmops-database/knowledge-graph-enhanced-rag-for-customer-service-question-answering" target="_blank">ZenML LLMOps Case Database</a> |
+                    <a href="https://neo4j.com/blog/genai/graphrag-manifesto/" target="_blank">GraphRAG Manifesto (Neo4j)</a>
+                </div>
+
+                <p><strong>Outlook:</strong> As benchmark evidence accumulates that vector RAG effectively fails on complex aggregation and multi-step queries, the shift to GraphRAG is expected to accelerate first in relationship-heavy domains such as customer service and compliance.</p>
+
+                <h3 class="subsection-title">5. Graph Database Vendor Competition and Market Growth: A Knowledge Graph Market Growing 31.6% Annually</h3>
+                <p><strong>Current state:</strong> The global knowledge graph market is projected to grow from $1.9 billion in 2026 to $9.88 billion by 2032, a 31.6% CAGR (source: MarketsandMarkets, June 2026). GraphRAG has emerged as the first mainstream graph database use case after fraud detection and recommendations, and vendors are racing to ship GraphRAG capabilities. Neo4j launched a new Aura console with a GenAI copilot; FalkorDB released a GraphRAG SDK that automatically generates ontologies from unstructured data; and Memgraph 3.x shipped a GraphRAG flow with a single-store vector index alongside the graph.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Key Vendor Moves</h4>
+                        <p>• <strong>Neo4j:</strong> Aura GenAI copilot, official neo4j-graphrag-python library, broadest ecosystem<br>
+                        • <strong>FalkorDB:</strong> GraphRAG SDK with automatic ontology generation, latency-first (sub-140ms p99)<br>
+                        • <strong>Memgraph / TigerGraph / AWS Neptune:</strong> In-memory analytics / billion-edge analytics / multi-model managed service</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Market Data</h4>
+                        <p>• <strong>Market size:</strong> $1.9B in 2026 → $9.88B by 2032 (31.6% CAGR)<br>
+                        • <strong>Services demand:</strong> GraphRAG enablement services projected at 31% of global market demand in 2026<br>
+                        • <strong>Cloud alignment:</strong> Microsoft, AWS, and Google Cloud have all committed to GraphRAG as a core architectural direction</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Market sizing cites official publications from research firms such as MarketsandMarkets<br>
+                        <strong>Weaknesses:</strong> Forecasts vary widely across firms (CAGR 31–37%) and should be read as a range; vendor performance figures are self-reported benchmarks
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://neo4j.com/blog/genai/what-is-graphrag/" target="_blank">Neo4j GraphRAG</a> |
+                    <a href="https://www.falkordb.com/" target="_blank">FalkorDB</a> |
+                    <a href="https://memgraph.com/" target="_blank">Memgraph</a> |
+                    <a href="https://aws.amazon.com/neptune/" target="_blank">AWS Neptune</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Graph database selection criteria are shifting from "graph analytics performance" to "GraphRAG readiness" — vector integration, ontology automation, and agent interoperability — and feature convergence across vendors is expected to accelerate.</p>
+            </section>
+
+            <!-- SECTION 2: Competitive Landscape -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">Four-Tier Market Structure</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The GraphRAG market is organizing into four tiers: indexing frameworks, orchestration layers, graph database platforms, and cloud-managed infrastructure.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tool / Platform</th>
+                            <th>Tier</th>
+                            <th>Characteristics</th>
+                            <th>Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Microsoft GraphRAG / LazyGraphRAG</strong></td>
+                            <td>Tier 1: Indexing Framework</td>
+                            <td>Hierarchical community summaries; lazy indexing at 0.1% of cost</td>
+                            <td>Research teams, large-corpus analysis</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LightRAG</strong></td>
+                            <td>Tier 1: Indexing Framework</td>
+                            <td>Dual-level retrieval (low/high); lightweight enough for CPUs</td>
+                            <td>Startups, resource-constrained environments</td>
+                        </tr>
+                        <tr>
+                            <td><strong>HippoRAG</strong></td>
+                            <td>Tier 1: Indexing Framework</td>
+                            <td>Personalized PageRank associative retrieval; multi-hop 10–30x cheaper</td>
+                            <td>Multi-hop reasoning workloads</td>
+                        </tr>
+                        <tr>
+                            <td><strong>LlamaIndex / LangChain</strong></td>
+                            <td>Tier 2: Orchestration</td>
+                            <td>Knowledge graph indexes with agent routing integration</td>
+                            <td>Application development teams</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Neo4j (Aura)</strong></td>
+                            <td>Tier 3: Graph Database</td>
+                            <td>GenAI copilot, broadest ecosystem, driving the GQL standard</td>
+                            <td>Enterprise knowledge graphs</td>
+                        </tr>
+                        <tr>
+                            <td><strong>FalkorDB</strong></td>
+                            <td>Tier 3: Graph Database</td>
+                            <td>GraphRAG SDK with auto ontology generation; latency-first</td>
+                            <td>Real-time AI applications</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Memgraph / TigerGraph</strong></td>
+                            <td>Tier 3: Graph Database</td>
+                            <td>In-memory vector + graph integration / billion-edge analytics</td>
+                            <td>Real-time analytics / very large graphs</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Azure (Discovery) / AWS Neptune / Google Cloud</strong></td>
+                            <td>Tier 4: Cloud Infrastructure</td>
+                            <td>Managed GraphRAG stacks with security and compliance</td>
+                            <td>Large enterprises, regulated industries</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Market Trends</h3>
+                <ul class="key-findings">
+                    <li><strong>Cost curve collapse:</strong> LazyGraphRAG lowered indexing costs to vector-RAG levels, changing the adoption calculus itself</li>
+                    <li><strong>Hybrid standardization:</strong> With 85% of enterprises projected to adopt vector + graph hybrid RAG in 2026, single-mode architectures are declining</li>
+                    <li><strong>Built-in vector index race:</strong> Memgraph, FalkorDB, and Neo4j all embed vector search inside the graph database, shrinking the need for a separate vector DB</li>
+                    <li><strong>Agent interoperability as table stakes:</strong> Integration quality with agent frameworks such as LangGraph and CrewAI is becoming a key vendor selection criterion</li>
+                    <li><strong>Services market growing in tandem:</strong> GraphRAG enablement services are projected to account for 31% of market demand in 2026, expanding consulting and SI opportunities</li>
+                </ul>
+
+                <h3 class="subsection-title">Platform Comparison Chart</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Application Ideas -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Key application approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Hybrid Retrieval Pilot</strong> - A small-scale validation adding graph traversal to an existing vector RAG stack and measuring multi-hop query accuracy (e.g., internal FAQs, issue tickets)</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>LazyGraphRAG Cost Validation</strong> - Benchmark indexing cost and answer quality against full GraphRAG using your own document corpus</p>
+                    <p style="line-height: 1.6;">3. <strong>Connecting Existing Knowledge Graphs to RAG</strong> - Add a vector index to a domain graph already in operation (skills, org, product relationships) to create a semantic-search entry point</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Executive Summary -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Cost is the driver of the resurgence:</strong> LazyGraphRAG cut indexing costs to 0.1% of full GraphRAG, effectively removing the "great quality, but expensive" adoption barrier.</li>
+                        <li><strong>Hybrid is the answer:</strong> The vector-versus-graph debate is over; hybrid architectures where agents route each query to the optimal retrieval method are converging as the 2026 standard.</li>
+                        <li><strong>ROI is proven:</strong> LinkedIn demonstrated a 77.6% retrieval accuracy improvement and 28.6% faster issue resolution in production — GraphRAG has graduated from the experimental phase.</li>
+                        <li><strong>The market is early in a high-growth phase:</strong> The knowledge graph market is projected to grow 31.6% annually through 2032, with vendors across the board adopting GraphRAG as a core direction.</li>
+                        <li><strong>Open-source options are abundant:</strong> Beyond Microsoft GraphRAG, mature alternatives such as LightRAG and HippoRAG keep initial investment low across cost and use-case profiles.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Corpus-wide summarization and exploration of large document sets → Microsoft GraphRAG (LazyGraphRAG)</strong><br>
+                        Why: Hierarchical community summaries excel at global queries, and lazy indexing keeps costs low.<br>
+                        <strong>Fast builds in resource-constrained environments → LightRAG</strong><br>
+                        Why: Runs on standard CPUs, and dual-level retrieval handles both factual and contextual queries.<br>
+                        <strong>Multi-hop reasoning as the core workload → HippoRAG</strong><br>
+                        Why: Personalized PageRank associative retrieval cuts multi-step query costs by 10–30x.<br>
+                        <strong>Organizations with existing graph assets → Neo4j or a graph DB with built-in vectors</strong><br>
+                        Why: Adding a vector index to a knowledge graph already in operation is faster than building from scratch, with broad ecosystem support.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall Assessment:</strong> Positive (three conditions — cost barrier removal, production validation, and vendor ecosystem alignment — are being met simultaneously, suggesting genuine adoption expansion rather than a repeat of past hype cycles)</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">8.2/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> A reliable analysis grounded in official announcements, academic papers, and market research publications</p>
+                        <p><strong>Key strengths:</strong> Built primarily on primary sources — the LinkedIn case (arXiv paper) and Microsoft's official announcements — with explicit quantitative metrics</p>
+                        <p><strong>Improvement priorities:</strong> Third-party validation of vendor self-reported benchmarks; explicit ranges for diverging market forecasts</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: Key Terminology -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">📖 Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Graph RAG (GraphRAG)</strong> - A retrieval-augmented generation approach that grounds AI answers in a knowledge graph of entities (people, products, concepts) and their relationships, instead of retrieving isolated document chunks.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>LazyGraphRAG</strong> - Microsoft's lightweight GraphRAG variant that defers ("lazily" performs) graph construction until query time, cutting upfront indexing costs to vector-RAG levels.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Multi-hop Query</strong> - A question that can only be answered by chaining multiple relationships, such as "Which C traded with the B built by A?" This is where vector search is weakest.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Agentic RAG</strong> - An approach where an AI agent assesses the question type on its own and selects and executes the optimal retrieval strategy — vector search, graph traversal, or both.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Personalized PageRank</strong> - A graph algorithm derived from Google's PageRank that scores nodes near a chosen starting point (query-related concepts) more highly; used for associative retrieval in HippoRAG.
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Hybrid RAG</strong> - A retrieval architecture combining vector search (semantic similarity) and graph traversal (relationship tracking), applying each according to the query's characteristics.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: References -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> July 14, 2026</p>
+                    <ul>
+                        <li>• <a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/" target="_blank">LazyGraphRAG: Setting a New Standard for Quality and Cost - Microsoft Research</a></li>
+                        <li>• <a href="https://www.microsoft.com/en-us/research/project/graphrag/" target="_blank">Project GraphRAG - Microsoft Research</a></li>
+                        <li>• <a href="https://github.com/microsoft/graphrag" target="_blank">microsoft/graphrag - GitHub</a></li>
+                        <li>• <a href="https://neo4j.com/videos/nodes-ai-2026-agentic-graphrag-autonomous-knowledge-graph-construction-and-adaptive-retrieval-2/" target="_blank">NODES AI 2026: Agentic GraphRAG - Neo4j</a></li>
+                        <li>• <a href="https://neo4j.com/blog/genai/what-is-graphrag/" target="_blank">What is GraphRAG? - Neo4j</a></li>
+                        <li>• <a href="https://arxiv.org/html/2404.17723v1" target="_blank">Retrieval-Augmented Generation with Knowledge Graphs for Customer Service QA (LinkedIn) - arXiv</a></li>
+                        <li>• <a href="https://www.zenml.io/llmops-database/knowledge-graph-enhanced-rag-for-customer-service-question-answering" target="_blank">LinkedIn: Knowledge Graph-Enhanced RAG - ZenML LLMOps Database</a></li>
+                        <li>• <a href="https://www.globenewswire.com/news-release/2026/06/29/3319085/0/en/Knowledge-Graph-Market-Surges-to-9-88-billion-at-a-CAGR-31-6-by-2032-Report-by-MarketsandMarkets.html" target="_blank">Knowledge Graph Market Report - MarketsandMarkets (June 2026)</a></li>
+                        <li>• <a href="https://medium.com/graph-praxis/graphrag-vs-hipporag-vs-pathrag-vs-og-rag-choosing-the-right-architecture-for-your-knowledge-graph-a4745e8b125f" target="_blank">GraphRAG vs HippoRAG vs PathRAG vs OG-RAG - Graph Praxis</a></li>
+                        <li>• <a href="https://www.firecrawl.dev/blog/best-open-source-rag-frameworks" target="_blank">15 Best Open-Source RAG Frameworks in 2026 - Firecrawl</a></li>
+                        <li>• <a href="https://pdpspectra.com/blog/neo4j-vs-arangodb-2026/" target="_blank">Graph Databases in 2026: Neo4j, ArangoDB, TigerGraph and the GraphRAG Moment</a></li>
+                        <li>• <a href="https://www.programming-helper.com/tech/graphrag-2026-knowledge-graphs-rag-enterprise-ai" target="_blank">GraphRAG 2026: How Knowledge Graphs Are Transforming Enterprise RAG Systems</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Ecosystem Maturity', 'Cost Efficiency', 'Retrieval Quality (Multi-hop)', 'Scalability', 'Ease of Adoption'],
+                datasets: [
+                    {
+                        label: 'Neo4j',
+                        data: [95, 60, 85, 85, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'Microsoft GraphRAG (Lazy)',
+                        data: [85, 90, 90, 80, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'LightRAG',
+                        data: [65, 95, 75, 60, 90],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'FalkorDB',
+                        data: [55, 80, 75, 70, 80],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+
+</body>
+</html>
