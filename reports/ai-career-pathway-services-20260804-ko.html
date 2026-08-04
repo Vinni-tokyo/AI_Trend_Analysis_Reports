@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 커리어 패스웨이 서비스 7선 심층 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .feature-matrix-wrap { overflow-x: auto; }
+        .feature-matrix { font-size: 0.75rem; min-width: 860px; }
+        .feature-matrix th, .feature-matrix td { text-align: center; padding: 0.45rem 0.4rem; }
+        .feature-matrix th:first-child, .feature-matrix td:first-child { text-align: left; white-space: nowrap; font-weight: 600; }
+        .feature-matrix thead th { background: #001e5c; color: white; font-size: 0.72rem; }
+        .fm-yes { color: #15803d; font-weight: 700; }
+        .fm-partial { color: #b45309; font-weight: 700; }
+        .fm-no { color: #b0b0b0; }
+        .fm-legend { font-size: 0.75rem; color: #4a4a4a; margin-bottom: 0.5rem; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 0.6rem 0.9rem;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+        }
+        .credibility-score-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+        .credibility-score-label { font-weight: 600; color: #92400e; }
+        .credibility-score-value { font-weight: 700; color: #92400e; }
+        .credibility-score-details { color: #78716c; line-height: 1.5; }
+        .overall-credibility {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+        }
+        .overall-credibility h3 { font-size: 1rem; color: #92400e; margin-bottom: 0.4rem; }
+        .overall-credibility-score { font-size: 1.5rem; font-weight: 700; color: #92400e; margin-bottom: 0.4rem; }
+        .overall-credibility-details p { font-size: 0.85rem; color: #78716c; margin-bottom: 0.25rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media (max-width: 480px) {
+            .header-actions { flex-direction: column; align-items: stretch; }
+            .language-switcher { width: 100%; justify-content: center; }
+            .back-btn { width: 100%; justify-content: center; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='ai-career-pathway-services-20260804-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='ai-career-pathway-services-20260804-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='ai-career-pathway-services-20260804-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>AI 커리어 패스웨이 서비스 7선 심층 분석</h1>
+            <div class="subtitle">Evelyn · Pathly · SkillMount · SkillSeek · Salesforce Career Connect · Google Career Dreamer · LinkedIn Next Role Explorer</div>
+            <div class="meta">보고서 작성일: 2026년 8월 4일 | 표준 보고서 (5-8페이지) | 데이터 수집: 2026년 8월 4일</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 서비스 심층 분석 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">서비스별 심층 분석</h2>
+
+                <h3 class="subsection-title">1. Evelyn Career Pathways: 교육기관용 AI 스킬 갭 분석 엔진</h3>
+                <p><strong>현황:</strong> Evelyn Learning의 Career Pathways는 대학·커뮤니티 칼리지·워크포스 개발 기관을 위한 AI 커리어 탐색 소프트웨어입니다. 자기 평가·성적표 분석·과제물·행동 데이터를 종합해 스킬 프로파일을 구축하고, 이를 산업 역량 프레임워크에 매핑합니다. <strong>1,000만 건 이상의 채용공고</strong>를 분석해 500개 이상의 커리어 경로를 실시간 노동시장 데이터와 연결하는 것이 특징입니다 (출처: Evelyn Learning 제품 페이지).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 기능</h4>
+                        <p>• <strong>AI 스킬 갭 분석:</strong> 자기 평가·성적표·과제물·행동 데이터로 역량 프로파일 구축<br>
+                        • <strong>커리어 매칭:</strong> 능력·관심사·시장 수요를 결합한 경로 추천<br>
+                        • <strong>학습 경로:</strong> 갭에 대응하는 과정·크리덴셜을 소속 기관 커리큘럼 포함으로 추천<br>
+                        • <strong>고용주 인사이트:</strong> 분야별 채용 담당자의 요구 사항 제시</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>데이터와 대상</h4>
+                        <p>• <strong>데이터 규모:</strong> 채용공고 1,000만+ 분석, 커리어 경로 500+ 매핑<br>
+                        • <strong>실시간성:</strong> 급여·성장률·요구 스킬을 지속 갱신<br>
+                        • <strong>대상:</strong> 고등교육기관(전공 선택·취업 준비), 커뮤니티 칼리지·워크포스 보드(리스킬링), 커리어 서비스 부서<br>
+                        • <strong>요금:</strong> 기관 계약형 (공개 요금 없음)</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 공식 제품 페이지에서 기능·데이터 규모 직접 확인<br>
+                        <strong>개선점:</strong> 벤더 자체 발표 수치로 제3자 검증 자료는 미확인
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.evelynlearning.com/products/career-pathways" target="_blank">Evelyn Career Pathways</a> |
+                    <a href="https://www.evelynlearning.com/" target="_blank">Evelyn Learning</a>
+                </div>
+
+                <p><strong>전망:</strong> "정적 진로 검사"를 실시간 노동시장 데이터로 대체하는 접근은 대학 커리어 센터의 표준이 되어가고 있어, 기관용 시장에서 FutureFit AI 등과의 경쟁이 심화될 것으로 예상됩니다.</p>
+
+                <h3 class="subsection-title">2. Pathly &amp; SkillMount: 학생·학습자 대상의 두 갈래 접근</h3>
+                <p><strong>현황:</strong> <strong>Pathly</strong>(pathly.com)는 중학생부터 대학생까지를 위한 무료 AI 진로·진학 플랫폼으로, 15분 이내의 성격·EQ·가치관 평가로 1,000개 이상의 직업 가능성과 연결하고, 월간·주간 마일스톤이 있는 개인화 로드맵을 생성합니다. 24시간 AI 멘토 챗과 상담사용 대시보드(실시간 학생 진행 신호·평가 결과·대화 소재)를 제공합니다. <strong>SkillMount</strong>는 Jain(Deemed-to-be) 대학이 인증하는 온라인 과정 플랫폼으로, 커머스·경영 분야 중심의 전문 스킬 과정과 수료증을 제공하는 학습 중심형 서비스입니다. ※주의: "Pathly"는 영국의 구직 도구(pathly.co.uk), EU의 이력서 최적화 서비스(path-ly.eu) 등 동명 서비스가 복수 존재하며, 본 보고서는 학교·상담사 대상의 pathly.com을 다룹니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Pathly (진로 탐색·로드맵)</h4>
+                        <p>• <strong>평가:</strong> 성격·EQ·가치관 검사를 15분 이내 완료, 1,000+ 직업과 매칭<br>
+                        • <strong>로드맵:</strong> 수강·스킬·자격의 다음 단계를 월간·주간 단위로 제시<br>
+                        • <strong>다경로 지원:</strong> 대학·직업학교·도제·자격증 경로를 병렬 탐색<br>
+                        • <strong>요금:</strong> 학생 무료, 학교·교육구 무료 파일럿, 학생 단위 과금 없음</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>SkillMount (대학 인증 과정)</h4>
+                        <p>• <strong>인증:</strong> Jain(Deemed-to-be) 대학 인증 수료증 발행<br>
+                        • <strong>과정 영역:</strong> 커머스·경영 중심 (프로젝트 관리·리더십·커뮤니케이션 등)<br>
+                        • <strong>포지션:</strong> 커리어 "탐색"보다 "자격 취득"에 무게를 둔 학습 플랫폼<br>
+                        • <strong>유의:</strong> 공개 정보가 제한적이어서 상세 기능은 추가 확인 필요</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Pathly는 공식 사이트에서 기능·요금 직접 확인, 동명 서비스 구분 명시<br>
+                        <strong>개선점:</strong> SkillMount는 공개 정보가 제한적이며(사이트 접근 제한) 일부는 관련 검색 결과 기반
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://pathly.com/" target="_blank">Pathly</a> |
+                    <a href="https://pathly.com/for-counselors/" target="_blank">Pathly for Counselors</a> |
+                    <a href="https://www.skillmount.com/courses" target="_blank">Skillmount</a>
+                </div>
+
+                <p><strong>전망:</strong> 학생 무료 + 기관 과금이라는 Pathly의 모델은 미국 학교 상담 시장의 표준 패턴이 되고 있으며, SkillMount형 "대학 인증 과정" 모델은 인도·중동 시장에서 학위 보완형 수요를 흡수하고 있습니다.</p>
+
+                <h3 class="subsection-title">3. SkillSeek: 기업용 역량 매핑과 블록체인 크리덴셜</h3>
+                <p><strong>현황:</strong> SkillSeek(skillseek.ai)는 구직자·고용주·교육 제공자를 아우르는 역량 매핑·분석 플랫폼입니다. ML·NLP 모델이 직무·산업 전반의 강점과 갭을 식별하고, 행동 신호 기반의 과정 추천과 역할 승계·스킬 마일스톤을 보여주는 시각적 커리어 궤적을 제공합니다. 배지·수료증은 블록체인 기반으로 위변조 방지 검증이 가능하며, Power BI 연동 대시보드·Azure AD SSO·HRM/LMS 연계 등 엔터프라이즈 통합을 갖췄습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 기능</h4>
+                        <p>• <strong>역량 매핑·벤치마킹:</strong> ML/NLP 기반 갭 식별, 산업 클러스터 대비 비교<br>
+                        • <strong>커리어 궤적:</strong> 역할 진행·스킬 마일스톤의 인터랙티브 시각화<br>
+                        • <strong>크리덴셜:</strong> 블록체인 기반 위변조 방지 배지·수료증<br>
+                        • <strong>거버넌스:</strong> 편향 모니터링과 알고리즘 결정의 감사 추적</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>대상과 통합</h4>
+                        <p>• <strong>3자 구조:</strong> 구직자(포트폴리오·매칭), 고용주(조직 스킬 가시화), 교육 제공자(API 과정 등록·성과 추적)<br>
+                        • <strong>분석:</strong> 실시간 인사이트·ROI 추적·Power BI 연동<br>
+                        • <strong>통합:</strong> 오픈 API, Azure AD SSO, HRM/LMS/재무 시스템 연계<br>
+                        • <strong>요금:</strong> 기업 계약형 (공개 요금 없음)</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 공식 사이트에서 기능·통합·거버넌스 항목 직접 확인<br>
+                        <strong>개선점:</strong> 도입 실적·사용자 수 등 시장 검증 데이터는 미공개
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.skillseek.ai/" target="_blank">SkillSeek</a>
+                </div>
+
+                <p><strong>전망:</strong> 편향 모니터링·감사 추적을 전면에 내세운 점은 EU AI법 등 규제 환경을 의식한 설계로, 규제 시장에서의 차별화 요소가 될 수 있습니다.</p>
+
+                <h3 class="subsection-title">4. Salesforce Career Connect: Slack에 내장된 사내 탤런트 마켓플레이스</h3>
+                <p><strong>현황:</strong> Career Connect는 Salesforce가 자사 직원을 위해 구축한 AI 사내 탤런트 마켓플레이스로, Eightfold AI와의 협력으로 구동됩니다. 직원이 프로필을 만들면 직무 이력에서 스킬을 자동 추론하고, 사내 공석·긱(단기 과제)·스트레치 과제·업스킬링 기회를 Slack 업무 흐름 안에서 제시합니다. "Career Agent"라는 AI 커리어 코치와 대화하며 목표 달성에 필요한 조언과 Trailhead 학습 콘텐츠를 추천받을 수 있습니다. 약 1,200명 대상 3개월 파일럿에서 <strong>90%가 프로필을 작성하고 74%가 정기적으로 플랫폼을 이용</strong>했습니다 (출처: Salesforce 발표·HR Brew).</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>핵심 기능</h4>
+                        <p>• <strong>스킬 자동 추론:</strong> 직무 이력 기반으로 프로필 자동 구축<br>
+                        • <strong>기회 매칭:</strong> 지금 지원 가능한 역할 + 스킬 전용 가능한 역할을 구분 제시<br>
+                        • <strong>Career Agent:</strong> Slack에서 대화형 커리어 코칭, Trailhead 콘텐츠 추천<br>
+                        • <strong>긱·스트레치 과제:</strong> 이동 전에 경험을 쌓는 단기 기회 연결</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>성과와 한계</h4>
+                        <p>• <strong>파일럿 성과:</strong> 참여자 90% 프로필 작성, 74% 정기 이용<br>
+                        • <strong>맥락:</strong> 에이전틱 AI 시대의 전사 리스킬링 전략의 일부 (7.2만 직원 대상)<br>
+                        • <strong>한계:</strong> Salesforce 사내 전용 — 외부 판매 제품이 아니라 Eightfold 기반의 레퍼런스 사례<br>
+                        • <strong>확산:</strong> Eightfold-Salesforce 제휴 확대로 유사 구성의 외부 구현 가능</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Salesforce 공식 발표와 HR 전문지 보도로 교차 확인, 파일럿 수치 명시<br>
+                        <strong>개선점:</strong> 파일럿 이후의 전사 전개 성과는 지속 추적 필요
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.salesforce.com/news/stories/career-connect-announcement/" target="_blank">Career Connect 발표</a> |
+                    <a href="https://eightfold.ai/blog/eightfold-salesforce-expand-agreement/" target="_blank">Eightfold-Salesforce 제휴</a> |
+                    <a href="https://www.salesforce.com/blog/career-connect-success-story-internal-mobility/" target="_blank">사내 이동 성공 사례</a>
+                </div>
+
+                <p><strong>전망:</strong> "채용 시장이 둔화될수록 사내 이동이 성장 경로가 된다"는 흐름의 대표 사례로, Slack·Teams 등 협업 도구 내장형 커리어 에이전트가 대기업 표준이 될 가능성이 높습니다.</p>
+
+                <h3 class="subsection-title">5. Google Career Dreamer &amp; LinkedIn Next Role Explorer: 빅테크의 양면 전략</h3>
+                <p><strong>현황:</strong> <strong>Google Career Dreamer</strong>(Grow with Google 실험)는 경력·스킬·관심사를 분석해 "가능성의 시각적 웹"으로 커리어를 탐색하게 하는 무료 도구입니다. AI로 커리어 정체성 선언문을 작성하고 Gemini와 이력서·커버레터를 다듬을 수 있으며, Lightcast와 미국 노동통계국(BLS) 데이터를 활용합니다. 단, 실제 채용공고 연결은 없고 미국 한정 실험입니다. <strong>LinkedIn Next Role Explorer</strong>는 LinkedIn Learning에 통합된 사내 이동 도구로, Guide(사내 역할 추천·커리어 경로), Develop(적응형 학습 계획·AI 코칭), Connect(사내 공석 탐색·관심 신호), Measure(분석 내보내기)의 4개 모듈로 구성됩니다. 연간 4억 건 이상 추가되는 LinkedIn 스킬 데이터를 활용합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Google Career Dreamer</h4>
+                        <p>• <strong>커리어 정체성 선언문:</strong> 경력·교육·관심사로 AI가 자기소개 초안 작성<br>
+                        • <strong>시각적 탐색:</strong> 배경에 맞는 직업들의 관계망 시각화<br>
+                        • <strong>Gemini 연계:</strong> 이력서·커버레터 협업 작성<br>
+                        • <strong>데이터:</strong> Lightcast·BLS | <strong>제약:</strong> 채용공고 미연결, 미국 한정, 무료</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>LinkedIn Next Role Explorer</h4>
+                        <p>• <strong>Guide:</strong> 현 직무·목표 기반 사내 역할 추천, 역할 상세·하루 일과 영상<br>
+                        • <strong>Develop:</strong> 목표·수준에 적응하는 학습 계획 + AI 코칭<br>
+                        • <strong>Connect:</strong> 사내 공석 알림·내부 리크루터에 관심 신호<br>
+                        • <strong>Measure:</strong> 역할 가이드 조회·자격 취득 분석 | 기업 구독형(LinkedIn Learning)</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Google 공식 블로그·TechCrunch, LinkedIn 발표·전문지 보도로 교차 확인<br>
+                        <strong>개선점:</strong> Career Dreamer는 실험 단계로 기능·제공 지역이 변경될 수 있음
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://grow.google/career-dreamer/home/" target="_blank">Career Dreamer</a> |
+                    <a href="https://blog.google/company-news/outreach-and-initiatives/grow-with-google/a-new-experiment-to-help-people-explore-more-career-possibilities/" target="_blank">Google 발표</a> |
+                    <a href="https://www.reworked.co/learning-development/linkedin-launches-next-role-explorer-and-offers-free-ai-courses-to-support-career-development/" target="_blank">Next Role Explorer 소개</a>
+                </div>
+
+                <p><strong>전망:</strong> Google은 개인 무료 탐색(자사 자격증 유도), LinkedIn은 기업 구독(사내 이동 데이터 장악)이라는 상반된 수익화 전략으로, 커리어 데이터 생태계의 양극을 형성하고 있습니다.</p>
+            </section>
+
+            <!-- SECTION 2: 기능 비교표 + 경쟁 환경 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">기능 비교표와 경쟁 구도</h2>
+
+                <h3 class="subsection-title">7개 서비스 기능 비교 매트릭스</h3>
+                <p class="fm-legend">범례: <span class="fm-yes">●</span> 제공 &nbsp; <span class="fm-partial">◐</span> 부분 제공·간접 제공 &nbsp; <span class="fm-no">—</span> 미제공·해당 없음 (2026년 8월 4일 공개 정보 기준)</p>
+
+                <div class="feature-matrix-wrap">
+                <table class="feature-matrix">
+                    <thead>
+                        <tr>
+                            <th>기능</th>
+                            <th>Evelyn<br>Career Pathways</th>
+                            <th>Pathly</th>
+                            <th>SkillMount</th>
+                            <th>SkillSeek</th>
+                            <th>Salesforce<br>Career Connect</th>
+                            <th>Google<br>Career Dreamer</th>
+                            <th>LinkedIn<br>Next Role Explorer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>AI 스킬 갭 분석</td><td class="fm-yes">●</td><td class="fm-partial">◐</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-partial">◐</td><td class="fm-yes">●</td></tr>
+                        <tr><td>커리어 매칭·경로 추천</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-yes">●</td></tr>
+                        <tr><td>학습 과정·크리덴셜 추천</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-partial">◐</td><td class="fm-yes">●</td></tr>
+                        <tr><td>실시간 노동시장 데이터</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-yes">●</td></tr>
+                        <tr><td>대화형 AI 코치·챗</td><td class="fm-partial">◐</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-yes">●</td></tr>
+                        <tr><td>사내 이동·채용 연계</td><td class="fm-no">—</td><td class="fm-no">—</td><td class="fm-no">—</td><td class="fm-partial">◐</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-yes">●</td></tr>
+                        <tr><td>검증 가능 배지·수료증</td><td class="fm-no">—</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-partial">◐</td><td class="fm-partial">◐</td></tr>
+                        <tr><td>기관·관리자용 분석 대시보드</td><td class="fm-yes">●</td><td class="fm-yes">●</td><td class="fm-no">—</td><td class="fm-yes">●</td><td class="fm-partial">◐</td><td class="fm-no">—</td><td class="fm-yes">●</td></tr>
+                        <tr><td>주 대상</td><td>대학·워크포스 기관</td><td>중고대학생·상담사</td><td>학습자(학위 보완)</td><td>기업·구직자·교육기관</td><td>Salesforce 직원(사내)</td><td>미국 개인(실험)</td><td>기업 직원(LiL 고객)</td></tr>
+                        <tr><td>요금 모델</td><td>기관 계약</td><td>학생 무료·기관 과금</td><td>과정별 유료</td><td>기업 계약</td><td>사내 전용</td><td>무료</td><td>LinkedIn Learning 구독</td></tr>
+                    </tbody>
+                </table>
+                </div>
+                <p style="font-size: 0.75rem; color: #808080; margin-top: 0.25rem;">주: SkillMount는 공개 정보가 제한적이어서 보수적으로 표기했습니다. "Pathly"는 동명 서비스가 복수 존재하며 학교·상담사 대상의 pathly.com 기준입니다. Career Connect는 Salesforce 사내 전용 사례입니다.</p>
+
+                <h3 class="subsection-title">시장 포지셔닝: 4가지 유형</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>유형</th>
+                            <th>서비스</th>
+                            <th>가치 제안</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>기관용 커리어 탐색</strong></td><td>Evelyn Career Pathways, Pathly</td><td>교육기관이 학생에게 데이터 기반 진로 지도를 확장 제공</td></tr>
+                        <tr><td><strong>역량 인프라</strong></td><td>SkillSeek</td><td>기업·교육·개인을 잇는 역량 매핑과 검증 가능 크리덴셜</td></tr>
+                        <tr><td><strong>사내 탤런트 마켓플레이스</strong></td><td>Salesforce Career Connect, LinkedIn Next Role Explorer</td><td>기존 직원의 사내 이동·업스킬링으로 채용 비용 절감</td></tr>
+                        <tr><td><strong>개인 무료 탐색</strong></td><td>Google Career Dreamer, SkillMount(학습형)</td><td>진입 장벽 없는 커리어 탐색·자격 취득으로 생태계 유입</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 트렌드 요점</h3>
+                <ul class="key-findings">
+                    <li>사내 이동이 성장 경로로 부상 — LinkedIn 조사 기준 외부 채용 둔화 속에 사내 이동은 6% 증가</li>
+                    <li>커리어 코치의 에이전트화 — Slack 내 Career Agent, Gemini 연계 등 대화형 AI가 표준 인터페이스로</li>
+                    <li>노동시장 데이터가 차별화 요소 — Lightcast·BLS·자체 채용공고 분석이 추천 신뢰도를 좌우</li>
+                    <li>학생 무료·기관 과금 모델 확산 — Pathly·Career Dreamer 등 개인 무료화로 유입 확대</li>
+                    <li>스킬 데이터의 플랫폼 종속 심화 — LinkedIn 연 4억+ 스킬, Salesforce-Eightfold 등 데이터 우위 경쟁</li>
+                </ul>
+
+                <h3 class="subsection-title">주요 서비스 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>기능 매트릭스 벤치마킹</strong> - 본 보고서의 비교표를 기준으로 자사 학습 플랫폼의 커리어 기능(갭 분석·경로 추천·AI 코치) 격차를 점검</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>무료 도구 체험 평가</strong> - Career Dreamer·Pathly 등 무료 서비스를 팀 차원에서 직접 사용해 UX 패턴(시각적 탐색·정체성 선언문)을 자사 기획에 참고</p>
+                    <p style="line-height: 1.6;">3. <strong>사내 이동 파일럿 관찰</strong> - Career Connect의 "90% 프로필 작성·74% 정기 이용" 지표를 참고해 소규모 사내 스킬 프로파일 실증을 검토</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 경영진 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">경영진 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>시장의 4유형화:</strong> 기관용 탐색(Evelyn·Pathly), 역량 인프라(SkillSeek), 사내 마켓플레이스(Career Connect·Next Role), 개인 무료 탐색(Career Dreamer)으로 분화</li>
+                        <li><strong>공통 코어, 다른 승부처:</strong> 커리어 매칭·학습 추천은 7개 서비스 대부분이 제공 — 차별화는 노동시장 데이터, AI 코치, 사내 채용 연계에서 발생</li>
+                        <li><strong>사내 이동이 최대 격전지:</strong> Career Connect(90% 프로필 작성)와 Next Role Explorer(4개 모듈)가 "직원 유지 = 채용 비용 절감" 가치로 기업 시장 공략</li>
+                        <li><strong>데이터 우위 경쟁:</strong> Evelyn 1,000만+ 채용공고, LinkedIn 연 4억+ 스킬, Google의 Lightcast·BLS — 추천 품질은 데이터 규모에 비례</li>
+                        <li><strong>무료화의 전략성:</strong> Google·Pathly의 무료 제공은 자격증·기관 계약으로 이어지는 퍼널 설계</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">참고 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>대학·직업교육기관 → Evelyn Career Pathways 또는 Pathly</strong><br>
+                        이유: 기관 커리큘럼 연계 추천(Evelyn)과 상담사 대시보드·무료 모델(Pathly)이 기관 운영에 최적화<br>
+                        <strong>기업 인사 부서 → LinkedIn Next Role Explorer 또는 Eightfold 계열 구축</strong><br>
+                        이유: 기존 LinkedIn Learning 계약이 있다면 Next Role이 최단 경로, 자체 구축은 Career Connect가 참조 모델<br>
+                        <strong>역량 검증·배지 발행 조직 → SkillSeek</strong><br>
+                        이유: 블록체인 크리덴셜·API 통합·감사 추적 등 인프라형 기능이 필요할 때 유일한 선택지<br>
+                        <strong>개인·소규모 팀 → Google Career Dreamer(무료 체험)</strong><br>
+                        이유: 비용 없이 최신 AI 커리어 탐색 UX를 경험 가능 (단, 미국 한정·채용 연계 없음)
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (외부 채용 둔화와 AI발 직무 변화가 커리어 패스웨이 도구의 수요를 구조적으로 견인하고 있으며, 빅테크·전문 벤더·교육기관용 솔루션이 각자의 세그먼트에서 성장 중)</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">8.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> 각 서비스의 공식 사이트·발표와 전문지 보도를 교차 확인한 신뢰도 높은 분석</p>
+                        <p><strong>주요 강점:</strong> 기능 비교표의 모든 항목을 공개 정보 기준으로 표기하고 불확실 항목은 보수적으로 처리</p>
+                        <p><strong>개선 우선순위:</strong> SkillMount의 상세 기능 확인, Pathly 동명 서비스의 지속적 구분, 벤더 자체 수치의 제3자 검증</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>커리어 패스웨이(Career Pathway)</strong> - 현재 스킬에서 목표 직무까지의 경로를 학습·경험 단계로 구조화한 것. AI가 갭 분석으로 경로를 자동 생성
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>스킬 갭 분석(Skill Gap Analysis)</strong> - 목표 직무가 요구하는 스킬과 현재 보유 스킬의 차이를 식별하는 분석. 학습 추천의 출발점
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>사내 탤런트 마켓플레이스(Internal Talent Marketplace)</strong> - 사내 공석·단기 과제·멘토링을 직원 스킬과 매칭하는 플랫폼. 이직 대신 사내 이동을 촉진
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>긱·스트레치 과제(Gigs &amp; Stretch Assignments)</strong> - 정식 이동 전에 다른 부서의 단기 프로젝트로 경험을 쌓는 제도. Career Connect의 핵심 기능
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>커리어 정체성 선언문(Career Identity Statement)</strong> - 경력·스킬·관심사를 한 문단으로 정리한 자기소개. Career Dreamer가 AI로 초안 작성
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Lightcast / BLS</strong> - 노동시장 데이터 제공자. Lightcast는 민간 채용공고 분석, BLS는 미국 노동통계국의 공식 고용 통계
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>Eightfold AI</strong> - 탤런트 인텔리전스 플랫폼 기업. Salesforce Career Connect의 기반 기술 파트너
+                    </div>
+                    <div>
+                        <strong>Trailhead</strong> - Salesforce의 무료 온라인 학습 플랫폼. Career Agent가 학습 콘텐츠 추천에 활용
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 8월 4일</p>
+                    <ul>
+                        <li>• <a href="https://www.evelynlearning.com/products/career-pathways" target="_blank">Evelyn Learning: Career Pathways 제품 페이지</a></li>
+                        <li>• <a href="https://pathly.com/" target="_blank">Pathly 공식 사이트</a></li>
+                        <li>• <a href="https://pathly.com/for-counselors/" target="_blank">Pathly for School Counselors</a></li>
+                        <li>• <a href="https://www.skillmount.com/courses" target="_blank">Skillmount Courses</a></li>
+                        <li>• <a href="https://www.skillseek.ai/" target="_blank">SkillSeek 공식 사이트</a></li>
+                        <li>• <a href="https://www.salesforce.com/news/stories/career-connect-announcement/" target="_blank">Salesforce: Introducing Career Connect</a></li>
+                        <li>• <a href="https://eightfold.ai/blog/eightfold-salesforce-expand-agreement/" target="_blank">Eightfold: Salesforce 제휴 확대</a></li>
+                        <li>• <a href="https://www.hr-brew.com/stories/2024/09/04/salesforce-ai-internal-talent-platform" target="_blank">HR Brew: Salesforce AI 사내 탤런트 플랫폼</a></li>
+                        <li>• <a href="https://grow.google/career-dreamer/home/" target="_blank">Grow with Google: Career Dreamer</a></li>
+                        <li>• <a href="https://blog.google/company-news/outreach-and-initiatives/grow-with-google/a-new-experiment-to-help-people-explore-more-career-possibilities/" target="_blank">Google 공식 블로그: Career Dreamer 발표</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/02/19/googles-career-dreamer-uses-ai-to-help-you-explore-job-possibilities" target="_blank">TechCrunch: Career Dreamer 리뷰</a></li>
+                        <li>• <a href="https://www.reworked.co/learning-development/linkedin-launches-next-role-explorer-and-offers-free-ai-courses-to-support-career-development/" target="_blank">Reworked: LinkedIn Next Role Explorer</a></li>
+                        <li>• <a href="https://www.hrdive.com/news/linkedin-launches-new-internal-mobility-career-development-tools/709453/" target="_blank">HR Dive: LinkedIn 사내 이동 도구</a></li>
+                        <li>• <a href="https://news.linkedin.com/2026/LinkedIn-Top-Companies-2026" target="_blank">LinkedIn Top Companies 2026</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['개인화 AI', '노동시장 데이터', '기업 통합', '학습 연계', '무료 접근성'],
+                datasets: [
+                    {
+                        label: 'Evelyn Career Pathways',
+                        data: [80, 90, 60, 85, 30],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: 'SkillSeek',
+                        data: [70, 70, 90, 75, 30],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: 'Salesforce Career Connect',
+                        data: [90, 40, 85, 80, 20],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'Google Career Dreamer',
+                        data: [75, 80, 20, 55, 95],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    },
+                    {
+                        label: 'LinkedIn Next Role Explorer',
+                        data: [85, 90, 85, 90, 35],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments &amp; Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+
+</body>
+</html>
