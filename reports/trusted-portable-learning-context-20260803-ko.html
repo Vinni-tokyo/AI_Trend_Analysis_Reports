@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1EdTech Trusted Portable Learning Context (TPLC) 심층 분석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #0052b8; text-decoration: none; }
+        .sources a:hover { text-decoration: underline; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .credibility-score {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 0.6rem 0.9rem;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+        }
+        .credibility-score-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+        .credibility-score-label { font-weight: 600; color: #92400e; }
+        .credibility-score-value { font-weight: 700; color: #92400e; }
+        .credibility-score-details { color: #78716c; line-height: 1.5; }
+        .overall-credibility {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+        }
+        .overall-credibility h3 { font-size: 1rem; color: #92400e; margin-bottom: 0.4rem; }
+        .overall-credibility-score { font-size: 1.5rem; font-weight: 700; color: #92400e; margin-bottom: 0.4rem; }
+        .overall-credibility-details p { font-size: 0.85rem; color: #78716c; margin-bottom: 0.25rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions {
+                position: static;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+            }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media (max-width: 480px) {
+            .header-actions { flex-direction: column; align-items: stretch; }
+            .language-switcher { width: 100%; justify-content: center; }
+            .back-btn { width: 100%; justify-content: center; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='trusted-portable-learning-context-20260803-ja.html'" class="lang-btn">日本語</button>
+                    <button onclick="window.location.href='trusted-portable-learning-context-20260803-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='trusted-portable-learning-context-20260803-en.html'" class="lang-btn">English</button>
+                </div>
+            </div>
+            <h1>1EdTech Trusted Portable Learning Context (TPLC) 심층 분석</h1>
+            <div class="subtitle">AI 에이전트를 위한 신뢰 가능·이동 가능한 학습 컨텍스트 — RFC 1.0.0 해부</div>
+            <div class="meta">보고서 작성일: 2026년 8월 3일 | 표준 보고서 (5-8페이지) | 데이터 수집: 2026년 8월 3일</div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 주요 트렌드 Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">핵심 분석 Top 5</h2>
+
+                <h3 class="subsection-title">1. TPLC란 무엇인가: "컨텍스트는 데이터와 다르다"에서 출발한 RFC</h3>
+                <p><strong>현황:</strong> 1EdTech Labs는 2026년 7월 21일 <strong>Trusted Portable Learning Context(신뢰 가능·이동 가능한 학습 컨텍스트, 이하 TPLC)</strong>에 대한 공개 의견 요청(RFC) 1.0.0 퍼블릭 드래프트를 공개하고, 7월 23일 Labs Live 웨비나(Tim Couper 수석 아키텍트, Michael Feldstein 최고전략책임자)에서 설명했습니다. RFC는 TPLC를 "권위 있는 소스들로부터 조립되고, 소유 기관의 정책에 따라 통제되는, 단일 학습 상황에 대한 구조화된·시간 제한적 기술"로 정의합니다. 학습 목표, 교재, 학습자 진도, 수업 제약, 접근성 요구, 프라이버시 경계 등 "특정 학습 순간"을 규정하는 정보가 대상입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>TPLC의 정의적 특징</h4>
+                        <p>• <strong>시간 제한적(Time-bound):</strong> 영구 상태가 아닌 특정 순간의 스냅샷<br>
+                        • <strong>상황 제한적(Situation-bound):</strong> 전체 데이터셋이 아니라 에이전트가 수행할 과업 중심으로 조립<br>
+                        • <strong>넓고 얕게(Broad, not deep):</strong> 여러 데이터 범주를 얇게 가로지르는 단면<br>
+                        • <strong>컴파일된 스냅샷:</strong> 라이브 쿼리가 아닌, 에이전트 간 이동 가능한 산출물<br>
+                        • <strong>선택적(Selective):</strong> 관련성과 동의에 따라 필터링</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>TPLC가 아닌 것 (RFC의 명시적 구분)</h4>
+                        <p>• OneRoster·Caliper·CASE·Open Badges·CLR을 <strong>대체하는 새 데이터 표준이 아님</strong><br>
+                        • 데이터 웨어하우스·종단 학습 기록이 아님<br>
+                        • AI 에이전트의 세션 메모리·로컬 스크래치패드가 아님<br>
+                        • 기간계 시스템(System of Record) 간 연계의 대체재가 아님<br>
+                        • 핵심 통찰: "새 어휘보다 <strong>기존 재료를 조립하는 레시피</strong>가 중요"</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> RFC 원문(standards.1edtech.org)과 공식 웨비나 페이지에 기반한 1차 소스 분석<br>
+                        <strong>개선점:</strong> 퍼블릭 드래프트 단계이므로 정의·용어는 향후 개정될 수 있음
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://standards.1edtech.org/publications/rfc-trusted-context" target="_blank">TPLC RFC 원문</a> |
+                    <a href="https://www.1edtech.org/events/request-for-public-comment-on-trusted-learning-context" target="_blank">공개 의견 요청 웨비나</a> |
+                    <a href="https://www.1edtech.org/program/labs" target="_blank">1EdTech Labs</a>
+                </div>
+
+                <p><strong>전망:</strong> AI가 "컨텍스트 부족으로 거부·과잉 일반화·환각을 일으키는 문제(context-failure problem)"를 표준으로 해결하려는 첫 체계적 시도로, 교육 AI 아키텍처 논의의 공통 언어가 될 가능성이 높습니다.</p>
+
+                <h3 class="subsection-title">2. 6대 핵심 속성: 동의·주권·출처증명이 만드는 "신뢰"</h3>
+                <p><strong>현황:</strong> RFC는 TPLC가 갖춰야 할 6가지 속성을 제시합니다. 앞의 세 가지(동의·주권·출처증명)가 "Trusted(신뢰 가능)"를, 뒤의 세 가지(실시간 컴파일·쿼리·다중 소스 조합)가 "Portable(이동 가능)"을 뒷받침하는 구조입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>신뢰(Trust)를 만드는 3속성</h4>
+                        <p>• <strong>동의(Consent):</strong> 기관 정책·요청 에이전트·학습자 선호에 따라 공개 전에 결정론적 필터링 적용<br>
+                        • <strong>주권(Sovereignty):</strong> 동의 정책은 소스에서 기관이 직접 집행 — 공개 결정을 하류 시스템에 위임하지 않음<br>
+                        • <strong>출처증명(Provenance):</strong> W3C 검증 가능 자격증명(VC) 기반의 선택적 암호 서명으로 출처·소스·정책·시점을 수신자가 검증 가능</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>이동성(Portability)을 만드는 3속성</h4>
+                        <p>• <strong>실시간 컴파일:</strong> 행동 시점에 최신 소스 데이터로 조립해 "낡은 컨텍스트" 실패 방지<br>
+                        • <strong>쿼리(Querying):</strong> 에이전트가 상황·목적·필요 정보를 선언하면, 서비스가 정책 필터링된 결과로 응답<br>
+                        • <strong>다중 소스 조합:</strong> SIS·LMS·평가·크리덴셜·커리큘럼·신원 시스템 등 이질적 시스템에서 일관된 산출물 조립</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">9.0/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 6대 속성은 RFC 본문에 명시된 내용을 그대로 정리<br>
+                        <strong>개선점:</strong> 속성별 구현 세부(예: 서명 의무화 여부)는 Part 2에서 확정 예정
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://standards.1edtech.org/publications/rfc-trusted-context" target="_blank">TPLC RFC 원문</a> |
+                    <a href="https://www.w3.org/TR/vc-data-model-2.0/" target="_blank">W3C Verifiable Credentials 2.0</a>
+                </div>
+
+                <p><strong>전망:</strong> "인스턴스 수준 서비스 계정"에서 "요청·사용자 단위 인증"으로의 전환 요구는 LMS·SIS 벤더의 인증 아키텍처에 실질적 개편 압력으로 작용할 것입니다.</p>
+
+                <h3 class="subsection-title">3. 아키텍처: "tplc 서비스"라는 새로운 시스템 계층의 등장</h3>
+                <p><strong>현황:</strong> RFC는 소스 시스템과 소비자 에이전트 사이에 <strong>tplc 서비스</strong>라는 새로운 시스템 클래스를 제안합니다. 이 계층은 컨텍스트를 온디맨드로 컴파일하고, 기관 거버넌스·동의 정책을 적용하며, 쿼리 인터페이스를 제공하고, 선택적으로 서명하며, 캐싱·중복 제거·속도 제한을 담당합니다. 기술적으로는 새 표준이 아니라 <strong>기존 표준의 조합 계층</strong>입니다: OneRoster·CASE·Caliper(학습 데이터 어휘), Open Badges·CLR(크리덴셜), W3C VC·DID(출처증명), OpenID Connect·SAML(연합 신원), 그리고 <strong>MCP(Model Context Protocol)</strong>를 에이전트 통신 전송 계층으로 참조합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>3계층 구조</h4>
+                        <p>• <strong>소스 시스템:</strong> SIS, LMS, IAM, 평가, 크리덴셜, 커리큘럼 시스템<br>
+                        • <strong>tplc 서비스:</strong> 컴파일 · 거버넌스 · 쿼리 · 릴리스 담당의 신규 플랫폼 계층<br>
+                        • <strong>소비자:</strong> AI 튜터, 분석 대시보드, 입학사정 어시스턴트, 개인 디바이스 에이전트 등</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>유연한 배치 모델</h4>
+                        <p>• <strong>단일 기관형:</strong> 기관이 자체 tplc 서비스로 모든 소스를 프론트<br>
+                        • <strong>지역/정부형:</strong> 교육부·주 정부가 복수 기관을 위해 운영<br>
+                        • <strong>시장형:</strong> 벤더가 호스팅형 tplc 서비스를 구성 제공<br>
+                        • 어떤 모델에서도 신뢰 속성은 동일하게 유지되도록 설계</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 계층 구조·참조 표준·배치 모델 모두 RFC 원문 기반<br>
+                        <strong>개선점:</strong> 쿼리 메커니즘(GraphQL/REST 등)은 미정(TBD)으로 명시되어 있음
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol (MCP)</a> |
+                    <a href="https://www.1edtech.org/standards/caliper" target="_blank">Caliper Analytics</a> |
+                    <a href="https://www.1edtech.org/standards/edu-api" target="_blank">Edu-API</a> |
+                    <a href="https://www.1edtech.org/standards/case" target="_blank">CASE</a>
+                </div>
+
+                <p><strong>전망:</strong> "학습자보다 에이전트가 더 많아지는" 규모 문제를 RFC가 명시적으로 경고한 점이 주목됩니다. 컴파일된 컨텍스트 캐싱과 에이전트별 속도 제한이 새로운 인프라 비용 항목이 될 것입니다.</p>
+
+                <h3 class="subsection-title">4. 거버넌스 모델: 계층적 공개·필터링 투영·양방향 선언</h3>
+                <p><strong>현황:</strong> TPLC의 프라이버시 모델은 세 가지 메커니즘으로 구성됩니다. <strong>계층적 공개(Tiered disclosure)</strong>는 익명 수준부터 확장된 종단 기록까지, 명시된 목적에 걸맞은 수준으로만 데이터를 공개합니다. <strong>필터링 투영(Filtered projections)</strong>은 하나의 정본 컨텍스트를 수신자별 정책에 따라 서로 다르게 투영합니다. <strong>양방향 선언(Two-sided declarations)</strong>은 "기관이 허용하는 것"과 "에이전트가 요구하는 것"을 컴파일 시점에 조정합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>인가(Authorization)의 전환</h4>
+                        <p>• <strong>요청·사용자 단위 인증:</strong> 인스턴스 수준 서비스 계정에서 벗어나 호출마다 요청 주체와 명시 목적을 평가<br>
+                        • <strong>멀티 에이전트 워크플로:</strong> 컨텍스트가 정책 결정을 함께 운반 — 하류 에이전트는 인가를 재도출하지 않고 검증만 수행<br>
+                        • 예시: 시험 대비 워크플로에서 계획 에이전트가 기관에 한 번 컨텍스트를 요청하면, 콘텐츠·학습계획 에이전트는 동일한 정책 필터링 스냅샷을 재쿼리 없이 수신</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>소스 시스템에 요구되는 역량 전환</h4>
+                        <p>• <strong>쿼리 인터페이스:</strong> 리소스 단위 REST에서 필요한 투영을 선언하는 쿼리로<br>
+                        • <strong>실시간 제공:</strong> 야간 배치가 아닌 수 초 내 최신 데이터 공급<br>
+                        • <strong>스키마 문서화:</strong> 자체 모델을 공유 교육 어휘로 매핑<br>
+                        • <strong>추가적(Additive) 마이그레이션:</strong> 기존 REST 엔드포인트를 유지하면서 tplc 대응 역량을 병행 도입</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 거버넌스 메커니즘과 소스 시스템 요구사항은 RFC 원문에 명시된 내용<br>
+                        <strong>개선점:</strong> 실제 기관 정책과의 정합성(FERPA·GDPR 등)은 향후 논의 과제로 남아 있음
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://standards.1edtech.org/publications/rfc-trusted-context" target="_blank">TPLC RFC 원문</a> |
+                    <a href="https://www.1edtech.org/standards/ai-rubric" target="_blank">TrustEd Apps 생성형 AI 데이터 루브릭</a>
+                </div>
+
+                <p><strong>전망:</strong> "어떤 교육 데이터를 AI와 공유할 수 있는가"라는 2026년 AI 거버넌스의 핵심 질문(1EdTech 2026 트렌드 블로그)에 대해, TPLC는 정책을 코드로 집행하는 구체적 해답을 제시합니다. 규제가 강한 유럽·일본 시장에서 특히 수요가 클 것으로 예상됩니다.</p>
+
+                <h3 class="subsection-title">5. 추진 경과와 표준화 로드맵: 실험 그룹에서 RFC, 그리고 Part 2로</h3>
+                <p><strong>현황:</strong> TPLC는 약 10개월간의 단계적 커뮤니티 프로세스의 산물입니다. 2025년 10월 21일 1EdTech가 Microsoft·Google과 함께 "책임 있는 교육 AI" 협력을 발표(MCP 기반 신뢰 컨텍스트 구상 최초 공개)했고, 2026년 1월 BETT UK의 Microsoft 주최 행사, 2월 26일 Labs Live 웨비나("Learning Context in the Age of AI: A Modest Proposal", Feldstein), 3월부터 월례 "Learning Context in AI 실험 그룹"과 AI 해커톤을 거쳐, 7월 21일 RFC 공개에 이르렀습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>타임라인 (2025.10 → 2026.7)</h4>
+                        <p>• <strong>2025.10:</strong> Microsoft·Google과 협력 발표, MCP 기반 구상 공개<br>
+                        • <strong>2026.1:</strong> BETT UK(런던 서밋)에서 "AI에 표준이 필요한 이유" 논의<br>
+                        • <strong>2026.2:</strong> Labs Live 웨비나로 "컨텍스트를 1급 관심사로" 제안<br>
+                        • <strong>2026.3~:</strong> 실험 그룹 월례 운영, 유스케이스 수집<br>
+                        • <strong>2026.7.21:</strong> RFC 1.0.0 퍼블릭 드래프트 공개(7.23 설명 웨비나)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>향후 로드맵</h4>
+                        <p>• <strong>커뮤니티 의견 수렴:</strong> RFC 저장소의 토론 채널에서 의견·대안 제안 접수, "Open Questions" 섹션 운영<br>
+                        • <strong>Part 2(2026년 하반기):</strong> 기술 패턴·데이터 모델·표준 권고를 담은 후속 RFC<br>
+                        • <strong>워킹그룹:</strong> tplc 서비스·소스 시스템·소비자 에이전트의 적합성 프로파일 개발<br>
+                        • <strong>범 커뮤니티 협력:</strong> W3C, ADL, OpenID Foundation, 유럽연합 집행위원회, Schema.org 참여 필요성 명시</p>
+                    </div>
+                </div>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8.5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 타임라인은 1EdTech 공식 발표·이벤트 페이지·커뮤니티 블로그로 교차 확인<br>
+                        <strong>개선점:</strong> Part 2 공개 시기는 "2026년 하반기"로만 명시되어 유동적
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.1edtech.org/1edtech-article/1edtech-leads-collaborative-effort-to-shape-responsible-ai-in-education/411336" target="_blank">책임 있는 AI 협력 발표</a> |
+                    <a href="https://www.1edtech.org/events/learning-context-in-the-age-of-ai-a-modest-proposal" target="_blank">2월 Labs 웨비나</a> |
+                    <a href="https://community.1edtech.org/blogs/cara-jenkins/2026/02/26/use-cases-for-learning-context-in-ai-experiment-gr" target="_blank">실험 그룹 모집 공지</a>
+                </div>
+
+                <p><strong>전망:</strong> Degreed가 자사 MCP 서버를 "학습의 GPS"로 발표하는 등 벤더들이 이미 독자 구현을 내놓고 있어, TPLC가 이런 개별 구현을 묶는 공통 거버넌스 규약이 될 수 있을지가 2027년 표준화의 관전 포인트입니다.</p>
+            </section>
+
+            <!-- SECTION 2: 경쟁 환경 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경: AI 학습 컨텍스트 계층을 둘러싼 접근 비교</h2>
+
+                <h3 class="subsection-title">4가지 접근 방식</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">"AI에게 학습 컨텍스트를 어떻게 전달할 것인가"라는 문제에는 현재 4가지 접근이 병존합니다. TPLC는 범용 프로토콜(MCP)을 전송 계층으로 삼되, 교육 특화 거버넌스와 기존 교육 표준 어휘를 결합하는 위치를 차지합니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>접근</th>
+                            <th>주체</th>
+                            <th>성격</th>
+                            <th>강점 / 한계</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>TPLC</strong></td>
+                            <td>1EdTech Labs</td>
+                            <td>교육 특화 컨텍스트 조합·거버넌스 계층 (RFC 드래프트)</td>
+                            <td>동의·주권·출처증명 내장 / 아직 사양 미확정</td>
+                        </tr>
+                        <tr>
+                            <td><strong>범용 MCP</strong></td>
+                            <td>Anthropic 주도, OpenAI·Google 지원</td>
+                            <td>AI-데이터 연결의 범용 개방 프로토콜</td>
+                            <td>광범위한 생태계·도구 / 교육 도메인 거버넌스 부재</td>
+                        </tr>
+                        <tr>
+                            <td><strong>벤더 자체 MCP 구현</strong></td>
+                            <td>Degreed 등 플랫폼 기업</td>
+                            <td>자사 학습 데이터를 MCP 서버로 노출</td>
+                            <td>즉시 사용 가능 / 플랫폼 종속, 기관 정책 통제 제한</td>
+                        </tr>
+                        <tr>
+                            <td><strong>xAPI / TLA</strong></td>
+                            <td>ADL Initiative</td>
+                            <td>학습 경험 기록·전송 표준</td>
+                            <td>성숙한 이력 데이터 표준 / "순간의 컨텍스트" 개념 없음</td>
+                        </tr>
+                        <tr>
+                            <td><strong>학술 프레임워크</strong></td>
+                            <td>연구 커뮤니티 (TEAS, Learning Context 통합 프레임워크 등)</td>
+                            <td>검증 가능·감사 가능한 교육 AI의 이론적 기반</td>
+                            <td>개념적 엄밀성 / 산업 구현·인증 체계 부재</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">시장 트렌드 요점</h3>
+                <ul class="key-findings">
+                    <li>MCP가 사실상의 AI-데이터 연결 표준으로 부상하면서, 교육 분야는 그 위에 얹을 "거버넌스 계층"을 경쟁적으로 모색 중</li>
+                    <li>Microsoft·Google이 1EdTech 협력에 동시 참여 — 빅테크가 교육 컨텍스트 표준화를 지지하는 드문 정렬</li>
+                    <li>Degreed 등 벤더의 선행 MCP 구현이 확산 — 표준 확정 전 사실상 표준(de facto) 선점 경쟁 시작</li>
+                    <li>"데이터 상호운용성"에서 "컨텍스트 상호운용성"으로 논의 축 이동 — 시간·상황 제한적 스냅샷이라는 새 패러다임</li>
+                    <li>W3C VC·DID가 크리덴셜을 넘어 컨텍스트 출처증명으로 활용 영역 확장</li>
+                </ul>
+
+                <h3 class="subsection-title">접근 방식 비교 차트</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 활용 아이디어 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>RFC 검토·의견 제출</strong> - 공개 의견 수렴 기간에 RFC를 검토하고 자사 유스케이스 관점의 의견을 제출해 표준 형성 초기에 관여</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>컨텍스트 게이트웨이 파일럿</strong> - 자사 LMS 데이터를 MCP 서버로 노출하되 TPLC의 6대 속성(동의 필터링·요청 단위 인증 등)을 선행 적용하는 소규모 실증</p>
+                    <p style="line-height: 1.6;">3. <strong>소스 시스템 준비도 점검</strong> - 자사 시스템의 쿼리 인터페이스·실시간 제공·스키마 문서화 역량을 RFC 요구사항 기준으로 사전 진단</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: 경영진 요약 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">경영진 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>새 개념 제안:</strong> TPLC는 "특정 학습 순간"을 기술하는 시간·상황 제한적 컨텍스트 스냅샷 — 데이터 표준이 아니라 기존 표준(OneRoster·CASE·Caliper·OB·CLR)을 조립하는 레시피</li>
+                        <li><strong>6대 속성:</strong> 동의·주권·출처증명(신뢰) + 실시간 컴파일·쿼리·다중 소스 조합(이동성)이 프레임워크의 뼈대</li>
+                        <li><strong>새 시스템 계층:</strong> 소스 시스템과 AI 에이전트 사이에 "tplc 서비스"가 등장 — 기관·정부·벤더 호스팅 등 유연한 배치 모델</li>
+                        <li><strong>MCP와의 관계:</strong> MCP를 전송 계층으로 참조하되, 교육 특화 거버넌스(계층적 공개·필터링 투영·양방향 선언)를 추가하는 상보적 구조</li>
+                        <li><strong>진행 단계:</strong> 2026년 7월 RFC 1.0.0 퍼블릭 드래프트 공개, 하반기 Part 2(기술 패턴)와 워킹그룹·해커톤을 거쳐 정식 표준화 추진</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">참고 가이드</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>LMS·학습 플랫폼 벤더 → RFC 의견 제출 + 소스 시스템 역량 점검</strong><br>
+                        이유: 쿼리 인터페이스·실시간 제공·요청 단위 인증이 향후 적합성 프로파일 요건이 될 가능성<br>
+                        <strong>AI 튜터·에이전트 개발 조직 → MCP 구현에 TPLC 속성 선행 반영</strong><br>
+                        이유: 표준 확정 전이라도 동의 필터링·목적 선언 설계는 기관 조달 심사에서 차별화 요소<br>
+                        <strong>교육기관·정부 → tplc 서비스 배치 모델 검토</strong><br>
+                        이유: 기관 주권을 유지한 채 AI 활용을 확대하는 구체적 아키텍처 선택지 제공
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정적 (빅테크 협력·기존 표준 재활용·단계적 커뮤니티 프로세스를 갖췄으나, 사양 미확정·벤더 선행 구현과의 조율이 관건)</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">8.5/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> RFC 원문·공식 웨비나·발표 자료 등 1차 소스 중심의 신뢰도 높은 분석</p>
+                        <p><strong>주요 강점:</strong> 정의·속성·아키텍처·로드맵을 RFC 본문에서 직접 확인, 추진 경과는 복수 소스로 교차 검증</p>
+                        <p><strong>개선 우선순위:</strong> 퍼블릭 드래프트 특성상 내용 변경 가능성 명시, Part 2 공개 후 재검토 필요</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: 주요 용어 설명 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>TPLC (Trusted Portable Learning Context)</strong> - 특정 학습 순간을 기술하는 신뢰 가능·이동 가능한 컨텍스트 스냅샷. 1EdTech Labs가 2026년 7월 RFC로 제안
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>RFC (Request for Comment)</strong> - 정식 표준화에 앞서 원칙·설계를 공개하고 커뮤니티 의견을 구하는 문서. 구속력 없는 비규범(non-normative) 문서
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>MCP (Model Context Protocol)</strong> - AI 모델을 외부 데이터·도구에 연결하는 개방형 프로토콜. Anthropic이 제안했고 OpenAI·Google도 지원. TPLC의 전송 계층 후보
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>컨텍스트 실패(Context-failure) 문제</strong> - AI가 통제된 컨텍스트 부족으로 응답 거부·과잉 일반화·환각을 일으키는 현상. TPLC가 해결하려는 핵심 문제
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>계층적 공개(Tiered Disclosure)</strong> - 익명 수준부터 상세 기록까지, 명시된 목적에 맞는 수준으로만 데이터를 공개하는 방식
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>필터링 투영(Filtered Projection)</strong> - 하나의 정본 컨텍스트를 수신자별 정책에 따라 서로 다른 모습으로 제공하는 기법
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>W3C 검증 가능 자격증명(VC)</strong> - 발행자·내용·시점을 암호학적으로 검증할 수 있는 디지털 증명 표준. TPLC에서 컨텍스트 출처증명에 활용
+                    </div>
+                    <div>
+                        <strong>SIS (Student Information System)</strong> - 학적·수강·성적 등 학사 정보를 관리하는 기간 시스템. TPLC의 주요 소스 시스템 중 하나
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: 참고 자료 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 8월 3일</p>
+                    <ul>
+                        <li>• <a href="https://standards.1edtech.org/publications/rfc-trusted-context" target="_blank">1EdTech: RFC — Trusted Portable Learning Context (Public Draft 1.0.0)</a></li>
+                        <li>• <a href="https://www.1edtech.org/events/request-for-public-comment-on-trusted-learning-context" target="_blank">1EdTech: Request for Public Comment on Trusted Learning Context (웨비나)</a></li>
+                        <li>• <a href="https://www.1edtech.org/program/labs" target="_blank">1EdTech Labs 프로그램</a></li>
+                        <li>• <a href="https://www.1edtech.org/1edtech-article/1edtech-leads-collaborative-effort-to-shape-responsible-ai-in-education/411336" target="_blank">1EdTech: Leads Collaborative Effort to Shape Responsible AI in Education</a></li>
+                        <li>• <a href="https://www.1edtech.org/events/learning-context-in-the-age-of-ai-a-modest-proposal" target="_blank">1EdTech: Learning Context in the Age of AI — A Modest Proposal</a></li>
+                        <li>• <a href="https://eliterate.us/learning-context-and-ai-a-1edtech-labs-live-webinar/" target="_blank">e-Literate: Learning Context and AI (Michael Feldstein)</a></li>
+                        <li>• <a href="https://community.1edtech.org/blogs/cara-jenkins/2026/02/26/use-cases-for-learning-context-in-ai-experiment-gr" target="_blank">1EdTech Community: Use Cases for Learning Context in AI Experiment Group</a></li>
+                        <li>• <a href="https://www.1edtech.org/events/ai-in-standards-a-conversation-with-google-and-microsoft" target="_blank">1EdTech: AI in Standards — A Conversation with Google and Microsoft</a></li>
+                        <li>• <a href="https://www.1edtech.org/events/1edtech-london-summit-2026-why-ai-in-learning-needs-standards" target="_blank">1EdTech London Summit 2026: Why AI in Learning Needs Standards</a></li>
+                        <li>• <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol 공식 사양</a></li>
+                        <li>• <a href="https://degreed.com/experience/blog/announcing-degreed-mcp/" target="_blank">Degreed: Announcing Degreed MCP</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2601.06066" target="_blank">arXiv: TEAS — Trusted Educational AI Standard</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2512.24362" target="_blank">arXiv: Learning Context — A Unified Framework for Context-Aware AI in Education</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['교육 특화성', '거버넌스·동의', '실시간성', '생태계 채택', '표준 성숙도'],
+                datasets: [
+                    {
+                        label: '1EdTech TPLC',
+                        data: [95, 90, 85, 30, 25],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    },
+                    {
+                        label: '범용 MCP',
+                        data: [20, 35, 80, 95, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    },
+                    {
+                        label: '벤더 MCP 구현 (예: Degreed)',
+                        data: [70, 50, 80, 45, 40],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)'
+                    },
+                    {
+                        label: 'ADL xAPI/TLA',
+                        data: [85, 55, 40, 60, 85],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments &amp; Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+
+</body>
+</html>
