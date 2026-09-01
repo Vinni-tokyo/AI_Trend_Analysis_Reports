@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>目的特化型レコメンド・チャットボットの開発方法論と市場動向</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+    --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+    --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; }
+.container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+    color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+.header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+.back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+    color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 0.3rem; }
+.back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.language-switcher { display: flex; gap: 0.3rem; }
+.lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+    color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+.lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+.header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+.header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+.header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+.content { padding: 1.5rem; }
+.section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+.section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+.subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+.executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+.key-findings { list-style: none; }
+.key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+.key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.75rem; }
+th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+th { background: #fafafa; font-weight: 600; }
+tr:hover { background: #fafafa; }
+.chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+.sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+.sources ul { list-style: none; }
+.sources li { padding: 0.25rem 0; }
+.sources a { color: #0052b8; text-decoration: none; }
+.trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+.trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+.trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+.trend-card p { font-size: 0.9rem; line-height: 1.6; }
+.related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+.related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+.related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+.related-links a:hover { text-decoration: underline; }
+.credibility-score { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; }
+.credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+.credibility-score-label { font-weight: 600; color: #334155; }
+.credibility-score-value { font-weight: 700; color: #0052b8; }
+.credibility-score-details { color: #475569; line-height: 1.55; }
+.overall-credibility { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1rem 1.25rem; margin: 1rem 0; }
+.overall-credibility h3 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+.overall-credibility-score { font-size: 1.6rem; font-weight: 800; color: #0052b8; margin-bottom: 0.5rem; }
+.overall-credibility-details p { font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.3rem; }
+@media (max-width: 768px) {
+    .trend-grid { grid-template-columns: 1fr; }
+    .header-actions { position: static; display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .header { padding-top: 1rem; }
+}
+@media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← トップ</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='purpose-built-recommendation-chatbots-20260901-ja.html'" class="lang-btn active">日本語</button>
+                <button onclick="window.location.href='purpose-built-recommendation-chatbots-20260901-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='purpose-built-recommendation-chatbots-20260901-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>目的特化型レコメンド・チャットボットの<br>開発方法論と市場動向</h1>
+        <div class="subtitle">評価駆動開発・審判の限界・検索と生成の分離・学習/キャリア推薦サービスへの提言</div>
+        <div class="meta">レポート作成日：2026年9月1日 | 標準レポート（5〜8ページ）</div>
+    </div>
+
+    <div class="content">
+
+    <!-- SECTION 1 -->
+    <section id="trends" class="section">
+        <h2 class="section-title">主要トレンド Top 5</h2>
+
+        <h3 class="subsection-title">1. 評価駆動開発（EDD）が事実上の標準になった</h3>
+        <p><strong>現状：</strong>2026年現在、大規模言語モデル（LLM）の機能を作る前に<strong>まず評価を書く</strong>という進め方が業界の推奨事項として定着しました。テスト駆動開発を非決定的なシステムに適用したもので、出力そのものを断定するのではなく、<strong>ラベル付きデータセットでのスコアが閾値を下回らないこと</strong>を保証します。プロンプト・モデル版・検索設定に触れる変更はすべて評価を実行し、閾値を超えて悪化した場合は取り込まれません。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>標準的なパイプライン構成</h4>
+                <p>• <strong>正解セット：</strong>100〜500件を厳選<br>
+                • <strong>課題別の指標：</strong>3〜5種（BLEU・ROUGE ではない）<br>
+                • <strong>LLM 審判の層：</strong>判定の10%を人が抜き取り確認<br>
+                • <strong>CI フック：</strong>5%を超える悪化で取り込みを止める</p>
+            </div>
+            <div class="trend-card">
+                <h4>なぜ100件以上なのか</h4>
+                <p>• <strong>ばらつきとの区別：</strong>本物の劣化と実行ごとの揺れを分ける最小規模<br>
+                • <strong>失敗の蓄積：</strong>経験した失敗をケースとして固定する<br>
+                • <strong>統計的な有意性：</strong>小数点の変化を判定するには標本が要る<br>
+                • <strong>CI 統合：</strong>品質ゲートが自動で回って初めて意味を持つ</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://developers.openai.com/api/docs/guides/evaluation-best-practices" target="_blank">OpenAI Evaluation Best Practices</a> |
+            <a href="https://deepeval.com/blog/top-5-llm-evaluation-frameworks" target="_blank">DeepEval</a> |
+            <a href="https://galtea.ai/blog/llm-evaluation-complete-guide" target="_blank">Galtea</a>
+        </div>
+
+        <p><strong>展望：</strong>評価資産がプロンプトより長く生き残る構造が固まりつつあります。モデルを入れ替えても評価セットは残るため、<strong>評価セットそのものがチームの蓄積資産</strong>になります。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>OpenAI の公式文書と複数の独立フレームワーク文書が同じ推奨を示している・具体的な数値（100〜500件、10%抜き取り、5%閾値）<br>
+                <strong>改善点：</strong>「事実上の標準」という表現は採用率の統計ではなく文献の一致度に基づく
+            </div>
+        </div>
+
+        <h3 class="subsection-title">2. LLM 審判は成熟したが、物差し自体が揺れる</h3>
+        <p><strong>現状：</strong>LLM-as-a-Judge は別の LLM の出力を採点・分類・比較する方式で、2026年の推奨は明確です — <strong>より強いモデルで弱いモデルを採点</strong>し、<strong>審判モデルの版を固定</strong>し、自由記述ではなく<strong>1〜5段階の構造化された採点基準</strong>を使い、<strong>リリースごとに判定の10%を人が確認</strong>します。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>固定すべきもの</h4>
+                <p>• <strong>モデルの版：</strong>自動更新は物差しを変えることと同じ<br>
+                • <strong>リージョン：</strong>同じモデルでも地域で挙動が変わり得る<br>
+                • <strong>採点基準のハッシュ：</strong>基準が変われば過去と比較できない<br>
+                • <strong>temperature：</strong>再現性のため0に固定</p>
+            </div>
+            <div class="trend-card">
+                <h4>実測された審判の影響</h4>
+                <p>• <strong>同じデータ、別の審判：</strong>平均 0.81 → 0.66<br>
+                • <strong>差分：</strong>−0.15（ノイズ比率 +11.1pp）<br>
+                • <strong>実行間の揺れ：</strong>−0.02<br>
+                • <strong>含意：</strong>審判の影響が製品変更より大きいことがある</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://deepeval.com/blog/llm-as-a-judge" target="_blank">DeepEval — LLM-as-a-Judge</a> |
+            <a href="https://www.openlayer.com/blog/rag-pipeline-evaluation-groundedness-faithfulness" target="_blank">Openlayer</a>
+        </div>
+
+        <p><strong>展望：</strong>審判を使うチームと<strong>審判を較正するチーム</strong>の差が開きます。正解セットなしに審判だけを使うと、審判を替えた時点で過去の数値がすべて無効になります。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>業界の推奨は DeepEval など一次文書に基づく・審判の影響 −0.15 は実プロジェクトの実測値<br>
+                <strong>改善点：</strong>実測値は単一プロジェクトの事例であり、一般化には追加検証が必要
+            </div>
+        </div>
+
+        <h3 class="subsection-title">3. RAG 評価が「検索」と「生成」の二点に分かれた</h3>
+        <p><strong>現状：</strong>2026年の RAG 評価プログラムの標準的な推奨は、<strong>検索段階の指標を1つ、生成段階の指標を1つ</strong>そろえて追跡することです。生成だけを見ると検索の劣化が隠れ、検索だけを見ると作り話を見逃します。実例として、ある法務検索システムは <strong>faithfulness 0.91</strong> で出荷されましたが、<strong>context recall 0.62</strong> のために6件に1件が重要な法令を落としていました。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>2つの失敗面</h4>
+                <p>• <strong>検索の失敗：</strong>関連文書を取り逃す（recall が低い）<br>
+                • <strong>検索の汚染：</strong>無関係な文書を上げる（precision が低い）<br>
+                • <strong>生成の失敗：</strong>部分的な文脈でもっともらしく答える<br>
+                • <strong>切り分けの利点：</strong>微調整モデルは2つの面が一体化し原因分離が難しい</p>
+            </div>
+            <div class="trend-card">
+                <h4>カバレッジの空白</h4>
+                <p>• <strong>定義：</strong>質問が求める概念がコーパスに存在しない<br>
+                • <strong>症状：</strong>慎重だが役に立たない回答・低い代理指標<br>
+                • <strong>誤診の危険：</strong>検索調整の問題と勘違いしやすい<br>
+                • <strong>対処：</strong>コーパスの監査と正本文書の確保 — アルゴリズムではない</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://www.premai.io/blog/rag-evaluation-metrics-frameworks-testing-2026/" target="_blank">Prem AI — RAG Evaluation 2026</a> |
+            <a href="https://arxiv.org/pdf/2603.08819" target="_blank">Beyond Relevance（arXiv）</a>
+        </div>
+
+        <p><strong>展望：</strong>「推薦が悪い」を<strong>検索の問題・入力の問題・在庫の問題</strong>に切り分ける診断体系が標準になります。3つは担当部門が異なります — それぞれ開発・データ・事業です。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>arXiv 論文と複数ベンダー文書が同じ二重指標を推奨・法務システムの事例は具体的な数値を含む<br>
+                <strong>改善点：</strong>引用した法務システム事例の出典がベンダーのブログであり、独立検証の余地がある
+            </div>
+        </div>
+
+        <h3 class="subsection-title">4.「運用上の安全性」が独立した評価軸になった</h3>
+        <p><strong>現状：</strong>目的特化型エージェントにおいて、<strong>範囲外（out-of-domain）の質問を正確に断りつつ、範囲内の質問には役立ち続ける能力</strong>を運用上の安全性（operational safety）と呼び、これを独立した指標として測る流れが定着しました。2026年の研究 <strong>OffTopicEval</strong> は21の目的別エージェントを立て、それぞれの拒否・受容の能力を評価しています。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>階層型のガードレール</h4>
+                <p>• <strong>入力側：</strong>話題分類で範囲外の質問を遮断<br>
+                • <strong>出力側：</strong>方針に反する表現を除去<br>
+                • <strong>システム側：</strong>アクセス制御・出典の強制・情報漏えい防止<br>
+                • <strong>例：</strong>医療向けは金融助言を、顧客対応は政治的論評を遮断</p>
+            </div>
+            <div class="trend-card">
+                <h4>よくある漏れの経路</h4>
+                <p>• <strong>「ちなみに」型：</strong>分類は正確でも生成段階で紛れ込む<br>
+                • <strong>代行の約束：</strong>「貼っていただければ対応します」<br>
+                • <strong>案内の不足：</strong>断るが理由と行き先を伝えない<br>
+                • <strong>属性による判断：</strong>傾向や背景で人を分ける</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://arxiv.org/pdf/2509.26495" target="_blank">OffTopicEval（arXiv）</a> |
+            <a href="https://www.openlayer.com/blog/ai-guardrails-llm-guide" target="_blank">Openlayer — AI Guardrails</a> |
+            <a href="https://www.datadoghq.com/blog/llm-guardrails-best-practices/" target="_blank">Datadog</a>
+        </div>
+
+        <p><strong>展望：</strong>ガードレールは2026年に入り<strong>経営レベルの関心事</strong>になりました。目的特化型のサービスでは「決められたことだけを行う」が機能ではなく<strong>約束</strong>として扱われます。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>arXiv 論文（OffTopicEval、21エージェント）を引用・階層型ガードレールは複数ベンダー文書で共通して確認<br>
+                <strong>改善点：</strong>「経営レベルの関心事」はベンダーの記述の引用であり、調査データは確認できていない
+            </div>
+        </div>
+
+        <h3 class="subsection-title">5. スキル・オントロジーが推薦品質の上限を決める</h3>
+        <p><strong>現状：</strong>キャリア・学習推薦のデータ基盤は<strong>スキルの分類体系</strong>です。既製の公開体系（Lightcast、ESCO、O*NET）を利用するか、自社体系（Eightfold の160万スキル、Workday Skills Cloud、Beamery の Talent Graph、Gloat の Loomra 知識グラフ）を持つかの二手に分かれます。資格証明の面では <strong>Open Badges 3.0</strong> が2024年6月に最終標準として承認され、2025〜2026年に機関での採用が広がっていますが、<strong>現場では依然として 2.0 が最も広く使われています</strong>。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>分類体系の地形</h4>
+                <p>• <strong>Lightcast：</strong>求人票・資格・地域の需給など外部労働市場の信号に基づく<br>
+                • <strong>O*NET：</strong>米国労働省の標準<br>
+                • <strong>ESCO：</strong>EU の多言語体系<br>
+                • <strong>TechWolf：</strong>AI 推論で常時更新されるスキル</p>
+            </div>
+            <div class="trend-card">
+                <h4>スキル推定の進化</h4>
+                <p>• <strong>申告ベース：</strong>プロフィールに書いたもの（網羅性が低い）<br>
+                • <strong>経歴からの推定：</strong>職歴からスキルを推し量る（Eightfold の強み）<br>
+                • <strong>業務信号：</strong>コミット・成果物・対応履歴から習熟度を導く<br>
+                • <strong>検証可能な資格：</strong>Open Badges 3.0 は暗号署名を内蔵</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://lightcast.io/" target="_blank">Lightcast</a> |
+            <a href="https://esco.ec.europa.eu/" target="_blank">ESCO</a> |
+            <a href="https://www.onetonline.org/" target="_blank">O*NET</a> |
+            <a href="https://www.gloat.com/" target="_blank">Gloat</a> |
+            <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+            <a href="https://www.imsglobal.org/spec/ob/v3p0/impl" target="_blank">Open Badges 3.0</a>
+        </div>
+
+        <p><strong>展望：</strong>推薦アルゴリズムの改善余地よりも、<strong>推薦する対象そのものの確保</strong>が制約になる局面が訪れます。カタログが空の職種は、検索をいくら直しても埋まりません。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>プラットフォームごとの具体的な規模（Eightfold 160万スキル）・Open Badges 3.0 の承認時期（2024年6月）を明記<br>
+                <strong>改善点：</strong>スキル数の出典がベンダー自身の発表であり、2.0/3.0 の採用比率の定量データは未確認
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="competitive" class="section">
+        <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+        <h3 class="subsection-title">市場規模</h3>
+        <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">
+        対話型システム市場は2025年の <strong>248億ドル</strong> から2026年に <strong>322億ドル</strong> へ成長し（年平均29.8%）、2026〜2034年は年平均25.6%の成長が見込まれます。AI ベースの推薦システム市場は2026年の <strong>23億7,260万ドル</strong> から2035年に <strong>45億8,710万ドル</strong> へ、年平均7.6%の成長が予想されます。AI キャリアコーチ市場は <strong>年平均18.7%</strong> で成長し、北米が約34.6%を占めています。</p>
+
+        <h3 class="subsection-title">4層の市場構造</h3>
+        <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">目的特化型のレコメンド・チャットボットを作るのに必要な道具は4層に分かれます。当社のようなサービスは<strong>4層すべてを組み立てる</strong>必要があり、どれか1層が欠けると残りが意味を失います。</p>
+
+        <table>
+            <thead>
+                <tr><th>層</th><th>主なプレイヤー</th><th>役割</th><th>対象</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>① 評価・観測</strong></td><td>DeepEval, Ragas, OpenAI Evals, Openlayer, Galtea</td><td>正解セット・審判・CI ゲート</td><td>LLM 製品チーム</td></tr>
+                <tr><td><strong>② ガードレール</strong></td><td>NeMo Guardrails, Guardrails AI, Datadog LLM Obs</td><td>入力・出力・システム層の防御</td><td>規制産業・大企業</td></tr>
+                <tr><td><strong>③ スキルデータ</strong></td><td>Lightcast, O*NET, ESCO, TechWolf</td><td>職業・スキルの分類体系</td><td>人事・EdTech・行政</td></tr>
+                <tr><td><strong>④ 人材マーケットプレイス</strong></td><td>Gloat, Eightfold AI, Fuel50, Beamery</td><td>マッチング・社内異動・経路推薦</td><td>大企業人事</td></tr>
+                <tr><td><strong>資格標準</strong></td><td>Open Badges 3.0（1EdTech）, Credly, Accredible</td><td>検証可能な学習の証明</td><td>教育機関・発行機関</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">主要な市場の変化5点</h3>
+        <ul class="key-findings">
+            <li><strong>評価が製品の一部になった：</strong>評価フレームワークが独立したカテゴリとして成立し、CI 統合が基本要件になった</li>
+            <li><strong>検索と生成の責任分離：</strong>単一の品質スコアから二重指標の体系へ移行</li>
+            <li><strong>運用上の安全性の指標化：</strong>「範囲を守る」が定性評価から定量指標へ転換</li>
+            <li><strong>スキル推定の高度化：</strong>申告ベースから業務信号ベースへ（コミット・成果物・対応履歴）</li>
+            <li><strong>資格標準の世代交代が進行中：</strong>Open Badges 3.0 の承認は完了、現場の移行は途上</li>
+        </ul>
+
+        <h3 class="subsection-title">層ごとの成熟度比較</h3>
+        <div class="chart-container">
+            <canvas id="competitiveChart"></canvas>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">7.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>市場規模は複数の調査機関（The Business Research Company、Global Growth Insights、Market.us）の数値を併記<br>
+                <strong>改善点：</strong>調査機関ごとの数値の差が大きく（対話型システムで267億〜322億ドル）、レーダーチャートの点数は本分析の定性判断
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">活用アイデア</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>正解セットの構築と審判の較正</strong> - 層化標本100〜200件を人がラベル付けし、審判との一致率を指標として固定する</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>カバレッジ地図の公開</strong> - 対応できる職種とそうでない職種を明示し、空白を製品の欠陥ではなく範囲として扱う</p>
+            <p style="line-height: 1.6;">3. <strong>二重指標の常設</strong> - 検索段階と生成段階の指標を同じダッシュボードに並べ、劣化が隠れないようにする</p>
+        </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">エグゼクティブサマリー</h2>
+
+        <div class="executive-summary">
+            <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+            <ul class="key-findings">
+                <li><strong>評価は資産である：</strong>モデルとプロンプトは入れ替わりますが、評価セットは残ります。評価セットなしに積み上げた改善は、次のモデル交代のときに証明できません。</li>
+                <li><strong>物差しが揺れると改善を判定できない：</strong>審判を替えただけで平均が0.15動いた実測があります。多くの製品変更より大きい値です。</li>
+                <li><strong>推薦の失敗は3種類ある：</strong>検索の問題・入力の問題・在庫の問題であり、担当はそれぞれ開発・データ・事業に分かれます。</li>
+                <li><strong>無いものは検索で作れない：</strong>コーパスに無い領域はアルゴリズム改善では埋まりません。対処はコンテンツの確保か範囲の縮小です。</li>
+                <li><strong>誠実さは精度より重い：</strong>誤った推薦は利用者が判断できますが、していない履歴を語られると検証しようがありません。</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">状況別の参考</h3>
+            <p style="font-size: 0.95rem; line-height: 1.8;">
+                <strong>評価体系が既にある組織 → 正解セットの構築を優先的に検討</strong><br>
+                理由：審判を較正する土台がないと、積み上げた数値が審判交代で無効になります。<br>
+                <strong>カバレッジの空白が大きい組織 → 範囲の縮小も選択肢として検討</strong><br>
+                理由：コンテンツ確保には時間がかかり、その間は約束を減らすほうが信頼の維持に有利な場合があります。<br>
+                <strong>ローンチ前の組織 → オフライン評価とオンライン信号の均衡を検討</strong><br>
+                理由：オフライン評価は劣化を防ぐのに強く、何を作るかを決めるのには弱いためです。
+            </p>
+        </div>
+
+        <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>ポジティブ（評価方法論が成熟段階に入り、ツールの生態系も整いました。ただしデータ・コンテンツ確保という非技術的な制約が残ります。）</p>
+
+        <div class="overall-credibility">
+            <h3>📋 総合信頼性評価</h3>
+            <div class="overall-credibility-score">8.0/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>総合評価：</strong>方法論の部分は一次文書と学術論文に基づき信頼性が高く、市場規模の部分は調査機関ごとの差を併記して透明性を確保しています。</p>
+                <p><strong>主な強み：</strong>arXiv 論文2件を引用・具体的な数値と出典を併記・実測データと文献根拠を区別して表記</p>
+                <p><strong>改善の優先順位：</strong>市場規模の数値について調査機関ごとの方法論の違いを明示・採用率に関する記述の定量根拠を補強</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+        <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+            <div style="margin-bottom: 0.4rem;"><strong>評価駆動開発（EDD）</strong> - 機能より先に評価を作る進め方。テスト駆動開発を LLM に適用したもので、出力そのものではなくスコアの閾値を保証します。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>正解セット（Golden Set）</strong> - 人がラベル付けした基準データ。審判と指標を較正する土台となり、最低100件が推奨されます。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>LLM 審判（LLM-as-a-Judge）</strong> - LLM が別の LLM の出力を採点する方式。モデルの版と採点基準の固定が前提です。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Context Recall / Precision</strong> - 検索段階の指標。関連文書をどれだけ漏れなく取れたか（recall）、取ったものがどれだけ関連するか（precision）を測ります。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Faithfulness（忠実性）</strong> - 生成段階の指標。回答が取得した文書に基づいているかを測ります。高くても recall が低ければ要点を落とします。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>カバレッジの空白（Coverage Gap）</strong> - 質問が求める概念がコーパスにまったく無い状態。検索の改善では埋められません。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>運用上の安全性（Operational Safety）</strong> - 範囲外の質問を正確に断りつつ範囲内の質問には役立つ能力。目的特化型エージェントの中核指標です。</div>
+            <div><strong>スキル・オントロジー</strong> - 職業とスキル、その関係を構造化した分類体系。Lightcast・ESCO・O*NET などの公開体系と、企業独自の体系があります。</div>
+        </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>参考資料</h3>
+            <p><strong>データ収集日：</strong>2026年9月1日</p>
+            <ul>
+                <li>• <a href="https://developers.openai.com/api/docs/guides/evaluation-best-practices" target="_blank">OpenAI — Evaluation Best Practices</a></li>
+                <li>• <a href="https://deepeval.com/blog/llm-as-a-judge" target="_blank">DeepEval — LLM-as-a-Judge in 2026</a></li>
+                <li>• <a href="https://deepeval.com/blog/top-5-llm-evaluation-frameworks" target="_blank">DeepEval — Top 5 LLM Evaluation Frameworks in 2026</a></li>
+                <li>• <a href="https://qaskills.sh/blog/eval-driven-development-llm-guide-2026" target="_blank">QASkills — Eval-Driven Development for LLMs (2026)</a></li>
+                <li>• <a href="https://galtea.ai/blog/llm-evaluation-complete-guide" target="_blank">Galtea — The Complete Guide for LLM Evaluations in 2026</a></li>
+                <li>• <a href="https://www.premai.io/blog/rag-evaluation-metrics-frameworks-testing-2026/" target="_blank">Prem AI — RAG Evaluation: Metrics, Frameworks &amp; Testing (2026)</a></li>
+                <li>• <a href="https://www.openlayer.com/blog/rag-pipeline-evaluation-groundedness-faithfulness" target="_blank">Openlayer — RAG Evaluation in Production (2026-07)</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2603.08819" target="_blank">arXiv — Beyond Relevance: Retrieval and RAG Information Coverage</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2509.26495" target="_blank">arXiv — OffTopicEval: When LLMs Enter the Wrong Chat</a></li>
+                <li>• <a href="https://www.openlayer.com/blog/ai-guardrails-llm-guide" target="_blank">Openlayer — AI Guardrails: The Complete Guide (2026-01)</a></li>
+                <li>• <a href="https://www.thebusinessresearchcompany.com/report/ai-based-recommendation-system-global-market-report" target="_blank">The Business Research Company — AI-Based Recommendation System Market</a></li>
+                <li>• <a href="https://www.globalgrowthinsights.com/market-reports/ai-based-recommendation-system-market-102057" target="_blank">Global Growth Insights — AI-Based Recommendation System Market 2026-2035</a></li>
+                <li>• <a href="https://market.us/report/ai-career-coach-market/" target="_blank">Market.us — AI Career Coach Market</a></li>
+                <li>• <a href="https://www.knowlee.ai/blog/ai-talent-intelligence" target="_blank">Knowlee — AI Talent Intelligence (Eightfold, Beamery, Gloat)</a></li>
+                <li>• <a href="https://www.virtualbadge.io/blog-articles/open-badges-3-0-what-is-the-status-in-2026" target="_blank">Virtualbadge — Open Badges 3.0: Status in 2026</a></li>
+                <li>• <a href="https://www.imsglobal.org/spec/ob/v3p0/impl" target="_blank">1EdTech — Open Badges 3.0 Implementation Guide</a></li>
+            </ul>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx, {
+    type: 'radar',
+    data: {
+        labels: ['ツールの成熟度', '標準化の水準', '導入の容易さ', '自社構築の必要性', '費用負担'],
+        datasets: [
+            { label: '評価・観測', data: [85, 60, 70, 40, 30],
+              borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+            { label: 'ガードレール', data: [70, 55, 65, 55, 35],
+              borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+            { label: 'スキルデータ', data: [90, 85, 50, 30, 75],
+              borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)' },
+            { label: '人材マーケットプレイス', data: [80, 40, 45, 25, 90],
+              borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+        scales: { r: { beginAtZero: true, max: 100 } } }
+});
+</script>
+
+<!-- Interaction Components -->
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">お名前（任意）</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">コメント</label>
+                <textarea id="comment-content" placeholder="ご意見をお聞かせください..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">投稿する</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>

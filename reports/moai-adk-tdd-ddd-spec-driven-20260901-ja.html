@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoAI-ADK と仕様駆動開発：TDD・DDD の再浮上</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.1rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.85rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.7rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:280px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← トップ</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='moai-adk-tdd-ddd-spec-driven-20260901-ja.html'" class="lang-btn active">日本語</button>
+                <button onclick="window.location.href='moai-adk-tdd-ddd-spec-driven-20260901-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='moai-adk-tdd-ddd-spec-driven-20260901-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>MoAI-ADK と仕様駆動開発：<br>TDD と DDD の再浮上</h1>
+        <div class="subtitle">AI がコードを書く時代に、古い方法論が再び必要になった理由</div>
+        <div class="meta">レポート作成日：2026年9月1日 | 標準レポート（5〜8ページ）</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">主要トレンド Top 5</h2>
+
+        <h3 class="subsection-title">1. 仕様駆動開発（SDD）が2026年の主流になった</h3>
+        <p><strong>現状：</strong>2026年に仕様駆動開発が主流へ押し上げられた理由は単純です — <strong>AI エージェントはコードを書くのは得意でも、こちらの意図を推し量るのは不得手だから</strong>です。SDD は AI コーディングエージェントを呼ぶ前に<strong>構造化され版管理された仕様</strong>を書き、目標・制約・受け入れ基準を明示的に渡す進め方です。2025年の「バイブコーディング」の失敗様式 — もっともらしいが意図から漂流し、API を作り話し、規模が大きくなるほど腐っていくコード — への直接の応答として現れました。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>TDD・BDD との違い</h4>
+                <p>• <strong>TDD：</strong>「まずテストを書け」<br>
+                • <strong>BDD：</strong>「まず振る舞いを業務の言葉で書け」<br>
+                • <strong>SDD：</strong>「振る舞い・構造・境界条件・制約を<strong>すべて</strong>先に書き、エージェントにコード・テスト・文書を作らせよ」<br>
+                • <strong>範囲の差：</strong>単体テストは関数を検証するだけで、構造違反や API 契約の漂流は捕らえられない</p>
+            </div>
+            <div class="trend-card">
+                <h4>2026年の道具の地形</h4>
+                <p>• <strong>主要ツールが軒並み SDD 搭載：</strong>GitHub Spec Kit・AWS Kiro・Claude Code・Cursor・OpenSpec・BMAD・Tessl・Google Antigravity<br>
+                • <strong>独立評価（2026-02）：</strong>中規模のサーバーレス Python バックエンドで13項目採点 — OpenSpec が総合1位<br>
+                • <strong>ただし優先順位が変われば順位も変わる：</strong>変更履歴と文書の追跡を重視するなら OpenSpec、生きた仕様の同期を重視するなら別の選択</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://github.com/github/spec-kit" target="_blank">GitHub Spec Kit</a> |
+            <a href="https://kiro.dev/" target="_blank">AWS Kiro</a> |
+            <a href="https://www.tessl.io/" target="_blank">Tessl</a> |
+            <a href="https://github.com/cameronsjo/spec-compare" target="_blank">spec-compare</a>
+        </div>
+
+        <p><strong>展望：</strong>「最良の道具」は存在せず、<strong>技術スタックと優先順位が選択を決めます</strong>。道具は2つの軸で分かれます — <strong>どこまで代わりにやってくれるか</strong>、そして<strong>結果を検証するか</strong>です。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>複数の独立ガイドが同じツール一覧と SDD/TDD の区分を示している・2026-02 の独立評価は採点項目数（13）まで明記<br>
+                <strong>改善点：</strong>「主流になった」は採用率の統計ではなく、ツールの出荷状況に基づく判断
+            </div>
+        </div>
+
+        <h3 class="subsection-title">2. MoAI-ADK — 主張ではなく証拠で完了を判定する</h3>
+        <p><strong>現状：</strong>MoAI-ADK は Claude Code を包み、構造化されたコード生成を強制する<strong>検証駆動のオーケストレーション基盤</strong>です。設計思想は明快です — <strong>エージェントの完了主張を額面どおりに受け取らず、すべての完了宣言を独立に検証された証拠（テスト出力・カバレッジ・リント結果）に結び付けます。</strong>Go の単一バイナリで配布され依存関係はなく、現在 1.2k GitHub スター・222 フォーク・4,456 コミットの規模です。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Plan → Run → Sync の3段階</h4>
+                <p>• <strong>Plan：</strong>GEARS 形式の要求で SPEC を作成<br>
+                • <strong>Run：</strong>TDD（RED→GREEN→REFACTOR）または DDD（ANALYZE→PRESERVE→IMPROVE）<br>
+                • <strong>自動選択：</strong>カバレッジ10%超または新規案件は TDD、10%未満のレガシーは DDD<br>
+                • <strong>Sync：</strong>文書化と PR の作成</p>
+            </div>
+            <div class="trend-card">
+                <h4>TRUST 5 品質ゲート</h4>
+                <p>• <strong>頭文字：</strong>Tested・Readable・Unified・Secured・Trackable<br>
+                • <strong>実行：</strong>リント・整形・型検査・テストを同時実行<br>
+                • <strong>採点4軸：</strong>機能性40%・セキュリティ25%・作り込み20%・一貫性15%<br>
+                • <strong>エージェント12種：</strong>管理・評価・構築・助言の各系統 — 偏りを防ぐ<strong>独立監査エージェント</strong>を含む</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://github.com/modu-ai/moai-adk" target="_blank">MoAI-ADK（GitHub）</a> |
+            <a href="https://pypi.org/project/moai-adk/" target="_blank">PyPI</a> |
+            <a href="https://deepwiki.com/modu-ai/moai-adk/1-moai-adk-overview" target="_blank">DeepWiki ドキュメント</a>
+        </div>
+
+        <p><strong>展望：</strong>「AI が書いたコードをどう信じるか」を<strong>手順ではなく証拠の結び付け</strong>で解く発想です。16言語（Go・Python・TypeScript・Rust・Java・Kotlin・C#・Ruby・PHP・Elixir・C++・Scala・R・Flutter・Swift・JavaScript）を<strong>優遇なく同等に</strong>扱う点も特徴です。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>公式リポジトリを直接確認し、スター・フォーク・コミット数、TRUST 5 の採点比率、エージェント数を一次情報から取得<br>
+                <strong>改善点：</strong>配布経路によって記述が食い違う — PyPI・DeepWiki は「手戻り90%削減・バグ70%削減・カバレッジ85%以上」を掲げるが <strong>README には該当する数値がない</strong>。独立検証されていないベンダー主張として扱うべき
+            </div>
+        </div>
+
+        <h3 class="subsection-title">3. TDD の再浮上 — AI の回帰を止める数少ない仕掛け</h3>
+        <p><strong>現状：</strong>AI コーディングツールの採用は広がった一方で、<strong>信頼はむしろ下がりました</strong>。開発者の84%が AI ツールを使うか使う予定で（2024年の76%から上昇）、51%が毎日使っています。しかし <strong>AI の正確さへの信頼は40%から29%へ11ポイント低下</strong>しました。そして <strong>AI 生成コードのレビューが週11.4時間（中央値）で最大の時間消費</strong>になっています。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>品質指標の悪化</h4>
+                <p>• <strong>バグ増加：</strong>52%が AI 導入以降バグ量が増えたと回答<br>
+                • <strong>PR の欠陥：</strong>AI 共同作成の PR で約1.7倍の指摘（CodeRabbit、2025-12）<br>
+                • <strong>コード重複が4倍</strong>・短期のコード書き直しも増加 — 貼り付けが増え保守性が落ちる<br>
+                • <strong>それでも：</strong>75%はマージ前にすべての AI コードを手で確認</p>
+            </div>
+            <div class="trend-card">
+                <h4>測定された処方 — TDAD</h4>
+                <p>• <strong>問題：</strong>AI コーディングエージェントが<strong>これまで通っていたテストを頻繁に壊す</strong><br>
+                • <strong>手法：</strong>グラフに基づく変更前の影響分析<br>
+                • <strong>結果：</strong>回帰率 <strong>6.08% → 1.82%</strong>（70%削減）<br>
+                • <strong>規模：</strong>SWE-bench Verified 100件（arXiv、2026年）</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://arxiv.org/pdf/2603.17973" target="_blank">TDAD: Test-Driven Agentic Development（arXiv）</a> |
+            <a href="https://www.coderabbit.ai/" target="_blank">CodeRabbit</a> |
+            <a href="https://survey.stackoverflow.co/" target="_blank">Stack Overflow Developer Survey</a>
+        </div>
+
+        <p><strong>展望：</strong>TDD は<strong>「良い習慣」から「必須の安全装置」へ性格が変わりました。</strong>人が読み切れない速さでコードが生まれる以上、<strong>テストだけが唯一スケールする検証手段</strong>だからです。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>arXiv 論文の定量結果（6.08%→1.82%、N=100）と複数調査の数値を併記・信頼の低下（40%→29%）は前年比較値<br>
+                <strong>改善点：</strong>各調査の標本規模と実施主体が二次集計媒体経由で確認されており、原報告書との突き合わせが必要
+            </div>
+        </div>
+
+        <h3 class="subsection-title">4. DDD は AI 時代にこそ重要度が上がった</h3>
+        <p><strong>現状：</strong>ドメイン駆動設計は<strong>エージェント型のコーディングを「プロンプト・スパゲッティ」から保守可能な工学へ変える枠組み</strong>として再評価されています。核心は DDD の3つの道具をそのままエージェント設計に移すことです — <strong>境界づけられたコンテキスト</strong>をエージェントの責務境界に、<strong>ユビキタス言語</strong>を道具の入出力の一貫性規約に、<strong>コンテキストマップ</strong>を統合点の明示的な文書として使います。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>マルチエージェントへの適用</h4>
+                <p>• <strong>1エージェント＝1コンテキスト：</strong>エージェントが特定ドメインの知識と規則を内包<br>
+                • <strong>例：</strong>在庫管理エージェントは在庫とのやり取りだけを担当<br>
+                • <strong>効果：</strong>責務の境界がプロンプトではなく<strong>構造</strong>で定義される<br>
+                • <strong>統合点：</strong>コンテキストマップで明示 — 暗黙の結合を防ぐ</p>
+            </div>
+            <div class="trend-card">
+                <h4>AI が境界の発見を助ける</h4>
+                <p>• <strong>役割：</strong>境界の特定を<strong>代替ではなく支援</strong><br>
+                • <strong>方法：</strong>ソースコード・DB スキーマ・相互作用パターンを解析し、ドメインの凝集と分離の兆候を可視化<br>
+                • <strong>2026年の実務的な見方：</strong>純粋な技術分析より<strong>チーム境界と組織構造から始める</strong><br>
+                • <strong>MoAI-ADK の例：</strong>カバレッジ10%未満のレガシーに DDD サイクル（ANALYZE-PRESERVE-IMPROVE）を自動割当</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://threedots.tech/post/ddd-and-ai-coding/" target="_blank">DDD matters more when AI writes your code</a> |
+            <a href="https://gitnation.com/contents/from-prompt-spaghetti-to-bounded-contexts-ddd-for-agentic-codebases" target="_blank">From Prompt Spaghetti to Bounded Contexts</a> |
+            <a href="https://www.jamescroft.co.uk/applying-domain-driven-design-principles-to-multi-agent-ai-systems/" target="_blank">DDD for Multi-Agent AI Systems</a>
+        </div>
+
+        <p><strong>展望：</strong>AI が大量にコードを生むほど、<strong>「このモジュールの責務はどこまでか」を人が先に決めておく価値が上がります。</strong>境界がなければ、エージェントは境界を作らず<strong>横断してしまいます</strong>。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">7.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>カンファレンス発表・実務者の技術ブログなど複数の出典が同じ対応付け（コンテキスト＝エージェント境界）を示す<br>
+                <strong>改善点：</strong>この領域は定量データが乏しく議論の多くが設計論 — 導入効果の数値的根拠はまだ蓄積途上
+            </div>
+        </div>
+
+        <h3 class="subsection-title">5. モジュラーモノリスへの回帰 — 第一の制約は今やコスト</h3>
+        <p><strong>現状：</strong><strong>CNCF の2026年第1四半期報告によると、マイクロサービスを先に導入した組織の42%が一部のサービスをより大きな配備単位へ統合</strong>しました。つまりモジュラーモノリスへ戻ったのです。2026年4月に公開された内部測定では、パック単位のモジュール化を導入した後、<strong>新規開発者の立ち上がり時間が55%短縮</strong>、<strong>モジュール横断の回帰が前年比68%減</strong>と報告されています。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>道具の成熟</h4>
+                <p>• <strong>2026年第1四半期に同時到着：</strong>Spring Modulith 1.4 GA・ArchUnit 1.3・jMolecules 2026.0<br>
+                • <strong>意味：</strong>進化的アーキテクチャの道具立てが成熟段階へ<br>
+                • <strong>適応度関数：</strong>構造の規則をテストとして強制する<br>
+                • <strong>イベントソーシング：</strong>Ecotone・EventSourcingDB など本番運用に耐えるイベントストアが登場</p>
+            </div>
+            <div class="trend-card">
+                <h4>なぜ今戻るのか</h4>
+                <p>• <strong>コストが第一の制約：</strong>2026年の構造決定を縛るのは拡張性ではなく<strong>費用</strong><br>
+                • <strong>過剰適用の揺り戻し：</strong>企業案件の90%以上はよく設計されたモジュラーモノリスで足りる<br>
+                • <strong>AI が後押しする：</strong>大規模言語モデル統合アプリやエージェント型 AI の台頭が回帰を強めている<br>
+                • <strong>参入障壁の低下：</strong>イベントソーシング導入が「数年の経験」から「数週間の手引き付き実装」へ</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク:</strong>
+            <a href="https://spring.io/projects/spring-modulith" target="_blank">Spring Modulith</a> |
+            <a href="https://www.archunit.org/" target="_blank">ArchUnit</a> |
+            <a href="https://jmolecules.org/" target="_blank">jMolecules</a> |
+            <a href="https://www.cncf.io/" target="_blank">CNCF</a>
+        </div>
+
+        <p><strong>展望：</strong>DDD の<strong>モジュール境界</strong>とモジュラーモノリスの<strong>配備単位</strong>が再び接続します。「境界は論理的に、配備はひとつに」が2026年の既定値になりつつあります。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>CNCF の四半期報告という業界標準の出典を引用・ツールのリリース（Spring Modulith 1.4、ArchUnit 1.3）は検証可能な事実<br>
+                <strong>改善点：</strong>立ち上がり55%・回帰68%減は<strong>匿名組織の内部測定</strong>で一般化できない・「90%以上で足りる」は定性判断
+            </div>
+        </div>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+        <h3 class="subsection-title">4層の市場構造</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">仕様駆動開発の道具は<strong>「どこまで代わりにやるか」と「結果を検証するか」</strong>の2軸で分かれます。層が上がるほど自動化の範囲が広がり、検証の層はそれとは別に存在します。</p>
+
+        <table>
+            <thead><tr><th>層</th><th>主なツール</th><th>特徴</th><th>対象</th></tr></thead>
+            <tbody>
+                <tr><td><strong>① 後付け CLI</strong></td><td>GitHub Spec Kit, OpenSpec</td><td>既存エージェントに載せる MIT ライセンスの道具立て・モデル非依存</td><td>道具を自分で選びたいチーム</td></tr>
+                <tr><td><strong>② 統合 IDE</strong></td><td>AWS Kiro, Google Antigravity, Cursor</td><td>仕様・モデル・課金が同じ囲いの中・仕様優先の IDE</td><td>単一クラウドに定着した組織</td></tr>
+                <tr><td><strong>③ オーケストレーション基盤</strong></td><td>MoAI-ADK, BMAD, Tessl</td><td>複数エージェントの調整・品質ゲート・費用ルーティング</td><td>品質を約束として扱うチーム</td></tr>
+                <tr><td><strong>④ 構造検証</strong></td><td>ArchUnit, Spring Modulith, jMolecules</td><td>境界の規則をテストで強制（適応度関数）</td><td>レガシー・大規模コードベース</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">主要な市場の変化5点</h3>
+        <ul class="key-findings">
+            <li><strong>仕様が一次成果物になった：</strong>コードではなく仕様が版管理とレビューの対象へ移った</li>
+            <li><strong>検証が差別化の軸になった：</strong>「生成」は商品化され、「生成物を信じる根拠を作ること」が競争点に</li>
+            <li><strong>TDD と DDD は排他ではなく条件付きの選択：</strong>MoAI-ADK はカバレッジ10%を境に自動で振り分ける</li>
+            <li><strong>費用ルーティングが機能になった：</strong>戦略は上位モデル、大量実装は低価格モデルという複数 LLM の割り当て</li>
+            <li><strong>構造が再び縮む：</strong>マイクロサービスの42%が統合へ回帰 — 境界は保ちつつ配備はまとめる</li>
+        </ul>
+
+        <h3 class="subsection-title">主要ツールの比較</h3>
+        <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>ツールごとの位置づけは複数の比較ガイドで共通して確認・42%の統合という数値は CNCF を出典として明記<br>
+                <strong>改善点：</strong>レーダーチャートの点数は公開文書に基づく<strong>本分析の定性判断</strong>であり、ベンチマークではない
+            </div>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">活用アイデア</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>仕様優先のパイロット</strong> - 機能を1つ選び、仕様を先に書いてエージェントに渡し、手戻り量を従来手法と比較する</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>カバレッジ基準の振り分け</strong> - 新規モジュールは TDD、カバレッジの低いレガシーは DDD サイクルで分けて適用する</p>
+            <p style="line-height:1.6;">3. <strong>適応度関数の配置</strong> - ArchUnit 系でモジュール境界の規則をテスト化し、AI 生成コードの境界違反を遮断する</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">エグゼクティブサマリー</h2>
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">重要なポイント</h3>
+            <ul class="key-findings">
+                <li><strong>AI が書くほど古い方法論が甦った：</strong>SDD・TDD・DDD は流行の回帰ではなく、人が読み切れない速さで生成されるコードを扱うための<strong>必須の装置</strong>になりました。</li>
+                <li><strong>採用は広がったが信頼は下がった：</strong>開発者の84%が AI ツールを使う一方、正確さへの信頼は40%→29%へ低下し、レビューが週11.4時間で最大の時間消費になりました。</li>
+                <li><strong>回帰は測れるし減らせる：</strong>グラフに基づく影響分析で、AI エージェントによるテスト回帰率が6.08%→1.82%へ下がりました（N=100）。</li>
+                <li><strong>差別化は検証にある：</strong>MoAI-ADK のように<strong>完了主張を証拠に結び付ける</strong>手法が登場しました — 「やった」ではなく「テスト・カバレッジ・リントがそう言っている」。</li>
+                <li><strong>構造は再び縮んでいる：</strong>マイクロサービスを導入した組織の42%が統合へ転じ、費用が拡張性を抜いて第一の制約になりました。</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">状況別の参考</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>モデルとエージェントを自分で選びたいチーム → 後付け CLI（Spec Kit・OpenSpec）</strong><br>
+                理由：既存の流れに載せられ、モデルに縛られません。<br>
+                <strong>品質を約束として扱う必要があるチーム → オーケストレーション基盤（MoAI-ADK・BMAD）</strong><br>
+                理由：品質ゲートと独立監査が組み込まれ、「完了」の定義がコードとして存在します。<br>
+                <strong>レガシーの比重が大きい組織 → DDD サイクル＋適応度関数</strong><br>
+                理由：カバレッジの低いコードに TDD を強いても進まず、まずは振る舞いの保存が優先です。
+            </p>
+        </div>
+        <p style="margin-top:1rem; font-size:1rem; color:#4a4a4a;"><strong>総合評価：</strong>ポジティブ（方法論と道具は急速に成熟しています。ただし品質指標はまだ悪化局面にあり、検証体制を備えたチームとそうでないチームの差が開きつつあります。）</p>
+
+        <div class="overall-credibility">
+            <h3>📋 総合信頼性評価</h3>
+            <div class="overall-credibility-score">7.5/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>総合評価：</strong>arXiv 論文や公式リポジトリなど一次情報を押さえた部分は信頼性が高い一方、市場統計と内部測定値は二次媒体を経由しており検証の強度が低めです。</p>
+                <p><strong>主な強み：</strong>MoAI-ADK は公式リポジトリを直接確認・arXiv 論文2件を引用・ベンダー主張と検証済みの事実を明示的に区別</p>
+                <p><strong>改善の優先順位：</strong>調査統計の原報告書との突き合わせ・「手戻り90%削減」類のベンダー数値の独立検証・匿名の内部測定値の表記の強化</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">主要用語の説明</h2>
+        <div style="background:#fafafa; padding:0.75rem 1rem; border-left:3px solid #e5e5e5; font-size:0.9rem;">
+            <div style="margin-bottom:0.4rem;"><strong>仕様駆動開発（SDD）</strong> - AI エージェントを呼ぶ前に、振る舞い・構造・境界条件・制約を含む構造化された仕様を先に書く進め方です。</div>
+            <div style="margin-bottom:0.4rem;"><strong>テスト駆動開発（TDD）</strong> - まずテストを書き（RED）、通してから（GREEN）、構造を整える（REFACTOR）循環です。</div>
+            <div style="margin-bottom:0.4rem;"><strong>ドメイン駆動設計（DDD）</strong> - 業務領域の言葉と境界をコード構造に反映する設計手法。MoAI-ADK ではレガシー向けの ANALYZE-PRESERVE-IMPROVE 循環を指すこともあります。</div>
+            <div style="margin-bottom:0.4rem;"><strong>境界づけられたコンテキスト</strong> - ひとつのモデルと用語が一貫して通じる境界。マルチエージェントではエージェント1体の責務範囲として使われます。</div>
+            <div style="margin-bottom:0.4rem;"><strong>ユビキタス言語</strong> - 開発者と業務の専門家が同じ意味で使う共通語彙。エージェントの道具の入出力規約としても活用されます。</div>
+            <div style="margin-bottom:0.4rem;"><strong>適応度関数（Fitness Function）</strong> - 構造の規則（例：モジュール A は B を直接参照しない）を自動テストで強制する仕掛けです。</div>
+            <div style="margin-bottom:0.4rem;"><strong>モジュラーモノリス</strong> - 内部はモジュール境界で分けつつ、ひとつの単位として配備する構造。運用費用を避けながら境界は保ちます。</div>
+            <div><strong>バイブコーディング</strong> - 仕様を書かず会話だけでコードを作らせる進め方。もっともらしいが意図から漂流するという問題提起から SDD が生まれました。</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>参考資料</h3>
+            <p><strong>データ収集日：</strong>2026年9月1日</p>
+            <ul>
+                <li>• <a href="https://github.com/modu-ai/moai-adk" target="_blank">modu-ai/moai-adk — GitHub 公式リポジトリ（1.2k★、v3.1.3）</a></li>
+                <li>• <a href="https://pypi.org/project/moai-adk/" target="_blank">MoAI-ADK — PyPI パッケージ文書</a></li>
+                <li>• <a href="https://deepwiki.com/modu-ai/moai-adk/1-moai-adk-overview" target="_blank">DeepWiki — MoAI-ADK Overview</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2603.17973" target="_blank">arXiv — TDAD: Test-Driven Agentic Development</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2606.04967" target="_blank">arXiv — From Prompt to Process: Frameworks Supporting AI Software Development Agents</a></li>
+                <li>• <a href="https://dev.to/krlz/spec-driven-development-in-2026-what-it-is-the-tooling-and-how-teams-actually-use-it-2fk2" target="_blank">DEV — Spec-Driven Development in 2026</a></li>
+                <li>• <a href="https://www.thebcms.com/blog/spec-driven-development/" target="_blank">BCMS — Spec-Driven Development: The Definitive 2026 Guide</a></li>
+                <li>• <a href="https://www.augmentcode.com/guides/spec-tdd-shippable-ai-generated-code" target="_blank">Augment Code — Spec + TDD</a></li>
+                <li>• <a href="https://github.com/cameronsjo/spec-compare" target="_blank">spec-compare — 仕様駆動ツールの比較</a></li>
+                <li>• <a href="https://threedots.tech/post/ddd-and-ai-coding/" target="_blank">Three Dots Labs — DDD matters more when AI writes your code</a></li>
+                <li>• <a href="https://gitnation.com/contents/from-prompt-spaghetti-to-bounded-contexts-ddd-for-agentic-codebases" target="_blank">GitNation — From Prompt Spaghetti to Bounded Contexts</a></li>
+                <li>• <a href="https://www.jamescroft.co.uk/applying-domain-driven-design-principles-to-multi-agent-ai-systems/" target="_blank">James Croft — DDD for Multi-Agent AI Systems</a></li>
+                <li>• <a href="https://dev.to/x4nent/the-modular-monolith-2026-complete-guide-spring-modulith-archunit-fitness-functions-and-lessons-878" target="_blank">DEV — The Modular Monolith 2026 Complete Guide</a></li>
+                <li>• <a href="https://byteiota.com/modular-monolith-42-ditch-microservices-in-2026/" target="_blank">byteiota — Modular Monolith: 42% Ditch Microservices（CNCF Q1 2026 引用）</a></li>
+                <li>• <a href="https://www.digitalapplied.com/blog/ai-coding-adoption-statistics-2026-50-data-points" target="_blank">Digital Applied — AI Coding Adoption 2026: 50 Statistics</a></li>
+                <li>• <a href="https://uvik.net/blog/ai-coding-assistant-statistics/" target="_blank">Uvik — AI Coding Assistant Statistics 2026</a></li>
+            </ul>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx, {
+    type: 'radar',
+    data: {
+        labels: ['自動化の範囲', '結果の検証', 'モデル非依存', '導入の容易さ', 'レガシー対応'],
+        datasets: [
+            { label: 'GitHub Spec Kit', data: [55, 40, 95, 80, 45],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'AWS Kiro', data: [85, 60, 30, 75, 50],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'MoAI-ADK', data: [90, 90, 60, 60, 85],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'BMAD', data: [80, 55, 75, 55, 55],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">お名前（任意）</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">コメント</label>
+                <textarea id="comment-content" placeholder="ご意見をお聞かせください..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">投稿する</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>

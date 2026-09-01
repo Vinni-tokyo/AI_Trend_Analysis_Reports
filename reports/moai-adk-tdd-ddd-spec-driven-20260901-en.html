@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoAI-ADK and Spec-Driven Development: The Return of TDD and DDD</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:280px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='moai-adk-tdd-ddd-spec-driven-20260901-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='moai-adk-tdd-ddd-spec-driven-20260901-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='moai-adk-tdd-ddd-spec-driven-20260901-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>MoAI-ADK and Spec-Driven Development:<br>The Return of TDD and DDD</h1>
+        <div class="subtitle">Why old methodologies became necessary again once AI started writing the code</div>
+        <div class="meta">Report date: September 1, 2026 | Standard report (5–8 pages)</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Trends</h2>
+
+        <h3 class="subsection-title">1. Spec-driven development went mainstream in 2026</h3>
+        <p><strong>Where things stand:</strong> The reason spec-driven development (SDD) went mainstream in 2026 is blunt — <strong>AI agents are great at writing code and terrible at guessing what you meant</strong>. SDD is the practice of writing a <strong>structured, versioned specification</strong> before invoking a coding agent, so the agent receives explicit goals, constraints and acceptance criteria. It emerged as a direct response to the failure mode of "vibe coding": agents that produce plausible code which drifts from intent, hallucinates APIs, and decays as projects scale.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>How it differs from TDD and BDD</h4>
+                <p>• <strong>TDD:</strong> "write the test first"<br>
+                • <strong>BDD:</strong> "write the behaviour first, in business language"<br>
+                • <strong>SDD:</strong> "write the <strong>whole spec</strong> first — behaviour, architecture, edge cases, constraints — and let an agent produce the code, tests and docs"<br>
+                • <strong>Scope difference:</strong> unit tests verify functions; they do not catch architectural violations or API contract drift</p>
+            </div>
+            <div class="trend-card">
+                <h4>The 2026 tooling landscape</h4>
+                <p>• <strong>Every major tool now ships SDD:</strong> GitHub Spec Kit · AWS Kiro · Claude Code · Cursor · OpenSpec · BMAD · Tessl · Google Antigravity<br>
+                • <strong>Independent evaluation (Feb 2026):</strong> 13 scoring categories on a medium-sized serverless Python backend — OpenSpec scored highest overall<br>
+                • <strong>But rankings shift with priorities:</strong> OpenSpec suits teams valuing change accountability; others fit living-spec synchronisation better</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/github/spec-kit" target="_blank">GitHub Spec Kit</a> |
+            <a href="https://kiro.dev/" target="_blank">AWS Kiro</a> |
+            <a href="https://www.tessl.io/" target="_blank">Tessl</a> |
+            <a href="https://github.com/cameronsjo/spec-compare" target="_blank">spec-compare</a>
+        </div>
+
+        <p><strong>Outlook:</strong> There is no single "best" tool — <strong>the stack and your priorities decide</strong>. Tools separate along two axes: <strong>how much they do for you</strong>, and <strong>whether they verify the result</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Several independent guides converge on the same tool list and the SDD/TDD distinction; the February 2026 evaluation states its scoring category count (13)<br>
+                <strong>Weaknesses:</strong> "Went mainstream" reflects tool shipping activity rather than measured adoption rates
+            </div>
+        </div>
+
+        <h3 class="subsection-title">2. MoAI-ADK — completion judged by evidence, not by claim</h3>
+        <p><strong>Where things stand:</strong> MoAI-ADK is a <strong>verification-driven orchestration framework</strong> that wraps Claude Code to enforce structured code generation. Its design premise is explicit: <strong>rather than accepting agent claims at face value, the system binds every completion assertion to independently verified evidence</strong> — test output, coverage metrics, lint results. It ships as a single Go binary with zero dependencies and currently sits at 1.2k GitHub stars, 222 forks and 4,456 commits.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Plan → Run → Sync</h4>
+                <p>• <strong>Plan:</strong> SPEC authoring using GEARS-format requirements<br>
+                • <strong>Run:</strong> TDD (RED→GREEN→REFACTOR) or DDD (ANALYZE→PRESERVE→IMPROVE)<br>
+                • <strong>Automatic selection:</strong> new projects or coverage above 10% trigger TDD; legacy codebases under 10% use DDD<br>
+                • <strong>Sync:</strong> documentation and pull-request creation</p>
+            </div>
+            <div class="trend-card">
+                <h4>TRUST 5 quality gates</h4>
+                <p>• <strong>The acronym:</strong> Tested · Readable · Unified · Secured · Trackable<br>
+                • <strong>Execution:</strong> lint, format, type-checking and tests run concurrently<br>
+                • <strong>Four scoring dimensions:</strong> functionality 40% · security 25% · craft 20% · consistency 15%<br>
+                • <strong>Twelve agents:</strong> manager, evaluator, builder and advisor roles — including <strong>independent auditors that prevent bias</strong></p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/modu-ai/moai-adk" target="_blank">MoAI-ADK (GitHub)</a> |
+            <a href="https://pypi.org/project/moai-adk/" target="_blank">PyPI</a> |
+            <a href="https://deepwiki.com/modu-ai/moai-adk/1-moai-adk-overview" target="_blank">DeepWiki documentation</a>
+        </div>
+
+        <p><strong>Outlook:</strong> This answers "how do I trust AI-written code?" through <strong>evidence binding rather than process</strong>. Notably, its 16 languages (Go, Python, TypeScript, Rust, Java, Kotlin, C#, Ruby, PHP, Elixir, C++, Scala, R, Flutter, Swift, JavaScript) receive <strong>equal treatment</strong> via marker-based detection rather than preferential support.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The official repository was read directly, giving primary-source figures for stars, forks, commits, TRUST 5 weightings and agent count<br>
+                <strong>Weaknesses:</strong> Claims diverge by distribution channel — PyPI and DeepWiki cite "90% rework reduction, 70% fewer bugs, 85%+ coverage", but <strong>the README contains no such figures</strong>. Treat these as unverified vendor claims
+            </div>
+        </div>
+
+        <h3 class="subsection-title">3. TDD's return — one of the few brakes on AI regression</h3>
+        <p><strong>Where things stand:</strong> Adoption of AI coding tools widened while <strong>trust moved the other way</strong>. 84% of developers use or plan to use AI tools (up from 76% in 2024) and 51% use them daily, yet <strong>trust in AI accuracy fell from 40% to 29%, an 11-point drop</strong>. Meanwhile <strong>reviewing AI-generated code became the single largest time sink at a median 11.4 hours per week</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Quality indicators moving the wrong way</h4>
+                <p>• <strong>More bugs:</strong> 52% report bug volume has increased since adopting AI<br>
+                • <strong>PR defects:</strong> roughly 1.7× more issues found in AI-coauthored PRs (CodeRabbit, Dec 2025)<br>
+                • <strong>Code duplication up 4×</strong>, with rising short-term churn — more copy/paste, less maintainable design<br>
+                • <strong>Even so:</strong> 75% still manually review every AI-generated snippet before merging</p>
+            </div>
+            <div class="trend-card">
+                <h4>A measured remedy — TDAD</h4>
+                <p>• <strong>Problem:</strong> AI coding agents <strong>frequently break previously passing tests</strong><br>
+                • <strong>Method:</strong> graph-based pre-change impact analysis<br>
+                • <strong>Result:</strong> regression rate <strong>6.08% → 1.82%</strong> (a 70% reduction)<br>
+                • <strong>Scale:</strong> 100 SWE-bench Verified instances (arXiv, 2026)</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/pdf/2603.17973" target="_blank">TDAD: Test-Driven Agentic Development (arXiv)</a> |
+            <a href="https://www.coderabbit.ai/" target="_blank">CodeRabbit</a> |
+            <a href="https://survey.stackoverflow.co/" target="_blank">Stack Overflow Developer Survey</a>
+        </div>
+
+        <p><strong>Outlook:</strong> TDD has shifted <strong>from "good practice" to "necessary safety device"</strong>. Once code is produced faster than humans can read it, <strong>tests are the only verification method that scales</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Quantitative arXiv results (6.08%→1.82%, N=100) presented alongside survey figures; the trust decline (40%→29%) is a year-over-year comparison<br>
+                <strong>Weaknesses:</strong> Survey sample sizes and sponsoring bodies were confirmed through secondary aggregators; cross-checking the original reports is warranted
+            </div>
+        </div>
+
+        <h3 class="subsection-title">4. DDD matters more, not less, now that AI writes the code</h3>
+        <p><strong>Where things stand:</strong> Domain-driven design is being re-read as <strong>the frame that turns agentic coding from "prompt spaghetti" into maintainable engineering</strong>. The core move is to carry DDD's three instruments straight into agent design: <strong>bounded contexts</strong> become agent responsibility boundaries, the <strong>ubiquitous language</strong> becomes the consistency contract for tool inputs and outputs, and the <strong>context map</strong> makes integration points explicit.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Applied to multi-agent systems</h4>
+                <p>• <strong>One agent = one bounded context:</strong> the agent encapsulates the knowledge and rules of its domain<br>
+                • <strong>Example:</strong> an inventory management agent is solely responsible for inventory interactions<br>
+                • <strong>Effect:</strong> responsibility boundaries are defined by <strong>structure</strong>, not by prompt wording<br>
+                • <strong>Integration points:</strong> made explicit in the context map, preventing implicit coupling</p>
+            </div>
+            <div class="trend-card">
+                <h4>AI assists boundary discovery</h4>
+                <p>• <strong>Role:</strong> to <strong>support rather than replace</strong> boundary identification<br>
+                • <strong>Method:</strong> analysing source code, database schemas and interaction patterns to surface signals of domain cohesion and separation<br>
+                • <strong>The pragmatic 2026 view:</strong> start from <strong>team boundaries and organisational structure</strong>, not purely technical analysis<br>
+                • <strong>MoAI-ADK example:</strong> assigns the DDD cycle (ANALYZE-PRESERVE-IMPROVE) automatically to legacy code under 10% coverage</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://threedots.tech/post/ddd-and-ai-coding/" target="_blank">DDD matters more when AI writes your code</a> |
+            <a href="https://gitnation.com/contents/from-prompt-spaghetti-to-bounded-contexts-ddd-for-agentic-codebases" target="_blank">From Prompt Spaghetti to Bounded Contexts</a> |
+            <a href="https://www.jamescroft.co.uk/applying-domain-driven-design-principles-to-multi-agent-ai-systems/" target="_blank">DDD for Multi-Agent AI Systems</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The more code AI produces, <strong>the more valuable it becomes for a human to decide in advance where a module's responsibility ends</strong>. Absent a boundary, agents do not create one — <strong>they cross it</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Conference talks and practitioner engineering blogs independently propose the same mapping (bounded context = agent boundary)<br>
+                <strong>Weaknesses:</strong> This area is thin on quantitative data and largely design discourse; measured adoption outcomes are still accumulating
+            </div>
+        </div>
+
+        <h3 class="subsection-title">5. The modular monolith returns — cost is now the primary constraint</h3>
+        <p><strong>Where things stand:</strong> According to the <strong>CNCF Q1 2026 report, 42% of organisations that initially adopted microservices have consolidated some services into larger deployable units</strong> — that is, back into modular monoliths. Internal measurements published in April 2026 report that after adopting pack-based modularisation, <strong>new-developer onboarding time fell by 55%</strong> and <strong>cross-module regressions dropped 68% year-over-year</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>A maturing toolchain</h4>
+                <p>• <strong>All landed in Q1 2026:</strong> Spring Modulith 1.4 GA · ArchUnit 1.3 · jMolecules 2026.0<br>
+                • <strong>Significance:</strong> the evolutionary architecture toolchain has reached maturity<br>
+                • <strong>Fitness functions:</strong> architectural rules enforced as tests<br>
+                • <strong>Event sourcing:</strong> production-grade stores such as Ecotone and EventSourcingDB now available</p>
+            </div>
+            <div class="trend-card">
+                <h4>Why the reversal now</h4>
+                <p>• <strong>Cost is the primary constraint:</strong> in 2026 architecture decisions are bounded by cost rather than scalability<br>
+                • <strong>Correction after over-application:</strong> more than 90% of enterprise projects are adequately served by a well-designed modular monolith<br>
+                • <strong>AI reinforces it:</strong> the rise of LLM-integrated applications and agentic AI systems strengthens the return<br>
+                • <strong>Lower barrier:</strong> adopting event sourcing moved from "years of experience" to "weeks of guided implementation"</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://spring.io/projects/spring-modulith" target="_blank">Spring Modulith</a> |
+            <a href="https://www.archunit.org/" target="_blank">ArchUnit</a> |
+            <a href="https://jmolecules.org/" target="_blank">jMolecules</a> |
+            <a href="https://www.cncf.io/" target="_blank">CNCF</a>
+        </div>
+
+        <p><strong>Outlook:</strong> DDD's <strong>module boundaries</strong> and the modular monolith's <strong>deployment unit</strong> are converging again. "Logical boundaries, single deployment" is becoming the 2026 default.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Cites the CNCF quarterly report, an industry-standard source; the tool releases (Spring Modulith 1.4, ArchUnit 1.3) are verifiable facts<br>
+                <strong>Weaknesses:</strong> The 55% onboarding and 68% regression figures come from <strong>an anonymous organisation's internal measurement</strong> and do not generalise; "more than 90%" is a qualitative judgement
+            </div>
+        </div>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+        <h3 class="subsection-title">A four-tier market structure</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">Spec-driven tools separate along two axes: <strong>how much they do for you, and whether they verify the result</strong>. Automation widens as the tiers rise, while the verification tier exists independently of them.</p>
+
+        <table>
+            <thead><tr><th>Tier</th><th>Key tools</th><th>Character</th><th>Audience</th></tr></thead>
+            <tbody>
+                <tr><td><strong>① Bolt-on CLI</strong></td><td>GitHub Spec Kit, OpenSpec</td><td>MIT-licensed toolkit layered onto any agent · model-agnostic</td><td>Teams that pick their own tooling</td></tr>
+                <tr><td><strong>② Integrated IDE</strong></td><td>AWS Kiro, Google Antigravity, Cursor</td><td>Spec, model and billing inside one perimeter · spec-first IDE</td><td>Organisations settled on one cloud</td></tr>
+                <tr><td><strong>③ Orchestration harness</strong></td><td>MoAI-ADK, BMAD, Tessl</td><td>Multi-agent coordination · quality gates · cost routing</td><td>Teams treating quality as a commitment</td></tr>
+                <tr><td><strong>④ Architecture verification</strong></td><td>ArchUnit, Spring Modulith, jMolecules</td><td>Boundary rules enforced as tests (fitness functions)</td><td>Legacy and large codebases</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">Five shifts worth noting</h3>
+        <ul class="key-findings">
+            <li><strong>The spec became the primary artefact:</strong> version control and review moved from code to specification</li>
+            <li><strong>Verification became the differentiator:</strong> generation is commoditised; producing grounds to trust the output is where tools compete</li>
+            <li><strong>TDD and DDD are conditional, not exclusive:</strong> MoAI-ADK branches automatically at the 10% coverage line</li>
+            <li><strong>Cost routing became a feature:</strong> strategy on a stronger model, bulk implementation on a cheaper one</li>
+            <li><strong>Architecture is contracting again:</strong> 42% of microservice adopters consolidated — boundaries kept, deployment merged</li>
+        </ul>
+
+        <h3 class="subsection-title">Tool comparison</h3>
+        <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Tool positioning is corroborated across multiple comparison guides; the 42% consolidation figure is attributed to CNCF<br>
+                <strong>Weaknesses:</strong> The radar-chart scores are <strong>this report's qualitative judgement</strong> based on public documentation, not a benchmark
+            </div>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">Approaches observed in the market.</p>
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>Spec-first pilot</strong> - pick one feature, write the spec before handing it to an agent, and compare rework volume against the usual approach</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>Coverage-based branching</strong> - apply TDD to new modules and a DDD cycle to low-coverage legacy code</p>
+            <p style="line-height:1.6;">3. <strong>Deploy fitness functions</strong> - encode module boundary rules as ArchUnit-style tests to block boundary violations in AI-generated code</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">Key findings</h3>
+            <ul class="key-findings">
+                <li><strong>The more AI writes, the more old methodologies matter:</strong> SDD, TDD and DDD are not a nostalgia cycle — they became <strong>necessary instruments</strong> for handling code produced faster than humans can read it.</li>
+                <li><strong>Adoption widened while trust narrowed:</strong> 84% of developers use AI tools, yet trust in accuracy fell from 40% to 29%, and review became the largest time sink at 11.4 hours per week.</li>
+                <li><strong>Regression is measurable and reducible:</strong> graph-based impact analysis cut AI agents' test regression rate from 6.08% to 1.82% (N=100).</li>
+                <li><strong>Verification is where tools differentiate:</strong> approaches like MoAI-ADK <strong>bind completion claims to evidence</strong> — not "it's done" but "the tests, coverage and lint say so".</li>
+                <li><strong>Architecture is contracting:</strong> 42% of microservice adopters have consolidated, and cost has overtaken scalability as the primary constraint.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Reference points by situation</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>Teams that want to choose their own model and agent → bolt-on CLI (Spec Kit, OpenSpec)</strong><br>
+                Rationale: it layers onto an existing workflow and avoids model lock-in.<br>
+                <strong>Teams that must treat quality as a commitment → orchestration harness (MoAI-ADK, BMAD)</strong><br>
+                Rationale: quality gates and independent audit are built in, so "done" exists as code.<br>
+                <strong>Organisations weighted toward legacy → DDD cycle plus fitness functions</strong><br>
+                Rationale: forcing TDD onto low-coverage code stalls progress; preserving behaviour comes first.
+            </p>
+        </div>
+        <p style="margin-top:1rem; font-size:1rem; color:#4a4a4a;"><strong>Overall sentiment:</strong> Positive — methodology and tooling are maturing quickly. Quality indicators are still deteriorating, however, and the gap is widening between teams with a verification regime and teams without one.</p>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility</h3>
+            <div class="overall-credibility-score">7.5/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Assessment:</strong> Sections grounded in primary sources — arXiv papers and the official repository — score well, while market statistics and internal measurements reach us through secondary media and are weaker.</p>
+                <p><strong>Main strengths:</strong> MoAI-ADK verified directly from its repository; two arXiv papers cited; vendor claims explicitly separated from verified facts.</p>
+                <p><strong>Improvement priorities:</strong> Cross-check survey statistics against original reports; independently verify vendor figures such as "90% rework reduction"; label anonymous internal measurements more prominently.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">Key Terminology</h2>
+        <div style="background:#fafafa; padding:0.75rem 1rem; border-left:3px solid #e5e5e5; font-size:0.9rem;">
+            <div style="margin-bottom:0.4rem;"><strong>SDD (Spec-Driven Development)</strong> - Writing a structured specification covering behaviour, architecture, edge cases and constraints before invoking an AI coding agent.</div>
+            <div style="margin-bottom:0.4rem;"><strong>TDD (Test-Driven Development)</strong> - The cycle of writing a failing test (RED), making it pass (GREEN), then improving the structure (REFACTOR).</div>
+            <div style="margin-bottom:0.4rem;"><strong>DDD (Domain-Driven Design)</strong> - Designing code structure around the language and boundaries of the business domain. In MoAI-ADK it also names the legacy-oriented ANALYZE-PRESERVE-IMPROVE cycle.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Bounded Context</strong> - The boundary within which one model and vocabulary hold consistently. In multi-agent systems it maps to a single agent's scope of responsibility.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Ubiquitous Language</strong> - The shared vocabulary used identically by developers and domain experts; also used as the contract for agent tool inputs and outputs.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Fitness Function</strong> - A mechanism that enforces architectural rules (for example, "module A must not reference B directly") as automated tests.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Modular Monolith</strong> - An architecture divided internally by module boundaries but deployed as a single unit, keeping boundaries while avoiding microservice operating costs.</div>
+            <div><strong>Vibe Coding</strong> - Producing code through conversation alone, without a specification. The critique of its drift from intent is what gave rise to SDD.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> September 1, 2026</p>
+            <ul>
+                <li>• <a href="https://github.com/modu-ai/moai-adk" target="_blank">modu-ai/moai-adk — official GitHub repository (1.2k★, v3.1.3)</a></li>
+                <li>• <a href="https://pypi.org/project/moai-adk/" target="_blank">MoAI-ADK — PyPI package documentation</a></li>
+                <li>• <a href="https://deepwiki.com/modu-ai/moai-adk/1-moai-adk-overview" target="_blank">DeepWiki — MoAI-ADK Overview</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2603.17973" target="_blank">arXiv — TDAD: Test-Driven Agentic Development</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2606.04967" target="_blank">arXiv — From Prompt to Process: Frameworks Supporting AI Software Development Agents</a></li>
+                <li>• <a href="https://dev.to/krlz/spec-driven-development-in-2026-what-it-is-the-tooling-and-how-teams-actually-use-it-2fk2" target="_blank">DEV — Spec-Driven Development in 2026</a></li>
+                <li>• <a href="https://www.thebcms.com/blog/spec-driven-development/" target="_blank">BCMS — Spec-Driven Development: The Definitive 2026 Guide</a></li>
+                <li>• <a href="https://www.augmentcode.com/guides/spec-tdd-shippable-ai-generated-code" target="_blank">Augment Code — Spec + TDD</a></li>
+                <li>• <a href="https://github.com/cameronsjo/spec-compare" target="_blank">spec-compare — spec-driven tool comparison</a></li>
+                <li>• <a href="https://threedots.tech/post/ddd-and-ai-coding/" target="_blank">Three Dots Labs — DDD matters more when AI writes your code</a></li>
+                <li>• <a href="https://gitnation.com/contents/from-prompt-spaghetti-to-bounded-contexts-ddd-for-agentic-codebases" target="_blank">GitNation — From Prompt Spaghetti to Bounded Contexts</a></li>
+                <li>• <a href="https://www.jamescroft.co.uk/applying-domain-driven-design-principles-to-multi-agent-ai-systems/" target="_blank">James Croft — DDD for Multi-Agent AI Systems</a></li>
+                <li>• <a href="https://dev.to/x4nent/the-modular-monolith-2026-complete-guide-spring-modulith-archunit-fitness-functions-and-lessons-878" target="_blank">DEV — The Modular Monolith 2026 Complete Guide</a></li>
+                <li>• <a href="https://byteiota.com/modular-monolith-42-ditch-microservices-in-2026/" target="_blank">byteiota — Modular Monolith: 42% Ditch Microservices (citing CNCF Q1 2026)</a></li>
+                <li>• <a href="https://www.digitalapplied.com/blog/ai-coding-adoption-statistics-2026-50-data-points" target="_blank">Digital Applied — AI Coding Adoption 2026: 50 Statistics</a></li>
+                <li>• <a href="https://uvik.net/blog/ai-coding-assistant-statistics/" target="_blank">Uvik — AI Coding Assistant Statistics 2026</a></li>
+            </ul>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx, {
+    type: 'radar',
+    data: {
+        labels: ['Automation scope', 'Result verification', 'Model independence', 'Ease of adoption', 'Legacy support'],
+        datasets: [
+            { label: 'GitHub Spec Kit', data: [55, 40, 95, 80, 45],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'AWS Kiro', data: [85, 60, 30, 75, 50],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'MoAI-ADK', data: [90, 90, 60, 60, 85],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'BMAD', data: [80, 55, 75, 55, 55],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Your comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
