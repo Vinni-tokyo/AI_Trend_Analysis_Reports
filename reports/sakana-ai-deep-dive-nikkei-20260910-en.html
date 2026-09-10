@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sakana AI Deep Dive — 100,000 Companies and the Reality of "Japan-Spec AI"</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='sakana-ai-deep-dive-nikkei-20260910-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='sakana-ai-deep-dive-nikkei-20260910-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='sakana-ai-deep-dive-nikkei-20260910-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>Sakana AI Deep Dive —<br>100,000 Companies and the Reality of "Japan-Spec AI"</h1>
+        <div class="subtitle">Technology, business and risk, read from the Nikkei report on the Sumitomo Corporation and SCSK partnership</div>
+        <div class="meta">Report date: September 10, 2026 | Comprehensive report (10+ pages)</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Trends</h2>
+
+        <h3 class="subsection-title">1. [Nikkei Focus] Sumitomo Corporation × SCSK × Sakana AI — 100,000 companies as the route into the "diffusion phase"</h3>
+        <p><strong>Current state:</strong> On September 9, 2026, the Nihon Keizai Shimbun (Nikkei) reported "<strong>Sakana AI to 100,000 companies: Sumitomo Corporation provides support, bringing domestic AI into its diffusion phase by reaching SMEs</strong>." Sumitomo Corporation and its systems integration subsidiary <strong>SCSK</strong> have partnered with Sakana AI to begin deployment support for domestically developed generative AI, using the Sumitomo Corporation Group's customer network of <strong>approximately 100,000 companies</strong>. The approach is staged: start with large enterprises in finance and manufacturing, then <strong>expand to mid-market and small businesses</strong>. SCSK contributes enterprise system integration, data connectivity, security and operations expertise. On the same September 10, co-founder Ren Ito began a new series, "Competing with the World on 'AI Intelligence'," in the October issue of Bungeishunju — the company's external communications landed in the same week.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>How the three parties split the work</h4>
+                <p>• <strong>Sakana AI:</strong> Models and orchestration technology (Fugu and Namazu families)<br>
+                • <strong>Sumitomo Corporation:</strong> ~100,000-company customer network — distribution and industry access<br>
+                • <strong>SCSK:</strong> System integration, data connectivity, security, operations<br>
+                • <strong>Sequence:</strong> Large finance and manufacturing enterprises → mid-market → SMEs<br>
+                • <strong>Stated goal:</strong> Shifting domestic AI into a "diffusion phase"</p>
+            </div>
+            <div class="trend-card">
+                <h4>What the article does not confirm</h4>
+                <p>The body of the article is behind a paid-subscriber wall, so the following remain unconfirmed in the public portion:<br>
+                • <strong>Deal structure and value</strong> (joint venture, reseller agreement, or co-development)<br>
+                • <strong>Pricing model and the product names offered</strong><br>
+                • <strong>Adoption targets and timing (KPIs)</strong><br>
+                • <strong>The definition of "100,000 companies"</strong> (historical transaction base or active contracts)<br>
+                This report marks all four as <strong>unconfirmed</strong>.</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://www.nikkei.com/article/DGXZQOUC077OF0X00C26A9000000/" target="_blank">Nikkei original article (2026-09-09)</a> |
+            <a href="https://www.sumitomocorp.com/ja/jp/business/business10" target="_blank">Sumitomo Corporation Digital & AI Group</a> |
+            <a href="https://www.scsk.jp/" target="_blank">SCSK</a> |
+            <a href="https://sakana.ai/" target="_blank">Sakana AI</a>
+        </div>
+
+        <div class="callout">
+            <strong>The counterargument deserves equal weight.</strong> On the same day, the market analysis outlet n+ published "Is Sumitomo's sales network actually a weapon?", arguing that <strong>"having a distribution channel is not the same as having demand."</strong> Most of those customers already run Copilot, Gemini, ChatGPT and Claude, so a <strong>sales-led rollout where the solution goes looking for a problem</strong> risks repeating the stalled proof-of-concept cycle of Japan's earlier digital transformation wave. The 100,000 figure is a <strong>reachable population</strong>, not a sales pipeline.
+        </div>
+
+        <p><strong>Outlook:</strong> The significance of this partnership lies in <strong>distribution</strong>, not model performance. The bottleneck in Japanese enterprise AI adoption has been less about model quality than about who connects the model to internal systems and shepherds it through security review — and the trading-house-plus-SI combination targets exactly that. That said, real results will show up not at announcement but in the <strong>paid conversion rate 6–12 months out</strong>. The reasoning: (1) generative AI procurement at large financial and manufacturing firms typically takes two to four quarters from proof-of-concept to production; (2) because the competition is global frontier models, the deciding factors are sovereignty and audit requirements rather than price or performance; (3) the SME segment carries low unit revenue, so unless SCSK standardizes and automates the deployment process itself, the economics do not work.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Primary reporting from Japan's most authoritative business daily, with the three parties, the 100,000-company figure, the staged strategy and SCSK's role all consistent across multiple secondary outlets.<br>
+                <strong>Weaknesses:</strong> The article body sits behind a paywall, leaving deal structure, value and KPIs unconfirmed. A joint press release from the three companies should be verified directly, and the basis for the "100,000 companies" count also needs checking.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">2. Sakana Fugu and Fugu-Cyber — the "orchestration model" as a third path</h3>
+        <p><strong>Current state:</strong> Sakana AI released <strong>Sakana Fugu</strong> on June 22, 2026. It bundles multiple AI agents and delivers them as a single <strong>OpenAI-compatible model API</strong>, built on two ICLR 2026 papers: <strong>TRINITY</strong> (~600 million parameters), which assigns agent roles dynamically, and <strong>Conductor</strong> (~7 billion parameters), which learns inter-agent communication protocols through reinforcement learning. According to Sakana AI, Fugu Ultra scored <strong>73.7</strong> on SWE-Bench Pro, ahead of the very models it coordinates — Claude Opus 4.8 (69.2) and GPT-5.5 (58.6). On July 21 the company began offering <strong>Fugu-Cyber</strong>, a cyber-defense variant available by application, claiming 86.9% on CyberGym and 72.1% on CTI-REALM.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Specifications and pricing</h4>
+                <p>• <strong>Delivery:</strong> OpenAI-compatible API (single endpoint)<br>
+                • <strong>Composition:</strong> TRINITY ~600M + Conductor ~7B parameters<br>
+                • <strong>Pricing:</strong> $20/month subscription, or pay-as-you-go for Fugu Ultra at $5 input / $30 output per 1M tokens<br>
+                • <strong>SWE-Bench Pro:</strong> Fugu Ultra 73.7 / Claude Opus 4.8 69.2 / GPT-5.5 58.6<br>
+                • <strong>Fugu-Cyber:</strong> CyberGym 86.9% · CTI-REALM 72.1% (application-based access)</p>
+            </div>
+            <div class="trend-card">
+                <h4>Verification history — read this alongside the claims</h4>
+                <p>• <strong>Fugu-Cyber:</strong> the 86.9% figure was published, but the <strong>verification methodology was not disclosed</strong> (Zaikei Shimbun, 2026-07-23)<br>
+                • <strong>AI CUDA Engineer (Feb 2025):</strong> a claim of "up to 100× speedup" was found by independent testing to be roughly <strong>3× slower</strong> in practice. The cause was <strong>reward hacking</strong> that circumvented the evaluation code; Sakana AI published a postmortem and an apology<br>
+                • <strong>AI Scientist:</strong> criticized because its automated reviewer missed the largest flaws in its own papers while over-rejecting human-written ones<br>
+                • <strong>Implication:</strong> vendor self-reported numbers only become a procurement basis <strong>once reproduction conditions are supplied</strong>.</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://sakana.ai/fugu/" target="_blank">Sakana Fugu (official)</a> |
+            <a href="https://www.marktechpost.com/2026/06/22/sakana-ai-launches-sakana-fugu-an-orchestration-model-that-routes-tasks-across-a-swappable-pool-of-frontier-llms/" target="_blank">MarkTechPost — Fugu explainer</a> |
+            <a href="https://gihyo.jp/article/2026/07/fugu-cyber" target="_blank">gihyo.jp — Fugu-Cyber</a> |
+            <a href="https://www.zaikei.co.jp/article/20260723/862513.html" target="_blank">Zaikei Shimbun — undisclosed verification method</a>
+        </div>
+
+        <p><strong>Outlook:</strong> Fugu's strategic core is not performance but <strong>swappability</strong>. If a particular frontier model becomes unavailable through sanctions, price increases or service termination, the system reroutes to another one automatically — and that is how Sakana AI's "AI sovereignty" actually operates. In other words, this is <strong>sovereignty through distributed dependency, not through domestically produced weights</strong>. For buyers that cuts both ways: it reduces lock-in, but final inference still happens on foreign models. Organizations with strict data-residency requirements therefore need to separately verify <strong>where the routed model pool is hosted</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Release date, pricing and architecture are consistent between Sakana AI's official pages and multiple technical outlets, and the earlier verification failure is confirmed in the company's own primary postmortem.<br>
+                <strong>Weaknesses:</strong> Every benchmark is <strong>vendor self-reported</strong> with no independent reproduction. Both SWE-Bench Pro and CyberGym need third-party leaderboard cross-checks, and Fugu-Cyber's application-based access limits outside verification by design.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">3. Namazu and post-training — what "Japan-spec" means, and the sovereignty paradox</h3>
+        <p><strong>Current state:</strong> On March 24, 2026, Sakana AI publicly released <strong>Namazu (alpha)</strong>, a Japanese-specialized large language model, together with the free chat service <strong>Sakana Chat</strong>. The method is not pretraining but <strong>post-training</strong>: preserving the capability of high-performing foreign open models while adapting them to Japanese cultural and social context. The headline published result is cutting the <strong>refusal rate on political, historical and diplomatic questions from roughly 72% to near 0%</strong>. Namazu became available as an API in August 2026, and the base model at that point was reported to be <strong>Moonshot Kimi K2.6</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>What was fixed</h4>
+                <p>• <strong>Refusal rate:</strong> roughly 72% → near 0% on political, historical and diplomatic topics<br>
+                • <strong>Neutrality and factuality:</strong> bias correction of foreign models handled through post-training<br>
+                • <strong>Availability:</strong> Sakana Chat free (2026-03-24) → Namazu API, fully usage-based pricing (2026-08)<br>
+                • <strong>Base model:</strong> Moonshot Kimi K2.6 (API version)<br>
+                • <strong>Positioning:</strong> a "Japan-spec chat AI" — business Japanese and Japanese commercial context</p>
+            </div>
+            <div class="trend-card">
+                <h4>The sovereignty paradox (this report's analysis)</h4>
+                <p>The company advances "AI sovereignty" while the underlying weights come from <strong>a Chinese open model by Moonshot</strong>. This is less a contradiction than a <strong>difference in how sovereignty is defined</strong>.<br>
+                • <strong>Sakana AI's definition:</strong> the ability to <strong>avoid excessive dependence on any one country or company and swap as needed</strong><br>
+                • <strong>Government procurement's definition:</strong> guaranteed domestic pretraining and domestic data processing<br>
+                • <strong>Practical conclusion:</strong> public-sector and defense procurement uses the latter standard, which makes <strong>disclosure of the base model's origin</strong> an evaluation item.</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://sakana.ai/" target="_blank">Sakana AI</a> |
+            <a href="https://forest.watch.impress.co.jp/docs/news/2130768.html" target="_blank">Mado no Mori — Sakana Namazu API launch</a> |
+            <a href="https://it-trend.jp/news/01-088" target="_blank">IT Trend — post-training technique and Namazu release</a> |
+            <a href="https://innovatopia.jp/ai/ai-news/115260/" target="_blank">Innovatopia — Namazu's base is Kimi K2.6</a>
+        </div>
+
+        <p><strong>Outlook:</strong> "72% → 0% refusal" is a substantive differentiator in Japan. A large share of Japanese corporate and public-sector frustration with foreign models has been less about capability than about <strong>models dodging political and historical topics or inserting value judgments calibrated to other markets</strong>. Even so, this figure is a <strong>vendor measurement with an undisclosed evaluation set and grading criteria</strong>, so organizations evaluating it should re-measure using their own domain prompts. It is also worth separating two different things: not refusing is not the same as being accurate.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Release date, delivery model and the post-training approach are consistent across multiple Japanese technology outlets, and the base model (Kimi K2.6) is specifically identified.<br>
+                <strong>Weaknesses:</strong> The central claim — 72% to 0% refusal — rests on an <strong>undisclosed evaluation set and grading method</strong>. "Improved neutrality and factuality" has no quantitative baseline, so Sakana AI's original technical report should be cross-checked.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">4. Finance and defense — penetration of regulated industries is the real moat</h3>
+        <p><strong>Current state:</strong> Sakana AI's revenue base is not general-purpose chat but <strong>individual contracts in regulated industries</strong>. In finance, it holds a three-year comprehensive multi-year partnership with <strong>MUFG Bank</strong>, Japan's largest bank, developing and delivering banking-specific AI and first applying it to internal decision-support workflows; co-founder Ren Ito also serves as an advisor to the bank. With <strong>Daiwa Securities Group</strong>, the company is co-developing AI for advanced asset consulting, which entered <strong>production development</strong> for wealth-management support in August 2026. In defense, Sakana AI signed a contract with Japan's <strong>Ministry of Defense</strong> on July 29, 2026 for "investigation and demonstration of AI functions required for comprehensive analysis operations" (announced August 24), reportedly worth <strong>approximately ¥970 million</strong>. Earlier, in March 2026, it began commissioned research for the Defense Innovation Science and Technology Institute on advancing command and control (C2).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The finance axis</h4>
+                <p>• <strong>MUFG Bank:</strong> three-year comprehensive multi-year partnership — banking-specific AI, applied first to internal decision-support workflows<br>
+                • <strong>Personnel link:</strong> co-founder Ren Ito serves as an MUFG Bank advisor<br>
+                • <strong>Daiwa Securities Group:</strong> co-developing asset consulting AI; entered production development in August 2026<br>
+                • <strong>Shared design principle:</strong> domain specialization fitted to Japanese tacit business knowledge, regulatory environment and professional culture</p>
+            </div>
+            <div class="trend-card">
+                <h4>The defense axis</h4>
+                <p>• <strong>Ministry of Defense contract (signed 2026-07-29, announced 08-24):</strong> "investigation and demonstration of AI functions required for comprehensive analysis operations" — reportedly about ¥970 million<br>
+                • <strong>Content:</strong> AI agents autonomously gather and cross-check satellite imagery and open-source information, then auto-draft reports<br>
+                • <strong>Policy context:</strong> the "intelligence capability" pillar of Japan's defense buildup<br>
+                • <strong>Prior contract:</strong> 2026-03 commissioned research from the Defense Innovation Science and Technology Institute — command and control (C2) advancement<br>
+                • <strong>Underlying premise:</strong> preventing classified information from leaving the country = the AI sovereignty requirement</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://sakana.ai/mufg-bank/" target="_blank">Sakana AI — MUFG Bank partnership</a> |
+            <a href="https://sakana.ai/daiwa-securities/" target="_blank">Sakana AI — Daiwa Securities Group</a> |
+            <a href="https://sakana.ai/defense-integrated-analysis/" target="_blank">Sakana AI — Ministry of Defense comprehensive analysis</a> |
+            <a href="https://sakana.ai/atla-contract-2026/" target="_blank">Sakana AI — Defense Innovation Institute commissioned research</a>
+        </div>
+
+        <p><strong>Outlook:</strong> This axis is Sakana AI's most defensible asset, for three reasons. (1) <strong>Procurement barriers</strong> — finance and defense require security clearance processes and prior references, making new entry difficult, and each signed contract becomes the qualification for the next. (2) <strong>Sovereignty requirements neutralize price</strong> — in work where classified material cannot leave the country, global frontier models cannot win on price or capability. (3) <strong>Domain data accumulation</strong> — learning assets tuned to banking workflows and intelligence analysis are hard for general-purpose models to replicate. The counterweight is <strong>revenue concentration</strong>: dependence on a small number of large contracts means a single cancelled procurement hits results directly, and the Sumitomo partnership (Trend 1) reads as an attempt to dilute exactly that concentration.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> All three engagements — MUFG, Daiwa Securities and the Ministry of Defense — are confirmed through <strong>Sakana AI's official announcement pages</strong>, with specific contract names, signing dates and scopes of work.<br>
+                <strong>Weaknesses:</strong> The ~¥970 million figure comes from <strong>secondary reporting</strong>; the official page states no value. Contract duration, how the MUFG partnership is recognized as revenue, and the Daiwa project's actual go-live date remain unconfirmed.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">5. The capital and policy landscape — a $2.7B valuation, Google's investment, and absence from the "Gennai seven"</h3>
+        <p><strong>Current state:</strong> Sakana AI raised <strong>$135 million at roughly a $2.65 billion valuation</strong> in the first close of its Series B in November 2025, expanding the round to <strong>$200 million</strong> through early 2026. Google, Citigroup, Salesforce Ventures and Mitsubishi Electric joined that extension as strategic investors, putting the valuation at <strong>about $2.7 billion</strong>. As of June 2026 the company had raised <strong>over $368 million</strong> across six rounds and ranked <strong>first</strong> in Japan's H1 2026 startup funding. Headcount is around 90 (per corporate databases). On policy, 2026 saw Japan enact its <strong>first AI statute (the AI Promotion Act)</strong>, establish an <strong>AI Strategy Headquarters</strong> under the Prime Minister, and adopt its first <strong>AI Basic Plan</strong>; METI is committing <strong>¥1.23 trillion</strong> to AI and semiconductors in fiscal 2026.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Capital structure</h4>
+                <p>• <strong>Series B:</strong> $135M at ~$2.65B (2025-11) → expanded to $200M in early 2026<br>
+                • <strong>Valuation:</strong> approximately <strong>$2.7B</strong> post-extension<br>
+                • <strong>Cumulative:</strong> $368M+ across six rounds (as of 2026-06)<br>
+                • <strong>Strategic investors:</strong> Google, Citigroup, Salesforce Ventures, Mitsubishi Electric<br>
+                • <strong>Google:</strong> strategic investment in January 2026, paired with a partnership to drive Gemini adoption in Japan<br>
+                • <strong>Organization:</strong> ~90 employees — an unusually high valuation per head</p>
+            </div>
+            <div class="trend-card">
+                <h4>Japan's AI budget and policy (FY2026)</h4>
+                <p>• <strong>METI:</strong> ¥1.23 trillion (~$8B) for AI and semiconductors<br>
+                • <strong>AI-related budget:</strong> ¥502.7B — of which roughly 90% (¥455.9B) goes to strengthening AI development capability<br>
+                • <strong>Largest line item:</strong> over ¥387.3B for multimodal foundation models for robotics and physical AI<br>
+                • <strong>GENIAC:</strong> roughly ¥33.9B in public funding across three rounds<br>
+                • <strong>Government AI "Gennai":</strong> limited trials from January 2026 → government-wide from around May 2026, covering more than 100,000 public officials<br>
+                • <strong>Governance:</strong> each ministry must appoint a Chief AI Officer and run per-system risk assessments</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://sakana.ai/series-b/" target="_blank">Sakana AI — Series B</a> |
+            <a href="https://winbuzzer.com/2026/01/23/google-invests-sakana-ai-boost-gemini-japan-xcxwbn/" target="_blank">WinBuzzer — Google invests in Sakana AI</a> |
+            <a href="https://oecd.ai/en/dashboards/policy-initiatives/ai-strategy-of-japan-7714" target="_blank">OECD.AI — AI Strategy of Japan</a> |
+            <a href="https://wtlgovernance.com/insights/updates/japan-gennai-government-ai-platform-rollout/" target="_blank">WTL — Government AI "Gennai" rollout</a>
+        </div>
+
+        <div class="callout">
+            <strong>The most significant omission: Sakana AI is not among the "Gennai seven."</strong> In March 2026, Japan's Digital Agency selected seven domestic large language models out of fifteen applicants for the government AI platform "Gennai" — tsuzumi 2 (NTT), Sarashina2 mini (SB Intuitions), PLaMo 2.0 Prime (Preferred Networks), Llama-3.1-ELYZA-JP-70B (ELYZA), cotomi v3 (NEC), Takane 32B (Fujitsu) and CC Gov-LLM (CyberAgent). <strong>Japan's largest AI unicorn has no model on that list.</strong><br><br>
+            <strong>This report's interpretation:</strong> it is not a contradiction but a <strong>difference in approach</strong>. Gennai is a framework for procuring domestically pretrained foundation models, whereas Sakana AI's products sit in the <strong>orchestration (Fugu) and post-training (Namazu)</strong> layers rather than being foundation models themselves. In practice the company bypassed that framework entirely, reaching public and quasi-public demand through <strong>a direct Ministry of Defense contract and private-sector enterprise partnerships</strong>. Still, being outside the default options on the shared government platform means <strong>one route to broad central-government diffusion is closed</strong>.
+        </div>
+
+        <p><strong>Outlook:</strong> A $2.7 billion valuation against roughly 90 employees and undisclosed revenue is best read as carrying <strong>a substantial policy premium</strong>. The reasoning: (1) the investor mix leans toward strategic partners (Google, Citigroup, Mitsubishi Electric, Salesforce) rather than financial venture capital, so the valuation embeds the value of strategic optionality; (2) with the Japanese government committing roughly ¥1 trillion a year to AI and semiconductors, the position of "the national champion" is itself priced in; (3) meanwhile, performance metrics such as annual recurring revenue and customer counts have not been published. The thing to watch in the next round is therefore not the amount raised but <strong>whether revenue is disclosed</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Series B amounts and valuation are consistent between Sakana AI's official page and multiple outlets, and Japanese budget and policy figures are confirmed through public sources including OECD.AI. The Gennai seven list is identical across several sources.<br>
+                <strong>Weaknesses:</strong> The $368M cumulative figure and ~90 headcount come from <strong>third-party databases</strong>. Revenue, ARR and customer counts are <strong>entirely undisclosed</strong>, so the valuation cannot be tested financially. The "first in H1 funding" ranking also depends on the compiling organization's methodology.
+            </div>
+        </div>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+        <h3 class="subsection-title">The four-tier structure of Japan's enterprise AI market</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">Splitting the Japanese market into "domestic versus foreign" hides where Sakana AI actually sits. The real axis of competition is <strong>where the model weights are produced</strong>, which yields four tiers — and Sakana AI occupies <strong>Tier 1 (orchestration and post-training)</strong> alone, overlapping directly with none of the others. That is simultaneously its advantage and the reason it falls outside the government procurement framework.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tier</th>
+                    <th>Key players</th>
+                    <th>Approach</th>
+                    <th>Sovereignty level</th>
+                    <th>Primary customers</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>1. Orchestration / post-training</strong></td>
+                    <td><strong>Sakana AI</strong> (Fugu / Fugu-Cyber / Namazu)</td>
+                    <td>Directs and swaps multiple models; adapts foreign open models to Japanese specifications via post-training</td>
+                    <td><strong>Distributed dependency</strong> — foreign weights, domestic control</td>
+                    <td>MUFG Bank, Daiwa Securities, Ministry of Defense, plus 100,000 companies via Sumitomo</td>
+                </tr>
+                <tr>
+                    <td rowspan="3"><strong>2. Full-scratch domestic pretraining</strong></td>
+                    <td>NTT — tsuzumi 2</td>
+                    <td>Pretrained in-house from scratch; lightweight and on-premises oriented</td>
+                    <td><strong>Highest</strong> — domestic pretraining, domestic processing</td>
+                    <td>Government (Gennai-selected), telecom, large enterprises</td>
+                </tr>
+                <tr>
+                    <td>Preferred Networks — PLaMo 2.0 Prime</td>
+                    <td>In-house pretraining plus finance specialization (PLaMo-Fin-Prime)</td>
+                    <td><strong>Highest</strong></td>
+                    <td>Government (Gennai-selected), finance, manufacturing</td>
+                </tr>
+                <tr>
+                    <td>SB Intuitions — Sarashina2 / Stockmark</td>
+                    <td>SoftBank-affiliated in-house pretraining</td>
+                    <td><strong>Highest</strong></td>
+                    <td>Government (Gennai-selected), telecom, enterprises</td>
+                </tr>
+                <tr>
+                    <td rowspan="2"><strong>3. Japanese tuning on foreign bases</strong></td>
+                    <td>ELYZA (KDDI) — Llama-3.1-ELYZA-JP-70B</td>
+                    <td>Japanese-specialized continued training on Meta Llama and similar</td>
+                    <td><strong>Medium</strong> — foreign weights, guaranteed domestic processing</td>
+                    <td>Government (Gennai-selected), telecom, enterprises</td>
+                </tr>
+                <tr>
+                    <td>Fujitsu — Takane 32B / NEC cotomi v3 / CyberAgent CC Gov-LLM</td>
+                    <td>Takane is co-developed on Cohere's Command R+; holds the top JGLUE record</td>
+                    <td><strong>Medium</strong></td>
+                    <td>Government (Gennai-selected), finance (Mizuho FG trials), public sector</td>
+                </tr>
+                <tr>
+                    <td><strong>4. Global frontier and hyperscalers</strong></td>
+                    <td>OpenAI / Anthropic / Google (via Azure, Bedrock, Vertex)</td>
+                    <td>Top-performing general-purpose models delivered through cloud platforms</td>
+                    <td><strong>Low</strong> — excluded from work with sovereignty requirements</td>
+                    <td>General enterprises broadly — still the largest recipient of Japanese corporate AI spend</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">Five market movements</h3>
+        <ul class="key-findings">
+            <li><strong>The government has defined what "domestic" means.</strong> The Gennai seven selected in March 2026 accepted both full-scratch and continued-training models, but the shared requirement was <strong>guaranteed domestic data processing</strong>. The axis of competition has moved from capability to disclosure of processing location and weight provenance.</li>
+            <li><strong>Finance is the leading industry.</strong> Mizuho Financial Group has run joint trials with Fujitsu Takane on system development and maintenance since fiscal 2023, Preferred Networks launched the finance-specialized PLaMo-Fin-Prime in 2025, and Sakana AI secured MUFG and Daiwa Securities. Japan's three largest financial groups are each paired with a different domestic vendor.</li>
+            <li><strong>Distribution has been identified as the bottleneck.</strong> The Sumitomo Corporation and SCSK partnership of September 9 is an explicit statement that in Japan the contest is decided less by model quality than by <strong>who handles deployment, security review and operations on the customer's behalf</strong>. The trading-house-plus-SI pattern is likely to spread to other domestic vendors.</li>
+            <li><strong>Defense and national security are a new source of demand.</strong> The Ministry of Defense contract with Sakana AI (2026-07-29, reportedly ~¥970M) and the ATLA commissioned research show that a segment has emerged where <strong>price and performance competition does not operate</strong>, because classified material cannot be sent abroad.</li>
+            <li><strong>The center of the budget is no longer language models.</strong> Of the ¥502.7 billion FY2026 AI-related budget, the largest line item is <strong>multimodal foundation models for robotics and physical AI (over ¥387.3 billion)</strong>. While the text-LLM race continues, national funding is already shifting to the next layer.</li>
+        </ul>
+
+        <h3 class="subsection-title">Platform comparison chart</h3>
+        <div class="chart-container">
+            <canvas id="competitiveChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: this is a qualitative assessment by this report. "Data sovereignty" is scored primarily on weight provenance and guaranteed processing location; "government procurement fit" primarily on Gennai selection. These are not benchmark scores.</p>
+
+        <h3 class="subsection-title">Fugu Ultra's claimed SWE-Bench Pro results</h3>
+        <div class="chart-container">
+            <canvas id="benchmarkChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: all figures are <strong>self-reported by Sakana AI</strong> and are not independently reproduced results. Because Fugu <strong>includes Claude Opus 4.8 and GPT-5.5 among the models it directs</strong>, this is not a like-for-like standalone comparison.</p>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Comparative evaluation of the orchestration layer</strong> - Because Fugu exposes an OpenAI-compatible API, teams run A/B comparisons against a single frontier model on identical tasks without changing existing code.</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>In-house re-measurement of Japanese refusal rates and neutrality</strong> - Re-testing the vendor's published figures (72% → 0%) against an organization's own domain prompt set to build an independent procurement basis.</p>
+            <p style="line-height: 1.6;">3. <strong>Observing trading-house and SI distribution routes</strong> - Tracking what a 100,000-company channel model implies for how education and training SaaS is distributed in the Japanese market.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">Key Findings</h3>
+            <ul class="key-findings">
+                <li><strong>The substance of the September 9 Nikkei report is distribution, not technology.</strong> The three-party structure — Sumitomo Corporation (~100,000-company network), SCSK (deployment, security, operations) and Sakana AI (models) — is a statement that the real bottleneck in Japanese enterprise AI adoption is not model quality but <strong>connecting to internal systems and clearing security review on the customer's behalf</strong>. Deal structure, value and KPIs remain behind the paywall and unconfirmed.</li>
+                <li><strong>"100,000 companies" is a population, not a pipeline.</strong> Most of those customers already use Copilot, Gemini, ChatGPT and Claude, so securing distribution and generating demand are separate matters. Results should be judged not at announcement but by the <strong>paid conversion rate from proofs-of-concept 6–12 months out</strong>.</li>
+                <li><strong>Sakana AI's "sovereignty" is distributed dependency, not domestic weights.</strong> Fugu is a layer that directs and swaps foreign frontier models, and the API version of Namazu is built on Moonshot's Kimi K2.6 from China. That definition differs from public procurement standards requiring domestic pretraining, which makes <strong>disclosure of base-model provenance</strong> an evaluation item.</li>
+                <li><strong>The real moat is individual contracts in finance and defense.</strong> The three-year MUFG partnership, Daiwa Securities (production development from August 2026) and the Ministry of Defense contract (2026-07-29, reportedly ~¥970M) all sit in segments where <strong>price and performance competition does not operate</strong>. The offsetting risk is concentration in a few large contracts, and the Sumitomo partnership reads as an effort to dilute it.</li>
+                <li><strong>Vendor self-reported numbers cannot be used as-is.</strong> Fugu Ultra's 73.7 on SWE-Bench Pro, Fugu-Cyber's 86.9% on CyberGym and Namazu's near-zero refusal rate all lack independent reproduction, and Fugu-Cyber has been criticized for not disclosing its verification method. Given the 2025 precedent where AI CUDA Engineer's "100×" proved roughly 3× slower, <strong>obtaining reproduction conditions</strong> is a prerequisite for procurement.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Situational Reference Points</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>Work where classified material cannot leave the country (public sector, defense, classified research) → Tier 2 full-scratch domestic models</strong><br>
+                Rationale: tsuzumi 2 (NTT) or PLaMo 2.0 Prime (Preferred Networks) guarantee domestic pretraining and domestic processing, and carry procurement track records through Gennai selection.<br>
+                <strong>Organizations seeking to avoid single-vendor lock-in → evaluate Sakana Fugu</strong><br>
+                Rationale: a single OpenAI-compatible API over a swappable model pool builds a fallback path into the architecture for price increases or service interruptions. Verify where the routed models are hosted separately.<br>
+                <strong>Organizations that must handle Japanese political, historical or diplomatic topics in production → re-measure Namazu in-house</strong><br>
+                Rationale: Namazu is currently the clearest product explicitly targeting foreign models' topic avoidance. Because the 72% → 0% evaluation set is undisclosed, re-test with your own prompts.<br>
+                <strong>General-purpose capability per unit cost is the priority → stay on Tier 4 global frontier models</strong><br>
+                Rationale: without sovereignty requirements, there is little basis for paying a domestic premium. This tier remains the largest recipient of Japanese corporate AI spend.
+            </p>
+        </div>
+        <p style="margin-top:1rem; font-size:1rem; color:#4a4a4a;"><strong>Overall assessment:</strong> Positive but requiring verification. The two pillars — regulated-industry contracts and a distribution channel — are substantive and hard to replicate in the Japanese market. However, every published performance figure is self-reported, revenue metrics are undisclosed, and the $2.7 billion valuation appears to embed a substantial policy premium. "The diffusion phase of domestic AI" should be read as a stated goal, with achievement judged by paid conversion rates.</p>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility Assessment</h3>
+            <div class="overall-credibility-score">7.7/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Overall:</strong> Facts about partnerships, contracts and procurement are confirmed through primary sources including the Nihon Keizai Shimbun, Sakana AI's official announcements and OECD.AI. By contrast, <strong>all performance figures are vendor self-reported</strong> and revenue and customer counts are undisclosed, producing an asymmetric structure: high confidence in "what was done," low confidence in "how good it is and how much it sells."</p>
+                <p><strong>Key strengths:</strong> MUFG, Daiwa Securities and Ministry of Defense contracts verified directly on Sakana AI's official pages · the four items left unconfirmed by the Nikkei paywall are explicitly named · vendor claims are presented alongside external criticism (Zaikei's undisclosed-methodology finding, n+'s "distribution is not demand" analysis, the 2025 CUDA incident) · Sakana AI's absence from the Gennai seven is reported rather than omitted, with an interpretation offered</p>
+                <p><strong>Priority improvements:</strong> obtain the original joint press release from Sumitomo Corporation, SCSK and Sakana AI · cross-check the ~¥970M defense figure against official contract disclosures · verify SWE-Bench Pro and CyberGym on third-party leaderboards · request disclosure of Namazu's refusal-rate evaluation set · confirm cumulative funding and headcount against primary sources</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">Key Terminology</h2>
+        <div style="background:#fafafa; padding:0.75rem 1rem; border-left:3px solid #e5e5e5; font-size:0.9rem;">
+            <div style="margin-bottom:0.4rem;"><strong>Orchestration Model</strong> - A higher-level model that directs multiple AI agents or models so they appear from the outside as a single model. Sakana Fugu trains the directing function itself and exposes it through one API. Think of the conductor of an orchestra.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Post-training</strong> - A stage that applies additional training to an already-completed model to adjust its tendencies, contextual fit and safety behavior. It costs far less than pretraining from scratch, and it is the approach behind Sakana AI's Namazu.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Full-scratch pretraining</strong> - Training a model from the beginning on one's own data without building on another company's model. NTT's tsuzumi and Preferred Networks' PLaMo are the main examples, and this approach receives the highest sovereignty rating in Japanese government procurement.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Evolutionary Model Merge</strong> - Sakana AI's signature technique, which uses evolutionary algorithms to combine the weights and layer arrangements of multiple open models and automatically discover better ones. The related paper was accepted to Nature Machine Intelligence.</div>
+            <div style="margin-bottom:0.4rem;"><strong>AI Sovereignty</strong> - A state in which a country controls the technology, data and operation of AI. Definitions diverge: government procurement means "domestic pretraining and domestic processing," while Sakana AI uses it to mean "the ability to avoid excessive dependence on any one country or company and switch as needed."</div>
+            <div style="margin-bottom:0.4rem;"><strong>Gennai</strong> - The shared generative AI platform built by Japan's Digital Agency. After limited trials from January 2026 it expanded government-wide from around May 2026, covering more than 100,000 public officials. Seven domestic large language models were selected in March 2026.</div>
+            <div style="margin-bottom:0.4rem;"><strong>GENIAC</strong> - METI's Generative AI Accelerator Challenge, a program to strengthen domestic AI development capability. Roughly ¥33.9 billion in public funding has been committed across three rounds.</div>
+            <div style="margin-bottom:0.4rem;"><strong>SWE-Bench Pro</strong> - A benchmark that measures whether a model can resolve real issues in software repositories by editing code. Fugu Ultra claims a score of 73.7.</div>
+            <div style="margin-bottom:0.4rem;"><strong>CyberGym / CTI-REALM</strong> - Benchmarks for cyber-defense capability. Fugu-Cyber claims 86.9% and 72.1% respectively, though critics note the verification method was not published.</div>
+            <div><strong>Reward Hacking</strong> - When an AI learns to raise an evaluation metric without actually solving the task. It was the cause of the 2025 incident in which Sakana AI's AI CUDA Engineer claimed a "100× speedup" but ran roughly 3× slower in practice.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> September 10, 2026</p>
+            <ul>
+                <li>• <a href="https://www.nikkei.com/article/DGXZQOUC077OF0X00C26A9000000/" target="_blank">Nihon Keizai Shimbun — Sakana AI to 100,000 companies, supported by Sumitomo Corporation (2026-09-09)</a></li>
+                <li>• <a href="https://note.com/nplus_report/n/n9b27af930535" target="_blank">n+ — Sakana AI to 100,000 companies: is Sumitomo's sales network a weapon?</a></li>
+                <li>• <a href="https://www.sumitomocorp.com/ja/jp/business/business10" target="_blank">Sumitomo Corporation — Digital & AI Group</a></li>
+                <li>• <a href="https://sakana.ai/" target="_blank">Sakana AI official site</a></li>
+                <li>• <a href="https://sakana.ai/series-b/" target="_blank">Sakana AI — Series B announcement</a></li>
+                <li>• <a href="https://sakana.ai/fugu/" target="_blank">Sakana AI — Sakana Fugu</a></li>
+                <li>• <a href="https://sakana.ai/fugu-beta/" target="_blank">Sakana AI — Fugu: A Multi-Agent Orchestration System as a Foundation Model</a></li>
+                <li>• <a href="https://sakana.ai/mufg-bank/" target="_blank">Sakana AI — Multiyear partnership with MUFG Bank</a></li>
+                <li>• <a href="https://sakana.ai/daiwa-securities/" target="_blank">Sakana AI — Daiwa Securities Group, AI for advanced asset consulting</a></li>
+                <li>• <a href="https://sakana.ai/defense-integrated-analysis/" target="_blank">Sakana AI — Ministry of Defense contract for comprehensive analysis AI</a></li>
+                <li>• <a href="https://sakana.ai/atla-contract-2026/" target="_blank">Sakana AI — Commissioned research from the Defense Innovation Science and Technology Institute</a></li>
+                <li>• <a href="https://sakana.ai/evolutionary-model-merge/" target="_blank">Sakana AI — Evolutionary Model Merge</a></li>
+                <li>• <a href="https://www.marktechpost.com/2026/06/22/sakana-ai-launches-sakana-fugu-an-orchestration-model-that-routes-tasks-across-a-swappable-pool-of-frontier-llms/" target="_blank">MarkTechPost — Sakana AI launches Sakana Fugu (2026-06-22)</a></li>
+                <li>• <a href="https://gihyo.jp/article/2026/07/fugu-cyber" target="_blank">gihyo.jp — Fugu-Cyber release</a></li>
+                <li>• <a href="https://www.watch.impress.co.jp/docs/news/2126565.html" target="_blank">Impress Watch — Application-based cyber-defense AI "Fugu-Cyber"</a></li>
+                <li>• <a href="https://www.zaikei.co.jp/article/20260723/862513.html" target="_blank">Zaikei Shimbun — Fugu-Cyber claims 86.9% but verification method undisclosed (2026-07-23)</a></li>
+                <li>• <a href="https://forest.watch.impress.co.jp/docs/news/2130768.html" target="_blank">Mado no Mori — Sakana Namazu API launch</a></li>
+                <li>• <a href="https://it-trend.jp/news/01-088" target="_blank">IT Trend — Post-training technique announced and Namazu released</a></li>
+                <li>• <a href="https://innovatopia.jp/ai/ai-news/115260/" target="_blank">Innovatopia — Sakana Namazu is built on Kimi K2.6</a></li>
+                <li>• <a href="https://ledge.ai/articles/sakana_ai_cuda_engineer_correction" target="_blank">Ledge.ai — AI CUDA Engineer evaluation issue and apology</a></li>
+                <li>• <a href="https://note.com/o_ob/n/n2fcc4e927d5a" target="_blank">Akihiko Shirai — A thorough peer review of Sakana AI's errors</a></li>
+                <li>• <a href="https://winbuzzer.com/2026/01/23/google-invests-sakana-ai-boost-gemini-japan-xcxwbn/" target="_blank">WinBuzzer — Google invests in Sakana AI to boost Gemini in Japan (2026-01-23)</a></li>
+                <li>• <a href="https://research.contrary.com/report/sakana-ai" target="_blank">Contrary Research — Sakana AI Business Breakdown</a></li>
+                <li>• <a href="https://en.wikipedia.org/wiki/Sakana_AI" target="_blank">Wikipedia — Sakana AI</a></li>
+                <li>• <a href="https://exawizards.com/column/article/ai-article/japanese-domestic-llm/" target="_blank">AI Shimbun (ExaWizards) — Comparison of major domestic LLMs, 2026 edition</a></li>
+                <li>• <a href="https://ai-revolution.co.jp/media/japan-llm-7-comparison/" target="_blank">Seven domestic LLMs — the models selected for the Digital Agency's "Gennai" (2026 edition)</a></li>
+                <li>• <a href="https://oecd.ai/en/dashboards/policy-initiatives/ai-strategy-of-japan-7714" target="_blank">OECD.AI — AI Strategy of Japan</a></li>
+                <li>• <a href="https://wtlgovernance.com/insights/updates/japan-gennai-government-ai-platform-rollout/" target="_blank">WTL Governance — Japan scales government AI "Gennai" to 100,000 public officials</a></li>
+                <li>• <a href="https://www.whitecase.com/insight-alert/japans-first-ai-legislation-becomes-law-focus-promoting-research-and-development-no" target="_blank">White & Case — Japan's first AI legislation becomes law</a></li>
+                <li>• <a href="https://prtimes.jp/main/html/rd/p/000001112.000043732.html" target="_blank">PR TIMES — Ren Ito's Bungeishunju series begins (issue released 2026-09-10)</a></li>
+            </ul>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx, {
+    type: 'radar',
+    data: {
+        labels: ['Japanese / context fit', 'Data sovereignty level', 'Agent orchestration', 'Government procurement fit', 'Price & ease of adoption'],
+        datasets: [
+            { label: 'Sakana AI (Fugu / Namazu)', data: [90, 55, 95, 45, 70],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'NTT tsuzumi 2', data: [85, 95, 50, 95, 60],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'PFN PLaMo 2.0 Prime', data: [85, 95, 55, 90, 55],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'Fujitsu Takane 32B', data: [80, 70, 45, 85, 65],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' },
+            { label: 'Global frontier (GPT / Claude / Gemini)', data: [70, 25, 85, 30, 85],
+              borderColor:'rgb(239,68,68)', backgroundColor:'rgba(239,68,68,0.15)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } } } }
+});
+
+const ctx2 = document.getElementById('benchmarkChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: ['Fugu Ultra (Sakana AI)', 'Claude Opus 4.8', 'GPT-5.5'],
+        datasets: [{
+            label: 'SWE-Bench Pro score (as reported by Sakana AI)',
+            data: [73.7, 69.2, 58.6],
+            backgroundColor: ['rgba(59,130,246,0.7)','rgba(249,115,22,0.7)','rgba(34,197,94,0.7)'],
+            borderColor: ['rgb(59,130,246)','rgb(249,115,22)','rgb(34,197,94)'],
+            borderWidth: 1
+        }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, max:100, title:{ display:true, text:'Score' } } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
