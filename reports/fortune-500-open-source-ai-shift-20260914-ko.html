@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포춘 500의 절반이 오픈소스 AI로? — 숫자가 실제로 측정한 것</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← 홈</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='fortune-500-open-source-ai-shift-20260914-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='fortune-500-open-source-ai-shift-20260914-ko.html'" class="lang-btn active">한국어</button>
+                <button onclick="window.location.href='fortune-500-open-source-ai-shift-20260914-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>포춘 500의 절반이 오픈소스 AI로? —<br>그 숫자가 실제로 측정한 것</h1>
+        <div class="subtitle">Hugging Face의 주장과 정반대 방향의 데이터, 그리고 오픈 가중치 주도권의 이동</div>
+        <div class="meta">보고서 작성일: 2026년 9월 14일 | 표준 보고서 (5-8페이지)</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+        <h3 class="subsection-title">1. 발단 — 「포춘 500의 절반」은 무엇을 센 숫자인가</h3>
+        <p><strong>현황:</strong> 2026년 7월 10일 TechCrunch의 Equity 팟캐스트에서 Hugging Face CEO 클레망 들랑그(Clem Delangue)는 <strong>포춘 500 기업의 약 절반이 Hugging Face를 통해 오픈소스 모델이나 자체 모델을 배포하고 있다</strong>고 밝혔습니다. 그가 제시한 전환 경로는 단순합니다. 기업은 OpenAI·Anthropic의 프론티어 API로 시작하지만, <strong>사용량이 늘수록 토큰 비용이 감당되지 않아</strong> 더 싸고 통제 가능한 오픈 모델로 옮겨간다는 것입니다. 플랫폼 규모는 모델 300만 개 이상, 데이터셋 50만 개, 앱 100만 개, 개발자 1,800만 명, 법인 고객 20만 곳입니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>주장의 근거와 규모</h4>
+                <p>• <strong>발언:</strong> 2026-07-10 TechCrunch Equity (기자 Rebecca Bellan)<br>
+                • <strong>핵심 논리:</strong> 프론티어 API로 시작 → 규모가 커지면 비용이 오픈 모델로 밀어낸다<br>
+                • <strong>플랫폼:</strong> 모델 300만+ · 데이터셋 50만 · 앱 100만 · 개발자 1,800만 · 법인 20만<br>
+                • <strong>목표:</strong> 향후 수년 내 AI 빌더 1억 명<br>
+                • <strong>CEO의 우려:</strong> 소수 대기업의 AI 지배력 집중</p>
+            </div>
+            <div class="trend-card">
+                <h4>이 숫자가 측정하지 않은 것</h4>
+                <p>• <strong>「사용한다」의 정의 비공개</strong> — 계정 보유, 모델 1회 내려받기, 프로덕션 배포가 구분되지 않습니다<br>
+                • <strong>자사 플랫폼 통계와 불일치:</strong> Hugging Face 자체 보고서(2026년 봄)는 <strong>포춘 500의 30% 이상이 검증된 계정을 보유</strong>한다고 적었습니다 — 같은 모집단에 두 개의 숫자<br>
+                • <strong>워크로드 비중 아님:</strong> 몇 명이 쓰는지이지, 실제 추론의 몇 %인지가 아닙니다<br>
+                • <strong>이해관계:</strong> 플랫폼 사업자 자체 발표이며 제3자 검증이 없습니다</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://techcrunch.com/2026/07/10/hugging-faces-ceo-on-why-companies-are-done-renting-their-ai/" target="_blank">TechCrunch 원문 (2026-07-10)</a> |
+            <a href="https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026" target="_blank">State of Open Source on Hugging Face: Spring 2026</a> |
+            <a href="https://huggingface.co/" target="_blank">Hugging Face</a>
+        </div>
+
+        <p><strong>전망:</strong> 이 발언 자체는 사실로 보입니다. 다만 <strong>「포춘 500의 절반이 오픈소스로 전환했다」로 번역하면 과장</strong>이 됩니다. 정확한 번역은 「포춘 500의 절반이 오픈소스 AI를 <em>만져봤다</em>」에 가깝습니다. 이 구분이 중요한 이유는 다음 항목에서 드러납니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 신뢰도 평가:</span><span class="credibility-score-value">7.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 주요 기술 매체의 1차 인터뷰이며 발언자·날짜·매체가 특정됩니다. 플랫폼 규모 수치는 복수 매체에서 일치합니다.<br>
+                <strong>개선점:</strong> 「사용한다」의 측정 정의가 공개되지 않았고, 제3자 검증이 없습니다. 같은 회사의 공식 보고서가 제시한 <strong>「30% 이상 검증 계정」</strong>과 층위가 다른 수치여서 병기해야 합니다.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">2. 반대 방향의 데이터 — 채택률은 오르는데 워크로드 점유율은 내려갔다</h3>
+        <p><strong>현황:</strong> 벤처캐피털 Menlo Ventures의 기업 조사에 따르면 <strong>오픈소스 모델이 기업 LLM 사용에서 차지하는 비중은 2024년 19%에서 2025년 11%로 오히려 떨어졌습니다.</strong> 같은 조사에서 기업 LLM 지출은 2024년 11월 35억 달러에서 2025년 중반 <strong>84억 달러</strong>로 6개월 만에 두 배 이상 늘었고, 이 지출의 88%를 Anthropic(40%)·OpenAI(27%)·Google(21%) 세 곳이 가져갔습니다. 나머지 12%에 Llama·Cohere·Mistral과 롱테일이 모두 들어갑니다. 한편 Linux Foundation과 Meta가 함께 낸 조사에서는 <strong>AI 도구를 쓰는 조직의 89%가 기술 스택 어딘가에 오픈소스 AI를 쓰고 있다</strong>고 나옵니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>같은 시장, 서로 다른 네 개의 숫자</h4>
+                <p>• <strong>50%</strong> — 포춘 500 중 Hugging Face로 오픈/자체 모델을 배포 (HF CEO)<br>
+                • <strong>30%+</strong> — 포춘 500 중 Hugging Face 검증 계정 보유 (HF 공식 보고서)<br>
+                • <strong>89%</strong> — AI 도구 사용 조직 중 스택 일부에 오픈소스 AI 사용 (Linux Foundation)<br>
+                • <strong>11%</strong> — 기업 LLM <strong>사용량</strong> 중 오픈소스 비중 (Menlo Ventures, 2025)<br>
+                <em>→ 모순이 아니라 측정 층위가 다릅니다.</em></p>
+            </div>
+            <div class="trend-card">
+                <h4>성능은 따라잡았는데 점유율은 빠졌다</h4>
+                <p>• <strong>격차 축소:</strong> 최고 오픈 모델과 최고 폐쇄 모델의 차이가 2023년 20~30%p에서 대부분 평가에서 <strong>5~10%p</strong>로 좁혀졌습니다<br>
+                • <strong>코딩은 사실상 동률</strong>, 가장 어려운 복합 추론·안전성에서만 뒤처집니다<br>
+                • <strong>Llama 정체가 직격:</strong> 기업에서 가장 널리 쓰이던 오픈 가중치 모델의 정체가 전체 오픈소스 점유율 하락의 주원인으로 지목됩니다<br>
+                • <strong>역설:</strong> 기술은 붙었는데 <strong>기업 도입은 줄었습니다</strong></p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/" target="_blank">Menlo Ventures — State of Generative AI in the Enterprise</a> |
+            <a href="https://www.linuxfoundation.org/research/surveys/2026-world-of-open-source-survey" target="_blank">Linux Foundation — World of Open Source Survey</a> |
+            <a href="https://www.luizneto.ai/enterprise-open-weight-models-2026/" target="_blank">Open-Weight Models Caught Up. Adoption Fell to 11%</a>
+        </div>
+
+        <p><strong>전망:</strong> 두 데이터는 충돌하지 않습니다. <strong>오픈 모델은 「많은 곳에서 조금씩」, 폐쇄 API는 「적은 곳에서 많이」</strong> 쓰이고 있습니다. 실험·내부 도구·임베딩·분류 같은 저가 작업은 오픈 모델이 넓게 퍼졌지만, 돈이 몰리는 고난도 프로덕션 추론은 여전히 프론티어 3사가 가져갑니다. 따라서 「전환」의 진도를 보려면 <strong>도입률이 아니라 지출·토큰 점유율</strong>을 봐야 합니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 신뢰도 평가:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> Menlo Ventures의 수치는 연도별 정량 추적이며 3사 점유율(40/27/21)까지 내역이 공개됩니다. Linux Foundation 조사도 기관 출처로 확인됩니다.<br>
+                <strong>개선점:</strong> Menlo 수치는 <strong>2025년 기준</strong>으로 2026년 갱신분이 필요하며, 표본 구성과 「사용량」의 정의(지출 기준인지 호출 기준인지)가 요약본에서 명확하지 않습니다. 「89%」도 Meta가 공동 저자인 보고서라는 점을 감안해야 합니다.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">3. 넘어가지 못하는 이유 — 성능이 아니라 라이선스·손익분기·출처</h3>
+        <p><strong>현황:</strong> 성능 격차가 5~10%p로 좁혀진 뒤에도 기업 전환이 더딘 이유는 <strong>모델 밖의 세 가지 제약</strong>으로 옮겨갔습니다. ① <strong>라이선스</strong> — 사용 분야 제한, 이용자 수 상한, 경쟁사 사용 금지 조항이 붙은 「오픈」 모델이 많습니다. ② <strong>자체 호스팅 경제성</strong> — OECD의 손익분기 분석에 따르면 <strong>월 10억 토큰 규모에서는 회수에 30개월</strong>이 걸리지만 <strong>월 100억 토큰이면 2개월</strong>로 줄어듭니다. ③ <strong>출처 검증</strong> — 가중치의 계보를 증명하고 무결성을 검증할 수단이 부족합니다. 한편 McKinsey 조사에서는 <strong>기업 리더의 40%가 통제를 이유로 자체 호스팅 가능한 모델을 선호</strong>한다고 나타났고, Forrester는 2026년 4월 <strong>AI 모델 개방성 프레임워크(AI Model Openness Framework)</strong>를 발표해 「오픈」의 등급을 나누기 시작했습니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>세 가지 실질 장벽</h4>
+                <p>• <strong>라이선스:</strong> 사용 분야 제한 · 이용자 수 상한 · 경쟁사 사용 금지 — 「오픈 가중치」가 「자유 사용」을 뜻하지 않습니다<br>
+                • <strong>손익분기:</strong> 월 10억 토큰 → 회수 30개월 / 월 100억 토큰 → 2개월 (OECD 모델링)<br>
+                • <strong>출처 검증:</strong> 가중치 계보 증명·무결성 검증 수단 부족<br>
+                • <strong>규제 부담:</strong> 오픈 가중치를 써도 고위험 용도라면 <strong>배포자(deployer)</strong>가 규정 준수 책임을 집니다</p>
+            </div>
+            <div class="trend-card">
+                <h4>그럼에도 전환을 미는 힘</h4>
+                <p>• <strong>통제 선호:</strong> 기업 리더의 40%가 자체 호스팅 가능 모델 선호 (McKinsey)<br>
+                • <strong>비용 배수:</strong> 오픈 모델은 최상위 폐쇄 모델 대비 <strong>10~1,000배</strong> 비용 절감이 가능한 구간이 있습니다 (Hugging Face 집계)<br>
+                • <strong>감사 대응:</strong> 자체 호스팅 구조는 데이터·로그·모델 계보를 직접 통제해 감사 마찰을 크게 줄인다는 분석<br>
+                • <strong>주권 조달:</strong> 프랑스는 세무당국 침해 사고 후 정부 시스템 취약점 점검에 Mistral 등 자국 공급자를 쓰고 OpenAI를 배제하기로 했습니다</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://www.forrester.com/" target="_blank">Forrester</a> |
+            <a href="https://www.mckinsey.com/" target="_blank">McKinsey &amp; Company</a> |
+            <a href="https://mistral.ai/" target="_blank">Mistral AI</a> |
+            <a href="https://mlflow.org/articles/the-role-of-open-source-in-enterprise-ai-in-2026/" target="_blank">MLflow — Role of Open Source in Enterprise AI</a>
+        </div>
+
+        <p><strong>전망:</strong> 전환의 임계점은 성능이 아니라 <strong>토큰 사용량</strong>입니다. OECD 수치를 그대로 읽으면, 월 10억 토큰 미만 조직이 자체 호스팅으로 옮기는 것은 대체로 손해이고, 월 100억 토큰을 넘어서면 옮기지 않는 쪽이 손해입니다. 대부분의 기업이 아직 전자 구간에 있기 때문에 <strong>「절반이 쓴다」와 「11%만 실제 워크로드」가 동시에 참</strong>일 수 있습니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 신뢰도 평가:</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 세 가지 장벽의 분류가 Forrester의 개방성 프레임워크(2026년 4월) 등 업계 논의와 일치하며, 손익분기의 방향성은 자체 호스팅 경제성의 상식과 부합합니다.<br>
+                <strong>개선점:</strong> OECD 30개월/2개월과 McKinsey 40%는 <strong>2차 매체를 경유해 인용된 수치</strong>로, 원 보고서를 직접 확인하지 못했습니다. 「10~1,000배 비용 절감」은 Hugging Face 자체 집계이며 조건이 명시되지 않았습니다.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">4. 오픈 가중치의 무게중심이 중국으로 이동했다</h3>
+        <p><strong>현황:</strong> 오픈 진영 내부의 주도권이 바뀌었습니다. Hugging Face 공식 집계에 따르면 <strong>2025년 중국이 월간 다운로드에서 미국을 추월</strong>했고, 최근 1년간 <strong>중국 모델이 전체 다운로드의 41%</strong>를 차지했습니다. 알리바바의 Qwen 계열은 2025년 9월 Meta의 Llama를 제치고 Hugging Face에서 가장 많이 내려받는 모델 계열이 되었고, 2026년 6개월간 <strong>30억 회 이상</strong> 다운로드되어 같은 기간 Google(4억 1,800만)과 Meta(2억 2,700만)를 합친 것보다 많았습니다. 파생 모델은 Qwen 계열만 <strong>11만 3,000개 이상</strong>으로 Google과 Meta를 합친 것을 넘습니다. 중립 라우터 OpenRouter 기준으로는 <strong>2026년 5월 중국계 오픈 가중치 모델이 전체 소비 토큰의 약 61%</strong>였습니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>수치로 본 이동</h4>
+                <p>• <strong>다운로드 점유:</strong> 중국 모델 41% (최근 1년, Hugging Face 집계)<br>
+                • <strong>Qwen:</strong> 2026년 6개월간 30억 회+ · 2026년 2월 단월 1억 5,360만 회(다음 8개 합계보다 많음) · 3월 전 세계 오픈소스 다운로드의 50% 초과<br>
+                • <strong>파생 모델:</strong> Qwen 계열 11만 3,000개+ (태그 포함 시 20만+)<br>
+                • <strong>OpenRouter 토큰:</strong> 2026년 5월 중국계 약 61%<br>
+                • <strong>공급자 확대:</strong> 바이두 2024년 0건 → 2025년 100건+ · 바이트댄스·텐센트 각 8~9배</p>
+            </div>
+            <div class="trend-card">
+                <h4>서구 진영의 재편</h4>
+                <p>• <strong>Meta:</strong> 프론티어는 폐쇄로 전환. 대신 2026년 8월 10일 Muse Spark에서 증류한 <strong>약 30B의 Muse Glimmer를 Apache 2.0</strong>(이용자 수 상한 없음)으로 공개 — Llama보다 오히려 관대한 라이선스<br>
+                • <strong>OpenAI:</strong> gpt-oss 가중치는 2025년 8월 이후 갱신 없음. 2026년 6월까지 후속판 부재, 다만 gpt-oss-120b가 2026년 3월 MLPerf Inference v6.0 공식 벤치마크로 채택<br>
+                • <strong>패턴:</strong> <strong>프론티어는 닫고, 증류한 소형만 연다</strong> — 미국 주요 연구소의 공통 전략으로 굳어지는 중<br>
+                • <strong>남은 축:</strong> Gemma · Mistral · Phi · Nemotron · OLMo · Command A+</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://qwen.ai/" target="_blank">Qwen (Alibaba)</a> |
+            <a href="https://www.deepseek.com/" target="_blank">DeepSeek</a> |
+            <a href="https://openrouter.ai/" target="_blank">OpenRouter</a> |
+            <a href="https://ai.meta.com/" target="_blank">Meta AI</a> |
+            <a href="https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026" target="_blank">Hugging Face — State of Open Source Spring 2026</a>
+        </div>
+
+        <p><strong>전망:</strong> 「오픈소스 AI로 간다」는 결정은 2026년 기준으로 사실상 <strong>「중국계 오픈 가중치를 쓴다」는 결정</strong>과 상당 부분 겹칩니다. 이것이 조달 심사에서 새로운 쟁점을 만듭니다 — 성능·가격이 아니라 <strong>원산지 정책과 가중치 계보</strong>입니다. 공공·금융·방위처럼 출처 제약이 있는 조직은, 성능이 앞서는 오픈 모델을 두고도 서구 오픈 모델이나 폐쇄 API로 회귀하는 선택을 하게 됩니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 신뢰도 평가:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 다운로드 점유율·국가별 추월·파생 모델 수는 <strong>Hugging Face 공식 보고서</strong>라는 플랫폼 1차 데이터이며, OpenRouter 토큰 비중은 독립된 중립 라우터 집계로 교차 확인됩니다.<br>
+                <strong>개선점:</strong> <strong>다운로드는 사용량이 아닙니다</strong> — 벤치마크·연구 목적 내려받기가 크게 섞입니다. Qwen 「30억 회」와 「50% 초과」는 2차 집계 매체 경유이며, OpenRouter 61%도 개발자 편향이 있는 특정 채널의 값입니다.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">5. 구조 변화 — Nvidia가 Hugging Face를 인수했다</h3>
+        <p><strong>현황:</strong> 2026년 9월 2일 Nvidia는 Hugging Face 인수에 관한 확정 계약을 체결했고, 9월 3일 공개했습니다. 인수 금액은 보도 기준 <strong>약 129억 달러</strong>입니다. 들랑그 CEO는 「여러 여건이 맞아떨어졌다(planets aligned)」며 <strong>이용자 1억 명</strong> 목표를 제시하고, 「Nvidia 같은 든든한 후원자가 있으면 앞으로 10년을 생각할 수 있다」고 말했습니다. 문제는 중립성입니다. Hugging Face는 <strong>Nvidia의 하드웨어 경쟁사들까지 포함해 업계 전체가 쓰는 모델 허브</strong>이기 때문입니다. Nvidia는 「Hugging Face는 AI 생태계 전체에 열린 플랫폼으로 남는다」, <strong>「Hugging Face에서 빌드하거나 배포하는 데 Nvidia 컴퓨트가 필수가 되지는 않는다」</strong>고 명시적으로 밝혔습니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>거래 사실관계</h4>
+                <p>• <strong>확정 계약:</strong> 2026-09-02 (SEC 제출) · <strong>공개:</strong> 2026-09-03<br>
+                • <strong>금액:</strong> 보도 기준 약 129억 달러 (출처에 따라 119억~130억 달러로 편차)<br>
+                • <strong>Nvidia 확약:</strong> 개방 플랫폼 유지 · 모델/프레임워크/클라우드/컴퓨트 선택 자유 · <strong>Nvidia 컴퓨트 강제 없음</strong><br>
+                • <strong>목표:</strong> 이용자 1억 명<br>
+                • <strong>반독점:</strong> 단기적으로는 자료 제출 요구·예비 심사 수준이 유력하다는 관측</p>
+            </div>
+            <div class="trend-card">
+                <h4>규제 층위 — EU AI Act의 오픈소스 면제</h4>
+                <p>• <strong>부분 면제 존재:</strong> 제53조 2항은 오픈소스 범용 AI 제공자에게 기술 문서·하류 정보 제공 의무의 일부를 면제합니다 — 단 <strong>4가지 조건을 모두</strong> 충족해야 합니다<br>
+                • <strong>면제의 소멸:</strong> 학습 연산량이 <strong>10^25 FLOPs</strong>를 넘어 「시스템적 위험」에 해당하면 면제가 사라집니다<br>
+                • <strong>배포자 책임은 남는다:</strong> 오픈 가중치를 써도 <strong>고위험 용도라면 배포하는 쪽이 준수 의무</strong>를 집니다<br>
+                • <strong>시사:</strong> 「오픈소스니까 규제에서 자유롭다」는 전제는 기업 사용자에게는 성립하지 않습니다</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://www.nvidia.com/" target="_blank">NVIDIA</a> |
+            <a href="https://www.cnn.com/2026/09/03/tech/nvidia-hugging-face-ai-acquisition" target="_blank">CNN — Nvidia의 Hugging Face 인수</a> |
+            <a href="https://www.infoworld.com/article/4218324/what-nvidias-13b-acquisition-of-hugging-face-means-for-ai-model-choice.html" target="_blank">InfoWorld — 모델 선택권에 미치는 영향</a> |
+            <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act</a>
+        </div>
+
+        <div class="callout">
+            <strong>가장 큰 아이러니는 여기입니다.</strong> 들랑그 CEO가 7월 인터뷰에서 밝힌 우려는 <strong>「소수 대기업이 AI를 장악하는 것」</strong>이었습니다. 두 달 뒤, 그 중립성의 근거였던 플랫폼이 <strong>AI 하드웨어에서 가장 지배적인 기업</strong>의 자회사가 되었습니다.<br><br>
+            <strong>본 보고서의 해석:</strong> 배신이라기보다 <strong>중립 인프라의 자금 조달 구조가 원래 취약하다</strong>는 사실의 노출로 읽는 것이 정확합니다. 모델 허브는 막대한 저장·대역폭 비용을 쓰면서 직접 수익화가 어렵습니다. 실무적으로 중요한 것은 선언이 아니라 <strong>검증 가능한 지표</strong>입니다 — 경쟁사 하드웨어(AMD·TPU·자체 칩) 대상 최적화 커널과 문서가 인수 이후에도 같은 속도로 갱신되는지, 비-Nvidia 백엔드의 추론 지원이 유지되는지를 6~12개월간 추적해야 합니다.
+        </div>
+
+        <p><strong>전망:</strong> 이번 인수로 「오픈소스 AI」의 정의가 한 겹 더 복잡해졌습니다. 모델 가중치는 열려 있어도, <strong>그 가중치를 찾고 배포하는 유통 계층은 이제 한 기업의 소유</strong>입니다. 조달 관점에서는 Hugging Face 단일 의존을 줄이고 미러·사설 레지스트리·복수 라우터를 함께 두는 구성이 늘어날 가능성이 높다고 봅니다. 근거: ① 2026년 들어 모델 허브 관련 보안 사고가 이미 부각된 바 있고, ② 단일 유통 지점 의존은 오픈 가중치를 선택한 애초의 이유(락인 회피)와 정면으로 충돌하기 때문입니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 신뢰도 평가:</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 인수 사실은 <strong>SEC 제출 문서</strong>와 CNN·Fortune·TechCrunch 등 복수 주요 매체에서 확인되며, Nvidia의 중립성 확약 문구와 CEO 발언이 직접 인용 가능합니다. EU AI Act 조항(제53조 2항·10^25 FLOPs)은 법령 기반입니다.<br>
+                <strong>개선점:</strong> <strong>인수 금액이 출처마다 119억~130억 달러로 엇갈립니다</strong> — 공시 원문 확인이 필요합니다. 반독점 전망은 애널리스트 추정이며, 중립성 유지 여부는 아직 검증할 데이터가 존재하지 않습니다.
+            </div>
+        </div>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+        <h3 class="subsection-title">기업 AI 모델 시장의 4계층 구조</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">「오픈 대 폐쇄」의 이분법으로는 지금 시장이 설명되지 않습니다. 실제 경쟁은 <strong>가중치 공개 여부 × 원산지 × 유통 경로</strong>의 조합에서 일어나며, 아래 4계층으로 나누면 각 진영이 무엇을 팔고 있는지가 드러납니다. 특히 제4계층(유통)은 지금까지 중립 지대로 여겨졌지만, Nvidia의 Hugging Face 인수로 경쟁 변수로 올라섰습니다.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>계층</th>
+                    <th>주요 플레이어</th>
+                    <th>제공 방식</th>
+                    <th>시장 위치</th>
+                    <th>주된 제약</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="2"><strong>1. 프론티어 폐쇄형 API</strong></td>
+                    <td>Anthropic · OpenAI · Google</td>
+                    <td>최고 성능 모델을 API로만 제공</td>
+                    <td><strong>기업 LLM 지출의 88%</strong> (40% / 27% / 21%)</td>
+                    <td>토큰 비용 · 데이터 반출 · 벤더 락인</td>
+                </tr>
+                <tr>
+                    <td>기타 상용 API (Cohere 등)</td>
+                    <td>특화 API · 기업용 커스터마이즈</td>
+                    <td>나머지 12%에 Llama·Mistral과 함께 분산</td>
+                    <td>규모의 경제 열세</td>
+                </tr>
+                <tr>
+                    <td><strong>2. 중국계 오픈 가중치</strong></td>
+                    <td>Qwen(알리바바) · DeepSeek · Kimi · GLM</td>
+                    <td>가중치 공개 + 관대한 라이선스</td>
+                    <td><strong>다운로드·토큰에서 사실상 선두</strong> — 다운로드 41%, OpenRouter 토큰 약 61%</td>
+                    <td>원산지 정책 · 조달 심사 · 데이터 거버넌스</td>
+                </tr>
+                <tr>
+                    <td rowspan="2"><strong>3. 서구 오픈 가중치</strong></td>
+                    <td>Meta Muse Glimmer(Apache 2.0) · OpenAI gpt-oss · Google Gemma</td>
+                    <td>프론티어는 닫고 증류한 소형만 공개</td>
+                    <td>성능 최전선에서 이탈, 규제 친화 포지션으로 이동</td>
+                    <td>갱신 정체 · 프론티어급 부재</td>
+                </tr>
+                <tr>
+                    <td>Mistral · Nemotron · Phi · OLMo · Command A+</td>
+                    <td>완전 공개형·연구형·유럽 주권형</td>
+                    <td>주권 AI 조달의 기본 선택지</td>
+                    <td>생태계 규모 열세</td>
+                </tr>
+                <tr>
+                    <td><strong>4. 유통·배포 계층</strong></td>
+                    <td><strong>Hugging Face(→Nvidia)</strong> · OpenRouter · Bedrock / Vertex / Azure · vLLM · Ollama</td>
+                    <td>모델 탐색·호스팅·라우팅·서빙</td>
+                    <td>모든 계층을 연결하는 관문 — <strong>중립성이 쟁점화</strong></td>
+                    <td>단일 의존 리스크 · 소유 구조 변화</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">시장 동향 5가지</h3>
+        <ul class="key-findings">
+            <li><strong>「도입률」과 「점유율」이 반대로 움직였습니다.</strong> AI 사용 조직의 89%가 스택 어딘가에 오픈소스를 쓰지만, 기업 LLM 사용량 중 오픈소스 비중은 19%(2024)에서 11%(2025)로 떨어졌습니다. 넓게 퍼졌으나 얕게 쓰입니다.</li>
+            <li><strong>성능은 더 이상 병목이 아닙니다.</strong> 최고 오픈 모델과 최고 폐쇄 모델의 격차가 20~30%p에서 5~10%p로 좁혀졌고 코딩은 사실상 동률입니다. 전환을 막는 것은 <strong>라이선스 조항·자체 호스팅 손익분기·가중치 출처 검증</strong>입니다.</li>
+            <li><strong>오픈 진영의 주도권이 중국으로 넘어갔습니다.</strong> Qwen이 Llama를 제치고 최다 다운로드 계열이 되었고, 2026년 5월 OpenRouter 소비 토큰의 약 61%가 중국계 오픈 가중치였습니다. Meta는 프론티어를 닫고 증류 소형만 여는 방식으로 전환했습니다.</li>
+            <li><strong>「오픈」 안에서도 집중이 심합니다.</strong> Hugging Face 자체 집계로 상위 200개 모델(전체의 0.01%)이 전체 다운로드의 <strong>49.6%</strong>를 가져가고, 전체 모델의 약 절반은 누적 다운로드가 200회 미만입니다. 개방이 다양성을 뜻하지는 않습니다.</li>
+            <li><strong>유통 계층이 새 전장이 되었습니다.</strong> Nvidia의 Hugging Face 인수(2026-09)로, 가중치는 열려 있어도 그것을 찾고 배포하는 관문은 한 기업 소유가 되었습니다. 조달 체크리스트에 <strong>유통 경로 다변화</strong> 항목이 추가되는 국면입니다.</li>
+        </ul>
+
+        <h3 class="subsection-title">같은 현상을 잰 네 개의 숫자</h3>
+        <div class="chart-container">
+            <canvas id="metricsChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">※ 네 수치는 <strong>모집단과 측정 대상이 각각 다릅니다</strong>. 앞의 세 개는 「쓰는 조직의 비율」, 마지막 하나는 「사용량 중 비중」입니다. 같은 축에 놓고 비교하면 안 되며, 이 보고서는 그 차이를 보이기 위해 나란히 배치했습니다.</p>
+
+        <h3 class="subsection-title">오픈 가중치 다운로드 (2026년 6개월 누계)</h3>
+        <div class="chart-container">
+            <canvas id="downloadChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">※ 단위는 백만 회. 다운로드는 <strong>사용량이 아니라 관심도에 가까운 지표</strong>이며 벤치마크·연구 목적 내려받기가 섞여 있습니다. Qwen 수치는 2차 집계 매체 기준입니다.</p>
+
+        <h3 class="subsection-title">4계층 특성 비교</h3>
+        <div class="chart-container">
+            <canvas id="competitiveChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">※ 본 보고서의 정성 평가입니다. 「조달 통과 용이성」은 원산지 정책·라이선스 제약·감사 대응을 종합해 점수화했으며 벤치마크 값이 아닙니다.</p>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">활용 아이디어</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근을 소개합니다.</p>
+
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>도입률 지표의 3층 분리</strong> - 「오픈소스 도입률」을 계정 보유·실험 사용·프로덕션 워크로드 세 층으로 나눠 따로 세는 접근이 관찰됩니다.</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>토큰량 기반 전환 시점 계산</strong> - 월 토큰 사용량을 축으로 자체 호스팅 손익분기를 먼저 계산한 뒤 전환 여부를 정하는 접근이 있습니다.</p>
+            <p style="line-height: 1.6;">3. <strong>라이선스·출처 실사 체크리스트</strong> - 개방성 프레임워크를 기준으로 사용 분야 제한과 가중치 계보를 조달 심사 항목으로 명문화하는 접근입니다.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">경영진 요약</h2>
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">핵심 발견</h3>
+            <ul class="key-findings">
+                <li><strong>「포춘 500의 절반」은 사실이지만 전환률이 아닙니다.</strong> 2026년 7월 Hugging Face CEO의 발언은 <strong>플랫폼을 쓰는 기업의 비율</strong>이고, 같은 회사의 공식 보고서는 포춘 500의 <strong>30% 이상이 검증 계정 보유</strong>라고 적습니다. 「쓴다」의 정의가 공개되지 않아 프로덕션 배포와 1회 실험이 구분되지 않습니다.</li>
+                <li><strong>정반대 방향의 데이터가 존재합니다.</strong> Menlo Ventures 기준 기업 LLM 사용량 중 오픈소스 비중은 <strong>19%(2024) → 11%(2025)</strong>로 하락했고, 84억 달러 지출의 88%를 Anthropic(40%)·OpenAI(27%)·Google(21%)이 가져갔습니다. 오픈 모델은 <strong>넓게 퍼졌지만 얕게</strong> 쓰입니다.</li>
+                <li><strong>병목은 성능이 아닙니다.</strong> 최고 오픈·폐쇄 모델 격차는 20~30%p에서 <strong>5~10%p</strong>로 좁혀졌고 코딩은 동률입니다. 남은 장벽은 라이선스 제한, 자체 호스팅 손익분기(월 10억 토큰이면 회수 30개월 · 월 100억 토큰이면 2개월), 가중치 출처 검증입니다.</li>
+                <li><strong>「오픈소스로 간다」는 실질적으로 「중국계 모델을 쓴다」와 겹칩니다.</strong> Qwen이 Llama를 제치고 최다 다운로드 계열이 되었고, 2026년 5월 OpenRouter 소비 토큰의 약 61%가 중국계였습니다. Meta는 프론티어를 닫고 증류한 소형(Muse Glimmer, Apache 2.0)만 여는 쪽으로 전환했습니다.</li>
+                <li><strong>중립 유통 계층이 사라졌습니다.</strong> 2026년 9월 Nvidia가 Hugging Face를 약 129억 달러에 인수했습니다. Nvidia는 「Nvidia 컴퓨트를 강제하지 않는다」고 확약했지만, 두 달 전 같은 CEO가 경고한 「소수 대기업의 AI 집중」이 자사에 적용된 형태입니다.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">상황별 참고</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>월 토큰 사용량이 10억 미만 → 프론티어 API 유지</strong><br>
+                이유: 손익분기 모델링상 회수에 30개월이 걸립니다. 이 구간에서 자체 호스팅 전환은 비용이 아니라 통제·규제를 이유로만 정당화됩니다.<br>
+                <strong>월 토큰 사용량이 100억 이상 → 오픈 가중치 자체 호스팅 검토</strong><br>
+                이유: 같은 모델링에서 회수 기간이 2개월로 줄어듭니다. 「전환」의 실질 임계점은 성능이 아니라 이 지점입니다.<br>
+                <strong>원산지 제약이 있는 조달(공공·금융·방위) → 서구 오픈 가중치 또는 폐쇄 API</strong><br>
+                이유: 성능이 앞서는 오픈 모델의 상당수가 중국계입니다. Gemma·Mistral·Nemotron·OLMo 계열이 대안이며, EU 고위험 용도라면 오픈 가중치를 써도 배포자가 준수 책임을 집니다.<br>
+                <strong>락인 회피가 전환 이유였던 조직 → 유통 경로도 함께 다변화</strong><br>
+                이유: 가중치를 열어도 모델 허브 한 곳에 의존하면 락인은 유통 계층으로 이동할 뿐입니다. 미러·사설 레지스트리·복수 라우터 구성이 필요합니다.
+            </p>
+        </div>
+        <p style="margin-top:1rem; font-size:1rem; color:#4a4a4a;"><strong>종합 평가:</strong> 중립 (오픈 모델의 성능·저변은 실제로 크게 올라왔고 이는 검증된 사실입니다. 그러나 「포춘 500의 절반이 전환 중」이라는 서사는 측정 층위를 섞은 결과이며, 돈이 도는 워크로드에서 오픈소스 비중은 오히려 줄었습니다. 2026년의 진짜 변화는 전환의 가속이 아니라 <strong>오픈 진영의 무게중심이 중국으로, 유통 계층의 소유권이 Nvidia로 이동한 것</strong>입니다.)</p>
+
+        <div class="overall-credibility">
+            <h3>📋 종합 신뢰도 평가</h3>
+            <div class="overall-credibility-score">7.8/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>종합 평가:</strong> 사건 사실(인수·발언·법령)은 SEC 제출 문서, 주요 매체 1차 보도, EU AI Act 조문으로 확인됩니다. 정량 지표는 Hugging Face 공식 보고서와 Menlo Ventures 조사 등 출처가 명확한 반면, <strong>대부분 벤더 또는 이해관계자 자체 집계</strong>이며 측정 정의가 공개되지 않은 경우가 많습니다. 본 보고서는 이 한계를 감추는 대신 <strong>상충하는 수치를 나란히 제시</strong>하는 방식을 택했습니다.</p>
+                <p><strong>주요 강점:</strong> 「50%」와 「11%」의 충돌을 은폐하지 않고 측정 층위 차이로 해소 · 같은 회사의 두 숫자(50% vs 30%)를 병기 · 다운로드가 사용량이 아니라는 한계를 차트 주석으로 명시 · Nvidia 인수 금액이 출처마다 다르다는 사실을 기재 · CEO의 「집중 우려」 발언과 두 달 뒤 인수를 나란히 배치</p>
+                <p><strong>개선 우선순위:</strong> Menlo Ventures 2026년 갱신판 확인 · OECD 손익분기 원 보고서와 McKinsey 40% 원문 직접 확인 · Nvidia·Hugging Face 공시 원문으로 인수 금액 확정 · Qwen 다운로드 수치의 1차 출처 확인 · Hugging Face의 「포춘 500 절반」 측정 정의 공개 요청</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">주요 용어 설명</h2>
+        <div style="background:#fafafa; padding:0.75rem 1rem; border-left:3px solid #e5e5e5; font-size:0.9rem;">
+            <div style="margin-bottom:0.4rem;"><strong>오픈 가중치 (Open Weights)</strong> - 모델의 학습된 수치(가중치)를 내려받아 직접 돌릴 수 있게 공개한 것. 학습 데이터와 코드까지 공개하는 완전한 오픈소스와는 다르며, 「오픈」이라는 이름이 붙어도 사용 분야 제한이 걸린 경우가 많습니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>자체 호스팅 (Self-hosting)</strong> - API로 빌려 쓰는 대신 자사 서버나 클라우드에 모델을 직접 올려 돌리는 방식. 고정비(GPU·운영)를 내는 대신 토큰당 과금이 사라져, 사용량이 많을수록 유리해집니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>손익분기 (Break-even)</strong> - 자체 호스팅의 고정비가 API 토큰 비용 절감액으로 회수되는 시점. 월 10억 토큰이면 약 30개월, 월 100억 토큰이면 약 2개월로 추정됩니다(OECD 모델링).</div>
+            <div style="margin-bottom:0.4rem;"><strong>모델 출처 검증 (Model Provenance)</strong> - 이 가중치가 누가 무엇으로 만든 것인지, 중간에 변조되지 않았는지 증명하는 것. 오픈 가중치 도입의 실질적 걸림돌 중 하나입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>파생 모델 (Derivative Model)</strong> - 공개된 모델을 추가 학습하거나 압축해 만든 변형 모델. 계열의 실제 생태계 크기를 보여주는 지표로, Qwen 계열은 11만 개 이상입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>증류 (Distillation)</strong> - 크고 강한 모델의 능력을 작은 모델에 옮겨 담는 기법. Meta의 Muse Glimmer(약 30B)는 상위 모델 Muse Spark에서 증류한 것으로, 「프론티어는 닫고 증류본만 연다」는 전략의 사례입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>LLM 라우터 (OpenRouter 등)</strong> - 여러 회사의 모델을 하나의 창구로 모아 요청을 알맞은 모델로 넘겨주는 중계 서비스. 특정 벤더에 치우치지 않아 실제 사용 비중을 관찰하기 좋은 지표원입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>시스템적 위험 (Systemic Risk) · 10^25 FLOPs</strong> - EU AI Act가 정한 기준선. 학습에 쓴 연산량이 이 값을 넘으면 파급력이 큰 모델로 보아, 오픈소스 면제가 사라지고 전면적인 의무가 적용됩니다.</div>
+            <div><strong>배포자 (Deployer)</strong> - 모델을 만들어 내놓는 제공자와 달리, 그 모델을 실제 업무에 가져다 쓰는 조직. EU AI Act에서 고위험 용도라면 <strong>오픈 가중치를 썼더라도 배포자가 규정 준수 책임</strong>을 집니다.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>참고 자료</h3>
+            <p><strong>데이터 수집일:</strong> 2026년 9월 14일</p>
+            <ul>
+                <li>• <a href="https://techcrunch.com/2026/07/10/hugging-faces-ceo-on-why-companies-are-done-renting-their-ai/" target="_blank">TechCrunch — Hugging Face's CEO on why companies are done renting their AI (2026-07-10)</a></li>
+                <li>• <a href="https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026" target="_blank">Hugging Face — State of Open Source on Hugging Face: Spring 2026</a></li>
+                <li>• <a href="https://huggingface.co/" target="_blank">Hugging Face 공식 사이트</a></li>
+                <li>• <a href="https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/" target="_blank">Menlo Ventures — The State of Generative AI in the Enterprise</a></li>
+                <li>• <a href="https://finance.yahoo.com/news/enterprise-llm-spend-reaches-8-130000140.html" target="_blank">Menlo Ventures 보도자료 — 기업 LLM 지출 84억 달러, Anthropic이 OpenAI 추월</a></li>
+                <li>• <a href="https://www.luizneto.ai/enterprise-open-weight-models-2026/" target="_blank">Open-Weight Models Caught Up. Adoption Fell to 11%</a></li>
+                <li>• <a href="https://www.linuxfoundation.org/research/surveys/2026-world-of-open-source-survey" target="_blank">Linux Foundation — 2026 World of Open Source Survey</a></li>
+                <li>• <a href="https://www.artificialintelligence-news.com/news/linux-foundation-slash-costs-boost-growth-with-open-source-ai/" target="_blank">AI News — Linux Foundation: 오픈소스 AI로 비용 절감과 성장</a></li>
+                <li>• <a href="https://mlflow.org/articles/the-role-of-open-source-in-enterprise-ai-in-2026/" target="_blank">MLflow — The Role of Open Source in Enterprise AI in 2026</a></li>
+                <li>• <a href="https://www.cnn.com/2026/09/03/tech/nvidia-hugging-face-ai-acquisition" target="_blank">CNN Business — Nvidia inks $13 billion deal to buy Hugging Face (2026-09-03)</a></li>
+                <li>• <a href="https://fortune.com/2026/09/04/nvidia-13-billion-hugging-face-bet-reveals-jensen-huang-vision-next-ai-battleground/" target="_blank">Fortune — Nvidia의 130억 달러 베팅이 드러낸 다음 전장</a></li>
+                <li>• <a href="https://techcrunch.com/2026/08/26/nvidia-closes-in-on-hugging-face-acquisition/" target="_blank">TechCrunch — Nvidia closes in on Hugging Face acquisition (2026-08-26)</a></li>
+                <li>• <a href="https://www.sec.gov/Archives/edgar/data/1045810/000104581026000078/nvda-20260902.htm" target="_blank">SEC — NVIDIA 제출 문서 (2026-09-02)</a></li>
+                <li>• <a href="https://www.theregister.com/ai-and-ml/2026/09/03/hugging_face_ceo_says_planets_aligned_for_nvidia_deal_aims_to_reach_100m_users/5294293" target="_blank">The Register — HF CEO "planets aligned", 이용자 1억 명 목표</a></li>
+                <li>• <a href="https://www.infoworld.com/article/4218324/what-nvidias-13b-acquisition-of-hugging-face-means-for-ai-model-choice.html" target="_blank">InfoWorld — 인수가 모델 선택권에 미치는 영향</a></li>
+                <li>• <a href="https://www.index.dev/blog/chinese-open-source-ai-models-statistics" target="_blank">Index.dev — 중국 오픈소스 AI 모델 통계</a></li>
+                <li>• <a href="https://www.datagravity.dev/p/chinas-open-weight-takeover" target="_blank">Data Gravity — China's Open-Weight Takeover</a></li>
+                <li>• <a href="https://www.forbes.com/sites/jonmarkman/2026/04/28/chinas-deepseek-v4-and-qwen-reshape-the-open-source-ai-race/" target="_blank">Forbes — DeepSeek V4와 Qwen이 바꾼 오픈소스 경쟁 (2026-04-28)</a></li>
+                <li>• <a href="https://valueaddvc.com/blog/alibaba-qwen-download-statistics-2026-3-billion-downloads-ranked-against-every-open-weight-model" target="_blank">ValueAdd VC — Qwen 30억 다운로드 집계</a></li>
+                <li>• <a href="https://dev.to/aiexplore369zoho/the-open-weight-frontier-didnt-die-it-moved-516d" target="_blank">The Open-Weight Frontier Didn't Die — It Moved</a></li>
+                <li>• <a href="https://help.openai.com/en/articles/11870455-openai-open-weight-models-gpt-oss" target="_blank">OpenAI — gpt-oss 오픈 가중치 모델</a></li>
+                <li>• <a href="https://linuxfoundation.eu/newsroom/ai-act-explainer" target="_blank">Linux Foundation Europe — 오픈소스 개발자를 위한 EU AI Act 해설</a></li>
+                <li>• <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act 공식 포털</a></li>
+                <li>• <a href="https://theneuralbase.com/ai-regulation/learn/advanced/eu-ai-act-open-source-exemption/" target="_blank">The Neural Base — EU AI Act 오픈소스 면제 조항</a></li>
+            </ul>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('metricsChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['F500 중 HF로 오픈/자체 모델 배포', 'F500 중 HF 검증 계정 보유', 'AI 사용 조직 중 오픈소스 사용', '기업 LLM 사용량 중 오픈소스 비중'],
+        datasets: [{
+            label: '비율 (%)',
+            data: [50, 30, 89, 11],
+            backgroundColor: ['rgba(59,130,246,0.7)','rgba(59,130,246,0.4)','rgba(34,197,94,0.7)','rgba(239,68,68,0.7)'],
+            borderColor: ['rgb(59,130,246)','rgb(59,130,246)','rgb(34,197,94)','rgb(239,68,68)'],
+            borderWidth: 1
+        }]
+    },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ beginAtZero:true, max:100, title:{ display:true, text:'%' } }, y:{ ticks:{ font:{ size:10 } } } },
+      plugins:{ legend:{ display:false } } }
+});
+
+new Chart(document.getElementById('downloadChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Qwen (알리바바)', 'Google', 'Meta'],
+        datasets: [{
+            label: '다운로드 (백만 회, 2026년 6개월 누계)',
+            data: [3000, 418, 227],
+            backgroundColor: ['rgba(249,115,22,0.7)','rgba(34,197,94,0.7)','rgba(59,130,246,0.7)'],
+            borderColor: ['rgb(249,115,22)','rgb(34,197,94)','rgb(59,130,246)'],
+            borderWidth: 1
+        }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'백만 회' } } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } } } }
+});
+
+new Chart(document.getElementById('competitiveChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['최고 성능', '비용 효율', '통제·커스터마이즈', '조달 통과 용이성', '생태계 규모'],
+        datasets: [
+            { label: '1. 프론티어 폐쇄 API', data: [95, 30, 35, 75, 85],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: '2. 중국계 오픈 가중치', data: [85, 95, 90, 35, 90],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: '3. 서구 오픈 가중치', data: [70, 85, 85, 80, 60],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: '4. 유통·배포 계층', data: [50, 75, 70, 65, 95],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">이름 (선택)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">댓글</label>
+                <textarea id="comment-content" placeholder="의견을 남겨주세요..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">댓글 등록</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>

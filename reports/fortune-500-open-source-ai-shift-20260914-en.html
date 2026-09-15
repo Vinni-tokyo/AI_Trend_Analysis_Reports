@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Half the Fortune 500 on Open-Source AI? What That Number Actually Measures</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='fortune-500-open-source-ai-shift-20260914-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='fortune-500-open-source-ai-shift-20260914-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='fortune-500-open-source-ai-shift-20260914-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>Half the Fortune 500 on Open-Source AI? —<br>What That Number Actually Measures</h1>
+        <div class="subtitle">The Hugging Face claim, the data pointing the other way, and where open-weight leadership moved</div>
+        <div class="meta">Report date: September 14, 2026 | Standard report (5-8 pages)</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Trends</h2>
+
+        <h3 class="subsection-title">1. The origin — what "half the Fortune 500" actually counted</h3>
+        <p><strong>Current state:</strong> On July 10, 2026, on TechCrunch's Equity podcast, Hugging Face CEO Clem Delangue said that <strong>roughly half of Fortune 500 companies are using Hugging Face to deploy open-source models or their own models</strong>. His account of the migration path is straightforward: companies begin on frontier APIs from OpenAI or Anthropic, but <strong>as usage grows the token bills become untenable</strong>, pushing them toward open models that are cheaper and easier to control. The platform's scale: more than 3 million models, 500,000 datasets, 1 million applications, 18 million developers, and 200,000 enterprise customers.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The claim and the scale behind it</h4>
+                <p>• <strong>Source:</strong> TechCrunch Equity, July 10, 2026 (reporter Rebecca Bellan)<br>
+                • <strong>Core logic:</strong> start on frontier APIs → at scale, cost pushes you to open models<br>
+                • <strong>Platform:</strong> 3M+ models · 500K datasets · 1M apps · 18M developers · 200K enterprises<br>
+                • <strong>Stated goal:</strong> 100 million AI builders within a few years<br>
+                • <strong>Delangue's own concern:</strong> concentration of AI control in a few large companies</p>
+            </div>
+            <div class="trend-card">
+                <h4>What the number does not measure</h4>
+                <p>• <strong>"Using" is left undefined</strong> — holding an account, downloading a model once, and running production deployments are not distinguished<br>
+                • <strong>It conflicts with the company's own statistics:</strong> Hugging Face's Spring 2026 report states that <strong>over 30% of the Fortune 500 hold verified accounts</strong> — two numbers for one population<br>
+                • <strong>It is not workload share:</strong> it counts how many firms touch the platform, not what percentage of inference runs on open models<br>
+                • <strong>Interest:</strong> this is self-reported by the platform operator, with no third-party verification</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://techcrunch.com/2026/07/10/hugging-faces-ceo-on-why-companies-are-done-renting-their-ai/" target="_blank">TechCrunch original (2026-07-10)</a> |
+            <a href="https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026" target="_blank">State of Open Source on Hugging Face: Spring 2026</a> |
+            <a href="https://huggingface.co/" target="_blank">Hugging Face</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The statement itself appears accurate. But <strong>translating it into "half the Fortune 500 has switched to open source" overstates it</strong>. The faithful reading is closer to "half the Fortune 500 has <em>touched</em> open-source AI." Why that distinction matters becomes clear in the next trend.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> A first-hand interview in a major technology outlet with the speaker, date and venue all identifiable. The platform-scale figures are consistent across multiple outlets.<br>
+                <strong>Weaknesses:</strong> The measurement definition of "using" was not disclosed, and there is no third-party verification. The same company's official report gives <strong>"over 30% with verified accounts"</strong> — a different layer of measurement that belongs alongside it.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">2. Data pointing the other way — adoption rose while workload share fell</h3>
+        <p><strong>Current state:</strong> According to enterprise survey work by the venture firm Menlo Ventures, <strong>open-source models' share of enterprise LLM usage fell from 19% in 2024 to 11% in 2025.</strong> The same research found enterprise LLM spend more than doubling in six months, from $3.5 billion in November 2024 to <strong>$8.4 billion</strong> by mid-2025, with 88% of that captured by Anthropic (40%), OpenAI (27%) and Google (21%). Llama, Cohere, Mistral and the entire long tail share the remaining 12%. Meanwhile, a study co-produced by the Linux Foundation and Meta reports that <strong>89% of organizations using AI tools have open-source AI somewhere in their technology stack</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>One market, four different numbers</h4>
+                <p>• <strong>50%</strong> — Fortune 500 firms deploying open or in-house models via Hugging Face (HF CEO)<br>
+                • <strong>30%+</strong> — Fortune 500 firms holding verified Hugging Face accounts (HF official report)<br>
+                • <strong>89%</strong> — AI-using organizations with open-source AI somewhere in the stack (Linux Foundation)<br>
+                • <strong>11%</strong> — open source's share of enterprise LLM <strong>usage</strong> (Menlo Ventures, 2025)<br>
+                <em>→ Not a contradiction. These measure different layers.</em></p>
+            </div>
+            <div class="trend-card">
+                <h4>Capability caught up while share slipped</h4>
+                <p>• <strong>Gap narrowing:</strong> the distance between the best open and best proprietary models fell from 20–30 points in 2023 to <strong>5–10 points</strong> on most evaluations<br>
+                • <strong>Coding is effectively level</strong>; open models trail only on the hardest composite reasoning and safety work<br>
+                • <strong>Llama's stagnation hit hardest:</strong> the stalling of the most widely adopted enterprise open-weight model is identified as the main driver of the overall open-source decline<br>
+                • <strong>The paradox:</strong> the technology converged while <strong>enterprise adoption fell</strong></p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/" target="_blank">Menlo Ventures — State of Generative AI in the Enterprise</a> |
+            <a href="https://www.linuxfoundation.org/research/surveys/2026-world-of-open-source-survey" target="_blank">Linux Foundation — World of Open Source Survey</a> |
+            <a href="https://www.luizneto.ai/enterprise-open-weight-models-2026/" target="_blank">Open-Weight Models Caught Up. Adoption Fell to 11%</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The two datasets do not conflict. <strong>Open models are used widely but shallowly; closed APIs narrowly but deeply.</strong> Low-cost work — prototyping, internal tooling, embeddings, classification — has gone open, while the high-difficulty production inference where the money concentrates still belongs to the three frontier vendors. To read the progress of "the shift," therefore, watch <strong>spend and token share, not adoption rates</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The Menlo Ventures figures are year-over-year quantitative tracking, with the three-vendor breakdown (40/27/21) published. The Linux Foundation study is traceable to an institutional source.<br>
+                <strong>Weaknesses:</strong> The Menlo figures are <strong>as of 2025</strong> and need a 2026 update; the sample composition and the definition of "usage" (spend-based or call-based) are not clear from the summaries. The 89% also warrants care, as Meta co-authored that report.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">3. Why the migration stalls — licensing, break-even and provenance, not capability</h3>
+        <p><strong>Current state:</strong> Even after the capability gap narrowed to 5–10 points, enterprise migration remains slow because the constraints moved <strong>outside the model</strong>. (1) <strong>Licensing</strong> — many "open" models carry field-of-use limits, user-count caps and competitive-use bans. (2) <strong>Self-hosting economics</strong> — OECD break-even modeling puts payback at <strong>30 months at 1 billion tokens per month</strong>, but only <strong>2 months at 10 billion tokens per month</strong>. (3) <strong>Provenance verification</strong> — there is little practical means to prove a model's lineage or validate that weights are unaltered. Meanwhile McKinsey found that <strong>40% of enterprise leaders prefer self-hostable models for control</strong>, and Forrester published its <strong>AI Model Openness Framework</strong> in April 2026, beginning to grade degrees of "open."</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Three real barriers</h4>
+                <p>• <strong>Licensing:</strong> field-of-use limits · user-count caps · competitive-use bans — "open weights" does not mean "free to use"<br>
+                • <strong>Break-even:</strong> 1B tokens/month → 30-month payback / 10B tokens/month → 2 months (OECD modeling)<br>
+                • <strong>Provenance:</strong> no reliable way to prove weight lineage or verify integrity<br>
+                • <strong>Regulatory load:</strong> using open weights does not remove obligations — in high-risk contexts the <strong>deployer</strong> carries compliance responsibility</p>
+            </div>
+            <div class="trend-card">
+                <h4>What still pushes the shift</h4>
+                <p>• <strong>Preference for control:</strong> 40% of enterprise leaders favor self-hostable models (McKinsey)<br>
+                • <strong>Cost multiple:</strong> there are workloads where open models deliver <strong>10x–1,000x</strong> cost reduction versus flagship proprietary models (Hugging Face's own analysis)<br>
+                • <strong>Audit posture:</strong> self-hosted architectures keep data, logs and model provenance under direct control, substantially reducing audit friction<br>
+                • <strong>Sovereign procurement:</strong> after a tax-agency breach, France indicated it will use domestic providers such as Mistral — and exclude OpenAI — to scan government systems for vulnerabilities</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://www.forrester.com/" target="_blank">Forrester</a> |
+            <a href="https://www.mckinsey.com/" target="_blank">McKinsey &amp; Company</a> |
+            <a href="https://mistral.ai/" target="_blank">Mistral AI</a> |
+            <a href="https://mlflow.org/articles/the-role-of-open-source-in-enterprise-ai-in-2026/" target="_blank">MLflow — Role of Open Source in Enterprise AI</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The threshold for switching is not capability but <strong>token volume</strong>. Read the OECD numbers literally and an organization under 1 billion tokens per month generally loses money moving to self-hosting, while one above 10 billion loses money by staying. Most enterprises are still in the first band — which is precisely how <strong>"half of them use it" and "only 11% of actual workload" can both be true</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The three-barrier framing matches industry discussion including Forrester's openness framework (April 2026), and the direction of the break-even logic is consistent with well-understood self-hosting economics.<br>
+                <strong>Weaknesses:</strong> The OECD 30-month/2-month figures and McKinsey's 40% reach this report <strong>through secondary coverage</strong>; the original publications were not verified directly. The "10x–1,000x cost reduction" is Hugging Face's own estimate with unstated conditions.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">4. The center of gravity in open weights moved to China</h3>
+        <p><strong>Current state:</strong> Leadership within the open camp has changed hands. By Hugging Face's own accounting, <strong>China overtook the United States in monthly downloads during 2025</strong>, and <strong>Chinese models accounted for 41% of all downloads</strong> over the past year. Alibaba's Qwen family displaced Meta's Llama as the most-downloaded model family on Hugging Face in September 2025, and logged <strong>more than 3 billion downloads</strong> across six months of 2026 — more than Google (418 million) and Meta (227 million) combined over the same period. Qwen derivatives alone number <strong>over 113,000</strong>, exceeding Google and Meta together. On OpenRouter, the largest neutral model router, <strong>Chinese open-weight models represented roughly 61% of all tokens consumed by May 2026</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The shift in numbers</h4>
+                <p>• <strong>Download share:</strong> Chinese models at 41% over the past year (Hugging Face accounting)<br>
+                • <strong>Qwen:</strong> 3B+ downloads across six months of 2026 · 153.6M in February 2026 alone (more than the next eight combined) · over 50% of all global open-source downloads by March<br>
+                • <strong>Derivatives:</strong> 113,000+ in the Qwen family (200,000+ counting tagged variants)<br>
+                • <strong>OpenRouter tokens:</strong> ~61% Chinese by May 2026<br>
+                • <strong>Supply side:</strong> Baidu went from zero releases in 2024 to 100+ in 2025; ByteDance and Tencent each increased 8–9x</p>
+            </div>
+            <div class="trend-card">
+                <h4>How the Western camp reorganized</h4>
+                <p>• <strong>Meta:</strong> took its frontier closed. In its place, on August 10, 2026, it shipped <strong>Muse Glimmer (~30B) under Apache 2.0</strong> with no user-count cap — more permissive licensing than Llama ever carried — distilled from Muse Spark<br>
+                • <strong>OpenAI:</strong> gpt-oss weights have not been refreshed since August 2025, and no successor had appeared as of June 2026; gpt-oss-120b did become an official MLPerf Inference v6.0 benchmark in March 2026<br>
+                • <strong>The pattern:</strong> <strong>close the frontier, open only the distilled small model</strong> — now a shared strategy among major U.S. labs<br>
+                • <strong>What remains:</strong> Gemma · Mistral · Phi · Nemotron · OLMo · Command A+</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://qwen.ai/" target="_blank">Qwen (Alibaba)</a> |
+            <a href="https://www.deepseek.com/" target="_blank">DeepSeek</a> |
+            <a href="https://openrouter.ai/" target="_blank">OpenRouter</a> |
+            <a href="https://ai.meta.com/" target="_blank">Meta AI</a> |
+            <a href="https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026" target="_blank">Hugging Face — State of Open Source Spring 2026</a>
+        </div>
+
+        <p><strong>Outlook:</strong> As of 2026, deciding to "go open source" substantially overlaps with deciding to <strong>run Chinese open weights</strong>. That creates a new question in procurement review — not capability or price, but <strong>country-of-origin policy and weight lineage</strong>. Organizations with provenance constraints (public sector, finance, defense) will find themselves declining a better-performing open model in favor of a Western open model or a closed API.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Download share, the country crossover and derivative counts come from <strong>Hugging Face's official report</strong> — first-party platform data — and the OpenRouter token share provides independent cross-confirmation from a separate neutral aggregator.<br>
+                <strong>Weaknesses:</strong> <strong>Downloads are not usage</strong> — benchmark and research pulls are heavily mixed in. Qwen's "3 billion" and "over 50%" arrive via secondary aggregators, and the OpenRouter 61% reflects one developer-skewed channel.
+            </div>
+        </div>
+
+        <h3 class="subsection-title">5. The structural change — Nvidia bought Hugging Face</h3>
+        <p><strong>Current state:</strong> On September 2, 2026, Nvidia entered a definitive agreement to acquire Hugging Face, announced publicly on September 3. The reported price is <strong>approximately $12.9 billion</strong>. Delangue said the "planets aligned," set a target of <strong>100 million users</strong>, and noted that "with a big supporter like Nvidia, we can think about the next 10 years." The issue is neutrality: Hugging Face is <strong>the model hub the entire industry uses, including Nvidia's hardware competitors</strong>. Nvidia stated that "Hugging Face will remain an open platform for the entire AI ecosystem," and specifically that <strong>"Nvidia compute will not be required to build on or deploy through Hugging Face."</strong></p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The transaction</h4>
+                <p>• <strong>Definitive agreement:</strong> 2026-09-02 (SEC filing) · <strong>Announced:</strong> 2026-09-03<br>
+                • <strong>Price:</strong> approximately $12.9 billion as reported (sources range from $11.9B to $13B)<br>
+                • <strong>Nvidia's commitments:</strong> platform stays open · free choice of models, frameworks, clouds and compute · <strong>Nvidia compute not required</strong><br>
+                • <strong>Target:</strong> 100 million users<br>
+                • <strong>Antitrust:</strong> analysts expect information requests and preliminary review rather than a blocking action in the near term</p>
+            </div>
+            <div class="trend-card">
+                <h4>The regulatory layer — the EU AI Act open-source exemption</h4>
+                <p>• <strong>A partial exemption exists:</strong> Article 53(2) relieves open-source general-purpose AI providers of part of the technical documentation and downstream information duties — but <strong>only if four strict conditions</strong> are met<br>
+                • <strong>It disappears:</strong> once training compute crosses <strong>10^25 FLOPs</strong> and the model counts as posing systemic risk, the exemption is gone<br>
+                • <strong>Deployer duties remain:</strong> using open weights does not help — in a <strong>high-risk use, the deploying organization carries compliance</strong><br>
+                • <strong>Implication:</strong> "it's open source, so we're outside the regulation" does not hold for enterprise users</p>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://www.nvidia.com/" target="_blank">NVIDIA</a> |
+            <a href="https://www.cnn.com/2026/09/03/tech/nvidia-hugging-face-ai-acquisition" target="_blank">CNN — Nvidia acquires Hugging Face</a> |
+            <a href="https://www.infoworld.com/article/4218324/what-nvidias-13b-acquisition-of-hugging-face-means-for-ai-model-choice.html" target="_blank">InfoWorld — What it means for model choice</a> |
+            <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act</a>
+        </div>
+
+        <div class="callout">
+            <strong>Here is the sharpest irony.</strong> The concern Delangue voiced in the July interview was <strong>that a small number of large companies could consolidate control over AI</strong>. Two months later, the platform that grounded his neutrality became a subsidiary of <strong>the most dominant company in AI hardware</strong>.<br><br>
+            <strong>This report's reading:</strong> rather than a betrayal, this exposes the fact that <strong>neutral infrastructure has an inherently fragile funding model</strong>. A model hub absorbs enormous storage and bandwidth costs while being hard to monetize directly. What matters operationally is not the pledge but <strong>verifiable indicators</strong>: whether optimization kernels and documentation for competing hardware (AMD, TPUs, custom silicon) keep updating at the same pace post-acquisition, and whether inference support for non-Nvidia backends is maintained. Track both over the next 6–12 months.
+        </div>
+
+        <p><strong>Outlook:</strong> The acquisition adds another layer of complexity to what "open-source AI" means. The weights may be open, but <strong>the distribution layer that finds and serves those weights is now owned by one company</strong>. From a procurement standpoint, expect more architectures that reduce single-point dependence on Hugging Face in favor of mirrors, private registries and multiple routers. The reasoning: (1) model-hub security incidents already drew attention earlier in 2026, and (2) depending on a single distribution point directly contradicts the original reason for choosing open weights — avoiding lock-in.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 Credibility Assessment:</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The acquisition is confirmed by an <strong>SEC filing</strong> and multiple major outlets including CNN, Fortune and TechCrunch, and Nvidia's neutrality language and the CEO's remarks are directly quotable. The EU AI Act provisions (Article 53(2), 10^25 FLOPs) rest on the statute itself.<br>
+                <strong>Weaknesses:</strong> <strong>The price is reported inconsistently, from $11.9B to $13B</strong> — the filing text needs to be checked directly. The antitrust outlook is analyst estimation, and no data yet exists to judge whether neutrality holds.
+            </div>
+        </div>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+        <h3 class="subsection-title">The four-tier structure of the enterprise AI model market</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">An open-versus-closed binary no longer explains this market. Real competition happens across a combination of <strong>weight availability × country of origin × distribution route</strong>, and splitting it into four tiers makes clear what each camp is actually selling. Tier 4 (distribution) was treated as neutral ground until now; Nvidia's acquisition of Hugging Face promoted it to a competitive variable.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tier</th>
+                    <th>Key players</th>
+                    <th>How it is delivered</th>
+                    <th>Market position</th>
+                    <th>Main constraint</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="2"><strong>1. Frontier closed APIs</strong></td>
+                    <td>Anthropic · OpenAI · Google</td>
+                    <td>Top-performing models available only by API</td>
+                    <td><strong>88% of enterprise LLM spend</strong> (40% / 27% / 21%)</td>
+                    <td>Token cost · data egress · vendor lock-in</td>
+                </tr>
+                <tr>
+                    <td>Other commercial APIs (Cohere and similar)</td>
+                    <td>Specialized APIs · enterprise customization</td>
+                    <td>Shares the remaining 12% with Llama and Mistral</td>
+                    <td>Disadvantaged on scale economics</td>
+                </tr>
+                <tr>
+                    <td><strong>2. Chinese open weights</strong></td>
+                    <td>Qwen (Alibaba) · DeepSeek · Kimi · GLM</td>
+                    <td>Published weights with permissive licensing</td>
+                    <td><strong>Effectively first in downloads and tokens</strong> — 41% of downloads, ~61% of OpenRouter tokens</td>
+                    <td>Country-of-origin policy · procurement review · data governance</td>
+                </tr>
+                <tr>
+                    <td rowspan="2"><strong>3. Western open weights</strong></td>
+                    <td>Meta Muse Glimmer (Apache 2.0) · OpenAI gpt-oss · Google Gemma</td>
+                    <td>Frontier kept closed; only distilled small models released</td>
+                    <td>Withdrawn from the capability frontier, repositioned as regulation-friendly</td>
+                    <td>Update stagnation · no frontier-class option</td>
+                </tr>
+                <tr>
+                    <td>Mistral · Nemotron · Phi · OLMo · Command A+</td>
+                    <td>Fully open, research-oriented, and European sovereign options</td>
+                    <td>The default choice for sovereign AI procurement</td>
+                    <td>Smaller ecosystem</td>
+                </tr>
+                <tr>
+                    <td><strong>4. Distribution and serving layer</strong></td>
+                    <td><strong>Hugging Face (→Nvidia)</strong> · OpenRouter · Bedrock / Vertex / Azure · vLLM · Ollama</td>
+                    <td>Model discovery, hosting, routing and serving</td>
+                    <td>The gateway connecting every tier — <strong>neutrality now contested</strong></td>
+                    <td>Single-dependency risk · change of ownership</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">Five market movements</h3>
+        <ul class="key-findings">
+            <li><strong>Adoption and share moved in opposite directions.</strong> 89% of AI-using organizations have open source somewhere in the stack, yet open source's share of enterprise LLM usage fell from 19% (2024) to 11% (2025). Wide reach, shallow use.</li>
+            <li><strong>Capability is no longer the bottleneck.</strong> The best open and best proprietary models converged from 20–30 points to 5–10, and coding is effectively level. What blocks migration is <strong>licence terms, self-hosting break-even, and weight provenance</strong>.</li>
+            <li><strong>Leadership within the open camp moved to China.</strong> Qwen displaced Llama as the most-downloaded family, and by May 2026 roughly 61% of tokens consumed on OpenRouter came from Chinese open weights. Meta closed its frontier and now opens only distilled small models.</li>
+            <li><strong>Concentration is severe inside "open" too.</strong> By Hugging Face's own accounting the top 200 models — 0.01% of the total — take <strong>49.6% of all downloads</strong>, while about half of all models have fewer than 200 cumulative downloads. Openness does not imply diversity.</li>
+            <li><strong>The distribution layer became the new battleground.</strong> With Nvidia's acquisition of Hugging Face (September 2026), the weights stay open but the gateway that finds and serves them belongs to one company. <strong>Distribution-route diversification</strong> is now entering procurement checklists.</li>
+        </ul>
+
+        <h3 class="subsection-title">Four numbers measuring the same phenomenon</h3>
+        <div class="chart-container">
+            <canvas id="metricsChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: these four figures have <strong>different populations and different measurement targets</strong>. The first three count "share of organizations using"; the last counts "share of usage." They should not be compared on one axis — this report places them side by side precisely to show that difference.</p>
+
+        <h3 class="subsection-title">Open-weight downloads (six-month total, 2026)</h3>
+        <div class="chart-container">
+            <canvas id="downloadChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: figures in millions. Downloads are <strong>closer to an interest metric than a usage metric</strong>, mixing in benchmark and research pulls. The Qwen figure comes from secondary aggregation.</p>
+
+        <h3 class="subsection-title">Four-tier characteristic comparison</h3>
+        <div class="chart-container">
+            <canvas id="competitiveChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: a qualitative assessment by this report. "Procurement clearance" scores country-of-origin policy, licence restrictions and audit posture together; it is not a benchmark value.</p>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Splitting the adoption metric into three layers</strong> - Counting "open-source adoption" separately as account presence, experimental use, and production workload rather than as one figure.</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Deciding migration timing from token volume</strong> - Calculating the self-hosting break-even against monthly token usage first, then deciding whether to move at all.</p>
+            <p style="line-height: 1.6;">3. <strong>Turning licensing and provenance into a checklist</strong> - Using an openness framework to write field-of-use limits and weight lineage into procurement review criteria.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">Key Findings</h3>
+            <ul class="key-findings">
+                <li><strong>"Half the Fortune 500" is true but it is not a migration rate.</strong> The July 2026 statement by Hugging Face's CEO describes <strong>the share of companies that use the platform</strong>, while the same company's official report says <strong>over 30% hold verified accounts</strong>. Because "using" was never defined, production deployment and a single experiment are indistinguishable.</li>
+                <li><strong>Data pointing the other way exists.</strong> Per Menlo Ventures, open source's share of enterprise LLM usage fell from <strong>19% (2024) to 11% (2025)</strong>, and 88% of $8.4 billion in spend went to Anthropic (40%), OpenAI (27%) and Google (21%). Open models are used <strong>widely but shallowly</strong>.</li>
+                <li><strong>The bottleneck is not capability.</strong> The best open-versus-proprietary gap narrowed from 20–30 points to <strong>5–10</strong>, and coding is level. The remaining barriers are licence restrictions, self-hosting break-even (30-month payback at 1B tokens/month, 2 months at 10B), and weight provenance.</li>
+                <li><strong>"Going open source" now largely means "running Chinese models."</strong> Qwen displaced Llama as the most-downloaded family, and about 61% of OpenRouter's consumed tokens were Chinese by May 2026. Meta closed its frontier and opens only a distilled small model (Muse Glimmer, Apache 2.0).</li>
+                <li><strong>The neutral distribution layer is gone.</strong> In September 2026 Nvidia acquired Hugging Face for roughly $12.9 billion. Nvidia pledged that "Nvidia compute will not be required," but this is the same concentration of AI control in a few large companies that the same CEO had warned about two months earlier — now applied to his own company.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Situational Reference Points</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>Under 1 billion tokens per month → stay on frontier APIs</strong><br>
+                Rationale: break-even modeling puts payback at 30 months. In this band, moving to self-hosting is justified by control or regulation, not by cost.<br>
+                <strong>Above 10 billion tokens per month → evaluate self-hosted open weights</strong><br>
+                Rationale: the same modeling shortens payback to 2 months. The practical threshold for "the shift" is this point, not model capability.<br>
+                <strong>Procurement with provenance constraints (public sector, finance, defense) → Western open weights or closed APIs</strong><br>
+                Rationale: many of the better-performing open models are Chinese. Gemma, Mistral, Nemotron and OLMo are the alternatives — and in EU high-risk uses, open weights still leave compliance with the deployer.<br>
+                <strong>Organizations that moved to avoid lock-in → diversify the distribution route too</strong><br>
+                Rationale: opening the weights while depending on a single model hub merely relocates lock-in to the distribution layer. Mirrors, private registries and multiple routers are the counterweight.
+            </p>
+        </div>
+        <p style="margin-top:1rem; font-size:1rem; color:#4a4a4a;"><strong>Overall assessment:</strong> Neutral. The capability and reach of open models genuinely improved, and that is verified. But the narrative that "half the Fortune 500 is migrating" conflates measurement layers, and in the workloads where money actually moves, open source's share went down rather than up. The real change in 2026 is not acceleration of the shift but <strong>the center of gravity in open weights moving to China, and ownership of the distribution layer moving to Nvidia</strong>.</p>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility Assessment</h3>
+            <div class="overall-credibility-score">7.8/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Overall:</strong> The events themselves — the acquisition, the statements, the statute — are confirmed through an SEC filing, first-hand reporting in major outlets, and the text of the EU AI Act. The quantitative indicators come from identifiable sources such as Hugging Face's official report and Menlo Ventures' survey, but <strong>most are self-reported by vendors or interested parties</strong>, and measurement definitions are frequently undisclosed. Rather than hiding that limitation, this report <strong>places conflicting figures side by side</strong>.</p>
+                <p><strong>Key strengths:</strong> The clash between "50%" and "11%" is resolved as a difference in measurement layer rather than concealed · the same company's two numbers (50% vs 30%+) are presented together · the limitation that downloads are not usage is stated in chart annotations · the inconsistency in Nvidia's reported deal price is recorded · the CEO's concentration warning is placed alongside the acquisition two months later</p>
+                <p><strong>Priority improvements:</strong> Obtain Menlo Ventures' 2026 update · verify the OECD break-even publication and McKinsey's 40% against the originals · confirm the deal price from Nvidia and Hugging Face filings · trace Qwen's download figures to a primary source · request that Hugging Face publish the measurement definition behind "half the Fortune 500"</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">Key Terminology</h2>
+        <div style="background:#fafafa; padding:0.75rem 1rem; border-left:3px solid #e5e5e5; font-size:0.9rem;">
+            <div style="margin-bottom:0.4rem;"><strong>Open weights</strong> - Publishing a model's trained numerical parameters so anyone can download and run it. This differs from full open source, which also releases training data and code; models labeled "open" often still carry field-of-use restrictions.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Self-hosting</strong> - Running a model on your own servers or cloud rather than renting it through an API. You take on fixed costs (GPUs, operations) but eliminate per-token billing, so it improves as usage rises.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Break-even</strong> - The point at which the fixed cost of self-hosting is recovered through savings on API token spend. Estimated at roughly 30 months at 1 billion tokens/month and 2 months at 10 billion (OECD modeling).</div>
+            <div style="margin-bottom:0.4rem;"><strong>Model provenance</strong> - Proving who built a set of weights, from what, and that they have not been tampered with along the way. One of the practical obstacles to adopting open weights.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Derivative model</strong> - A variant produced by further training or compressing a published model. It indicates the real ecosystem size of a family — the Qwen family exceeds 113,000.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Distillation</strong> - Transferring the capability of a large, strong model into a smaller one. Meta's Muse Glimmer (~30B) was distilled from the larger Muse Spark, exemplifying the "close the frontier, open the distilled version" strategy.</div>
+            <div style="margin-bottom:0.4rem;"><strong>LLM router (e.g. OpenRouter)</strong> - A broker that gathers models from many vendors behind one interface and forwards each request to a suitable model. Because it is not tied to a single vendor, it is a useful place to observe real usage shares.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Systemic risk / 10^25 FLOPs</strong> - The threshold set by the EU AI Act. Once training compute exceeds this value the model is treated as high-impact, the open-source exemption disappears, and the full set of obligations applies.</div>
+            <div><strong>Deployer</strong> - As distinct from the provider that builds and releases a model, the organization that puts it to work in practice. Under the EU AI Act, in a high-risk use the <strong>deployer carries compliance responsibility even when open weights are used</strong>.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> September 14, 2026</p>
+            <ul>
+                <li>• <a href="https://techcrunch.com/2026/07/10/hugging-faces-ceo-on-why-companies-are-done-renting-their-ai/" target="_blank">TechCrunch — Hugging Face's CEO on why companies are done renting their AI (2026-07-10)</a></li>
+                <li>• <a href="https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026" target="_blank">Hugging Face — State of Open Source on Hugging Face: Spring 2026</a></li>
+                <li>• <a href="https://huggingface.co/" target="_blank">Hugging Face official site</a></li>
+                <li>• <a href="https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/" target="_blank">Menlo Ventures — The State of Generative AI in the Enterprise</a></li>
+                <li>• <a href="https://finance.yahoo.com/news/enterprise-llm-spend-reaches-8-130000140.html" target="_blank">Menlo Ventures release — Enterprise LLM spend reaches $8.4B as Anthropic overtakes OpenAI</a></li>
+                <li>• <a href="https://www.luizneto.ai/enterprise-open-weight-models-2026/" target="_blank">Open-Weight Models Caught Up. Adoption Fell to 11%</a></li>
+                <li>• <a href="https://www.linuxfoundation.org/research/surveys/2026-world-of-open-source-survey" target="_blank">Linux Foundation — 2026 World of Open Source Survey</a></li>
+                <li>• <a href="https://www.artificialintelligence-news.com/news/linux-foundation-slash-costs-boost-growth-with-open-source-ai/" target="_blank">AI News — Linux Foundation: slash costs, boost growth with open-source AI</a></li>
+                <li>• <a href="https://mlflow.org/articles/the-role-of-open-source-in-enterprise-ai-in-2026/" target="_blank">MLflow — The Role of Open Source in Enterprise AI in 2026</a></li>
+                <li>• <a href="https://www.cnn.com/2026/09/03/tech/nvidia-hugging-face-ai-acquisition" target="_blank">CNN Business — Nvidia inks $13 billion deal to buy Hugging Face (2026-09-03)</a></li>
+                <li>• <a href="https://fortune.com/2026/09/04/nvidia-13-billion-hugging-face-bet-reveals-jensen-huang-vision-next-ai-battleground/" target="_blank">Fortune — Nvidia's $13 billion bet and the next AI battleground</a></li>
+                <li>• <a href="https://techcrunch.com/2026/08/26/nvidia-closes-in-on-hugging-face-acquisition/" target="_blank">TechCrunch — Nvidia closes in on Hugging Face acquisition (2026-08-26)</a></li>
+                <li>• <a href="https://www.sec.gov/Archives/edgar/data/1045810/000104581026000078/nvda-20260902.htm" target="_blank">SEC — NVIDIA filing (2026-09-02)</a></li>
+                <li>• <a href="https://www.theregister.com/ai-and-ml/2026/09/03/hugging_face_ceo_says_planets_aligned_for_nvidia_deal_aims_to_reach_100m_users/5294293" target="_blank">The Register — HF CEO says "planets aligned", aims to reach 100M users</a></li>
+                <li>• <a href="https://www.infoworld.com/article/4218324/what-nvidias-13b-acquisition-of-hugging-face-means-for-ai-model-choice.html" target="_blank">InfoWorld — What Nvidia's acquisition means for AI model choice</a></li>
+                <li>• <a href="https://www.index.dev/blog/chinese-open-source-ai-models-statistics" target="_blank">Index.dev — Chinese open-source AI model statistics</a></li>
+                <li>• <a href="https://www.datagravity.dev/p/chinas-open-weight-takeover" target="_blank">Data Gravity — China's Open-Weight Takeover</a></li>
+                <li>• <a href="https://www.forbes.com/sites/jonmarkman/2026/04/28/chinas-deepseek-v4-and-qwen-reshape-the-open-source-ai-race/" target="_blank">Forbes — China's DeepSeek V4 and Qwen reshape the open-source AI race (2026-04-28)</a></li>
+                <li>• <a href="https://valueaddvc.com/blog/alibaba-qwen-download-statistics-2026-3-billion-downloads-ranked-against-every-open-weight-model" target="_blank">ValueAdd VC — Qwen download statistics, 3 billion downloads</a></li>
+                <li>• <a href="https://dev.to/aiexplore369zoho/the-open-weight-frontier-didnt-die-it-moved-516d" target="_blank">The Open-Weight Frontier Didn't Die — It Moved</a></li>
+                <li>• <a href="https://help.openai.com/en/articles/11870455-openai-open-weight-models-gpt-oss" target="_blank">OpenAI — gpt-oss open-weight models</a></li>
+                <li>• <a href="https://linuxfoundation.eu/newsroom/ai-act-explainer" target="_blank">Linux Foundation Europe — What open source developers need to know about the EU AI Act</a></li>
+                <li>• <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act official portal</a></li>
+                <li>• <a href="https://theneuralbase.com/ai-regulation/learn/advanced/eu-ai-act-open-source-exemption/" target="_blank">The Neural Base — EU AI Act open-source exemption</a></li>
+            </ul>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('metricsChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['F500 deploying open/own models via HF', 'F500 holding verified HF accounts', 'AI-using orgs with open source in stack', 'Open source share of enterprise LLM usage'],
+        datasets: [{
+            label: 'Percent (%)',
+            data: [50, 30, 89, 11],
+            backgroundColor: ['rgba(59,130,246,0.7)','rgba(59,130,246,0.4)','rgba(34,197,94,0.7)','rgba(239,68,68,0.7)'],
+            borderColor: ['rgb(59,130,246)','rgb(59,130,246)','rgb(34,197,94)','rgb(239,68,68)'],
+            borderWidth: 1
+        }]
+    },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ beginAtZero:true, max:100, title:{ display:true, text:'%' } }, y:{ ticks:{ font:{ size:10 } } } },
+      plugins:{ legend:{ display:false } } }
+});
+
+new Chart(document.getElementById('downloadChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Qwen (Alibaba)', 'Google', 'Meta'],
+        datasets: [{
+            label: 'Downloads (millions, six months of 2026)',
+            data: [3000, 418, 227],
+            backgroundColor: ['rgba(249,115,22,0.7)','rgba(34,197,94,0.7)','rgba(59,130,246,0.7)'],
+            borderColor: ['rgb(249,115,22)','rgb(34,197,94)','rgb(59,130,246)'],
+            borderWidth: 1
+        }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'Millions' } } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } } } }
+});
+
+new Chart(document.getElementById('competitiveChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['Peak capability', 'Cost efficiency', 'Control & customization', 'Procurement clearance', 'Ecosystem scale'],
+        datasets: [
+            { label: '1. Frontier closed APIs', data: [95, 30, 35, 75, 85],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: '2. Chinese open weights', data: [85, 95, 90, 35, 90],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: '3. Western open weights', data: [70, 85, 85, 80, 60],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: '4. Distribution layer', data: [50, 75, 70, 65, 95],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
