@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenMAIC — 清華大学が公開したマルチエージェントAI教室</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.1rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.85rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.7rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← トップ</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='openmaic-multi-agent-classroom-20260928-ja.html'" class="lang-btn active">日本語</button>
+                <button onclick="window.location.href='openmaic-multi-agent-classroom-20260928-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='openmaic-multi-agent-classroom-20260928-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>OpenMAIC 徹底調査 —<br>清華大学が公開したマルチエージェントAI教室</h1>
+        <div class="subtitle">MOOC から MAIC へ：6か月で 39,000 スターの実像、論文が実際に測った数値、そして導入前に必ず見るべき脆弱性</div>
+        <div class="meta">レポート作成日：2026年9月28日 ｜ 詳細版レポート ｜ データ収集：2026-09-28（GitHub API の直接取得を含む）</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">主要トレンド Top 5</h2>
+
+        <h3 class="subsection-title">1. OpenMAIC とは何か —「AIチューター」ではなく「教室そのもの」を生成する</h3>
+        <p><strong>現状：</strong>OpenMAIC（Open Multi-Agent Interactive Classroom）は、清華大学 THU-MAIC チームが公開したオープンソース基盤です。<strong>テーマを一行入力するか PDF を一本アップロードすると、スライド・小テスト・対話型シミュレーション・プロジェクト学習（PBL）まで含む授業一式が生成されます</strong>。最大の違いは、出力が「教材」ではなく「授業の進行」である点です。AI教師が音声で講義し、ホワイトボードにその場で図を描き、AIクラスメイトが議論や反論に加わります。リポジトリは2026年3月11日に作成され、3月26日に v0.1.0 が公開。2026年9月28日時点で<strong>スター 39,290・フォーク 6,102・コントリビューター約106名</strong>（GitHub API を直接取得）に達しました。最新リリースは9月26日の v1.1.1 です。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>実測したリポジトリ指標（2026-09-28）</h4>
+                <p>• <strong>スター：</strong>39,290 ・ <strong>フォーク：</strong>6,102 ・ <strong>ウォッチャー：</strong>180<br>
+                • <strong>コントリビューター：</strong>約106名 ・ <strong>未解決 Issue：</strong>173<br>
+                • <strong>主言語：</strong>TypeScript ・ <strong>ライセンス：</strong>MIT<br>
+                • <strong>作成：</strong>2026-03-11 ・ <strong>最終プッシュ：</strong>2026-09-27<br>
+                • <strong>リリース13本：</strong>v0.1.0（3/26）→ v1.1.1（9/26）、約6か月</p>
+            </div>
+            <div class="trend-card">
+                <h4>生成される「シーン」4種</h4>
+                <p>• <strong>スライド：</strong>音声ナレーション付きのアニメーション講義<br>
+                • <strong>小テスト：</strong>単一選択・複数選択・記述式、AI採点つき<br>
+                • <strong>対話型シミュレーション：</strong>HTML ベースの3D・物理・フローチャート<br>
+                • <strong>PBL：</strong>マイルストーンが定義された共同プロジェクト<br>
+                • <strong>Deep Interactive Mode（v0.2.0〜）：</strong>ゲーム・マインドマップ・オンライン開発環境</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>リポジトリ指標は二次記事の引用ではなく、GitHub REST API を直接取得して確認しました（取得時刻 2026-09-28）。リリース日・ライセンス・主言語も同じ応答から確認しています。<br>
+                <strong>改善点：</strong>スター数の時系列（成長曲線）は API の単一スナップショットでは取得できないため、「6か月で39,000」という速度以外の推移は示せていません。
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://github.com/THU-MAIC/OpenMAIC" target="_blank">THU-MAIC/OpenMAIC（GitHub）</a> |
+            <a href="https://open.maic.chat/" target="_blank">OpenMAIC ホスト版デモ</a> |
+            <a href="https://openmaic.io/" target="_blank">openmaic.io（第三者の紹介ページ）</a>
+        </div>
+
+        <p><strong>展望：</strong>6か月で39,000スターは、教育分野のオープンソースとしては異例の速さです。ただしスターは「関心」の指標であって「本番導入」の指標ではありません。6,102件のフォークのうち実際に運用されているものが何件かは、公開データでは確認できません。</p>
+
+        <h3 class="subsection-title">2. エージェント構成 — 教師・助手・クラスメイト4類型という設計判断</h3>
+        <p><strong>現状：</strong>OpenMAIC の理論的な土台は、2024年9月に arXiv で公開され、2026年に <em>Journal of Computer Science and Technology</em>（JCST、DOI 10.1007/s11390-025-6000-0）に掲載された論文「From MOOC to MAIC」です。この論文では教室が<strong>教師エージェント（a<sub>T</sub>）＋ティーチングアシスタント・エージェント（a<sub>TA</sub>）＋クラスメイト・エージェント4類型</strong>で構成され、その上に<strong>Session Controller</strong>（Class State Receptor と Manager メタエージェント）が発言順を調整します。つまり「AIチューター1体が1対1で教える」のではなく、<strong>複数の役割が互いに言葉を交わす場面を意図的に演出する</strong>構造です。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>クラスメイト・エージェント4類型（論文）</h4>
+                <p>• <strong>Class Clown：</strong>場を揺さぶり、注意の途切れに対処する<br>
+                • <strong>Deep Thinker：</strong>思考を促す問いを投げる<br>
+                • <strong>Note Taker：</strong>議論の要点をまとめる<br>
+                • <strong>Inquisitive Mind：</strong>探究型の対話を引き出す<br>
+                • <strong>Manager メタエージェント：</strong>誰がいつ話すかを判定。論文はこのエージェントの精度が<strong>まだ十分でない</strong>と明記しています</p>
+            </div>
+            <div class="trend-card">
+                <h4>実装側のオーケストレーション</h4>
+                <p>• <strong>LangGraph の状態機械</strong>でエージェント間のやり取りを管理<br>
+                • <strong>2段階の生成パイプライン：</strong>アウトライン → シーン内容<br>
+                • <strong>Action Engine：</strong>発話・ホワイトボード・演出など<strong>21種類のアクション</strong>を実行<br>
+                • <strong>Playback Engine：</strong>授業の進行を駆動する別の状態機械<br>
+                • <strong>v1.0.0 の Curriculum Agent：</strong>カリキュラムを計画し、ページを作り、手直しする対話型ワークベンチ＋再利用可能なスキル24種</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>エージェントの役割と設計上の限界は著者らの原論文（arXiv:2409.03512、JCST 2026）で、実装の詳細（21アクション・2段階パイプライン・LangGraph）は公式リポジトリの文書で、それぞれ確認しました。<br>
+                <strong>改善点：</strong>論文の4類型と v1.x のコードのエージェント構成が完全に一致するかは、ソースレベルで突き合わせていません。論文（2024年のシステム）とオープンソース版（2026年）には2年の開きがあり、細部は異なる可能性があります。
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://arxiv.org/abs/2409.03512" target="_blank">arXiv:2409.03512 From MOOC to MAIC</a> |
+            <a href="https://link.springer.com/article/10.1007/s11390-025-6000-0" target="_blank">JCST 掲載版</a> |
+            <a href="https://www.langchain.com/langgraph" target="_blank">LangGraph</a>
+        </div>
+
+        <p><strong>展望：</strong>「クラスメイト・エージェント」という設計は、推薦システムや対話システムの設計者にとってそのまま参考になります。1つのモデルに全役割を兼ねさせる代わりに役割を分離し、発言順は別のメタエージェントが判定する構造です。ただし著者ら自身が、そのメタエージェントの判定精度を未解決の課題として残しています。</p>
+
+        <h3 class="subsection-title">3. 実測データ — 論文が実際に測ったものと、宣伝文句が言い換えたもの</h3>
+        <p><strong>現状：</strong>MAIC は清華大学で実際に運用されました。論文のパイロットは<strong>「Towards Artificial General Intelligence」（TAGI）と「How to Study in the University」（HSU）の2科目、学生500名以上、3か月以上、行動記録10万件以上</strong>です。ここで注意すべき点があります。複数の紹介ページが<strong>「学生700名以上・2年以上で検証」</strong>あるいは<strong>「満足度84.1%」</strong>と記していますが、これらの数値は論文本文では確認できません。論文が示す満足度は84.1%のような単一の百分率ではなく、<strong>項目別の5段階評価</strong>です。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>論文で確認できる数値</h4>
+                <p>• <strong>「授業の目標を明確に伝えた」：</strong>4.12 / 5<br>
+                • <strong>「新しい概念の探究を促した」：</strong>4.03 / 5<br>
+                • <strong>「長所と短所についてフィードバックをくれた」：</strong><strong>3.51 / 5 — 最も低い項目</strong><br>
+                • <strong>行動の内訳：</strong>知識を求める行動 61% ・ エージェントと進行の操作 11%<br>
+                • <strong>モジュール試験の得点：</strong>53.3% 〜 82.4% ・ <strong>参加率：</strong>モジュール 76.3% / 期末 73.3%</p>
+            </div>
+            <div class="trend-card">
+                <h4>統計的に有意だった変化</h4>
+                <p>• <strong>発言頻度・長さ ↔ 試験得点：</strong>r = 0.341〜0.346（p&lt;0.001）— <strong>相関であって因果ではありません</strong><br>
+                • <strong>技術受容度の全体的な上昇：</strong>t = 3.05、p = 0.002<br>
+                • <strong>内訳：</strong>習慣 p=0.005 ・ 努力期待 p&lt;0.001 ・ 促進条件 p=0.002<br>
+                • <strong>高次思考（自己申告）：</strong>抽象的思考 p=0.02 ・ 批判的思考 p=0.02<br>
+                • <strong>後続研究（arXiv:2508.17310）：</strong>離脱予測の枠組み CPADP が最大精度 95.4%、学生3,000名以上の規模で検証</p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>⚠️ 数値を引用する際の注意：</strong>① <strong>r ≈ 0.34 は相関係数</strong>です。「よく発言した学生は得点が高かった」であり、「発言させれば得点が上がる」ではありません。② <strong>「700名・2年・84.1%」は二次的な紹介ページ由来の数値</strong>で、著者の論文と突き合わせられません。社外資料に使う場合は論文の数値（500名以上・3か月・項目別5段階）を用いるのが安全です。③ 高次思考の向上は<strong>学生の主観（自己申告）</strong>であり、客観測定ではないと論文が明記しています。
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>すべての数値を原論文の本文（arXiv HTML 版）で直接確認し、著者が述べた限界（メタエージェントの精度、全員に同一の講義スクリプト、自己申告に基づく評価、学生同士の交流の乏しさ、アルゴリズム上の偏りの可能性）も併記しました。<br>
+                <strong>改善点：</strong>対照群を置いた統制実験ではなくパイロット観察研究のため、「MOOC より優れている」という比較の主張はこのデータでは成立しません。後続の離脱研究の 95.4% は要旨ベースで、評価手順の詳細は未検証です。
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://arxiv.org/html/2409.03512v1" target="_blank">MAIC 論文 全文（HTML）</a> |
+            <a href="https://arxiv.org/abs/2508.17310" target="_blank">離脱予測の後続研究（CPADP）</a> |
+            <a href="https://arxiv.org/pdf/2503.01694" target="_blank">学生とAIの相互作用：クラスター分析</a>
+        </div>
+
+        <p><strong>展望：</strong>最も低い項目が「フィードバックの質（3.51/5）」だったという事実が、この分野の次の課題を正確に示しています。授業を生成することはすでにできており、<strong>学習者一人ひとりの長所と短所を指摘することはまだできていない</strong>ということです。</p>
+
+        <h3 class="subsection-title">4. 技術スタックとライセンス — AGPL から MIT へ、しかし古い情報がまだ出回っている</h3>
+        <p><strong>現状：</strong>フロントエンドは Next.js 16・React 19・TypeScript 5・Tailwind CSS 4、オーケストレーションは LangGraph 1.1、永続化はブラウザ・HTTP・PostgreSQL・S3 を差し替え可能な層として持ちます。対応する大規模言語モデル（LLM）の提供元は <strong>OpenAI・Azure OpenAI・Anthropic・Amazon Bedrock・Google Gemini・DeepSeek・Qwen・Kimi・MiniMax・Grok・OpenRouter・GLM・Ollama</strong> など16種類以上に、OpenAI 互換 API を加えた構成です。ライセンスは <strong>v0.3.0（2026-06-29）で AGPL-3.0 から MIT へ変更</strong>され、同じリリースで <code>@openmaic/*</code> の SDK が npm に公開されました。商用利用は MIT の条件で可能です。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>配備・書き出し・連携</h4>
+                <p>• <strong>配備：</strong>Vercel ワンクリック ・ Docker Compose（PostgreSQL・レンダーサービスのプロファイル）・ 自社サーバー<br>
+                • <strong>書き出し：</strong>PowerPoint（PPTX）・ 対話型 HTML ・ 教室 ZIP パッケージ ・ MP4（レンダーサービス）<br>
+                • <strong>任意のサービス：</strong>Lemonade（ローカル LLM/TTS/ASR）・ FunASR（ローカル音声認識）・ MinerU（文書解析）・ VoxCPM2（音声複製つき TTS の自社運用）<br>
+                • <strong>多言語対応：</strong>12ロケール ・ ダークモード<br>
+                • <strong>エージェント・ワークベンチ連携：</strong>SKILL.md 形式のスキルパッケージを同梱。OpenClaw（<code>clawhub install openmaic</code>）や Codex などに取り込め、Feishu・Slack・Telegram・Discord のチャネルに対応します</p>
+            </div>
+            <div class="trend-card">
+                <h4>情報の食い違い — 第三者の紹介ページを鵜呑みにしない</h4>
+                <p>• <strong>ライセンス：</strong>公式リポジトリは <strong>MIT</strong>、一部の紹介サイトは <strong>AGPL-3.0</strong> → 後者は v0.3.0 以前の情報<br>
+                • <strong>スター数：</strong>実測 <strong>39,290</strong>、紹介サイト <strong>3,700</strong>、記事 <strong>25,975・30,000</strong> → 取得時点の差<br>
+                • <strong>例外のライセンス：</strong>ルートは MIT ですが <code>packages/mathml2omml</code> は <strong>LGPL-3.0-or-later</strong>。再配布時は個別確認が必要<br>
+                • <strong>ミラーが多数：</strong>検索上位に同じ説明文の個人フォークが多く並びます → <strong>THU-MAIC 組織アカウント</strong>が正本です</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>ライセンスは GitHub API の license フィールド（<code>spdx_id: MIT</code>）で確定し、変更時期は v0.3.0 のリリースノートで特定しました。スタック・提供元一覧・書き出し形式は公式リポジトリの文書に基づいています。<br>
+                <strong>改善点：</strong>AGPL から MIT への変更理由は公開されたリリースノートに記載がなく、確認できませんでした（推測せず事実のみ記載）。下位パッケージのライセンス全数監査は行っていません。
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.3.0" target="_blank">v0.3.0 リリース（MIT への変更）</a> |
+            <a href="https://github.com/THU-MAIC/OpenMAIC/releases" target="_blank">リリース一覧</a> |
+            <a href="https://nextjs.org/" target="_blank">Next.js</a>
+        </div>
+
+        <p><strong>展望：</strong>MIT への変更、npm への SDK 公開、SKILL.md 形式のスキルパッケージ——この3つはいずれも同じ方向を指しています。<strong>完成品のアプリではなく、他者が組み込んで使う部品になろうとする戦略</strong>です。社内の学習管理システムやエージェント・ワークベンチに、スライド生成や授業再生の機能だけを切り出して組み込む使い方が、現実的な最初の導入形になる可能性が高いでしょう。</p>
+
+        <h3 class="subsection-title">5. セキュリティ — CVE-2026-86259、「開発しやすい初期値」が本番で請求される仕組み</h3>
+        <p><strong>現状：</strong>2026年9月、OpenMAIC 1.0.0 以下に<strong>認証なしの SSRF（サーバーサイド・リクエスト・フォージェリ）脆弱性 CVE-2026-86259</strong> が公表されました。原因は2つが重なったものです。① 既定の設定ファイル（<code>.env.example</code>）で <code>ACCESS_CODE</code> が空のため、<strong>API 経路70本が全体として未認証</strong>で開きます。② クライアントが送る提供元ベース URL の検証（<code>validateUrlForSSRF()</code>）が<strong><code>NODE_ENV === 'production'</code> のときだけ</strong>実行されます。結果として本番以外のビルドでは、<code>x-base-url</code> ヘッダーや <code>baseUrl</code> クエリパラメータ経由で <strong>AWS・GCP・Azure のインスタンスメタデータサービス（IMDS）に到達</strong>し、クラウドの認証情報を引き出せてしまいます。1.0.1 で修正され（GHSA-9m7h-vh2h-rc3w）、その後も <strong>1.0.2・1.0.3・1.1.1 が続けてセキュリティ・リリース</strong>でした。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>脆弱性の要点</h4>
+                <p>• <strong>ID：</strong>CVE-2026-86259 ・ <strong>影響：</strong>≤ 1.0.0 ・ <strong>修正：</strong>1.0.1<br>
+                • <strong>種別：</strong>未認証の外向き SSRF → IMDS へのアクセス<br>
+                • <strong>入力箇所：</strong><code>x-base-url</code> ヘッダー、<code>baseUrl</code> クエリパラメータ<br>
+                • <strong>深刻度：</strong>多くのデータベースは <strong>CVSS 7.5</strong>、一部の分析サイトは <strong>9.3</strong> と表記 — <strong>出典間で不一致</strong><br>
+                • <strong>根本原因：</strong>フェイルオープンのミドルウェア＋環境変数で条件分岐する検証</p>
+            </div>
+            <div class="trend-card">
+                <h4>導入時の点検項目</h4>
+                <p>• <strong>バージョン：</strong>1.1.1 以上に固定し、セキュリティ・リリースの追跡体制を必須に（9月だけで4回）<br>
+                • <strong>認証：</strong><code>ACCESS_CODE</code> の設定は必須。ただし単なる共有コードであり暗号学的な保護ではありません<br>
+                • <strong>NODE_ENV：</strong>本番配備は必ず production ビルドで<br>
+                • <strong>外向き通信の遮断：</strong>コンテナから 169.254.169.254 などメタデータ用エンドポイントを遮断し、IMDSv2 を強制<br>
+                • <strong>資産の分離：</strong>既定では配備単位で主体を共有します — <strong>利用者ごとの資産分離やクォータは標準では提供されません</strong><br>
+                • <strong>学習者データ：</strong>個人情報・ログ・保存期間の方針が定まるまで、実在の学習者データを接続しない</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>CVE 番号・影響バージョン・修正バージョン・攻撃の入力箇所・根本原因は複数の脆弱性データベースで一致しており、修正リリース（v1.0.1）と後続のセキュリティ・リリース4件は GitHub のリリース一覧で直接確認しました。<br>
+                <strong>改善点：</strong>CVSS の値が出典によって 7.5 と 9.3 に分かれます（本文にそのまま併記）。実証コードを動かして再現したり、修正差分をコードレベルで検証したりはしていません。
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://github.com/THU-MAIC/OpenMAIC/releases" target="_blank">セキュリティ・リリース（v1.0.1〜v1.1.1）</a> |
+            <a href="https://vuldb.com/cve/CVE-2026-86259" target="_blank">VulDB CVE-2026-86259</a> |
+            <a href="https://www.redpacketsecurity.com/cve-alert-cve-2026-86259-thu-maic-openmaic/" target="_blank">CVE アラート</a>
+        </div>
+
+        <p><strong>展望：</strong>この脆弱性の教訓は OpenMAIC 固有のものではありません。<strong>「デモを手軽に動かすための初期値」がそのまま本番に出ていく</strong>のは、急成長する AI オープンソースに典型的な事故の形です。自社の LLM サービスにも同じ点検（未認証の経路数、環境変数で有効化される検証、外向き通信の方針）を当てはめる価値があります。</p>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+        <h3 class="subsection-title">4層の市場構造</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">「AI で学ぶ」は一つの市場ではありません。出力が<strong>授業の進行</strong>なのか、<strong>学習教材</strong>なのか、<strong>チューターとの対話</strong>なのか、<strong>スライド</strong>なのかによって、競合はまったく異なります。OpenMAIC は第1層にほぼ単独で立っており、他の層とは直接競合していません。</p>
+
+        <table>
+            <thead>
+                <tr><th>層</th><th>主なプレイヤー</th><th>出力</th><th>対象</th><th>自社運用</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Tier 1</strong><br>オープンソースのマルチエージェント教室</td><td><strong>OpenMAIC</strong>（THU-MAIC）</td><td>授業の進行そのもの — 教師・助手・クラスメイトのエージェント、スライド・小テスト・シミュレーション・PBL</td><td>大学・企業の教育部門・開発者</td><td>✅ MIT、Docker/Vercel</td></tr>
+                <tr><td><strong>Tier 2</strong><br>資料 → 学習への変換</td><td>NotebookLM、StudyFetch、okti、AFFiNE</td><td>要約・暗記カード・練習問題・音声概要</td><td>個人の学習者・研究者</td><td>一部（AFFiNE）</td></tr>
+                <tr><td><strong>Tier 3</strong><br>教育機関向け AI チューター</td><td>Khanmigo（Gemini）、Gemini for Education / LearnLM、Coursera Coach</td><td>カリキュラム連動の対話・教師用ツール・進捗の可視化</td><td>学校・大学・教育機関</td><td>❌ マネージド</td></tr>
+                <tr><td><strong>Tier 4</strong><br>スライド・コンテンツ生成</td><td>Presenton（オープンソース）、Gamma、SlideSpeak、PPTAgent、Synthesia</td><td>編集可能なスライド・動画 — 双方向性はなし</td><td>一般のビジネス職・講師</td><td>一部（Presenton）</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">市場で観察される動き</h3>
+        <p style="font-size:0.95rem; line-height:1.8;">
+        • <strong>「生成」から「進行」へ：</strong>Tier 4 がスライドまでを作る段階だったのに対し、Tier 1 は授業の時間軸・発言順・やり取りまでを生成の対象に入れました。<br>
+        • <strong>教育機関向けは教師の統制を強める方向：</strong>2026年の Khanmigo と Google.org の協業は、教師が設問を生成し、確認し、選んでから配布する流れ（Practice My Knowledge）に向かいました。完全自動化ではなく人の確認を残す設計です。<br>
+        • <strong>モデル依存の軽減が競争要因に：</strong>OpenMAIC の16種類以上の提供元対応と Ollama・Lemonade によるローカル経路は、規制やデータ主権が関わる機関導入の前提条件になります。<br>
+        • <strong>オープンソースが教育分野にも到達：</strong>Tier 1・2・4 のいずれにも自社運用の選択肢が生まれ、マネージドのみが残るのは Tier 3 だけです。<br>
+        • <strong>市場推計は出典による差が大きい：</strong>下のグラフのとおり同じ年について調査会社間で2倍近い差があるため、単一の数値を引用するのは避けるべきです。
+        </p>
+
+        <h3 class="subsection-title">層ごとの能力比較</h3>
+        <div class="chart-container">
+            <canvas id="tierChart"></canvas>
+        </div>
+
+        <h3 class="subsection-title">市場規模の推計 — 出典による差</h3>
+        <div class="chart-container">
+            <canvas id="marketChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">※ 基準年や市場の定義（AI in Education 全体 vs AI Tutors）が調査会社ごとに異なるため、直接の比較ではありません。差そのものを示すための図です。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 信頼性評価：</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>強み：</strong>層の区分と各プレイヤーの出力・提供形態は、公式の製品文書および2026年の報道に基づいています。市場の数値は単一の出典で断定せず、3社の推計を併記しました。<br>
+                <strong>改善点：</strong>層ごとの能力レーダーの点数は、公開されている機能比較に基づく<strong>本レポートの定性評価</strong>であり、ベンチマークの測定値ではありません。市場規模は有料レポートの公開要約に基づくもので、元レポートの手法は検証できていません。
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://www.khanacademy.org/khan-labs" target="_blank">Khanmigo</a> |
+            <a href="https://cloud.google.com/solutions/learnlm" target="_blank">LearnLM</a> |
+            <a href="https://notebooklm.google.com/" target="_blank">NotebookLM</a> |
+            <a href="https://presenton.ai/" target="_blank">Presenton</a> |
+            <a href="https://github.com/presenton/presenton" target="_blank">Presenton（GitHub）</a>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">活用アイデア</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>書き出し経路だけを使う試行</strong> — 既存の教材 PDF を投入し、PPTX・HTML・ZIP の書き出しまでを検証。授業1本あたりのモデル API 費用を測り、単価を先に把握するアプローチ。</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>エージェントの役割分離という設計の借用</strong> — 教師・助手・クラスメイト4類型と、発言順を判定するメタエージェントの構造を、自社の推薦・学習対話シナリオ設計の参照モデルとして検討するアプローチ。</p>
+            <p style="line-height:1.6;">3. <strong>脆弱性を点検基準として逆用</strong> — CVE-2026-86259 の3要素（未認証の経路数、環境変数で有効化される検証、メタデータへの外向き通信）を、自社 LLM サービスの点検リストに転用するアプローチ。</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">エグゼクティブサマリー</h2>
+
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">重要なポイント</h3>
+            <ul class="key-findings">
+                <li><strong>実体は確かです：</strong>清華大学 THU-MAIC の OpenMAIC は、2026年3月の公開から6か月でスター 39,290・フォーク 6,102・コントリビューター約106名に達した MIT ライセンスの TypeScript プロジェクトです（2026-09-28 に API で実測）。リリースは13本、最新は v1.1.1。</li>
+                <li><strong>出力が違います：</strong>競合ツールが教材やスライドを作るのに対し、OpenMAIC は教師・助手・クラスメイトのエージェントが進める<strong>授業そのもの</strong>を生成します。4種のシーン（スライド・小テスト・シミュレーション・PBL）と21種のアクションを LangGraph の状態機械で統率します。</li>
+                <li><strong>根拠はあるが統制実験ではありません：</strong>論文（JCST 2026）は学生500名以上・3か月・記録10万件のパイロット観察です。満足度は項目別に 4.12・4.03・3.51/5、発言量と成績の関係は r ≈ 0.34 の相関です。対照群との比較ではないため、「MOOC より優れている」はこのデータでは主張できません。</li>
+                <li><strong>最も弱い項目が次の方向を示します：</strong>最低点は「長所・短所のフィードバック」3.51/5。授業の生成は解けており、<strong>個別の診断的フィードバックが次の課題</strong>です。</li>
+                <li><strong>導入前提はセキュリティです：</strong>≤1.0.0 の未認証 SSRF（CVE-2026-86259）は、既定値のままだと API 70本が開き、クラウドのメタデータに到達し得ました。1.0.1 で修正されましたが、9月だけでセキュリティ・リリースが4回です。<strong>バージョン固定と更新の追跡なしに本番配備はできません</strong>。</li>
+                <li><strong>二次情報をそのまま使うと誤ります：</strong>第三者の紹介ページはライセンスを AGPL、スターを 3,700、検証規模を「700名・2年・満足度84.1%」と記しています。公式リポジトリと原論文に突き合わせる必要があります。</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Selection Guide</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>自社運用・モデル選択の自由・改変が最優先なら → OpenMAIC</strong><br>
+                理由：MIT ライセンス、16種類以上の提供元＋Ollama・Lemonade のローカル経路、PostgreSQL/S3 に差し替え可能な永続化。ただしセキュリティの基準を先に固めることが条件です。<br>
+                <strong>学校・機関で教師が統制する形の導入なら → Khanmigo / Gemini for Education</strong><br>
+                理由：マネージド運用、管理者による制御とワークスペース統合、教師の確認フロー（設問の生成後に確認・選別）がすでに設計されています。<br>
+                <strong>個人が資料を手早く消化する用途なら → NotebookLM 系</strong><br>
+                理由：教室の演出は不要で、要約・暗記カード・音声概要だけで足りる用途です。<br>
+                <strong>編集可能なスライドだけが必要なら → Presenton（オープンソース）/ Gamma</strong><br>
+                理由：双方向性もエージェントも不要で PPTX・PDF の出力が目的なら、OpenMAIC は過剰です。
+            </p>
+        </div>
+
+        <div class="overall-credibility">
+            <h3>📋 総合信頼性評価</h3>
+            <div class="overall-credibility-score">8.4/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>総合評価：</strong>一次情報を中心に構成したレポートです。リポジトリ指標は GitHub REST API の直接取得、学術的な数値は原論文の本文、セキュリティは脆弱性データベースと公式リリース一覧で確認しました。</p>
+                <p><strong>主な強み：</strong>二次記事と公式情報が食い違う箇所（ライセンス・スター数・検証規模・CVSS 値）を隠さず不一致として明示しました。相関と因果、自己申告と客観測定を区別しています。</p>
+                <p><strong>改善の優先順位：</strong>① 実際に導入・実行して生成品質と授業1本あたりの費用を実測する、② 論文（2024年のシステム）と v1.x のコードのエージェント構成を突き合わせる、③ 層ごとの能力スコアを定性評価から測定値に置き換える。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">主要用語の説明</h2>
+        <div style="background:#fafafa; padding:0.5rem 0.75rem; border-left:3px solid #e5e5e5;">
+            <div style="margin-bottom:0.4rem;"><strong>MOOC / MAIC</strong> — MOOC は多人数が同じ録画講義を視聴する公開オンライン講座です。MAIC（Massive AI-empowered Course）はその講義を AI エージェントたちがその場で進行する形にしたもので、規模を保ちながら個別対応を加えようとする考え方です。</div>
+            <div style="margin-bottom:0.4rem;"><strong>マルチエージェント・オーケストレーション</strong> — 役割の異なる複数の AI を、一つの作業の中で順序や条件に従って協働させるやり方です。教師役・助手役・クラスメイト役を分けて置き、誰がいつ話すかを別に決めるのがその例です。</div>
+            <div style="margin-bottom:0.4rem;"><strong>LangGraph</strong> — エージェントの流れを状態機械（グラフ）として定義するオープンソースの枠組みです。「今どの段階にいるか」を明示的に管理するため、長い対話や中断・再開のある作業に使われます。</div>
+            <div style="margin-bottom:0.4rem;"><strong>PBL（プロジェクト型学習）</strong> — 講義を聴く代わりに、課題に取り組みながら学ぶ方式です。OpenMAIC はマイルストーンが定義された共同プロジェクトを、シーンの一種として生成します。</div>
+            <div style="margin-bottom:0.4rem;"><strong>SSRF（サーバーサイド・リクエスト・フォージェリ）</strong> — 攻撃者がサーバーを騙し、サーバーの名前で内部のアドレスに要求を送らせる攻撃です。外部から直接は届かない内部資源へ、サーバーを踏み台に回り込むことが狙いです。</div>
+            <div style="margin-bottom:0.4rem;"><strong>IMDS（インスタンスメタデータサービス）</strong> — クラウド上の仮想マシンが自分の設定や一時的な認証情報を参照する、内部専用のアドレスです。SSRF でここに届くとクラウドへのアクセス権が漏れかねないため、今回の脆弱性が危険だったのです。</div>
+            <div style="margin-bottom:0.4rem;"><strong>MIT / AGPL-3.0 ライセンス</strong> — MIT は著作権表示さえ残せば商用利用・改変・非公開での配布が自由な寛容型のライセンスです。AGPL-3.0 はネットワーク経由でサービス提供する場合にもソース公開を求める強いコピーレフトです。OpenMAIC は v0.3.0 で後者から前者へ変更しました。</div>
+            <div><strong>TTS / ASR</strong> — TTS は文章を音声で読み上げる技術（AI 教師の講義音声）、ASR は音声を文字に起こす技術（学生の発話認識）です。OpenMAIC はどちらも外部 API と自社運用（VoxCPM2・FunASR）の両経路に対応します。</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>参考資料</h3>
+            <p><strong>データ収集：</strong>2026年9月28日（GitHub REST API の直接取得を含む）</p>
+            <ul>
+                <li>• <a href="https://github.com/THU-MAIC/OpenMAIC" target="_blank">THU-MAIC/OpenMAIC — 公式リポジトリ（スタック・エージェント・配備・ライセンス）</a></li>
+                <li>• <a href="https://api.github.com/repos/THU-MAIC/OpenMAIC" target="_blank">GitHub REST API — スター 39,290 / フォーク 6,102 / MIT / 2026-03-11 作成（実測）</a></li>
+                <li>• <a href="https://github.com/THU-MAIC/OpenMAIC/releases" target="_blank">リリース一覧 — v0.1.0（2026-03-26）〜 v1.1.1（2026-09-26）</a></li>
+                <li>• <a href="https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.3.0" target="_blank">v0.3.0 リリースノート — MIT への変更、npm SDK 公開</a></li>
+                <li>• <a href="https://arxiv.org/abs/2409.03512" target="_blank">Yu et al., From MOOC to MAIC — arXiv:2409.03512（2024-09）</a></li>
+                <li>• <a href="https://arxiv.org/html/2409.03512v1" target="_blank">同論文 全文（HTML）— エージェント4類型、4.12/4.03/3.51、r=0.341〜0.346、限界の記述</a></li>
+                <li>• <a href="https://link.springer.com/article/10.1007/s11390-025-6000-0" target="_blank">JCST 掲載版 — DOI 10.1007/s11390-025-6000-0（2026）</a></li>
+                <li>• <a href="https://arxiv.org/abs/2508.17310" target="_blank">Wang et al., Handling Students Dropouts — CPADP 最大 95.4%、学生3,000名以上</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2503.01694" target="_blank">Student-AI Interaction: Cluster Analysis of Engagement Profiles</a></li>
+                <li>• <a href="https://vuldb.com/cve/CVE-2026-86259" target="_blank">VulDB — CVE-2026-86259（OpenMAIC ≤1.0.0 SSRF）</a></li>
+                <li>• <a href="https://www.redpacketsecurity.com/cve-alert-cve-2026-86259-thu-maic-openmaic/" target="_blank">CVE アラート — THU-MAIC OpenMAIC</a></li>
+                <li>• <a href="https://blog.khanacademy.org/new-ai-tools-bring-interactive-diagrams-and-targeted-practice-thanks-to-khan-academys-partnership-with-google-org/" target="_blank">Khan Academy — Gemini による新ツール（2026年度新学期）</a></li>
+                <li>• <a href="https://blog.google/products-and-platforms/products/education/khan-academy-back-to-school/" target="_blank">Google — Khan Academy との協業と Gemini for Education</a></li>
+                <li>• <a href="https://cloud.google.com/solutions/learnlm" target="_blank">Google Cloud — LearnLM</a></li>
+                <li>• <a href="https://github.com/presenton/presenton" target="_blank">Presenton — オープンソースのスライド生成（Tier 4 比較対象）</a></li>
+                <li>• <a href="https://www.mordorintelligence.com/industry-reports/ai-in-education-market" target="_blank">Mordor Intelligence — AI in Education：$6.9B（2025）→ $41.01B（2030）、CAGR 42.83%</a></li>
+                <li>• <a href="https://www.researchandmarkets.com/reports/5896034/ai-in-education-market-report" target="_blank">Research and Markets — $10.6B（2026）→ $42.48B（2030）、CAGR 41.5%</a></li>
+                <li>• <a href="https://www.grandviewresearch.com/industry-analysis/ai-tutors-market-report" target="_blank">Grand View Research — AI Tutors：$2.7B（2026）→ $17.7B（2033）、CAGR 30.5%</a></li>
+            </ul>
+            <p style="margin-top:0.5rem; font-size:0.7rem; color:#808080;"><em>注：第三者の紹介サイト（openmaic.io など）はライセンスを AGPL-3.0、スターを 3,700 と記すなど更新が遅れているため、根拠としては採用していません。市場規模は有料レポートの公開要約に基づくもので、手法は未検証です。</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('tierChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['授業進行の生成', '双方向性の深さ', '自社運用・モデル選択', '機関向け統合・管理', '運用の成熟度'],
+        datasets: [
+            { label: 'Tier 1 OpenMAIC', data: [95, 90, 95, 40, 45],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'Tier 2 NotebookLM 系', data: [25, 45, 30, 50, 85],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'Tier 3 Khanmigo・Gemini for Education', data: [45, 70, 15, 95, 90],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'Tier 4 Presenton・Gamma', data: [35, 15, 70, 35, 80],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'層ごとの能力比較（本レポートの定性評価、100点満点）', font:{ size:12 } } } }
+});
+
+new Chart(document.getElementById('marketChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Mordor: AI in Education', 'R&M: AI in Education', 'Grand View: AI Tutors'],
+        datasets: [
+            { label: '基準年（十億 USD）', data: [6.90, 10.60, 2.70],
+              backgroundColor:'rgba(59,130,246,0.7)' },
+            { label: '予測年（十億 USD）', data: [41.01, 42.48, 17.70],
+              backgroundColor:'rgba(249,115,22,0.7)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'十億 USD' } } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'Mordor 2025→2030 ・ R&M 2026→2030 ・ Grand View 2026→2033（基準年・市場定義が異なる）', font:{ size:11 } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">お名前（任意）</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">コメント</label>
+                <textarea id="comment-content" placeholder="ご意見をお寄せください..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">コメントを投稿</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenMAIC — Tsinghua's Open Multi-Agent AI Classroom</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='openmaic-multi-agent-classroom-20260928-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='openmaic-multi-agent-classroom-20260928-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='openmaic-multi-agent-classroom-20260928-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>OpenMAIC, Examined —<br>Tsinghua's Open Multi-Agent AI Classroom</h1>
+        <div class="subtitle">From MOOC to MAIC: what 39,000 stars in six months really represents, what the research actually measured, and the vulnerability to check before you deploy</div>
+        <div class="meta">Report date: September 28, 2026 | Comprehensive report | Data collected: 2026-09-28 (includes direct GitHub API queries)</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Trends</h2>
+
+        <h3 class="subsection-title">1. What OpenMAIC Is — It Generates a Classroom, Not an AI Tutor</h3>
+        <p><strong>Where things stand:</strong> OpenMAIC (Open Multi-Agent Interactive Classroom) is an open-source platform released by the THU-MAIC team at Tsinghua University. <strong>Give it a one-line topic or upload a single PDF, and it produces a complete lesson — slides, quizzes, interactive simulations, and project-based learning (PBL).</strong> The distinguishing point is that the output is not study material but a running class: an AI teacher lectures with voice, draws on a whiteboard in real time, and AI classmates join discussions and push back. The repository was created on March 11, 2026, with v0.1.0 shipping on March 26. As of September 28, 2026 it has reached <strong>39,290 stars, 6,102 forks, and roughly 106 contributors</strong> (queried directly from the GitHub API). The latest release is v1.1.1, dated September 26.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Measured repository metrics (2026-09-28)</h4>
+                <p>• <strong>Stars:</strong> 39,290 · <strong>Forks:</strong> 6,102 · <strong>Watchers:</strong> 180<br>
+                • <strong>Contributors:</strong> ~106 · <strong>Open issues:</strong> 173<br>
+                • <strong>Primary language:</strong> TypeScript · <strong>License:</strong> MIT<br>
+                • <strong>Created:</strong> 2026-03-11 · <strong>Last push:</strong> 2026-09-27<br>
+                • <strong>13 releases:</strong> v0.1.0 (Mar 26) → v1.1.1 (Sep 26), roughly six months</p>
+            </div>
+            <div class="trend-card">
+                <h4>The four "scene" types it generates</h4>
+                <p>• <strong>Slides:</strong> narrated lectures with animation<br>
+                • <strong>Quizzes:</strong> single-choice, multiple-choice and short answer, with AI grading<br>
+                • <strong>Interactive simulations:</strong> HTML-based 3D, physics and flowcharts<br>
+                • <strong>PBL:</strong> collaborative projects with defined milestones<br>
+                • <strong>Deep Interactive Mode (v0.2.0+):</strong> games, mind maps, in-browser coding environments</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Repository metrics come from a direct GitHub REST API query (retrieved 2026-09-28), not from secondary articles. Release dates, license and primary language were confirmed in the same response.<br>
+                <strong>Weaknesses:</strong> A single API snapshot cannot produce a star-growth time series, so nothing beyond the headline pace ("39,000 in six months") is shown.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/THU-MAIC/OpenMAIC" target="_blank">THU-MAIC/OpenMAIC (GitHub)</a> |
+            <a href="https://open.maic.chat/" target="_blank">OpenMAIC hosted demo</a> |
+            <a href="https://openmaic.io/" target="_blank">openmaic.io (third-party overview)</a>
+        </div>
+
+        <p><strong>Outlook:</strong> 39,000 stars in six months is unusual velocity for an education-domain open-source project. But stars measure interest, not production adoption, and public data cannot tell us how many of the 6,102 forks are actually running anywhere.</p>
+
+        <h3 class="subsection-title">2. Agent Design — Teacher, Assistant, and Four Classmate Archetypes</h3>
+        <p><strong>Where things stand:</strong> The theoretical foundation is the paper "From MOOC to MAIC," posted to arXiv in September 2024 and published in 2026 in the <em>Journal of Computer Science and Technology</em> (JCST, DOI 10.1007/s11390-025-6000-0). In that paper the classroom consists of a <strong>teacher agent (a<sub>T</sub>), a teaching-assistant agent (a<sub>TA</sub>), and four classmate archetypes</strong>, with a <strong>Session Controller</strong> above them (a Class State Receptor plus a Manager meta-agent) regulating who speaks when. The design is not "one AI tutor teaching one student" but <strong>a deliberately staged scene in which several roles talk to one another</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The four classmate archetypes (from the paper)</h4>
+                <p>• <strong>Class Clown:</strong> stirs the room and handles lapses in attention<br>
+                • <strong>Deep Thinker:</strong> raises thought-provoking questions<br>
+                • <strong>Note Taker:</strong> summarizes the key points of a discussion<br>
+                • <strong>Inquisitive Mind:</strong> draws out inquiry-based dialogue<br>
+                • <strong>Manager meta-agent:</strong> decides who speaks and when — the paper states its accuracy <strong>remains below optimal levels</strong></p>
+            </div>
+            <div class="trend-card">
+                <h4>Orchestration on the implementation side</h4>
+                <p>• <strong>LangGraph state machine</strong> manages agent interaction<br>
+                • <strong>Two-stage generation pipeline:</strong> outline → scene content<br>
+                • <strong>Action Engine:</strong> executes <strong>21 action types</strong> — speech, whiteboard, effects and more<br>
+                • <strong>Playback Engine:</strong> a separate state machine that drives classroom delivery<br>
+                • <strong>Curriculum Agent (v1.0.0):</strong> a conversational workbench that plans the curriculum, builds pages and revises them, backed by 24 reusable skills</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Agent roles and the stated design limits come from the authors' own paper (arXiv:2409.03512; JCST 2026); implementation details (21 actions, two-stage pipeline, LangGraph) come from the official repository documentation.<br>
+                <strong>Weaknesses:</strong> We did not diff the source to confirm that the paper's four archetypes match the agent set in the v1.x code. The paper describes a 2024 system and the open-source release is from 2026 — two years apart, so details may differ.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/abs/2409.03512" target="_blank">arXiv:2409.03512 From MOOC to MAIC</a> |
+            <a href="https://link.springer.com/article/10.1007/s11390-025-6000-0" target="_blank">JCST published version</a> |
+            <a href="https://www.langchain.com/langgraph" target="_blank">LangGraph</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The "classmate agent" pattern is worth borrowing for anyone designing recommendation or conversational systems. Rather than asking one model to play every part, roles are separated and turn-taking is adjudicated by a distinct meta-agent. That said, the authors themselves leave that meta-agent's accuracy as an open problem.</p>
+
+        <h3 class="subsection-title">3. The Evidence — What the Paper Measured, and What Marketing Copy Rephrased</h3>
+        <p><strong>Where things stand:</strong> MAIC ran for real at Tsinghua. The paper's pilot covered <strong>two courses — "Towards Artificial General Intelligence" (TAGI) and "How to Study in the University" (HSU) — with 500+ students over 3+ months and 100,000+ behavioral records.</strong> One caution matters here. Several overview pages state <strong>"validated with 700+ students over 2+ years"</strong> or <strong>"84.1% satisfaction."</strong> Neither figure can be confirmed in the paper. What the paper reports is not a single satisfaction percentage but <strong>item-level scores on a five-point scale</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Figures confirmed in the paper</h4>
+                <p>• <strong>"The AI instructor clearly communicated course goals":</strong> 4.12 / 5<br>
+                • <strong>"Encouraged exploring new concepts":</strong> 4.03 / 5<br>
+                • <strong>"Provided feedback on strengths and weaknesses":</strong> <strong>3.51 / 5 — the lowest-rated item</strong><br>
+                • <strong>Behavior mix:</strong> 61% actively seeking knowledge · 11% managing agents and class progress<br>
+                • <strong>Module test scores:</strong> 53.3% – 82.4% · <strong>Attendance:</strong> 76.3% (modules) / 73.3% (final)</p>
+            </div>
+            <div class="trend-card">
+                <h4>Statistically significant changes</h4>
+                <p>• <strong>Message frequency/length ↔ test scores:</strong> r = 0.341–0.346 (p&lt;0.001) — <strong>correlation, not causation</strong><br>
+                • <strong>Overall technology acceptance rose:</strong> t = 3.05, p = 0.002<br>
+                • <strong>Components:</strong> Habit p=0.005 · Effort Expectancy p&lt;0.001 · Facilitating Conditions p=0.002<br>
+                • <strong>Higher-order thinking (self-reported):</strong> abstract thinking p=0.02 · critical thinking p=0.02<br>
+                • <strong>Follow-up study (arXiv:2508.17310):</strong> the CPADP dropout-prediction framework reached up to 95.4% accuracy, validated at a deployment of 3,000+ students</p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>⚠️ Care when citing these numbers:</strong> (1) <strong>r ≈ 0.34 is a correlation</strong> — "students who talked more scored higher," not "making students talk raises scores." (2) <strong>"700 students / 2 years / 84.1%" traces to secondary overview pages</strong> and cannot be matched against the authors' paper; for external material, the paper's figures (500+ students, 3 months, item-level 5-point scores) are the safe ones. (3) Gains in higher-order thinking are <strong>student self-report</strong>, not objective measurement — the paper says so explicitly.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Every figure was read from the paper itself (arXiv HTML version), and the authors' own stated limitations are reproduced here: manager-agent accuracy, identical lecture scripts for all students, self-report-based evaluation, limited peer-to-peer interaction, and possible algorithmic bias.<br>
+                <strong>Weaknesses:</strong> This is a pilot observational study, not a controlled experiment with a comparison group, so "better than a MOOC" cannot be claimed from this data. The 95.4% from the follow-up dropout paper is taken from the abstract; its evaluation protocol was not verified.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/html/2409.03512v1" target="_blank">MAIC paper, full text (HTML)</a> |
+            <a href="https://arxiv.org/abs/2508.17310" target="_blank">Dropout-prediction follow-up (CPADP)</a> |
+            <a href="https://arxiv.org/pdf/2503.01694" target="_blank">Student-AI interaction: cluster analysis</a>
+        </div>
+
+        <p><strong>Outlook:</strong> That the lowest-scoring item is "feedback quality" (3.51/5) points precisely at the field's next problem. Generating a lesson is largely solved; <strong>telling an individual learner what they are good and bad at is not</strong>.</p>
+
+        <h3 class="subsection-title">4. Stack and License — AGPL to MIT, and Stale Information Still Circulating</h3>
+        <p><strong>Where things stand:</strong> The front end is Next.js 16, React 19, TypeScript 5 and Tailwind CSS 4; orchestration is LangGraph 1.1; persistence is a swappable layer across browser, HTTP, PostgreSQL and S3. Supported large language model (LLM) providers number more than sixteen — <strong>OpenAI, Azure OpenAI, Anthropic, Amazon Bedrock, Google Gemini, DeepSeek, Qwen, Kimi, MiniMax, Grok, OpenRouter, GLM, Ollama</strong> and others — plus any OpenAI-compatible API. The license was <strong>changed from AGPL-3.0 to MIT in v0.3.0 (2026-06-29)</strong>, and the same release published the <code>@openmaic/*</code> SDK packages to npm. Commercial use is permitted under MIT terms.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Deployment, export and integration</h4>
+                <p>• <strong>Deployment:</strong> one-click Vercel · Docker Compose (PostgreSQL and render-service profiles) · self-hosted servers<br>
+                • <strong>Export:</strong> PowerPoint (PPTX) · interactive HTML · classroom ZIP packages · MP4 (render service)<br>
+                • <strong>Optional services:</strong> Lemonade (local LLM/TTS/ASR), FunASR (local speech recognition), MinerU (document parsing), VoxCPM2 (self-hosted TTS with voice cloning)<br>
+                • <strong>Internationalization:</strong> 12 locales · dark mode<br>
+                • <strong>Agent workbench integration:</strong> ships a SKILL.md-format skill package — importable into OpenClaw (<code>clawhub install openmaic</code>), Codex and others, with Feishu, Slack, Telegram and Discord channel support</p>
+            </div>
+            <div class="trend-card">
+                <h4>Conflicting information — don't trust third-party pages</h4>
+                <p>• <strong>License:</strong> official repository says <strong>MIT</strong>; some overview sites still say <strong>AGPL-3.0</strong> → that predates v0.3.0<br>
+                • <strong>Star count:</strong> measured <strong>39,290</strong> vs. overview site <strong>3,700</strong> vs. articles citing <strong>25,975 / 30,000</strong> → different snapshot dates<br>
+                • <strong>License exception:</strong> the root is MIT, but <code>packages/mathml2omml</code> is <strong>LGPL-3.0-or-later</strong> — check separately before redistributing<br>
+                • <strong>Many mirrors:</strong> search results are full of personal forks carrying the identical description → the <strong>THU-MAIC organization account</strong> is the canonical source</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The license was settled from the GitHub API license field (<code>spdx_id: MIT</code>) and the switch was dated from the v0.3.0 release notes. Stack, provider list and export formats come from official repository documentation.<br>
+                <strong>Weaknesses:</strong> The reason for the AGPL→MIT change is not stated in the public release notes and could not be confirmed, so it is left unexplained rather than guessed. No full audit of sub-package licenses was performed.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.3.0" target="_blank">v0.3.0 release (MIT relicense)</a> |
+            <a href="https://github.com/THU-MAIC/OpenMAIC/releases" target="_blank">Full release list</a> |
+            <a href="https://nextjs.org/" target="_blank">Next.js</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The MIT relicense, the npm SDK, and the SKILL.md skill package all point the same direction: <strong>a strategy of becoming a component other people embed, rather than a finished application</strong>. Lifting out only the slide generation or classroom playback and wiring it into an existing LMS or agent workbench is the most plausible first form of adoption.</p>
+
+        <h3 class="subsection-title">5. Security — CVE-2026-86259, or How "Convenient Defaults" Bill You in Production</h3>
+        <p><strong>Where things stand:</strong> In September 2026, an <strong>unauthenticated server-side request forgery (SSRF) vulnerability, CVE-2026-86259</strong>, was disclosed for OpenMAIC 1.0.0 and earlier. Two things compounded. First, the shipped defaults (<code>.env.example</code>) leave <code>ACCESS_CODE</code> unset, which leaves <strong>all 70 API routes globally unauthenticated</strong>. Second, validation of client-supplied provider base URLs (<code>validateUrlForSSRF()</code>) runs <strong>only when <code>NODE_ENV === 'production'</code></strong>. In non-production builds, an attacker can therefore use the <code>x-base-url</code> header or the <code>baseUrl</code> query parameter to <strong>reach the instance metadata service (IMDS) on AWS, GCP or Azure</strong> and pull cloud credentials. It was fixed in 1.0.1 (GHSA-9m7h-vh2h-rc3w), and <strong>1.0.2, 1.0.3 and 1.1.1 were all subsequent security releases</strong>.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Vulnerability summary</h4>
+                <p>• <strong>ID:</strong> CVE-2026-86259 · <strong>Affected:</strong> ≤ 1.0.0 · <strong>Fixed in:</strong> 1.0.1<br>
+                • <strong>Type:</strong> unauthenticated outbound SSRF → IMDS access<br>
+                • <strong>Input points:</strong> <code>x-base-url</code> header, <code>baseUrl</code> query parameter<br>
+                • <strong>Severity:</strong> most databases list <strong>CVSS 7.5</strong>; some analysis sites list <strong>9.3</strong> — <strong>sources disagree</strong><br>
+                • <strong>Root cause:</strong> fail-open middleware plus environment-gated validation</p>
+            </div>
+            <div class="trend-card">
+                <h4>Deployment checklist</h4>
+                <p>• <strong>Version:</strong> pin to 1.1.1 or later and put a release-tracking process in place (four security releases in September alone)<br>
+                • <strong>Authentication:</strong> <code>ACCESS_CODE</code> must be set — but it is a shared code, not cryptographic protection<br>
+                • <strong>NODE_ENV:</strong> production deployments must be production builds<br>
+                • <strong>Egress control:</strong> block metadata endpoints such as 169.254.169.254 from the container and enforce IMDSv2<br>
+                • <strong>Asset isolation:</strong> the default is a single shared principal per deployment — <strong>per-user asset isolation and quotas are not provided out of the box</strong><br>
+                • <strong>Learner data:</strong> do not connect real student data until privacy, logging and retention rules are settled</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> CVE identifier, affected and fixed versions, attack input points and root cause were consistent across multiple vulnerability databases, and the fix release (v1.0.1) plus four subsequent security releases were confirmed directly in the GitHub release list.<br>
+                <strong>Weaknesses:</strong> CVSS scoring splits between 7.5 and 9.3 depending on the source (both are shown above). We did not run a proof of concept to reproduce it, nor verify the patch diff at code level.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/THU-MAIC/OpenMAIC/releases" target="_blank">Security releases (v1.0.1–v1.1.1)</a> |
+            <a href="https://vuldb.com/cve/CVE-2026-86259" target="_blank">VulDB CVE-2026-86259</a> |
+            <a href="https://www.redpacketsecurity.com/cve-alert-cve-2026-86259-thu-maic-openmaic/" target="_blank">CVE alert</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The lesson here is not specific to OpenMAIC. <strong>Defaults chosen to make a demo easy shipping straight into production</strong> is the characteristic failure shape of fast-growing AI open source, and the same three checks — how many unauthenticated routes exist, which validations are gated on an environment variable, and what egress policy applies — are worth applying to your own LLM services.</p>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+        <h3 class="subsection-title">A four-tier market structure</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">"Learning with AI" is not one market. The competitor set changes entirely depending on whether the output is <strong>a running class</strong>, <strong>study material</strong>, <strong>tutor conversation</strong>, or <strong>slides</strong>. OpenMAIC stands nearly alone in the first tier and does not compete head-on with the others.</p>
+
+        <table>
+            <thead>
+                <tr><th>Tier</th><th>Key players</th><th>Output</th><th>Audience</th><th>Self-hosting</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Tier 1</strong><br>Open-source multi-agent classroom</td><td><strong>OpenMAIC</strong> (THU-MAIC)</td><td>The class itself — teacher, assistant and classmate agents; slides, quizzes, simulations, PBL</td><td>Universities, corporate L&amp;D, developers</td><td>✅ MIT, Docker/Vercel</td></tr>
+                <tr><td><strong>Tier 2</strong><br>Material → learning conversion</td><td>NotebookLM, StudyFetch, okti, AFFiNE</td><td>Summaries, flashcards, practice questions, audio overviews</td><td>Individual learners and researchers</td><td>Partial (AFFiNE)</td></tr>
+                <tr><td><strong>Tier 3</strong><br>Institutional AI tutors</td><td>Khanmigo (Gemini), Gemini for Education / LearnLM, Coursera Coach</td><td>Curriculum-linked tutoring, teacher tools, progress insight</td><td>Schools, universities, institutions</td><td>❌ Managed</td></tr>
+                <tr><td><strong>Tier 4</strong><br>Slide and content generation</td><td>Presenton (open source), Gamma, SlideSpeak, PPTAgent, Synthesia</td><td>Editable decks and video — no interactivity</td><td>Knowledge workers, instructors</td><td>Partial (Presenton)</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">Shifts visible in the market</h3>
+        <p style="font-size:0.95rem; line-height:1.8;">
+        • <strong>From generating artifacts to generating delivery:</strong> where Tier 4 stopped at the deck, Tier 1 brings the timeline of a lesson, the order of speech, and the interaction itself into scope.<br>
+        • <strong>Institutional products are strengthening teacher control:</strong> the 2026 Khanmigo–Google.org collaboration moved toward teachers generating, reviewing and curating questions before assigning them (Practice My Knowledge) — human review retained, not removed.<br>
+        • <strong>Reduced model lock-in has become a competitive factor:</strong> OpenMAIC's 16-plus provider support and its Ollama/Lemonade local paths are preconditions for institutional adoption where regulation or data sovereignty applies.<br>
+        • <strong>Open source has reached the education domain:</strong> Tiers 1, 2 and 4 all now have a self-hosting option; Tier 3 is the only one that remains managed-only.<br>
+        • <strong>Market estimates vary widely by source:</strong> as the chart below shows, analyst houses differ by nearly a factor of two for the same year, so citing any single figure should be avoided.
+        </p>
+
+        <h3 class="subsection-title">Capability comparison by tier</h3>
+        <div class="chart-container">
+            <canvas id="tierChart"></canvas>
+        </div>
+
+        <h3 class="subsection-title">Market size estimates — divergence across sources</h3>
+        <div class="chart-container">
+            <canvas id="marketChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: base years and market definitions (AI in Education overall vs. AI Tutors) differ by firm, so this is not a like-for-like comparison. The chart exists to show the divergence itself.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Tier definitions and each player's output and hosting model are grounded in official product documentation and 2026 reporting. Market figures are presented from three separate research firms rather than asserted from one.<br>
+                <strong>Weaknesses:</strong> Scores in the tier radar are <strong>this report's qualitative assessment</strong> based on published feature comparisons, not benchmark measurements. Market sizes come from the public summaries of paid reports whose methodology we could not verify.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://www.khanacademy.org/khan-labs" target="_blank">Khanmigo</a> |
+            <a href="https://cloud.google.com/solutions/learnlm" target="_blank">LearnLM</a> |
+            <a href="https://notebooklm.google.com/" target="_blank">NotebookLM</a> |
+            <a href="https://presenton.ai/" target="_blank">Presenton</a> |
+            <a href="https://github.com/presenton/presenton" target="_blank">Presenton (GitHub)</a>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">Approaches observed in the market.</p>
+
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>Export-path-only pilot</strong> — feed in existing course PDFs, validate no further than PPTX/HTML/ZIP export, and measure model API cost per lesson to establish unit economics first.</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>Borrow the role-separation design</strong> — treat the teacher/assistant/four-classmate structure, with a meta-agent adjudicating turn order, as a reference model when designing recommendation or learning-dialogue scenarios.</p>
+            <p style="line-height:1.6;">3. <strong>Turn the vulnerability into a baseline</strong> — convert the three elements of CVE-2026-86259 (count of unauthenticated routes, validations gated on environment variables, metadata egress) into a review checklist for your own LLM services.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">Key findings</h3>
+            <ul class="key-findings">
+                <li><strong>The substance is real:</strong> Tsinghua THU-MAIC's OpenMAIC reached 39,290 stars, 6,102 forks and roughly 106 contributors within six months of its March 2026 release — an MIT-licensed TypeScript project (measured via API on 2026-09-28), with 13 releases and v1.1.1 as the latest.</li>
+                <li><strong>The output is different in kind:</strong> where competing tools produce material or slides, OpenMAIC generates <strong>the class itself</strong>, delivered by teacher, assistant and classmate agents. Four scene types (slides, quizzes, simulations, PBL) and 21 action types are orchestrated through a LangGraph state machine.</li>
+                <li><strong>There is evidence, but not a controlled trial:</strong> the paper (JCST 2026) is a pilot observation with 500+ students over three months and 100,000+ records. Satisfaction is item-level — 4.12, 4.03, 3.51 out of 5 — and the link between participation and scores is a correlation of r ≈ 0.34. With no comparison group, "better than a MOOC" cannot be claimed from this data.</li>
+                <li><strong>The weakest score points to the next problem:</strong> the lowest item is "feedback on strengths and weaknesses" at 3.51/5. Lesson generation is solved; <strong>individual diagnostic feedback is the open work</strong>.</li>
+                <li><strong>Security is a precondition for adoption:</strong> the unauthenticated SSRF in ≤1.0.0 (CVE-2026-86259) left 70 API routes open by default and could reach cloud metadata. It is fixed in 1.0.1, but September alone saw four security releases — <strong>production deployment is not viable without version pinning and release tracking</strong>.</li>
+                <li><strong>Secondary sources will mislead you:</strong> third-party overview pages list the license as AGPL, stars as 3,700, and validation as "700 students / 2 years / 84.1% satisfaction." Cross-check against the official repository and the original paper.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Selection Guide</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>If self-hosting, model choice and customization come first → OpenMAIC</strong><br>
+                Why: MIT license, 16-plus providers plus local paths via Ollama and Lemonade, swappable PostgreSQL/S3 persistence — on the condition that you establish a security baseline first.<br>
+                <strong>If you need teacher-controlled adoption in a school or institution → Khanmigo / Gemini for Education</strong><br>
+                Why: managed operation, admin controls and workspace integration, and a teacher-review flow (generate questions, then review and curate) that is already designed in.<br>
+                <strong>If an individual simply needs to absorb material quickly → the NotebookLM tier</strong><br>
+                Why: no classroom staging required; summaries, flashcards and audio overviews are sufficient.<br>
+                <strong>If all you need is an editable deck → Presenton (open source) / Gamma</strong><br>
+                Why: if the goal is PPTX or PDF output with no interactivity and no agents, OpenMAIC is overkill.
+            </p>
+        </div>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility Assessment</h3>
+            <div class="overall-credibility-score">8.4/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Overall:</strong> This report is built on primary sources. Repository metrics came from a direct GitHub REST API query, academic figures from the paper's own text, and security details from vulnerability databases plus the official release list.</p>
+                <p><strong>Main strengths:</strong> Where secondary coverage and official sources disagree — license, star count, validation scale, CVSS score — the disagreement is stated rather than smoothed over. Correlation is distinguished from causation, and self-report from objective measurement.</p>
+                <p><strong>Improvement priorities:</strong> (1) install and run the system to measure generation quality and real cost per lesson; (2) diff the paper's 2024 architecture against the v1.x agent set in code; (3) replace the qualitative tier scores with measured values.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">Key Terminology</h2>
+        <div style="background:#fafafa; padding:0.5rem 0.75rem; border-left:3px solid #e5e5e5;">
+            <div style="margin-bottom:0.4rem;"><strong>MOOC / MAIC</strong> — A MOOC is an open online course where many people watch the same recorded lecture. MAIC (Massive AI-empowered Course) turns that lecture into something AI agents deliver live, aiming to keep the scale while adding individual responsiveness.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Multi-agent orchestration</strong> — Having several AIs with different roles cooperate within one task, in a defined order and under defined conditions. Assigning separate teacher, assistant and classmate roles and deciding separately who speaks when is one example.</div>
+            <div style="margin-bottom:0.4rem;"><strong>LangGraph</strong> — An open-source framework that defines agent flow as a state machine (a graph). It manages "which step are we on" explicitly, which suits long conversations and work that pauses and resumes.</div>
+            <div style="margin-bottom:0.4rem;"><strong>PBL (project-based learning)</strong> — Learning by working through a task rather than by listening to a lecture. OpenMAIC generates collaborative projects with defined milestones as one of its scene types.</div>
+            <div style="margin-bottom:0.4rem;"><strong>SSRF (server-side request forgery)</strong> — An attack that tricks a server into sending requests, in the server's own name, to internal addresses. The point is to reach internal resources an outsider cannot touch directly, by using the server as a stepping stone.</div>
+            <div style="margin-bottom:0.4rem;"><strong>IMDS (instance metadata service)</strong> — The internal-only address a cloud virtual machine uses to look up its own configuration and temporary credentials. Reaching it via SSRF can leak cloud access, which is exactly why the vulnerability above mattered.</div>
+            <div style="margin-bottom:0.4rem;"><strong>MIT / AGPL-3.0 licenses</strong> — MIT is permissive: keep the copyright notice and you may use, modify and redistribute commercially, including in closed form. AGPL-3.0 is strong copyleft that requires source disclosure even when the software is offered as a network service. OpenMAIC moved from the latter to the former in v0.3.0.</div>
+            <div><strong>TTS / ASR</strong> — TTS reads text aloud (the AI teacher's lecture voice); ASR transcribes speech into text (recognizing what a student says). OpenMAIC supports both via external APIs and via self-hosted options (VoxCPM2, FunASR).</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> September 28, 2026 (including direct GitHub REST API queries)</p>
+            <ul>
+                <li>• <a href="https://github.com/THU-MAIC/OpenMAIC" target="_blank">THU-MAIC/OpenMAIC — official repository (stack, agents, deployment, license)</a></li>
+                <li>• <a href="https://api.github.com/repos/THU-MAIC/OpenMAIC" target="_blank">GitHub REST API — 39,290 stars / 6,102 forks / MIT / created 2026-03-11 (measured)</a></li>
+                <li>• <a href="https://github.com/THU-MAIC/OpenMAIC/releases" target="_blank">Release list — v0.1.0 (2026-03-26) to v1.1.1 (2026-09-26)</a></li>
+                <li>• <a href="https://github.com/THU-MAIC/OpenMAIC/releases/tag/v0.3.0" target="_blank">v0.3.0 release notes — MIT relicense, npm SDK published</a></li>
+                <li>• <a href="https://arxiv.org/abs/2409.03512" target="_blank">Yu et al., From MOOC to MAIC — arXiv:2409.03512 (2024-09)</a></li>
+                <li>• <a href="https://arxiv.org/html/2409.03512v1" target="_blank">Same paper, full text (HTML) — four archetypes, 4.12/4.03/3.51, r=0.341–0.346, stated limitations</a></li>
+                <li>• <a href="https://link.springer.com/article/10.1007/s11390-025-6000-0" target="_blank">JCST published version — DOI 10.1007/s11390-025-6000-0 (2026)</a></li>
+                <li>• <a href="https://arxiv.org/abs/2508.17310" target="_blank">Wang et al., Handling Students Dropouts — CPADP up to 95.4%, 3,000+ students</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2503.01694" target="_blank">Student-AI Interaction: Cluster Analysis of Engagement Profiles</a></li>
+                <li>• <a href="https://vuldb.com/cve/CVE-2026-86259" target="_blank">VulDB — CVE-2026-86259 (OpenMAIC ≤1.0.0 SSRF)</a></li>
+                <li>• <a href="https://www.redpacketsecurity.com/cve-alert-cve-2026-86259-thu-maic-openmaic/" target="_blank">CVE alert — THU-MAIC OpenMAIC</a></li>
+                <li>• <a href="https://blog.khanacademy.org/new-ai-tools-bring-interactive-diagrams-and-targeted-practice-thanks-to-khan-academys-partnership-with-google-org/" target="_blank">Khan Academy — new Gemini-powered tools (2026 back-to-school)</a></li>
+                <li>• <a href="https://blog.google/products-and-platforms/products/education/khan-academy-back-to-school/" target="_blank">Google — Khan Academy collaboration and Gemini for Education</a></li>
+                <li>• <a href="https://cloud.google.com/solutions/learnlm" target="_blank">Google Cloud — LearnLM</a></li>
+                <li>• <a href="https://github.com/presenton/presenton" target="_blank">Presenton — open-source presentation generator (Tier 4 comparator)</a></li>
+                <li>• <a href="https://www.mordorintelligence.com/industry-reports/ai-in-education-market" target="_blank">Mordor Intelligence — AI in Education: $6.9B (2025) → $41.01B (2030), CAGR 42.83%</a></li>
+                <li>• <a href="https://www.researchandmarkets.com/reports/5896034/ai-in-education-market-report" target="_blank">Research and Markets — $10.6B (2026) → $42.48B (2030), CAGR 41.5%</a></li>
+                <li>• <a href="https://www.grandviewresearch.com/industry-analysis/ai-tutors-market-report" target="_blank">Grand View Research — AI Tutors: $2.7B (2026) → $17.7B (2033), CAGR 30.5%</a></li>
+            </ul>
+            <p style="margin-top:0.5rem; font-size:0.7rem; color:#808080;"><em>Note: third-party overview sites (openmaic.io and similar) were not used as evidence because they lag — listing the license as AGPL-3.0 and the star count as 3,700. Market sizes come from the public summaries of paid reports; their methodology is unverified.</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('tierChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['Generates class delivery', 'Depth of interactivity', 'Self-hosting & model choice', 'Institutional integration', 'Operational maturity'],
+        datasets: [
+            { label: 'Tier 1 OpenMAIC', data: [95, 90, 95, 40, 45],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'Tier 2 NotebookLM tier', data: [25, 45, 30, 50, 85],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'Tier 3 Khanmigo / Gemini for Education', data: [45, 70, 15, 95, 90],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'Tier 4 Presenton / Gamma', data: [35, 15, 70, 35, 80],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'Capability by tier (qualitative assessment by this report, out of 100)', font:{ size:12 } } } }
+});
+
+new Chart(document.getElementById('marketChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Mordor: AI in Education', 'R&M: AI in Education', 'Grand View: AI Tutors'],
+        datasets: [
+            { label: 'Base year (USD billions)', data: [6.90, 10.60, 2.70],
+              backgroundColor:'rgba(59,130,246,0.7)' },
+            { label: 'Forecast year (USD billions)', data: [41.01, 42.48, 17.70],
+              backgroundColor:'rgba(249,115,22,0.7)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'USD billions' } } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'Mordor 2025→2030 · R&M 2026→2030 · Grand View 2026→2033 (different base years and market definitions)', font:{ size:11 } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
