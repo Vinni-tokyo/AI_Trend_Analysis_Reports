@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>과업 지향 대화 시스템(TOD) 심층 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+    --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+    --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; font-weight: 400; }
+.container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+.header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+.back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+.back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.language-switcher { display: flex; gap: 0.3rem; }
+.lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+.lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+.header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+.header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+.header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+.content { padding: 1.5rem; }
+.section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+.section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+.subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+.executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+.key-findings { list-style: none; }
+.key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+.key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.72rem; }
+th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+th { background: #fafafa; font-weight: 600; }
+tr:hover { background: #fafafa; }
+.chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+.sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.72rem; }
+.sources ul { list-style: none; }
+.sources li { padding: 0.25rem 0; }
+.sources a { color: #0052b8; text-decoration: none; }
+.trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+.trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+.trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+.trend-card p { font-size: 0.9rem; line-height: 1.6; }
+.related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+.related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+.related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+.related-links a:hover { text-decoration: underline; }
+.credibility-score { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 0.6rem 0.9rem; margin: 0.75rem 0; font-size: 0.82rem; }
+.credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.credibility-score-label { font-weight: 600; color: #92400e; }
+.credibility-score-value { font-weight: 700; color: #b45309; }
+.credibility-score-details { color: #78350f; line-height: 1.5; }
+.overall-credibility { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 1rem; margin-top: 1rem; }
+.overall-credibility h3 { font-size: 1rem; color: #92400e; margin-bottom: 0.5rem; }
+.overall-credibility-score { font-size: 1.6rem; font-weight: 700; color: #b45309; margin-bottom: 0.5rem; }
+.overall-credibility-details p { font-size: 0.85rem; color: #78350f; margin-bottom: 0.3rem; }
+@media (max-width: 768px) {
+    .trend-grid { grid-template-columns: 1fr; }
+    .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .header { padding-top: 1rem; text-align: center; }
+    .language-switcher { justify-content: center; }
+    .back-btn { order: -1; }
+}
+@media (max-width: 480px) {
+    .header-actions { flex-direction: column; align-items: stretch; }
+    .language-switcher { width: 100%; justify-content: center; }
+    .back-btn { width: 100%; justify-content: center; }
+}
+@media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+.interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+.interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+.interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+.interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+.like-section { display: flex; align-items: center; gap: 0.75rem; }
+.like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+.like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+.like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+.like-count { font-size: 0.9rem; color: #666; }
+.comment-form { margin-bottom: 1.5rem; }
+.comment-input-group { margin-bottom: 0.75rem; }
+.comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+.comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+.comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+.comment-input-group textarea { min-height: 80px; resize: vertical; }
+.comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+.comment-submit-btn:hover { background: #555; }
+.comments-list { margin-top: 1.5rem; }
+.comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+.comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+.comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+.comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+.comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+.comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+@media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← 홈</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='task-oriented-dialogue-systems-20260930-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='task-oriented-dialogue-systems-20260930-ko.html'" class="lang-btn active">한국어</button>
+                <button onclick="window.location.href='task-oriented-dialogue-systems-20260930-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>과업 지향 대화 시스템(TOD) 심층 분석<br>기술 구조 · 글로벌 시스템 · 사업 가능성</h1>
+        <div class="subtitle">40년 된 설계가 LLM 시대에 다시 표준이 되는 이유</div>
+        <div class="meta">보고서 작성일: 2026년 9월 30일 | 심층 보고서 | ID: TR-20260930-001</div>
+    </div>
+
+    <div class="content">
+
+    <!-- ============ SECTION 1 ============ -->
+    <section id="trends" class="section">
+        <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+        <h3 class="subsection-title">1. 파이프라인의 해체와 재조립: LLM이 양 끝을 흡수하고, 가운데는 코드로 남는다</h3>
+        <p><strong>현황:</strong> 과업 지향 대화(TOD)는 전통적으로 <strong>NLU → DST → Policy → NLG</strong> 네 부품으로 나뉘어 왔습니다. LLM은 이 중 양 끝단인 자연어 이해(NLU)와 생성(NLG)을 사실상 흡수했습니다. 그러나 가운데 두 부품 — <strong>대화 상태 추적(DST)</strong>과 <strong>대화 정책(Policy)</strong> — 은 여전히 결정적 코드로 남아 있습니다. arXiv에 공개된 다수 연구는 LLM 기반 시스템이 "상태 추적, 개인화, 검색, 도구·API 호출, 메모리를 위한 외부 모듈"과 결합되는 구조를 채택한다고 기술합니다 (출처: <a href="https://www.emergentmind.com/topics/llm-based-dialogue-agents" target="_blank">LLM-Based Dialogue Agents</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>LLM이 대체한 영역</h4>
+                <p>• <strong>의도 분류(NLU):</strong> 규칙·분류 모델 → 프롬프트 기반 분류<br>
+                • <strong>응답 생성(NLG):</strong> 템플릿 → 계산 결과를 설명하는 생성<br>
+                • <strong>도메인 이전:</strong> 미학습 도메인에 대한 일반화 능력 향상<br>
+                • <strong>다국어:</strong> 언어별 모델 없이 단일 모델로 처리</p>
+            </div>
+            <div class="trend-card">
+                <h4>코드로 남는 영역</h4>
+                <p>• <strong>DST:</strong> 턴을 넘는 슬롯·목표 상태의 결정적 보존<br>
+                • <strong>Policy:</strong> 물을지 답할지, 확인할지 진행할지<br>
+                • <strong>도구 호출:</strong> 외부 API·DB 조회의 검증 가능한 실행<br>
+                • <strong>가드레일:</strong> 재현 가능해야 하는 안전·규정 판단</p>
+            </div>
+        </div>
+
+        <p><strong>전망:</strong> 2026년 프로덕션 시스템은 <strong>라우터 구조</strong>를 일반적으로 채택합니다. 일상적 턴은 저렴한 모델로 처리하고 복잡한 턴만 상위 모델로 에스컬레이션하는 방식입니다 (출처: <a href="https://futureagi.com/blog/llm-agents-applications-guide-2025/" target="_blank">LLM Agents 2026</a>). 이는 비용과 지연시간을 동시에 관리하려는 실무적 대응이며, 정책 판단이 코드에 남아야 라우팅 자체가 성립합니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 학술 문헌과 산업 관측이 일치하며, 아키텍처 서술이 구체적<br>
+                <strong>개선점:</strong> "라우터 구조 일반화"의 채택률을 보여주는 정량 조사는 부재
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://arxiv.org/abs/2608.18085" target="_blank">Persona-Guided LLM Agents for TOD</a> |
+            <a href="https://arxiv.org/pdf/2507.04841" target="_blank">Spec-TOD</a> |
+            <a href="https://arxiv.org/pdf/2505.14299" target="_blank">Domain-Independent Multi-Agent Framework</a>
+        </div>
+
+        <h3 class="subsection-title">2. 고객지원 에이전트로의 자본 집중: Sierra 158억 달러, Decagon 45억 달러</h3>
+        <p><strong>현황:</strong> TOD의 상업적 중심축은 <strong>고객지원 자동화</strong>로 이동했고, 자본 유입 규모가 카테고리를 재정의하고 있습니다. Sierra는 2026년 5월 GV와 Tiger Global이 주도한 9억 5천만 달러 시리즈 E를 통해 <strong>158억 달러 기업가치</strong>를 기록했으며, 누적 조달액은 15억 8,500만 달러입니다. 매출은 2024년 말 2,600만 달러 → 2025년 말 약 1억 3천만 달러 → 2026년 5월 <strong>2억 달러 ARR</strong>로 성장했습니다 (출처: <a href="https://sacra.com/c/sierra/" target="_blank">Sacra — Sierra</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>주요 기업 밸류에이션</h4>
+                <p>• <strong>Sierra:</strong> 158억 달러 (2026.5), ARR 2억 달러<br>
+                • <strong>Decagon:</strong> 45억 달러 (2026.1), ARR 약 3,500만 달러<br>
+                • <strong>Parloa:</strong> 30억 달러, 누적 조달 5.6억 달러 초과<br>
+                • <strong>Cognigy:</strong> NICE가 약 9.55억 달러에 인수 (2025)</p>
+            </div>
+            <div class="trend-card">
+                <h4>주목할 지표 괴리</h4>
+                <p>• <strong>Decagon:</strong> 매출 대비 밸류에이션 배수가 <strong>약 128배</strong><br>
+                • <strong>Cognigy 인수:</strong> 애널리스트들이 <strong>25배 프리미엄</strong>으로 평가<br>
+                • <strong>누적 조달 1위:</strong> Sierra 약 16억 달러<br>
+                • <strong>해석:</strong> 현재 매출이 아니라 <strong>교체 대상 시장</strong>에 베팅</p>
+            </div>
+        </div>
+
+        <p><strong>전망:</strong> 이 배수는 지원 인력 비용 자체를 대체 대상으로 보는 관점에서만 정당화됩니다. 즉 투자자들은 소프트웨어 시장이 아니라 <strong>인건비 시장</strong>의 일부를 겨냥하고 있습니다. 바꿔 말하면, 실측 성과가 기대에 못 미칠 경우 조정 폭도 그만큼 큽니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">9.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 구체적 금액·시점·투자자가 명시된 1차 추적 데이터<br>
+                <strong>개선점:</strong> ARR 수치는 비공개 기업 추정치이므로 오차 가능성 존재
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://sierra.ai/" target="_blank">Sierra</a> |
+            <a href="https://decagon.ai/" target="_blank">Decagon</a> |
+            <a href="https://www.parloa.com/" target="_blank">Parloa</a> |
+            <a href="https://www.cognigy.com/" target="_blank">Cognigy</a> |
+            <a href="https://sacra.com/c/decagon/" target="_blank">Sacra — Decagon</a>
+        </div>
+
+        <h3 class="subsection-title">3. 플랫폼 시장의 4계층 분화: 하이퍼스케일러 · 전문 · 오픈소스</h3>
+        <p><strong>현황:</strong> 구축형 플랫폼 시장은 <strong>생태계 종속성</strong>을 축으로 뚜렷하게 분화했습니다. Google Dialogflow CX는 시각적 상태 기계로 복잡한 멀티턴 흐름의 감사·디버깅에 강점을 보이고, Amazon Lex는 AWS Lambda/Connect 통합이 이미 구축된 음성 워크로드에 적합합니다. Microsoft Copilot Studio는 M365·Teams·Dynamics 365 환경에 최적화되어 있습니다 (출처: <a href="https://rasa.com/compare/copilot-studio-vs-dialogflow-vs-rasa" target="_blank">Rasa 비교 분석</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>선택을 가르는 기준</h4>
+                <p>• <strong>데이터 주권:</strong> 금융·국방의 에어갭 요구 → Rasa 자체 호스팅<br>
+                • <strong>기존 생태계:</strong> AWS → Lex, M365 → Copilot Studio<br>
+                • <strong>흐름 복잡도:</strong> 다분기 IVR → Dialogflow CX 시각 편집<br>
+                • <strong>범위:</strong> 전사 다중 에이전트 → Kore.ai</p>
+            </div>
+            <div class="trend-card">
+                <h4>가격 구조 (2026년 1월 기준)</h4>
+                <p>• <strong>Dialogflow CX:</strong> 요청당 생성 과금 + 1,000 이벤트당 세션 저장 과금<br>
+                • <strong>Kore.ai:</strong> 맞춤 엔터프라이즈 가격, 일반적 도입 규모 <strong>연 30만 달러 이상</strong><br>
+                • <strong>Rasa:</strong> 오픈소스 기반, 비용이 인프라·인력으로 이전<br>
+                • <strong>시사점:</strong> 토큰 과금이 대화 설계를 직접 제약</p>
+            </div>
+        </div>
+
+        <p><strong>전망:</strong> 요청당 과금 구조는 "턴 수를 줄이는 설계"에 경제적 인센티브를 부여합니다. 불필요한 재질문 한 번이 비용이자 이탈 요인이 되는 구조이며, 이는 <strong>DST 품질이 곧 단가</strong>라는 뜻입니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 가격 구조와 시점이 명시되어 실무 판단에 직접 활용 가능<br>
+                <strong>개선점:</strong> 주요 출처가 경쟁사(Rasa) 블로그이므로 편향 가능성 — 각 벤더 공식 문서 교차 확인 권장
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://cloud.google.com/dialogflow" target="_blank">Google Dialogflow CX</a> |
+            <a href="https://aws.amazon.com/lex/" target="_blank">Amazon Lex</a> |
+            <a href="https://www.microsoft.com/en-us/microsoft-copilot/microsoft-copilot-studio" target="_blank">Copilot Studio</a> |
+            <a href="https://rasa.com/" target="_blank">Rasa</a> |
+            <a href="https://kore.ai/" target="_blank">Kore.ai</a>
+        </div>
+
+        <h3 class="subsection-title">4. 도입률과 실측 ROI의 격차: 66% 도입, 23%만 유의미한 성과</h3>
+        <p><strong>현황:</strong> 도입은 빠르지만 <strong>검증된 성과는 뒤처집니다.</strong> Salesforce 조사에 따르면 AI 에이전트를 운영 중인 서비스 조직은 2025년 39%에서 <strong>66%</strong>로 증가했고, Gartner는 CX 리더의 <strong>91%</strong>가 경영진으로부터 배포 압박을 받고 있다고 보고합니다. 그러나 AI 에이전트로부터 <strong>유의미한 ROI를 보고한 조직은 약 23%</strong>에 그칩니다 (출처: <a href="https://www.mavenagi.com/blog/ai-agent-adoption-statistics" target="_blank">AI Agent Statistics 2026</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>문의 자동해결률(Deflection)의 실제</h4>
+                <p>• <strong>벤더 주장:</strong> Decagon 80%<br>
+                • <strong>플랫폼 중앙값:</strong> Zendesk 엔터프라이즈 <strong>41.2%</strong><br>
+                • <strong>균형 잡힌 관측:</strong> 도입 1년차 45~60%, 성숙 단계 65~75%<br>
+                • <strong>시사점:</strong> 벤더 수치와 현장 중앙값의 격차가 약 2배</p>
+            </div>
+            <div class="trend-card">
+                <h4>시간에 따른 ROI 곡선</h4>
+                <p>• <strong>1년차:</strong> 평균 ROI 41%<br>
+                • <strong>2년차:</strong> 87%<br>
+                • <strong>3년차:</strong> 124% 초과<br>
+                • <strong>회수기간:</strong> 중앙값 5.4개월 (Forrester TEI 기준)<br>
+                • <strong>산업별 도입률:</strong> 통신 95% · 은행 92% · 헬스케어 79%</p>
+            </div>
+        </div>
+
+        <p><strong>전망:</strong> 이 곡선이 시사하는 바는 명확합니다. <strong>TOD는 1년차에 손익분기를 넘기는 사업이 아닙니다.</strong> 초기 ROI 41%는 대부분 도입 비용과 운영 학습에 소진되며, 실질적 수익은 2~3년차에 발생합니다. 단기 성과를 전제로 한 도입 결정은 2년 내 철수로 이어질 위험이 높습니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">8.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 복수 출처(Salesforce·Gartner·Forrester·Zendesk)가 교차 검증되며, 낙관·비관 수치를 모두 제시<br>
+                <strong>개선점:</strong> 집계 블로그를 경유한 2차 인용이 포함되어 원 조사 보고서 직접 확인 필요
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://www.mavenagi.com/blog/customer-service-automation-statistics" target="_blank">Customer Service Automation Statistics</a> |
+            <a href="https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points" target="_blank">AI Agent Adoption 2026</a> |
+            <a href="https://www.zendesk.com/" target="_blank">Zendesk</a>
+        </div>
+
+        <h3 class="subsection-title">5. 평가 방법론의 공백: 벤치마크는 정확도를, 현장은 목적지 도달을 본다</h3>
+        <p><strong>현황:</strong> TOD 연구의 표준 벤치마크는 <strong>MultiWOZ</strong>와 <strong>Schema-Guided Dialogue(SGD)</strong>입니다. SGD는 16,000건 이상의 대화, 16개 도메인 26개 서비스로 구성되며, 테스트셋에 <strong>학습하지 않은 도메인</strong>을 포함시켜 일반화 능력을 측정합니다. MultiWOZ는 Wizard-of-Oz 방식으로 수집된 인간 대 인간 대화이며, 2.4 버전에서 검증·테스트셋을 재주석해 평가 정확도를 개선했습니다 (출처: <a href="https://github.com/yukyunglee/Awesome-Dialogue-State-Tracking" target="_blank">Awesome DST</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>벤치마크가 재는 것</h4>
+                <p>• <strong>Joint Goal Accuracy:</strong> 슬롯 상태 전체가 정답과 일치하는 비율<br>
+                • <strong>Slot F1:</strong> 개별 슬롯 추출 정확도<br>
+                • <strong>도메인 일반화:</strong> 미학습 서비스 대응력(SGD)<br>
+                • <strong>성격:</strong> <strong>모델 능력</strong>의 측정</p>
+            </div>
+            <div class="trend-card">
+                <h4>현장이 필요로 하는 것</h4>
+                <p>• <strong>과제 성공률:</strong> N턴 내 목적을 달성했는가<br>
+                • <strong>대화 비용:</strong> 몇 턴 걸렸나, 몇 번 되물었나<br>
+                • <strong>이관율:</strong> 사람에게 넘어간 비율과 그 사유<br>
+                • <strong>성격:</strong> <strong>서비스 성과</strong>의 측정</p>
+            </div>
+        </div>
+
+        <p><strong>전망:</strong> 이 공백은 실무에서 반복적으로 관찰됩니다. 상태 추적 정확도가 높아도 <strong>대화가 목적지에 도달하지 못하는</strong> 사례가 존재하며, 기존 안전성·정확도 중심 게이트는 이를 탐지하지 못합니다. PARADISE 계열의 <strong>과제 성공 + 대화 비용</strong> 이중 축 평가를 운영 지표로 편입하는 것이 향후 1~2년의 실질적 과제입니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">7.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 데이터셋 규모·구성이 1차 문헌으로 확인되며, 평가 축 구분이 명확<br>
+                <strong>개선점:</strong> 검색 결과의 문헌이 2020~2023년에 집중되어 2026년 최신 벤치마크 동향은 미반영 — 본 절의 "공백" 주장은 <strong>필자 분석</strong>임을 명시
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://github.com/budzianowski/multiwoz" target="_blank">MultiWOZ</a> |
+            <a href="https://github.com/google-research-datasets/dstc8-schema-guided-dialogue" target="_blank">Schema-Guided Dialogue</a> |
+            <a href="https://arxiv.org/pdf/2310.14970" target="_blank">Towards LLM-driven DST</a>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 2 ============ -->
+    <section id="competitive" class="section">
+        <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+        <h3 class="subsection-title">4계층 시장 구조</h3>
+        <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">TOD 시장은 <strong>구매자가 무엇을 사는가</strong>를 기준으로 네 계층으로 나뉩니다. 최상위 계층은 소프트웨어가 아니라 <strong>성과</strong>를 판매하며, 이것이 밸류에이션 격차의 근거입니다.</p>
+
+        <table>
+            <thead>
+                <tr><th>계층</th><th>대표 기업</th><th>판매 대상</th><th>과금 방식</th><th>주 고객</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>T1. 수직통합 에이전트</strong></td><td>Sierra, Decagon, Parloa</td><td>해결된 문의(성과)</td><td>해결 건당 과금 중심</td><td>대규모 지원 조직</td></tr>
+                <tr><td><strong>T2. 하이퍼스케일러</strong></td><td>Dialogflow CX, Amazon Lex, Copilot Studio</td><td>구축 도구 + 생태계</td><td>요청·세션 단위</td><td>기존 클라우드 사용 기업</td></tr>
+                <tr><td><strong>T3. 엔터프라이즈 전문</strong></td><td>Kore.ai, Cognigy(NICE), Yellow.ai</td><td>전사 에이전트 플랫폼</td><td>연 계약 (30만 달러+)</td><td>대기업 CX·업무 자동화</td></tr>
+                <tr><td><strong>T4. 오픈소스·자체호스팅</strong></td><td>Rasa</td><td>완전한 통제권</td><td>라이선스 + 자체 운영</td><td>금융·국방·규제 산업</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">시장 동향 5가지</h3>
+        <ul class="key-findings">
+            <li><strong>성과 기반 과금으로의 이동:</strong> T1 계층은 좌석당(seat) 과금이 아니라 해결 건당 과금을 채택해, 소프트웨어 예산이 아닌 인건비 예산을 겨냥합니다.</li>
+            <li><strong>플랫폼의 수직 통합:</strong> NICE의 Cognigy 인수(약 9.55억 달러)는 컨택센터 사업자가 대화 엔진을 내재화하는 흐름을 보여줍니다.</li>
+            <li><strong>음성의 재부상:</strong> Parloa가 음성 전문으로 1년 내 밸류에이션을 3배(30억 달러)로 올린 사례는 텍스트 이후의 성장축이 음성임을 시사합니다.</li>
+            <li><strong>데이터 주권의 가격화:</strong> 에어갭·온프레미스 요구가 Rasa 계열의 존립 근거이며, 규제 산업에서는 클라우드 편의성보다 우선합니다.</li>
+            <li><strong>기대와 성과의 괴리 확대:</strong> 도입률 66% 대비 유의미한 ROI 23%라는 격차는 향후 2년간 벤더 선별과 구조조정의 동인이 됩니다.</li>
+        </ul>
+
+        <h3 class="subsection-title">주요 플랫폼 역량 비교</h3>
+        <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+
+        <h3 class="subsection-title">시장 규모 전망</h3>
+        <p style="margin-bottom: 0.5rem; color: #4a4a4a; font-size: 0.9rem;">조사기관별로 정의 범위가 달라 수치에 편차가 있습니다. 아래는 복수 출처의 병렬 제시입니다.</p>
+        <div class="chart-container"><canvas id="marketChart"></canvas></div>
+        <p style="font-size: 0.8rem; color: #808080; margin-top: 0.5rem;">주: 대화형 AI 전체 시장은 2026년 기준 약 161억~180억 달러로 추정되며 CAGR 23~26% 구간에서 전망됩니다. 엔터프라이즈 플랫폼 세그먼트는 2026년 155.4억 달러에서 2030년 495.3억 달러(CAGR 33.6%)로 더 가파른 성장이 예측됩니다.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 계층 구분이 과금 방식이라는 관찰 가능한 기준에 근거하며, 시장 규모는 복수 기관 병렬 제시로 편차를 은폐하지 않음<br>
+                <strong>개선점:</strong> 4계층 분류 자체는 <strong>본 보고서의 분석 틀</strong>이며 업계 표준 분류가 아님
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 3 ============ -->
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">활용 아이디어</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근을 소개합니다.</p>
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>단일 도메인 파일럿</strong> - 문의 유형 상위 3개에 한정해 TOD를 적용하고 자동해결률을 실측한 뒤 범위를 넓힙니다.</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>상태 추적의 코드 분리</strong> - 슬롯·목표 상태를 프롬프트가 아닌 결정적 코드로 보관해 재현성과 디버깅 가능성을 확보합니다.</p>
+            <p style="line-height: 1.6;">3. <strong>과제 성공 지표 도입</strong> - 정확도 중심 평가에 N턴 내 목적 달성률과 재질문률을 추가해 운영 지표로 삼습니다.</p>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 4 ============ -->
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">종합 요약</h2>
+        <div class="executive-summary">
+            <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 요점</h3>
+            <ul class="key-findings">
+                <li><strong>구조는 되돌아왔다:</strong> LLM이 NLU·NLG를 흡수했지만 DST와 Policy는 코드로 남았습니다. 40년 된 4부품 설계가 여전히 유효한 골격입니다.</li>
+                <li><strong>자본은 성과를 산다:</strong> Sierra 158억 달러·Decagon 45억 달러라는 배수는 소프트웨어가 아니라 인건비 시장을 겨냥한 베팅입니다.</li>
+                <li><strong>격차가 핵심 리스크:</strong> 도입 66% 대비 유의미한 ROI 23%. 벤더 주장 자동해결률 80%와 플랫폼 중앙값 41.2%의 차이가 실체입니다.</li>
+                <li><strong>수익은 2~3년차:</strong> ROI는 1년차 41% → 2년차 87% → 3년차 124%로 상승합니다. 단기 성과 전제의 도입은 실패 확률이 높습니다.</li>
+                <li><strong>평가에 공백이 있다:</strong> 벤치마크는 상태 추적 정확도를 재지만, 현장은 "대화가 목적지에 도달했는가"를 재야 합니다.</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">선택 가이드</h3>
+            <p style="font-size: 0.95rem; line-height: 1.8;">
+                <strong>대규모 지원 조직, 빠른 성과 필요 → T1 수직통합 (Sierra·Decagon)</strong><br>
+                이유: 구축 부담 없이 해결 건당 과금으로 시작 가능. 단 종속성과 단가 상승 리스크를 계약에 명시할 것<br>
+                <strong>이미 특정 클라우드에 투자 → T2 하이퍼스케일러</strong><br>
+                이유: AWS면 Lex, M365면 Copilot Studio. 통합 비용이 가장 낮음<br>
+                <strong>전사 다중 에이전트 전략 → T3 엔터프라이즈 전문 (Kore.ai)</strong><br>
+                이유: 연 30만 달러 이상 규모에서 단일 거버넌스의 이점이 발생<br>
+                <strong>금융·국방·의료 등 데이터 주권 필수 → T4 오픈소스 (Rasa)</strong><br>
+                이유: 에어갭 운영이 가능한 사실상 유일한 선택지. 단 인력 비용으로 이전됨
+            </p>
+        </div>
+        <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가: 긍정적이되 조건부</strong> — 기술적 성숙도와 자본 유입은 견고하나, 실측 ROI가 기대에 미치지 못하는 구간이 2~3년 지속될 전망입니다. 사업 기회는 <strong>수평적 범용 챗봇</strong>이 아니라 <strong>도메인 특화 + 검증 가능한 성과 지표</strong>를 갖춘 영역에 있습니다.</p>
+
+        <div class="overall-credibility">
+            <h3>📋 종합 신뢰도 평가</h3>
+            <div class="overall-credibility-score">8.0/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>종합 평가:</strong> 자금조달·시장규모·도입률은 복수 1차 출처로 교차 검증되었으며, 낙관·비관 수치를 병렬 제시해 균형을 확보했습니다.</p>
+                <p><strong>주요 강점:</strong> 구체적 금액과 시점 명시, 벤더 주장과 플랫폼 중앙값의 격차 노출, 조사기관별 편차 은폐 없음</p>
+                <p><strong>개선 우선순위:</strong> ① 집계 블로그 경유 2차 인용을 원 보고서로 대체 ② 비공개 기업 ARR 추정치의 오차 범위 명시 ③ 2026년 최신 벤치마크 동향 보강</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 5 ============ -->
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+        <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.85rem;">
+            <div style="margin-bottom: 0.4rem;"><strong>과업 지향 대화(TOD, Task-Oriented Dialogue)</strong> - 예약·문의·상담처럼 <strong>목적이 정해진</strong> 대화를 처리하는 시스템. 잡담형 대화와 달리 "완료했는가"로 성공을 판정합니다.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>대화 상태 추적(DST, Dialogue State Tracking)</strong> - 여러 턴에 걸쳐 확정된 정보(목적지·날짜·인원 등)를 기억하고 갱신하는 부품. 사람으로 치면 "지금까지 들은 내용을 적어 두는 메모"에 해당합니다.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>대화 정책(Dialogue Policy)</strong> - 다음에 무엇을 할지 결정하는 부품. 더 물을지, 확인할지, 답을 줄지를 판단합니다.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>자동해결률(Deflection Rate)</strong> - 사람 상담원에게 넘기지 않고 AI가 끝낸 문의의 비율. 벤더 마케팅에서 가장 자주 인용되며 정의가 제각각이라 비교 시 주의가 필요합니다.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Joint Goal Accuracy</strong> - DST 평가 지표. 한 턴에서 <strong>모든</strong> 슬롯 값이 정답과 일치해야 1점이므로, 하나만 틀려도 0점인 엄격한 척도입니다.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>성과 기반 과금(Outcome-based pricing)</strong> - 좌석 수나 호출 수가 아니라 <strong>해결된 건수</strong>에 과금하는 방식. 공급자가 품질 리스크를 함께 부담하는 구조입니다.</div>
+            <div><strong>MultiWOZ / SGD</strong> - TOD 연구의 표준 데이터셋. SGD는 16개 도메인 26개 서비스, 16,000건 이상의 대화로 구성되며 테스트셋에 미학습 도메인을 포함합니다.</div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 6 ============ -->
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>참고 자료</h3>
+            <p><strong>데이터 수집일:</strong> 2026년 9월 30일</p>
+            <ul>
+                <li>• <a href="https://sacra.com/c/sierra/" target="_blank">Sacra — Sierra revenue, valuation &amp; funding</a></li>
+                <li>• <a href="https://sacra.com/c/decagon/" target="_blank">Sacra — Decagon revenue, valuation &amp; funding</a></li>
+                <li>• <a href="https://research.contrary.com/company/sierra" target="_blank">Contrary Research — Sierra Business Breakdown</a></li>
+                <li>• <a href="https://valueaddvc.com/blog/decagon-valuation-2026-4-5b-35m-arr-ai-customer-service-boom" target="_blank">Decagon Valuation 2026: $4.5B, $35M ARR</a></li>
+                <li>• <a href="https://newmarketpitch.com/blogs/news/conversational-ai-top-startups-valuation" target="_blank">Top Conversational AI Startups by Valuation (2026)</a></li>
+                <li>• <a href="https://www.grandviewresearch.com/industry-analysis/conversational-ai-market-report" target="_blank">Grand View Research — Conversational AI Market 2026-2033</a></li>
+                <li>• <a href="https://market.us/report/enterprise-conversational-ai-platform-market/" target="_blank">Market.us — Enterprise Conversational AI Platform Market</a></li>
+                <li>• <a href="https://www.thebusinessresearchcompany.com/report/enterprise-conversational-artificial-intelligence-ai-platform-market-report" target="_blank">The Business Research Company — Enterprise Conversational AI Platform 2026-2030</a></li>
+                <li>• <a href="https://www.mavenagi.com/blog/ai-agent-adoption-statistics" target="_blank">15 AI Agent Statistics for Enterprise Adoption, ROI &amp; Customer Service (2026)</a></li>
+                <li>• <a href="https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points" target="_blank">AI Agent Adoption 2026: 120+ Enterprise Data Points</a></li>
+                <li>• <a href="https://rasa.com/compare/copilot-studio-vs-dialogflow-vs-rasa" target="_blank">Rasa — Copilot Studio vs Dialogflow vs Rasa (2026)</a></li>
+                <li>• <a href="https://rasa.com/blog/kore-ai-alternatives" target="_blank">Rasa — Kore.ai Alternatives for Enterprise Conversational AI (2026)</a></li>
+                <li>• <a href="https://futureagi.com/blog/llm-agents-applications-guide-2025/" target="_blank">LLM Agents 2026: 5 Types, Applications, and Evaluation Stack</a></li>
+                <li>• <a href="https://www.emergentmind.com/topics/llm-based-dialogue-agents" target="_blank">Emergent Mind — LLM-Based Dialogue Agents</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2507.04841" target="_blank">arXiv — Spec-TOD: Specialized Instruction-Tuned LLM Framework for TOD</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2505.14299" target="_blank">arXiv — Empowering LLMs in Task-Oriented Dialogues</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2310.14970" target="_blank">arXiv — Towards LLM-driven Dialogue State Tracking</a></li>
+                <li>• <a href="https://github.com/yukyunglee/Awesome-Dialogue-State-Tracking" target="_blank">GitHub — Awesome Dialogue State Tracking</a></li>
+            </ul>
+            <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #808080;"><em>주: 본 보고서의 4계층 시장 분류와 평가 공백 분석은 필자의 분석 틀이며 업계 표준 분류가 아닙니다. 비공개 기업의 ARR은 추정치입니다.</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx1 = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx1, {
+    type: 'radar',
+    data: {
+        labels: ['구축 용이성', '유연성·통제', '엔터프라이즈 기능', '생태계 통합', '데이터 주권'],
+        datasets: [
+            { label: 'Dialogflow CX', data: [85, 65, 80, 90, 45], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+            { label: 'Copilot Studio', data: [88, 55, 82, 95, 40], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+            { label: 'Kore.ai', data: [70, 75, 92, 70, 60], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)' },
+            { label: 'Rasa', data: [45, 95, 70, 50, 98], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100 } },
+        plugins: { title: { display: true, text: '주요 플랫폼 역량 비교 (100점 척도 · 본 보고서 평가)' } } }
+});
+
+const ctx2 = document.getElementById('marketChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: ['대화형 AI 전체 (2026)', '대화형 AI 전체 (2033)', '엔터프라이즈 플랫폼 (2026)', '엔터프라이즈 플랫폼 (2030)'],
+        datasets: [{
+            label: '시장 규모 (십억 달러)',
+            data: [17.7, 78.9, 15.54, 49.53],
+            backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(59, 130, 246, 0.9)', 'rgba(249, 115, 22, 0.7)', 'rgba(249, 115, 22, 0.9)'],
+            borderColor: ['rgb(59, 130, 246)', 'rgb(59, 130, 246)', 'rgb(249, 115, 22)', 'rgb(249, 115, 22)'],
+            borderWidth: 1
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: '십억 달러(USD)' } } },
+        plugins: { title: { display: true, text: '시장 규모 전망 — 전체 CAGR 23.8% · 엔터프라이즈 CAGR 33.6%' } } }
+});
+</script>
+
+<div class="interaction-section">
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments &amp; Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/interaction.js"></script>
+</body>
+</html>

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task-Oriented Dialogue Systems: A Deep Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+    --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+    --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; font-weight: 400; }
+.container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+.header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+.back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+.back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.language-switcher { display: flex; gap: 0.3rem; }
+.lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+.lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+.header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+.header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+.header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+.content { padding: 1.5rem; }
+.section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+.section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+.subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+.executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+.key-findings { list-style: none; }
+.key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+.key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.72rem; }
+th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+th { background: #fafafa; font-weight: 600; }
+tr:hover { background: #fafafa; }
+.chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+.sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.72rem; }
+.sources ul { list-style: none; }
+.sources li { padding: 0.25rem 0; }
+.sources a { color: #0052b8; text-decoration: none; }
+.trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+.trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+.trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+.trend-card p { font-size: 0.9rem; line-height: 1.6; }
+.related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+.related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+.related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+.related-links a:hover { text-decoration: underline; }
+.credibility-score { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 0.6rem 0.9rem; margin: 0.75rem 0; font-size: 0.82rem; }
+.credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.credibility-score-label { font-weight: 600; color: #92400e; }
+.credibility-score-value { font-weight: 700; color: #b45309; }
+.credibility-score-details { color: #78350f; line-height: 1.5; }
+.overall-credibility { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 1rem; margin-top: 1rem; }
+.overall-credibility h3 { font-size: 1rem; color: #92400e; margin-bottom: 0.5rem; }
+.overall-credibility-score { font-size: 1.6rem; font-weight: 700; color: #b45309; margin-bottom: 0.5rem; }
+.overall-credibility-details p { font-size: 0.85rem; color: #78350f; margin-bottom: 0.3rem; }
+@media (max-width: 768px) {
+    .trend-grid { grid-template-columns: 1fr; }
+    .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .header { padding-top: 1rem; text-align: center; }
+    .language-switcher { justify-content: center; }
+    .back-btn { order: -1; }
+}
+@media (max-width: 480px) {
+    .header-actions { flex-direction: column; align-items: stretch; }
+    .language-switcher { width: 100%; justify-content: center; }
+    .back-btn { width: 100%; justify-content: center; }
+}
+@media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+.interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+.interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+.interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+.interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+.like-section { display: flex; align-items: center; gap: 0.75rem; }
+.like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+.like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+.like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+.like-count { font-size: 0.9rem; color: #666; }
+.comment-form { margin-bottom: 1.5rem; }
+.comment-input-group { margin-bottom: 0.75rem; }
+.comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+.comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+.comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+.comment-input-group textarea { min-height: 80px; resize: vertical; }
+.comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+.comment-submit-btn:hover { background: #555; }
+.comments-list { margin-top: 1.5rem; }
+.comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+.comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+.comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+.comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+.comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+.comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+@media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='task-oriented-dialogue-systems-20260930-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='task-oriented-dialogue-systems-20260930-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='task-oriented-dialogue-systems-20260930-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>Task-Oriented Dialogue Systems: A Deep Analysis<br>Architecture, Global Players, and Commercial Viability</h1>
+        <div class="subtitle">Why a forty-year-old design became the standard again in the LLM era</div>
+        <div class="meta">Published: September 30, 2026 | Comprehensive Report | ID: TR-20260930-001</div>
+    </div>
+
+    <div class="content">
+
+    <!-- ============ SECTION 1 ============ -->
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Trends</h2>
+
+        <h3 class="subsection-title">1. The Pipeline Reassembled: LLMs Absorb Both Ends, Code Keeps the Middle</h3>
+        <p><strong>Current state:</strong> Task-oriented dialogue has traditionally been decomposed into four components: <strong>NLU → DST → Policy → NLG</strong>. Large language models have effectively absorbed the two outer components — natural language understanding and generation. The two inner components, however — <strong>dialogue state tracking (DST)</strong> and <strong>dialogue policy</strong> — remain deterministic code. Recent literature describes production architectures that combine "LLM-driven natural language understanding, planning, and generation with external modules for state tracking, personalization, retrieval, tool/API invocation, or memory" (Source: <a href="https://www.emergentmind.com/topics/llm-based-dialogue-agents" target="_blank">LLM-Based Dialogue Agents</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>What LLMs Replaced</h4>
+                <p>• <strong>Intent classification (NLU):</strong> Rule and classifier models → prompt-based classification<br>
+                • <strong>Response generation (NLG):</strong> Templates → generation that explains computed results<br>
+                • <strong>Domain transfer:</strong> Markedly improved generalization to unseen domains<br>
+                • <strong>Multilingual:</strong> One model instead of per-language pipelines</p>
+            </div>
+            <div class="trend-card">
+                <h4>What Stays in Code</h4>
+                <p>• <strong>DST:</strong> Deterministic persistence of slots and goals across turns<br>
+                • <strong>Policy:</strong> Whether to ask, confirm, or answer<br>
+                • <strong>Tool invocation:</strong> Auditable execution of external API and database calls<br>
+                • <strong>Guardrails:</strong> Safety and compliance decisions that must be reproducible</p>
+            </div>
+        </div>
+
+        <p><strong>Outlook:</strong> Production systems in 2026 commonly adopt a <strong>router architecture</strong>: a cheaper model handles routine turns while complex turns escalate to a stronger one (Source: <a href="https://futureagi.com/blog/llm-agents-applications-guide-2025/" target="_blank">LLM Agents 2026</a>). This is a pragmatic response to cost and latency pressure — and it only works because policy decisions live in code, where the routing logic can read them.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Academic literature and industry observation converge; architectural description is specific<br>
+                <strong>Weaknesses:</strong> No quantitative survey establishes how widely the router pattern is actually adopted
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/abs/2608.18085" target="_blank">Persona-Guided LLM Agents for TOD</a> |
+            <a href="https://arxiv.org/pdf/2507.04841" target="_blank">Spec-TOD</a> |
+            <a href="https://arxiv.org/pdf/2505.14299" target="_blank">Domain-Independent Multi-Agent Framework</a>
+        </div>
+
+        <h3 class="subsection-title">2. Capital Concentrates on Support Agents: Sierra at $15.8B, Decagon at $4.5B</h3>
+        <p><strong>Current state:</strong> The commercial center of gravity for TOD has shifted decisively to <strong>customer support automation</strong>, and the scale of capital inflow is redefining the category. Sierra raised a $950 million Series E led by GV and Tiger Global in May 2026 at a <strong>$15.8 billion valuation</strong>, bringing total capital raised to $1.585 billion. Revenue grew from $26 million at the end of 2024 to roughly $130 million at the end of 2025, reaching <strong>$200 million ARR</strong> by May 2026 (Source: <a href="https://sacra.com/c/sierra/" target="_blank">Sacra — Sierra</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Leading Valuations</h4>
+                <p>• <strong>Sierra:</strong> $15.8B (May 2026), $200M ARR<br>
+                • <strong>Decagon:</strong> $4.5B (Jan 2026), roughly $35M ARR<br>
+                • <strong>Parloa:</strong> $3B valuation, over $560M raised<br>
+                • <strong>Cognigy:</strong> Acquired by NICE for approximately $955M (2025)</p>
+            </div>
+            <div class="trend-card">
+                <h4>The Multiples Worth Noting</h4>
+                <p>• <strong>Decagon:</strong> Roughly <strong>128× revenue</strong> at the January 2026 round<br>
+                • <strong>Cognigy acquisition:</strong> Analysts characterized it as a <strong>25× premium</strong><br>
+                • <strong>Most capital raised:</strong> Sierra, roughly $1.6B cumulative<br>
+                • <strong>Interpretation:</strong> The bet is on the <strong>market being displaced</strong>, not on current revenue</p>
+            </div>
+        </div>
+
+        <p><strong>Outlook:</strong> These multiples are only defensible if one treats support headcount itself as the addressable market. Investors are underwriting a slice of the <strong>labor budget</strong>, not the software budget. The corollary is symmetrical: if measured performance falls short of the thesis, the correction will be proportionally severe.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Specific amounts, dates, and lead investors from primary tracking sources<br>
+                <strong>Weaknesses:</strong> ARR figures for private companies are estimates and carry margin of error
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://sierra.ai/" target="_blank">Sierra</a> |
+            <a href="https://decagon.ai/" target="_blank">Decagon</a> |
+            <a href="https://www.parloa.com/" target="_blank">Parloa</a> |
+            <a href="https://www.cognigy.com/" target="_blank">Cognigy</a> |
+            <a href="https://sacra.com/c/decagon/" target="_blank">Sacra — Decagon</a>
+        </div>
+
+        <h3 class="subsection-title">3. The Platform Market Splits Four Ways: Hyperscaler, Specialist, Open Source</h3>
+        <p><strong>Current state:</strong> The build-it-yourself platform market has separated cleanly along <strong>ecosystem dependency</strong>. Google Dialogflow CX offers a visual state machine that is substantially easier to audit and debug for complex multi-turn contact center flows. Amazon Lex suits voice workloads already running on AWS with Lambda and Connect integration in place. Microsoft Copilot Studio fits organizations committed to Microsoft 365, Teams, Dynamics 365, and Azure (Source: <a href="https://rasa.com/compare/copilot-studio-vs-dialogflow-vs-rasa" target="_blank">Rasa comparison</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>What Actually Decides the Choice</h4>
+                <p>• <strong>Data sovereignty:</strong> Air-gapped requirements in banking and defense → self-hosted Rasa<br>
+                • <strong>Existing ecosystem:</strong> AWS → Lex; Microsoft 365 → Copilot Studio<br>
+                • <strong>Flow complexity:</strong> Heavily branched IVR → Dialogflow CX visual editing<br>
+                • <strong>Scope:</strong> Enterprise-wide multi-agent programs → Kore.ai</p>
+            </div>
+            <div class="trend-card">
+                <h4>Pricing Structure (as of January 2026)</h4>
+                <p>• <strong>Dialogflow CX:</strong> Per-request generative charges plus per-1,000-event session storage<br>
+                • <strong>Kore.ai:</strong> Custom enterprise pricing; typical deployments <strong>$300K+ per year</strong><br>
+                • <strong>Rasa:</strong> Open-source core; cost shifts to infrastructure and engineering headcount<br>
+                • <strong>Implication:</strong> Token-based billing directly constrains dialogue design</p>
+            </div>
+        </div>
+
+        <p><strong>Outlook:</strong> Per-request billing creates a direct economic incentive to <strong>reduce turn count</strong>. One unnecessary re-ask is simultaneously a cost line and an abandonment risk. In practical terms, <strong>DST quality is unit economics</strong>.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Pricing structures and effective dates are specific enough for procurement decisions<br>
+                <strong>Weaknesses:</strong> A primary source is a competitor's blog (Rasa), introducing potential bias — cross-check each vendor's official documentation
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://cloud.google.com/dialogflow" target="_blank">Google Dialogflow CX</a> |
+            <a href="https://aws.amazon.com/lex/" target="_blank">Amazon Lex</a> |
+            <a href="https://www.microsoft.com/en-us/microsoft-copilot/microsoft-copilot-studio" target="_blank">Copilot Studio</a> |
+            <a href="https://rasa.com/" target="_blank">Rasa</a> |
+            <a href="https://kore.ai/" target="_blank">Kore.ai</a>
+        </div>
+
+        <h3 class="subsection-title">4. The Gap Between Adoption and Measured Return: 66% Deployed, 23% Seeing Real ROI</h3>
+        <p><strong>Current state:</strong> Deployment is outpacing <strong>verified performance</strong>. Salesforce reports that service organizations running AI agents rose from 39% in 2025 to <strong>66%</strong>, and Gartner finds <strong>91%</strong> of CX leaders under executive pressure to deploy. Yet only about <strong>23% of organizations report significant ROI</strong> from AI agents (Source: <a href="https://www.mavenagi.com/blog/ai-agent-adoption-statistics" target="_blank">AI Agent Statistics 2026</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Deflection Rate in Practice</h4>
+                <p>• <strong>Vendor claim:</strong> Decagon reports 80%<br>
+                • <strong>Platform median:</strong> Zendesk enterprise median <strong>41.2%</strong><br>
+                • <strong>Balanced view:</strong> 45–60% in year one, 65–75% at maturity<br>
+                • <strong>Implication:</strong> The gap between vendor claims and field medians is roughly 2×</p>
+            </div>
+            <div class="trend-card">
+                <h4>The ROI Curve Over Time</h4>
+                <p>• <strong>Year 1:</strong> 41% average ROI<br>
+                • <strong>Year 2:</strong> 87%<br>
+                • <strong>Year 3:</strong> Exceeds 124%<br>
+                • <strong>Payback:</strong> 5.4-month median (Forrester Total Economic Impact)<br>
+                • <strong>Adoption by sector:</strong> Telecom 95% · Banking 92% · Healthcare 79%</p>
+            </div>
+        </div>
+
+        <p><strong>Outlook:</strong> The shape of this curve carries an unambiguous message: <strong>TOD is not a business that breaks even in year one.</strong> The 41% first-year figure is largely consumed by deployment cost and operational learning; meaningful return arrives in years two and three. Deployments justified on short-term payback assumptions carry a high probability of abandonment within two years.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Multiple sources (Salesforce, Gartner, Forrester, Zendesk) cross-validate, and both optimistic and pessimistic figures are presented<br>
+                <strong>Weaknesses:</strong> Some figures are secondary citations routed through aggregator blogs; original research reports should be consulted directly
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://www.mavenagi.com/blog/customer-service-automation-statistics" target="_blank">Customer Service Automation Statistics</a> |
+            <a href="https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points" target="_blank">AI Agent Adoption 2026</a> |
+            <a href="https://www.zendesk.com/" target="_blank">Zendesk</a>
+        </div>
+
+        <h3 class="subsection-title">5. The Evaluation Gap: Benchmarks Measure Accuracy, Operations Need Task Completion</h3>
+        <p><strong>Current state:</strong> The standard benchmarks for TOD research are <strong>MultiWOZ</strong> and <strong>Schema-Guided Dialogue (SGD)</strong>. SGD comprises over 16,000 conversations across 26 services in 16 domains, and deliberately includes <strong>unseen domains</strong> in its test set to stress generalization. MultiWOZ consists of human-to-human dialogues collected in a Wizard-of-Oz setup; version 2.4 reannotated the validation and test sets to improve evaluation fidelity (Source: <a href="https://github.com/yukyunglee/Awesome-Dialogue-State-Tracking" target="_blank">Awesome DST</a>).</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>What Benchmarks Measure</h4>
+                <p>• <strong>Joint Goal Accuracy:</strong> Fraction of turns where the entire slot state matches ground truth<br>
+                • <strong>Slot F1:</strong> Per-slot extraction accuracy<br>
+                • <strong>Domain generalization:</strong> Performance on unseen services (SGD)<br>
+                • <strong>Nature:</strong> A measure of <strong>model capability</strong></p>
+            </div>
+            <div class="trend-card">
+                <h4>What Operations Require</h4>
+                <p>• <strong>Task success rate:</strong> Did the conversation reach its goal within N turns<br>
+                • <strong>Dialogue cost:</strong> How many turns, how many re-asks<br>
+                • <strong>Escalation rate:</strong> What fraction reached a human, and why<br>
+                • <strong>Nature:</strong> A measure of <strong>service outcome</strong></p>
+            </div>
+        </div>
+
+        <p><strong>Outlook:</strong> This gap is observable in practice. Systems can achieve high state-tracking accuracy while <strong>conversations still fail to reach their destination</strong>, and safety- and accuracy-oriented release gates do not detect this failure mode. Incorporating PARADISE-style dual-axis evaluation — <strong>task success plus dialogue cost</strong> — into operational metrics is the substantive work of the next one to two years.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">7.0/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Dataset scale and composition verified against primary literature; the distinction between evaluation axes is clearly drawn<br>
+                <strong>Weaknesses:</strong> Retrieved literature clusters in 2020–2023 and does not reflect 2026 benchmark developments — the "gap" argument in this section is explicitly <strong>the author's analysis</strong>
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/budzianowski/multiwoz" target="_blank">MultiWOZ</a> |
+            <a href="https://github.com/google-research-datasets/dstc8-schema-guided-dialogue" target="_blank">Schema-Guided Dialogue</a> |
+            <a href="https://arxiv.org/pdf/2310.14970" target="_blank">Towards LLM-driven DST</a>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 2 ============ -->
+    <section id="competitive" class="section">
+        <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+        <h3 class="subsection-title">A Four-Tier Market Structure</h3>
+        <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">The TOD market divides into four tiers according to <strong>what the buyer is actually purchasing</strong>. The top tier sells outcomes rather than software, which is the grounding for its valuation premium.</p>
+
+        <table>
+            <thead>
+                <tr><th>Tier</th><th>Representative Players</th><th>What Is Sold</th><th>Pricing Model</th><th>Primary Buyer</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>T1. Vertically Integrated Agents</strong></td><td>Sierra, Decagon, Parloa</td><td>Resolved tickets (outcome)</td><td>Per-resolution</td><td>Large support organizations</td></tr>
+                <tr><td><strong>T2. Hyperscaler Platforms</strong></td><td>Dialogflow CX, Amazon Lex, Copilot Studio</td><td>Build tools plus ecosystem</td><td>Per-request / per-session</td><td>Existing cloud committers</td></tr>
+                <tr><td><strong>T3. Enterprise Specialists</strong></td><td>Kore.ai, Cognigy (NICE), Yellow.ai</td><td>Enterprise-wide agent platform</td><td>Annual contract ($300K+)</td><td>Large-enterprise CX and process automation</td></tr>
+                <tr><td><strong>T4. Open Source / Self-Hosted</strong></td><td>Rasa</td><td>Complete control</td><td>License plus self-operation</td><td>Banking, defense, regulated industries</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">Five Market Dynamics</h3>
+        <ul class="key-findings">
+            <li><strong>The shift to outcome-based pricing:</strong> Tier 1 players charge per resolution rather than per seat, targeting labor budgets instead of software budgets.</li>
+            <li><strong>Vertical integration by platforms:</strong> NICE's acquisition of Cognigy for approximately $955 million signals contact center operators absorbing the dialogue engine itself.</li>
+            <li><strong>Voice returns as a growth axis:</strong> Parloa tripling its valuation to $3 billion within a year as a voice specialist suggests the next expansion vector lies beyond text.</li>
+            <li><strong>Data sovereignty acquires a price:</strong> Air-gapped and on-premises requirements sustain the Rasa category; in regulated industries this outweighs cloud convenience.</li>
+            <li><strong>The expectation gap widens:</strong> 66% adoption against 23% reporting meaningful ROI will drive vendor consolidation and selection discipline over the next two years.</li>
+        </ul>
+
+        <h3 class="subsection-title">Platform Capability Comparison</h3>
+        <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+
+        <h3 class="subsection-title">Market Size Projections</h3>
+        <p style="margin-bottom: 0.5rem; color: #4a4a4a; font-size: 0.9rem;">Research firms define the category differently, producing meaningful variance. Figures below are presented in parallel rather than reconciled.</p>
+        <div class="chart-container"><canvas id="marketChart"></canvas></div>
+        <p style="font-size: 0.8rem; color: #808080; margin-top: 0.5rem;">Note: The overall conversational AI market is estimated at roughly $16.1–18.0 billion for 2026 with projected CAGR in the 23–26% range. The enterprise platform segment is forecast to grow more steeply, from $15.54 billion in 2026 to $49.53 billion by 2030 (33.6% CAGR).</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Tier boundaries rest on an observable criterion (pricing model), and market sizes are presented in parallel without concealing variance<br>
+                <strong>Weaknesses:</strong> The four-tier taxonomy is <strong>this report's analytical frame</strong>, not an industry-standard classification
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 3 ============ -->
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">Observed approaches to deployment in the current market.</p>
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Single-domain pilot</strong> - Restrict TOD to the top three inquiry types, measure actual deflection, then widen scope on evidence.</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Separate state tracking into code</strong> - Hold slot and goal state in deterministic code rather than prompts to preserve reproducibility and debuggability.</p>
+            <p style="line-height: 1.6;">3. <strong>Adopt task-success metrics</strong> - Add goal completion within N turns and re-ask rate to accuracy-centric evaluation as operational indicators.</p>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 4 ============ -->
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+        <div class="executive-summary">
+            <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+            <ul class="key-findings">
+                <li><strong>The architecture came back:</strong> LLMs absorbed NLU and NLG, but DST and policy remain code. The forty-year-old four-component design is still the working skeleton.</li>
+                <li><strong>Capital is buying outcomes:</strong> Sierra at $15.8B and Decagon at $4.5B are bets on labor budgets, not software budgets.</li>
+                <li><strong>The gap is the core risk:</strong> 66% adoption against 23% reporting meaningful ROI. The distance between an 80% vendor deflection claim and a 41.2% platform median is the substance.</li>
+                <li><strong>Return arrives in years two and three:</strong> ROI moves 41% → 87% → 124% across years one to three. Deployments justified on short payback are likely to fail.</li>
+                <li><strong>Evaluation has a hole in it:</strong> Benchmarks measure state-tracking accuracy; operations need to know whether the conversation reached its destination.</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+            <p style="font-size: 0.95rem; line-height: 1.8;">
+                <strong>Large support organization needing fast results → T1 vertically integrated (Sierra, Decagon)</strong><br>
+                Rationale: Start without build effort on per-resolution pricing. Negotiate lock-in and unit-price escalation explicitly into the contract<br>
+                <strong>Already committed to a specific cloud → T2 hyperscaler</strong><br>
+                Rationale: Lex on AWS, Copilot Studio on Microsoft 365. Lowest integration cost<br>
+                <strong>Enterprise-wide multi-agent strategy → T3 enterprise specialist (Kore.ai)</strong><br>
+                Rationale: Unified governance pays off above the $300K-per-year deployment scale<br>
+                <strong>Data sovereignty is mandatory (banking, defense, healthcare) → T4 open source (Rasa)</strong><br>
+                Rationale: Effectively the only air-gappable option. Cost shifts to engineering headcount
+            </p>
+        </div>
+        <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall assessment: Positive but conditional</strong> — technical maturity and capital inflow are robust, but a two-to-three-year period in which measured ROI trails expectations appears likely. The commercial opportunity lies not in <strong>horizontal general-purpose chatbots</strong> but in <strong>domain-specific deployments with verifiable outcome metrics</strong>.</p>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility Assessment</h3>
+            <div class="overall-credibility-score">8.0/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Overall:</strong> Funding, market sizing, and adoption figures are cross-validated across multiple primary sources, with optimistic and pessimistic figures presented side by side.</p>
+                <p><strong>Principal strengths:</strong> Specific amounts and dates; explicit exposure of the gap between vendor claims and platform medians; no concealment of variance between research firms</p>
+                <p><strong>Improvement priorities:</strong> (1) Replace aggregator-routed secondary citations with original reports (2) State margin of error on private-company ARR estimates (3) Supplement with 2026 benchmark developments</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 5 ============ -->
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+        <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.85rem;">
+            <div style="margin-bottom: 0.4rem;"><strong>Task-Oriented Dialogue (TOD)</strong> - A system handling conversations with a <strong>defined objective</strong>, such as booking, inquiry, or advisory. Unlike open-domain chat, success is judged by whether the task completed.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Dialogue State Tracking (DST)</strong> - The component that remembers and updates confirmed information (destination, date, party size) across turns. Think of it as the notepad on which the system writes down what it has heard so far.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Dialogue Policy</strong> - The component deciding what to do next: ask another question, confirm an assumption, or deliver an answer.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Deflection Rate</strong> - The share of inquiries resolved by AI without escalation to a human agent. The most frequently cited vendor marketing metric, and one whose definition varies enough to make cross-vendor comparison unreliable.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Joint Goal Accuracy</strong> - A DST metric requiring <strong>every</strong> slot value in a turn to match ground truth for credit. One wrong slot scores zero, making it a deliberately strict measure.</div>
+            <div style="margin-bottom: 0.4rem;"><strong>Outcome-Based Pricing</strong> - Charging per <strong>resolved case</strong> rather than per seat or per API call, so the vendor shares quality risk with the buyer.</div>
+            <div><strong>MultiWOZ / SGD</strong> - The standard datasets for TOD research. SGD spans 16 domains and 26 services across more than 16,000 conversations, with unseen domains reserved for the test set.</div>
+        </div>
+    </section>
+
+    <!-- ============ SECTION 6 ============ -->
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> September 30, 2026</p>
+            <ul>
+                <li>• <a href="https://sacra.com/c/sierra/" target="_blank">Sacra — Sierra revenue, valuation &amp; funding</a></li>
+                <li>• <a href="https://sacra.com/c/decagon/" target="_blank">Sacra — Decagon revenue, valuation &amp; funding</a></li>
+                <li>• <a href="https://research.contrary.com/company/sierra" target="_blank">Contrary Research — Sierra Business Breakdown</a></li>
+                <li>• <a href="https://valueaddvc.com/blog/decagon-valuation-2026-4-5b-35m-arr-ai-customer-service-boom" target="_blank">Decagon Valuation 2026: $4.5B, $35M ARR</a></li>
+                <li>• <a href="https://newmarketpitch.com/blogs/news/conversational-ai-top-startups-valuation" target="_blank">Top Conversational AI Startups by Valuation (2026)</a></li>
+                <li>• <a href="https://www.grandviewresearch.com/industry-analysis/conversational-ai-market-report" target="_blank">Grand View Research — Conversational AI Market 2026-2033</a></li>
+                <li>• <a href="https://market.us/report/enterprise-conversational-ai-platform-market/" target="_blank">Market.us — Enterprise Conversational AI Platform Market</a></li>
+                <li>• <a href="https://www.thebusinessresearchcompany.com/report/enterprise-conversational-artificial-intelligence-ai-platform-market-report" target="_blank">The Business Research Company — Enterprise Conversational AI Platform 2026-2030</a></li>
+                <li>• <a href="https://www.mavenagi.com/blog/ai-agent-adoption-statistics" target="_blank">15 AI Agent Statistics for Enterprise Adoption, ROI &amp; Customer Service (2026)</a></li>
+                <li>• <a href="https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points" target="_blank">AI Agent Adoption 2026: 120+ Enterprise Data Points</a></li>
+                <li>• <a href="https://rasa.com/compare/copilot-studio-vs-dialogflow-vs-rasa" target="_blank">Rasa — Copilot Studio vs Dialogflow vs Rasa (2026)</a></li>
+                <li>• <a href="https://rasa.com/blog/kore-ai-alternatives" target="_blank">Rasa — Kore.ai Alternatives for Enterprise Conversational AI (2026)</a></li>
+                <li>• <a href="https://futureagi.com/blog/llm-agents-applications-guide-2025/" target="_blank">LLM Agents 2026: 5 Types, Applications, and Evaluation Stack</a></li>
+                <li>• <a href="https://www.emergentmind.com/topics/llm-based-dialogue-agents" target="_blank">Emergent Mind — LLM-Based Dialogue Agents</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2507.04841" target="_blank">arXiv — Spec-TOD: Specialized Instruction-Tuned LLM Framework for TOD</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2505.14299" target="_blank">arXiv — Empowering LLMs in Task-Oriented Dialogues</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2310.14970" target="_blank">arXiv — Towards LLM-driven Dialogue State Tracking</a></li>
+                <li>• <a href="https://github.com/yukyunglee/Awesome-Dialogue-State-Tracking" target="_blank">GitHub — Awesome Dialogue State Tracking</a></li>
+            </ul>
+            <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #808080;"><em>Note: The four-tier market taxonomy and the evaluation-gap analysis are this report's own analytical frame, not industry-standard classifications. ARR figures for private companies are estimates.</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx1 = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx1, {
+    type: 'radar',
+    data: {
+        labels: ['Ease of Build', 'Flexibility & Control', 'Enterprise Features', 'Ecosystem Integration', 'Data Sovereignty'],
+        datasets: [
+            { label: 'Dialogflow CX', data: [85, 65, 80, 90, 45], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+            { label: 'Copilot Studio', data: [88, 55, 82, 95, 40], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+            { label: 'Kore.ai', data: [70, 75, 92, 70, 60], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)' },
+            { label: 'Rasa', data: [45, 95, 70, 50, 98], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100 } },
+        plugins: { title: { display: true, text: 'Platform Capability Comparison (100-point scale · this report’s assessment)' } } }
+});
+
+const ctx2 = document.getElementById('marketChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: ['Conversational AI total (2026)', 'Conversational AI total (2033)', 'Enterprise platform (2026)', 'Enterprise platform (2030)'],
+        datasets: [{
+            label: 'Market size (USD billions)',
+            data: [17.7, 78.9, 15.54, 49.53],
+            backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(59, 130, 246, 0.9)', 'rgba(249, 115, 22, 0.7)', 'rgba(249, 115, 22, 0.9)'],
+            borderColor: ['rgb(59, 130, 246)', 'rgb(59, 130, 246)', 'rgb(249, 115, 22)', 'rgb(249, 115, 22)'],
+            borderWidth: 1
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'USD billions' } } },
+        plugins: { title: { display: true, text: 'Market Size Projections — overall CAGR 23.8% · enterprise CAGR 33.6%' } } }
+});
+</script>
+
+<div class="interaction-section">
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments &amp; Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+        <div class="comment-form">
+            <div class="comment-input-group">
+                <label for="comment-author">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+            </div>
+            <div class="comment-input-group">
+                <label for="comment-content">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list">
+            <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
