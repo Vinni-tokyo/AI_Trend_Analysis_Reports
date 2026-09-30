@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タスク指向対話システムの技術的進化</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8; --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080; --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fafafa; font-size: 16px; font-weight: 400; }
+.container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.header { background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%); color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative; border-bottom: 3px solid var(--primary-navy); }
+.header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+.back-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+.back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.language-switcher { display: flex; gap: 0.3rem; }
+.lang-btn { padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; }
+.lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+.header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+.header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+.header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+.content { padding: 1.5rem; }
+.section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+.section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+.subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+.executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+.key-findings { list-style: none; }
+.key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+.key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.7rem; }
+th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+th { background: #fafafa; font-weight: 600; }
+tr:hover { background: #fafafa; }
+.chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+.sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.7rem; }
+.sources ul { list-style: none; }
+.sources li { padding: 0.25rem 0; }
+.sources a { color: #0052b8; text-decoration: none; }
+.trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+.trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+.trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+.trend-card p { font-size: 0.87rem; line-height: 1.6; }
+.related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+.related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+.related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+.related-links a:hover { text-decoration: underline; }
+.credibility-score { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 0.6rem 0.9rem; margin: 0.75rem 0; font-size: 0.8rem; }
+.credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.credibility-score-label { font-weight: 600; color: #92400e; }
+.credibility-score-value { font-weight: 700; color: #b45309; }
+.credibility-score-details { color: #78350f; line-height: 1.5; }
+.overall-credibility { background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 1rem; margin-top: 1rem; }
+.overall-credibility h3 { font-size: 0.95rem; color: #92400e; margin-bottom: 0.5rem; }
+.overall-credibility-score { font-size: 1.55rem; font-weight: 700; color: #b45309; margin-bottom: 0.5rem; }
+.overall-credibility-details p { font-size: 0.82rem; color: #78350f; margin-bottom: 0.3rem; }
+@media (max-width: 768px) { .trend-grid { grid-template-columns: 1fr; } .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; } .header { padding-top: 1rem; text-align: center; } .language-switcher { justify-content: center; } .back-btn { order: -1; } }
+@media (max-width: 480px) { .header-actions { flex-direction: column; align-items: stretch; } .language-switcher { width: 100%; justify-content: center; } .back-btn { width: 100%; justify-content: center; } }
+@media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+.interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+.interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+.interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+.interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+.like-section { display: flex; align-items: center; gap: 0.75rem; }
+.like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+.like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+.like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+.like-count { font-size: 0.9rem; color: #666; }
+.comment-form { margin-bottom: 1.5rem; }
+.comment-input-group { margin-bottom: 0.75rem; }
+.comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+.comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+.comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+.comment-input-group textarea { min-height: 80px; resize: vertical; }
+.comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+.comment-submit-btn:hover { background: #555; }
+.comments-list { margin-top: 1.5rem; }
+.comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+.comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+.comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+.comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+.comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+@media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← トップ</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='tod-technical-evolution-20260930-ja.html'" class="lang-btn active">日本語</button>
+                <button onclick="window.location.href='tod-technical-evolution-20260930-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='tod-technical-evolution-20260930-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>タスク指向対話システムの技術的進化<br>計算機科学・AI の観点から見た世界の研究動向</h1>
+        <div class="subtitle">状態管理はプログラミングになり、方策は強化学習へ戻った</div>
+        <div class="meta">レポート作成日：2026年9月30日 | 標準版レポート | ID: TR-20260930-002</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">主要トレンド Top 5</h2>
+
+        <h3 class="subsection-title">1. 状態管理がプログラミングの問題になった — 関数呼び出しが標準の窓口へ</h3>
+        <p><strong>現状：</strong>対話状態管理（DST: Dialogue State Tracking）は長らく<strong>項目埋めの分類問題</strong>として扱われてきました。2024年以降、この捉え方が変わりました。DST を<strong>関数呼び出し</strong>として表現したところ、70億・130億パラメータ級のモデルが ChatGPT による従来の最高性能を上回り、ChatGPT 自身も平均の Joint Goal Accuracy が<strong>5.6ポイント</strong>改善しました（出典：<a href="https://arxiv.org/abs/2402.10466" target="_blank">arXiv 2402.10466</a>）。RefPyDST はさらに踏み込み、DST を<strong>Python のプログラミング課題</strong>として定式化し、言語上の共参照を<strong>変数参照</strong>として明示的に表しました。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>何が変わったか</h4>
+                <p>• <strong>表現方法：</strong>項目の分類 → <strong>型のある関数の形</strong><br>
+                • <strong>共参照：</strong>「それでお願い」を<strong>変数参照</strong>として処理<br>
+                • <strong>スキーマ投入：</strong>領域の定義をそのまま指示文に与える<br>
+                • <strong>検証：</strong>構造化された出力のため<strong>読み取り時に形式を確認</strong>できる</p>
+            </div>
+            <div class="trend-card">
+                <h4>データ費用が崩れた</h4>
+                <p>• <strong>文脈内学習：</strong>重みの更新は0回、必要なデータは極小<br>
+                • <strong>少数事例での優位：</strong>少データ環境で<strong>学習済みの手法を上回る</strong><br>
+                • <strong>検索併用：</strong>多様な事例を選ぶことで精度が上がる<br>
+                • <strong>意図基準の事例選択：</strong>意図の単位で事例を構造化</p>
+            </div>
+        </div>
+
+        <p><strong>展望：</strong>ラベル付きのタスク指向対話を集めて注釈する費用は、この分野の長年の隘路でした。関数呼び出しの窓口と文脈内学習はその隘路を迂回します。一方で<strong>解釈のしやすさ</strong>が次の課題として浮上し、状態を自然な文章の要約として表すことで頑健さと説明力を同時に得ようとする研究が進んでいます。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details"><strong>強み：</strong>具体的な数値（+5.6ポイント）と一次論文の出典を明示<br><strong>改善点：</strong>70億・130億級が上回ったのは特定の評価条件であり、全面的な優位ではない</div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://arxiv.org/abs/2402.10466" target="_blank">LLM as Zero-shot DST through Function Calling</a> |
+            <a href="https://arxiv.org/pdf/2307.01453" target="_blank">Diverse Retrieval-Augmented ICL for DST</a> |
+            <a href="https://arxiv.org/pdf/2412.03270" target="_blank">Intent-driven ICL for Few-shot DST</a> |
+            <a href="https://arxiv.org/pdf/2503.08857" target="_blank">Interpretable DST via NL Summarization</a>
+        </div>
+
+        <h3 class="subsection-title">2. 対話方策が強化学習へ戻った — やり取り単位から道筋単位へ</h3>
+        <p><strong>現状：</strong>対話方策（Dialogue Policy）は従来、<strong>マルコフ決定過程</strong>として定式化され強化学習で最適化されてきました。大規模言語モデルの時代に一時は指示文で置き換わるかに見えましたが、<strong>再び強化学習が中心に戻って</strong>います。最近の調査論文は、強化学習が二つの形で働くと整理しています — <strong>構造化された計画過程の外側の案内役</strong>か、<strong>モデルに内在する計画方策を直接育てる内側の駆動力</strong>か、です（出典：<a href="https://arxiv.org/pdf/2509.02547" target="_blank">The Landscape of Agentic RL for LLMs</a>）。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>中心にある転換 — 道筋単位の報酬</h4>
+                <p>• <strong>課題：</strong>長期かつ報酬が乏しい環境では、やり取り単位の最適化が失敗する<br>
+                • <strong>HiPER：</strong>上位の計画役と下位の部品に<strong>分解</strong><br>
+                • <strong>効果：</strong>即時の報酬から<strong>道筋全体の累積収益</strong>へ<br>
+                • <strong>意味：</strong>初期の行動の結果が時間を越えて伝わることを反映</p>
+            </div>
+            <div class="trend-card">
+                <h4>制御しやすさを加える工夫</h4>
+                <p>• <strong>ChatSOP：</strong>標準手順に沿った<strong>木探索による計画</strong><br>
+                • <strong>Interactive Planner-R1：</strong>自律的な環境探索に基づく道筋単位の学習<br>
+                • <strong>DialogXpert：</strong>事前知識を使った価値ベースの学習<br>
+                • <strong>PPDPP：</strong>方策の計画役を<strong>着脱できる部品</strong>に</p>
+            </div>
+        </div>
+
+        <p><strong>展望：</strong>この流れが示すものは明確です。<strong>指示文だけでは多回にわたる意思決定は解けない</strong>というのが研究分野の暫定的な結論です。とくに「着脱できる方策の計画役」という形は、大規模モデルを学習し直さずに方策だけを入れ替えられるため、実務への適用可能性が高いといえます。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">8.0/10</span></div>
+            <div class="credibility-score-details"><strong>強み：</strong>調査論文と個別手法の論文を相互に引用し、流れの存在を裏づけている<br><strong>改善点：</strong>評価基盤が異なるため、各手法の定量比較は行っていない</div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://arxiv.org/pdf/2509.02547" target="_blank">Agentic RL for LLMs: A Survey</a> |
+            <a href="https://arxiv.org/pdf/2407.03884" target="_blank">ChatSOP (SOP-Guided MCTS)</a> |
+            <a href="https://arxiv.org/pdf/2505.17795" target="_blank">DialogXpert</a> |
+            <a href="https://openreview.net/forum?id=MCNqgUFTHI" target="_blank">Plug-and-Play Policy Planner</a>
+        </div>
+
+        <h3 class="subsection-title">3. 小さなモデルの逆襲 — 特化した微調整が規模に勝つ条件</h3>
+        <p><strong>現状：</strong>タスク指向対話は<strong>扱う範囲が狭い</strong>という性質があり、小規模な言語モデルに有利です。最近の分析は、<strong>5億〜30億</strong>パラメータ級のモデルが対象とした課題全般で優れた効率指標を示し、これは<strong>わずかな精度差より推論効率を優先する運用環境</strong>に小さなモデルを置く定量的な根拠になると結論づけています（出典：<a href="https://arxiv.org/html/2603.21389v1" target="_blank">Task-Specific Efficiency Analysis</a>）。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>圧縮手法の組み合わせ効果</h4>
+                <p>• <strong>3段階の手順：</strong>枝刈り → 蒸留 → 量子化<br>
+                • <strong>結果：</strong>同じ規模を<strong>一から学習したモデルより優れる</strong><br>
+                • <strong>Phi-4-mini：</strong>AlpacaEval <strong>80.5</strong><br>
+                • <strong>Mistral-7B：</strong><strong>77.0</strong> — パラメータは約2倍</p>
+            </div>
+            <div class="trend-card">
+                <h4>タスク指向対話での裏づけ</h4>
+                <p>• <strong>道具の呼び出し：</strong>狙いを絞って微調整した小型モデルが大型を上回る<br>
+                • <strong>Spec-TOD：</strong>タスク指向対話に特化した指示調整の枠組み<br>
+                • <strong>複数意図の分類：</strong>70億級の公開モデルを MultiWOZ 2.1 で比較<br>
+                • <strong>前提：</strong>領域が狭くスキーマが固定されるほど有利</p>
+            </div>
+        </div>
+
+        <p><strong>展望：</strong>これは<strong>費用の構造を変えます。</strong>要求ごとの課金が対話設計を制約する状況では、日常的なやり取りを特化した小型モデルで処理し、複雑なものだけ大型モデルへ上げる<strong>階層的な配置</strong>が標準になる可能性が高いといえます。ただしこの方法には<strong>やり取りの難しさを判定する振り分け役</strong>が必要で、その判定自体が正確でなければなりません。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">7.5/10</span></div>
+            <div class="credibility-score-details"><strong>強み：</strong>Phi-4-mini 80.5 と Mistral-7B 77.0 など直接比較できる数値を提示<br><strong>改善点：</strong>AlpacaEval は汎用の指示遂行を測る指標であり、対話性能の直接の代替ではない</div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://arxiv.org/html/2603.21389v1" target="_blank">Task-Specific Efficiency Analysis</a> |
+            <a href="https://arxiv.org/html/2512.15943" target="_blank">SLM for Agentic Tool Calling</a> |
+            <a href="https://arxiv.org/pdf/2507.04841" target="_blank">Spec-TOD</a> |
+            <a href="https://arxiv.org/pdf/2402.09748" target="_blank">Model Compression Survey</a>
+        </div>
+
+        <h3 class="subsection-title">4. 評価がやり取りから道筋へ — τ-bench と利用者の模擬</h3>
+        <p><strong>現状：</strong>評価の考え方が変わりつつあります。<strong>τ-bench</strong> は小売と航空の領域で顧客対応のエージェントを評価し、従来の道具利用の評価基盤になかった<strong>三つの要素</strong>を導入しました — ① 複数回のやり取りを導く<strong>利用者の模擬</strong> ② エージェントが必ず守るべき<strong>領域ごとの規定</strong> ③ 行動がデータベースに持続的な影響を残す<strong>状態が続く筋書き</strong>です（出典：<a href="https://benchmarkingagents.com/tau-bench/" target="_blank">Tau-Bench 2026</a>）。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>何が問題だったのか</h4>
+                <p>• <strong>従来の指標：</strong>Joint Goal Accuracy などの<strong>やり取り単位の正確さ</strong><br>
+                • <strong>限界：</strong>正確でも<strong>対話が目標に収束したか</strong>は分からない<br>
+                • <strong>τ-bench：</strong>道筋の指標を明示的に狙う<br>
+                • <strong>τ²-bench：</strong><strong>双方向の制御</strong>環境へ拡張</p>
+            </div>
+            <div class="trend-card">
+                <h4>利用者の模擬という新しい変数</h4>
+                <p>• <strong>EYT-Bench：</strong>人物像に基づく模擬・評価対象モデル・<strong>独立した審査</strong>の三者を分離<br>
+                • <strong>測るもの：</strong>人物像の一貫性・意図の変化の追跡・感情の動き・目標達成<br>
+                • <strong>SimulatorArena：</strong>模擬が<strong>信頼できる代理になるか</strong>を検証<br>
+                • <strong>注意：</strong>協力的な模擬だけでは頑健さを測れない</p>
+            </div>
+        </div>
+
+        <p><strong>展望：</strong>この転換は実務に直結します。「<strong>大規模言語モデルは変化する利用者の意図の中で道を見失う</strong>」という題の研究が現れるほど、複数回にわたる意図の追跡は今も脆弱です。安全性と正確さだけを測る出荷判定では、<strong>対話が詰まっていても通過</strong>してしまいます。道筋の指標を運用に組み込むことが今後1〜2年の課題です。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">8.5/10</span></div>
+            <div class="credibility-score-details"><strong>強み：</strong>τ-bench の構成要素が一次資料で確認でき、後続（τ²・EYT）まで系譜がつながっている<br><strong>改善点：</strong>モデル別の得点を示しておらず、難しさが数値として伝わらない</div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://benchmarkingagents.com/tau-bench/" target="_blank">Tau-Bench 2026</a> |
+            <a href="https://arxiv.org/pdf/2607.10428" target="_blank">EYT-Bench</a> |
+            <a href="https://arxiv.org/pdf/2510.05444" target="_blank">SimulatorArena</a> |
+            <a href="https://arxiv.org/pdf/2607.20734" target="_blank">LLMs Get Lost in Evolving User Intent</a>
+        </div>
+
+        <h3 class="subsection-title">5. 部品構成の再評価 — 一体型がタスク指向対話で勝てなかった理由</h3>
+        <p><strong>現状：</strong>一体型（end-to-end）の神経回路が部品構成の流れ作業を置き換えるという見通しは、<strong>タスク指向対話では完全には実現しませんでした。</strong>文献はその理由を明確に述べています — 部品構成の方が<strong>特定の課題上の制約を守るように作り込みやすい</strong>のです。興味深いことに、タスク指向の一体型モデルでさえ、検索の仕組みや知識基盤、領域固有の語彙体系という形の<strong>暗黙の部品</strong>を足して動いています（出典：<a href="https://www.emergentmind.com/topics/end-to-end-spoken-dialogue-systems" target="_blank">End-to-End Spoken Dialogue Systems</a>）。</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>部品構成が残る理由</h4>
+                <p>• <strong>制約の遵守：</strong>規定や方針をコードで強制できる<br>
+                • <strong>検証のしやすさ：</strong>各段階の中間表現を点検できる<br>
+                • <strong>部分的な差し替え：</strong>一つの部品だけ改善・巻き戻しが可能<br>
+                • <strong>再現性：</strong>同じ入力に同じ判断を保証しやすい</p>
+            </div>
+            <div class="trend-card">
+                <h4>一体型が優れる領域</h4>
+                <p>• <strong>音声対話：</strong>音声の理解と生成を<strong>一つの網</strong>で<br>
+                • <strong>自然さ：</strong>中間表現での損失がなく抑揚と反応が良い<br>
+                • <strong>同時発話：</strong>割り込みや相づちを扱える<br>
+                • <strong>Kimi-Audio：</strong>入力側と出力側を<strong>切り離し</strong>、学習し直さずに改善</p>
+            </div>
+        </div>
+
+        <p><strong>展望：</strong>現在形づくられつつある共通理解は<strong>階層的な折衷</strong>です。音声の入出力は一体型で、<strong>状態と方策は部品として</strong>置く構成です。同時発話の音声対話に関する調査論文が<strong>「決定状態機械」</strong>を構造階層の中心に据えていることは、この折衷をよく表しています — 最も神経回路的な領域でさえ、<strong>状態機械は残る</strong>のです。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details"><strong>強み：</strong>部品構成が残る根拠を一次文献で確認し、音声領域の例外も併記<br><strong>改善点：</strong>「共通理解が形づくられつつある」という判断は<strong>本レポートの分析</strong>であり定量的根拠はない</div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 関連リンク：</strong>
+            <a href="https://arxiv.org/html/2606.19453" target="_blank">Full-Duplex Spoken Dialogue Survey</a> |
+            <a href="https://arxiv.org/pdf/2512.18706" target="_blank">X-Talk: Potential of Modular</a> |
+            <a href="https://arxiv.org/pdf/2501.00953" target="_blank">Incremental Dialogue in the Age of LMs</a>
+        </div>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">技術的な取り組みの地図</h2>
+        <h3 class="subsection-title">四層の技術構造</h3>
+        <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">研究および実装の取り組みは<strong>何が行動を決めるか</strong>を基準に四つの層に分かれます。下の層ほど制御しやすくなる一方、データと計算の要求が増えます。</p>
+
+        <table>
+            <thead><tr><th>層</th><th>代表的な手法</th><th>学習の要求</th><th>強み</th><th>弱み</th></tr></thead>
+            <tbody>
+                <tr><td><strong>第1層 指示文・文脈内学習</strong></td><td>関数呼び出し DST、RefPyDST、検索併用</td><td>重みの更新なし</td><td>すぐ使える・領域移行が容易</td><td>ばらつき・解釈が難しい</td></tr>
+                <tr><td><strong>第2層 特化した微調整</strong></td><td>Spec-TOD、小型モデルの道具呼び出し、蒸留・量子化</td><td>中程度（指示調整）</td><td>推論費用が最小・安定</td><td>領域が固定・学習し直しの負担</td></tr>
+                <tr><td><strong>第3層 強化学習による方策最適化</strong></td><td>HiPER、Planner-R1、ChatSOP、PPDPP</td><td>高い（環境と報酬の設計）</td><td>長期課題・道筋の最適化</td><td>報酬設計が難しい・模擬に依存</td></tr>
+                <tr><td><strong>第4層 一体型音声</strong></td><td>同時発話対話、Kimi-Audio</td><td>非常に高い</td><td>自然さ・低遅延</td><td>制約の遵守と監査が難しい</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">技術の動き 5点</h3>
+        <ul class="key-findings">
+            <li><strong>窓口の標準化：</strong>関数呼び出しが対話状態管理の事実上の表現となり、型の検査と構造化出力が信頼性の第一の防壁になりつつあります。</li>
+            <li><strong>最適化の単位が上がる：</strong>やり取り単位の正確さから<strong>道筋単位の収益</strong>へ移り、これは評価と学習の両方で同時に起きています。</li>
+            <li><strong>規模の再交渉：</strong>狭い課題では5億〜30億級が効率で優位に立ち、階層的な配置が費用構造を組み替えます。</li>
+            <li><strong>模擬の台頭：</strong>利用者の模擬が学習環境でも評価道具でもあるため、<strong>模擬そのものの信頼性</strong>が新たな研究主題になりました。</li>
+            <li><strong>部品の存続：</strong>最も神経回路的な音声領域でさえ決定状態機械が残り、状態と方策の部品化は消えていません。</li>
+        </ul>
+
+        <h3 class="subsection-title">取り組み別の特性比較</h3>
+        <div class="chart-container"><canvas id="competitiveChart"></canvas></div>
+
+        <h3 class="subsection-title">評価基盤の世代別 構成要素</h3>
+        <div class="chart-container"><canvas id="benchChart"></canvas></div>
+        <p style="font-size: 0.78rem; color: #808080; margin-top: 0.5rem;">注：各評価基盤が備える構成要素の数（複数回のやり取り・利用者の模擬・規定の遵守・状態の持続・道具の呼び出し）を数えたものです。出典の記述に基づきますが、<strong>集計は本レポートが行いました</strong>。</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header"><span class="credibility-score-label">📊 信頼性評価：</span><span class="credibility-score-value">7.0/10</span></div>
+            <div class="credibility-score-details"><strong>強み：</strong>層の区分が「学習の要求量」という観察可能な基準に基づく<br><strong>改善点：</strong>四層の分類とレーダーの点数は<strong>本レポートの評価</strong>であり標準の分類ではない</div>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">活用アイデア</h2>
+        <p style="margin-bottom: 1rem; color: #4a4a4a;">研究動向から見える主要な適用の進め方をご紹介します。</p>
+        <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+            <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>状態管理を関数呼び出しへ</strong> - 項目の抽出を型のある関数の形に変え、読み取り時に形式を検証します。</p>
+            <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>階層的なモデル配置</strong> - 日常のやり取りは特化した小型モデルで処理し、複雑なものだけ大型へ上げて推論費用を抑えます。</p>
+            <p style="line-height: 1.6;">3. <strong>道筋の指標を導入</strong> - やり取り単位の正確さの隣に、所定回数内の目標達成率と聞き返し率を並べます。</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">要旨</h2>
+        <div class="executive-summary">
+            <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+            <ul class="key-findings">
+                <li><strong>対話状態管理の再定義：</strong>項目の分類から関数呼び出し・プログラミングへ変わり、70億級のモデルが従来の最高性能を超えました（ChatGPT 比 +5.6ポイント）。</li>
+                <li><strong>方策の復帰：</strong>指示文だけでは多回の意思決定が解けないという認識のもと、道筋単位の強化学習が再び中心に立ちました。</li>
+                <li><strong>規模の逆転：</strong>狭い課題では5億〜30億級が効率で優位に立ち、Phi-4-mini が半分のパラメータで Mistral-7B を上回ります（80.5 対 77.0）。</li>
+                <li><strong>評価の移行：</strong>τ-bench が利用者の模擬・規定の遵守・状態の持続を導入し、<strong>やり取りの正確さでは目標への収束が分からない</strong>という限界に正面から向き合います。</li>
+                <li><strong>部品の存続：</strong>一体型は音声で優れますが、制約の遵守が必要なタスク指向対話では状態と方策の部品化が保たれます。</li>
+            </ul>
+
+            <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選定の指針</h3>
+            <p style="font-size: 0.92rem; line-height: 1.8;">
+                <strong>領域が頻繁に変わり早い立ち上げが必要 → 第1層 指示文・文脈内学習</strong><br>
+                理由：重みではなくスキーマを変えるだけで済みます。ばらつきを状態として固める設計が必須<br>
+                <strong>通信量が多く単価が重要 → 第2層 特化した微調整</strong><br>
+                理由：推論費用が支配的なとき、小型特化モデルの効率優位が最も大きくなります<br>
+                <strong>複数回での目標達成率が中心指標 → 第3層 強化学習による方策最適化</strong><br>
+                理由：道筋単位の報酬だけが長期・希薄な報酬の問題を扱えます。模擬の信頼性の検証が先<br>
+                <strong>音声の応答性と自然さが製品価値 → 第4層 一体型</strong><br>
+                理由：同時発話のやり取りは一体型が有利です。規定の遵守は別の部品で確保を
+            </p>
+        </div>
+        <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：前向き</strong> — 技術の成熟が速く、方向も収束しつつあります。ただし<strong>収束する先は「大規模言語モデルがすべてを置き換える」ではなく、「理解と生成はモデルが、記憶と判断はコードと強化学習が担う」</strong>という分業の形です。</p>
+
+        <div class="overall-credibility">
+            <h3>📋 総合信頼性評価</h3>
+            <div class="overall-credibility-score">7.9/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>総合評価：</strong>主張の大半が arXiv の一次文献と評価基盤の公式説明に基づき、数値を引く際は出典と条件を併記しています。</p>
+                <p><strong>主な強み：</strong>関数呼び出し DST（+5.6ポイント）や Phi-4-mini（80.5 対 77.0）など検証できる数値、τ-bench から τ²-bench、EYT-Bench へと続く研究の系譜</p>
+                <p><strong>改善の優先順位：</strong>①モデル別の得点の補強 ②AlpacaEval を対話性能の代替として用いた限界の補足 ③強化学習手法間の定量比較の追加</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+        <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.82rem;">
+            <div style="margin-bottom: 0.4rem;"><strong>Joint Goal Accuracy</strong> - 対話状態管理の代表的な指標。一つのやり取りで<strong>すべての</strong>項目が正解と一致してはじめて得点となるため、一つ違うだけで零点という厳しい尺度です。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>文脈内学習</strong> - モデルの重みを変えずに<strong>指示文に事例を入れて</strong>課題を教える方法。データを集める費用を大きく下げます。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>関数呼び出し</strong> - モデルの出力を自由な文章ではなく<strong>決まった関数と引数</strong>の形で受け取る方式。形式の検証ができるため信頼性が上がります。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>道筋単位の報酬</strong> - 毎回の即時点ではなく<strong>対話全体の結果</strong>で学習する方式。初期の選択が後々に与える影響を反映します。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>知識の蒸留</strong> - 大きなモデルの判断を小さなモデルへ<strong>移し植える</strong>手法。枝刈りや量子化と組み合わせると、同じ規模を一から学習したモデルより良くなります。</div>
+            <div style="margin-bottom: 0.4rem;"><strong>利用者の模擬</strong> - 人の代わりに対話を導く仕組み。学習環境でも評価道具でもあり、<strong>実際の利用者を代表しているか</strong>が最近の論点です。</div>
+            <div><strong>同時発話の対話</strong> - 双方が<strong>同時に</strong>話せる対話。割り込みや相づちを扱う必要があり、音声システムの難題です。</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>参考資料</h3>
+            <p><strong>データ収集日：</strong>2026年9月30日</p>
+            <ul>
+                <li>• <a href="https://arxiv.org/abs/2402.10466" target="_blank">arXiv 2402.10466 — LLMs as Zero-shot Dialogue State Tracker through Function Calling</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2307.01453" target="_blank">arXiv 2307.01453 — Diverse Retrieval-Augmented In-Context Learning for DST</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2412.03270" target="_blank">arXiv 2412.03270 — Intent-driven In-context Learning for Few-shot DST</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2503.08857" target="_blank">arXiv 2503.08857 — Interpretable and Robust DST via Natural Language Summarization</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2310.14970" target="_blank">arXiv 2310.14970 — Towards LLM-driven Dialogue State Tracking</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2509.02547" target="_blank">arXiv 2509.02547 — The Landscape of Agentic Reinforcement Learning for LLMs: A Survey</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2407.03884" target="_blank">arXiv 2407.03884 — ChatSOP: SOP-Guided MCTS Planning Framework</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2505.17795" target="_blank">arXiv 2505.17795 — DialogXpert</a></li>
+                <li>• <a href="https://openreview.net/forum?id=MCNqgUFTHI" target="_blank">OpenReview — Plug-and-Play Policy Planner for LLM Dialogue Agents</a></li>
+                <li>• <a href="https://arxiv.org/html/2603.21389v1" target="_blank">arXiv 2603.21389 — Task-Specific Efficiency Analysis: When SLMs Outperform LLMs</a></li>
+                <li>• <a href="https://arxiv.org/html/2512.15943" target="_blank">arXiv 2512.15943 — Small Language Models for Efficient Agentic Tool Calling</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2507.04841" target="_blank">arXiv 2507.04841 — Spec-TOD</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2402.09748" target="_blank">arXiv 2402.09748 — Model Compression and Efficient Inference for LLMs: A Survey</a></li>
+                <li>• <a href="https://benchmarkingagents.com/tau-bench/" target="_blank">Tau-Bench 2026 — Customer-Service Agent Eval, Methodology, Tiers</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2607.10428" target="_blank">arXiv 2607.10428 — EYT-Bench: Human-Centered Benchmark for Multi-Turn Dialogue</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2510.05444" target="_blank">arXiv 2510.05444 — SimulatorArena</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2607.20734" target="_blank">arXiv 2607.20734 — LLMs Get Lost in Evolving User Intent</a></li>
+                <li>• <a href="https://arxiv.org/html/2606.19453" target="_blank">arXiv 2606.19453 — A Survey of Full-Duplex Spoken Dialogue Systems</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2512.18706" target="_blank">arXiv 2512.18706 — X-Talk: On the Underestimated Potential of Modular</a></li>
+                <li>• <a href="https://www.emergentmind.com/topics/end-to-end-spoken-dialogue-systems" target="_blank">Emergent Mind — End-to-End Spoken Dialogue Systems</a></li>
+            </ul>
+            <p style="margin-top: 0.5rem; font-size: 0.68rem; color: #808080;"><em>注：四層の技術分類とレーダー図の点数は本レポートの評価枠組みであり、業界標準ではありません。arXiv の事前公開論文は査読を経ていない場合があります。</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+const ctx1 = document.getElementById('competitiveChart').getContext('2d');
+new Chart(ctx1, {
+    type: 'radar',
+    data: {
+        labels: ['データ効率', '推論費用の優位', '制御のしやすさ', '領域移行', '実装のしやすさ'],
+        datasets: [
+            { label: '第1層 指示文・文脈内学習', data: [95, 40, 45, 92, 90], borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+            { label: '第2層 特化した微調整', data: [55, 95, 75, 40, 65], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+            { label: '第3層 強化学習', data: [30, 55, 92, 45, 30], borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)' },
+            { label: '第4層 一体型音声', data: [20, 45, 35, 30, 20], borderColor: 'rgb(168, 85, 247)', backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+        ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100 } },
+        plugins: { title: { display: true, text: '技術的な取り組みの比較（100点満点・本レポートの評価）' } } }
+});
+
+const ctx2 = document.getElementById('benchChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: ['MultiWOZ', 'SGD', 'τ-bench', 'τ²-bench', 'EYT-Bench'],
+        datasets: [{
+            label: '備える構成要素の数（5つ中）',
+            data: [1, 2, 5, 5, 4],
+            backgroundColor: ['rgba(148, 163, 184, 0.7)', 'rgba(148, 163, 184, 0.9)', 'rgba(59, 130, 246, 0.8)', 'rgba(34, 197, 94, 0.8)', 'rgba(249, 115, 22, 0.8)'],
+            borderColor: ['rgb(148, 163, 184)', 'rgb(148, 163, 184)', 'rgb(59, 130, 246)', 'rgb(34, 197, 94)', 'rgb(249, 115, 22)'],
+            borderWidth: 1
+        }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 }, title: { display: true, text: '構成要素の数' } } },
+        plugins: { title: { display: true, text: '評価基盤の構成要素 — 複数回・模擬・規定遵守・状態持続・道具呼び出し' } } }
+});
+</script>
+
+<div class="interaction-section">
+    <div class="interaction-card">
+        <div class="interaction-header">
+            <h2 class="interaction-title">💬 Comments &amp; Reactions</h2>
+            <div class="like-section">
+                <button id="like-btn" class="like-btn"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count">0</span>
+            </div>
+        </div>
+        <div class="comment-form">
+            <div class="comment-input-group"><label for="comment-author">Name (optional)</label><input type="text" id="comment-author" placeholder="Anonymous" maxlength="50"></div>
+            <div class="comment-input-group"><label for="comment-content">Your Comment</label><textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea></div>
+            <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list"><p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p></div>
+    </div>
+</div>
+
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
