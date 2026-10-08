@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Models — Jev, Laya and the Three Weeks of System One</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='system-one-decision-models-20261008-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='system-one-decision-models-20261008-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='system-one-decision-models-20261008-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>Decision Models, Surveyed Globally —<br>Jev, Laya, and the Three Weeks That Made "System One"</h1>
+        <div class="subtitle">Models that judge instead of write: 25-plus open clones, a wire format standardized by Ollama, and the first independent benchmark — where a 2023 classifier beat Jev</div>
+        <div class="meta">Report date: October 8, 2026 | Comprehensive report | Data collected: 2026-10-08</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Trends</h2>
+
+        <h3 class="subsection-title">1. Jev — A Model That Returns a Verdict Instead of Prose</h3>
+        <p><strong>Where things stand:</strong> TypeSafe AI released <strong>Jev</strong> on September 15, 2026, naming the category itself: <strong>a "System One model."</strong> Where a large language model (LLM) generates text, Jev <strong>answers typed questions about a text and attaches probabilities</strong>. The point is that software can use those values directly as a branch condition. The same day, TypeSafe came out of stealth with a <strong>$40 million seed round led by DCVC</strong>; Forbes reported a post-money valuation of roughly $200 million. The founders are <strong>Diogo Almeida — a former OpenAI researcher and co-inventor of RLHF and ChatGPT</strong> — along with Erik Gafni and Sasha Sheng.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The three question types (primitives)</h4>
+                <p>• <strong>Choice:</strong> one option out of up to 255, plus a probability distribution across them<br>
+                • <strong>Score:</strong> a position on an ordered rubric (2–10 levels), plus a distribution over levels<br>
+                • <strong>Noul:</strong> the probability that a condition is true (yes/no)<br>
+                • All three return a <strong>confidence value</strong> alongside the answer<br>
+                • Training method is <strong>RLCD</strong> (Reinforcement Learning for Calibrated Decisions) — post-training aimed at correct verdicts and usable probability estimates rather than preferred conversational replies</p>
+            </div>
+            <div class="trend-card">
+                <h4>Operational specs per the official docs</h4>
+                <p>• <strong>Version:</strong> <code>jev-1.13.0</code>, served at <code>POST /v1/systemone</code><br>
+                • <strong>Context:</strong> 64k tokens per request; a 32k budget for <code>state</code> plus the longest single question<br>
+                • <strong>Parallel evaluation:</strong> ingests <code>state</code> once and evaluates every question against it in parallel<br>
+                • <strong>Price:</strong> <strong>$0.042 per million input tokens; output tokens are free</strong><br>
+                • <strong>Limits:</strong> 100K tokens per second / 80 requests per second<br>
+                • <strong>Constraints:</strong> text only (no image or audio), English is the primary language, and <strong>no per-account fine-tuning</strong> — identical weights across all customers</p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>⚠️ One figure we do not adopt:</strong> Sequoia partner Pat Grady said Jev went "from zero to $100 million in revenue in seven days," and several outlets reprinted it. <strong>This report does not use that number.</strong> The disclosed seed was $40 million at a post-money valuation of roughly $200 million; a seed-stage company booking $100 million in a week is hard to reconcile with that valuation. TypeSafe has named no customers.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Specs, pricing, limits and constraints come from TypeSafe's own documentation (docs.typesafe.ai/models); the funding facts come from the Business Wire release, as do the founder details.<br>
+                <strong>Weaknesses:</strong> Parameter count, architecture and the RLCD recipe are unpublished, so the "why is it fast" claim cannot be verified. The official documentation gives no latency figures at all.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://docs.typesafe.ai/models" target="_blank">TypeSafe official model docs</a> |
+            <a href="https://www.morningstar.com/news/business-wire/20260915525333/typesafe-ai-emerges-from-stealth-with-40m-in-funding-with-new-model-for-composable-ai" target="_blank">$40M seed announcement (Business Wire)</a> |
+            <a href="https://www.turingpost.com/p/what-is-jev-rlcd" target="_blank">RLCD explained (Turing Post)</a>
+        </div>
+
+        <p><strong>Outlook:</strong> Jev's real invention is more likely the <strong>interface</strong> than the model. The contract — three typed question kinds plus probabilities — holds regardless of what sits behind it, and within three weeks more than 25 models had implemented that contract.</p>
+
+        <h3 class="subsection-title">2. A Three-Week Clone Rush — Laya and 25-Plus Open-Weight Implementations</h3>
+        <p><strong>Where things stand:</strong> Three days after Jev, on <strong>September 18, 2026, Convai Innovations published Laya's weights to Hugging Face under Apache 2.0</strong>. Laya takes a fundamentally different route. It is not a shrunken LLM but <strong>an encoder (BERT family) with a typed decision head — a non-autoregressive model</strong> that generates no text and produces its answer in a single forward pass. It ships as <strong>ModernBERT-large 421M</strong> for English, <strong>mmBERT-base 322M</strong> for 100-plus languages, and a router that detects the script and dispatches accordingly. Over the following month, open models implementing Jev's three question types arrived in a flood.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Laya's measured specs (HF model card)</h4>
+                <p>• <strong>Checkpoints:</strong> 421M (English) / 322M (multilingual) / 421M (typed-decisions fine-tune)<br>
+                • <strong>License:</strong> Apache 2.0 · <strong>Runs on:</strong> CPU, CUDA, Apple Silicon<br>
+                • <strong>Latency:</strong> about <strong>33ms</strong> single-shot, <strong>7.2ms</strong> per question when batched<br>
+                • <strong>Cost:</strong> $0 per token on your own hardware (infrastructure cost only)<br>
+                • <strong>Context:</strong> 512 tokens English / 1,024 multilingual — <strong>an order of magnitude below Jev's 64k</strong><br>
+                • <strong>Training scale:</strong> fine-tuned on 1,200 cases (6,000 decisions), evaluated on 400 cases (2,000 decisions)</p>
+            </div>
+            <div class="trend-card">
+                <h4>The derivative spectrum (a sample)</h4>
+                <p>• <strong>Decider</strong> (Mapika): Qwen3.5-based 2B/4B/35B-a3b — the 35B activates 3B, with 8 of 256 routed experts live<br>
+                • <strong>Nimble</strong> (Bespoke Labs): 9B fine-tuned from Qwen3.5-9B, 8,192 tokens, 255 choices<br>
+                • <strong>Clef</strong> (Cloudflare, Oct 1): 27B/9B Apache 2.0, Workers AI, $0.09 per million tokens<br>
+                • <strong>Anarkali</strong> (ToufiqQureshi): <strong>68M</strong> — the smallest encoder, claiming to beat Jev at one-sixth the size<br>
+                • <strong>AnyJev</strong> (Nokia Applied Research): <strong>training-free</strong> — reads hidden states from an existing LLM with debiasing<br>
+                • <strong>Jev-Omni</strong>: 12B multimodal (text, images, audio, video) — territory Jev does not cover</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Laya's figures were read directly from the official Hugging Face model card (convaiinnovations/laya-typed-decisions) — primary material down to training and evaluation case counts and per-workflow accuracy.<br>
+                <strong>Weaknesses:</strong> The list of 25-plus derivatives rests mainly on <strong>a single aggregator site</strong>; individual repositories were not exhaustively verified. Claims like "beats Jev at one-sixth the size" are all publisher self-assessments.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Laya (Hugging Face)</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">laya-typed-decisions model card</a> |
+            <a href="https://github.com/Mapika/decider" target="_blank">Decider (GitHub)</a> |
+            <a href="https://ollama.com/library/nimble" target="_blank">Nimble (Ollama)</a>
+        </div>
+
+        <p><strong>Outlook:</strong> What the clone rush shows is not who won but <strong>proof that the barrier to entry is effectively zero</strong>. Everything from a 68M encoder to a 35B mixture-of-experts — and even approaches requiring no training at all (AnyJev, SemIf) — satisfied the same contract.</p>
+
+        <h3 class="subsection-title">3. The Wire Format Got Standardized — Ollama Shipped <code>/v1/systemone</code></h3>
+        <p><strong>Where things stand:</strong> On September 29, 2026, <strong>Ollama 0.35 added a <code>/v1/systemone</code> endpoint</strong>. The crucial detail is that it is <strong>wire-compatible with Jev</strong>. A commercial API's request and response shape became the standard endpoint of a local runtime in two weeks. The same day, <strong>OpenAI launched a Decisions API (a GPT-6 Luna variant, 150ms latency, limited preview)</strong> and <strong>Liquid AI launched d1</strong>; two days later <strong>Cloudflare published Clef</strong>. Three hyperscale platforms entered a category that was two weeks old.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Ollama 0.35 (2026-09-29)</h4>
+                <p>• <strong>Endpoint:</strong> <code>/v1/systemone</code> — you pass the input text, the question and the choices together<br>
+                • <strong>Response:</strong> not prose but <strong>typed answers plus probabilities plus usage</strong><br>
+                • <strong>Question types:</strong> choice, noul, score (the same names Jev uses)<br>
+                • <strong>Three launch models:</strong> Nimble 9B (Bespoke Labs) and Together AI's Tev1 at 4B and 0.8B (experimental)<br>
+                • <strong>Effect:</strong> no extra cost and lower latency when run locally — aimed at ticket triage, model routing and content moderation</p>
+            </div>
+            <div class="trend-card">
+                <h4>Three platforms that arrived the same week</h4>
+                <p>• <strong>OpenAI Decisions API</strong> (Sep 29): GPT-6 Luna variant, <strong>150ms</strong>, limited preview, API only<br>
+                • <strong>Liquid AI d1</strong> (Sep 29): free tier, self-reported first place on the Jev Decision Index<br>
+                • <strong>Cloudflare Clef</strong> (Oct 1): Qwen fine-tunes at 27B/9B, <strong>Apache 2.0</strong>, Workers AI plus self-hosting, $0.09 per million tokens<br>
+                • <strong>What it means:</strong> the edge (Cloudflare), the frontier (OpenAI) and the local machine (Ollama) opened simultaneously behind <strong>one interface</strong></p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Ollama 0.35's new endpoint and its three launch models were consistent across multiple independent reports, and we confirmed by direct comparison that the path matches <code>POST /v1/systemone</code> in TypeSafe's official documentation.<br>
+                <strong>Weaknesses:</strong> OpenAI's Decisions API and Liquid AI's d1 are in limited preview or rest on self-published rankings, so their specs could not be pinned to primary documentation. "First on the Jev Decision Index" is a vendor claim.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://github.com/ollama/ollama/releases" target="_blank">Ollama releases</a> |
+            <a href="https://ollama.com/library/nimble" target="_blank">Nimble on Ollama</a> |
+            <a href="https://www.cloudflare.com/developer-platform/products/workers-ai/" target="_blank">Cloudflare Workers AI</a> |
+            <a href="https://www.liquid.ai/" target="_blank">Liquid AI</a>
+        </div>
+
+        <p><strong>Outlook:</strong> The category has no winner yet, but <strong>the interface looks settled</strong>. Once the wire format is standard, models become swappable parts and competition drops from model quality to <strong>latency, unit price and where the thing runs</strong>. That structure works against Jev.</p>
+
+        <h3 class="subsection-title">4. The First Independent Benchmark Pushed Back — A 2023 DeBERTa Classifier Beat Jev</h3>
+        <p><strong>Where things stand:</strong> On October 2, 2026, <strong>Red Hat's developer blog</strong> published a like-for-like comparison of nine models across four paradigms. It used two balanced datasets from the NeMo Guardrails evaluation benchmark — prompt injection, and toxicity/safety — and the conclusion is blunt: <strong>"decision models like Jev do not reliably outperform LLM-as-a-judge, pre-trained predictive models, or open source decision models in speed or accuracy."</strong></p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Prompt injection (accuracy / latency)</h4>
+                <p>• <strong>Qwen3.6-35B (LLM-as-judge): 89.31%</strong> / 312.5ms<br>
+                • <strong>deberta-v3-base-prompt-injection-v2: 89.01% / 54.1ms ← fastest</strong><br>
+                • DiffusionGemma-26B: 87.72% / 561.7ms<br>
+                • <strong>Jev-1.13.0: 86.35% / 348.1ms</strong><br>
+                • <strong>Laya: 85.44% / 119.3ms</strong><br>
+                • → a small 2023-era purpose-built classifier is <strong>2.7 points more accurate at one-sixth the latency</strong></p>
+            </div>
+            <div class="trend-card">
+                <h4>Content safety (accuracy / latency)</h4>
+                <p>• <strong>Jev: 86.20% ← first place</strong> / 360.4ms<br>
+                • DiffusionGemma: 85.53% / 499.3ms<br>
+                • Qwen3.6-35B: 85.47% / 307.6ms<br>
+                • Nemotron-3.5 (custom): 85.07% / 241.5ms<br>
+                • granite-guardian-hap-125m: 80.27% / <strong>33.2ms</strong><br>
+                • → Jev wins, but it is <strong>11× slower than a 125M model for a 5.9-point gap</strong></p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>📌 How to read this benchmark:</strong> The authors concede two things. (1) <strong>"The paradigms that work well for LLM-as-a-judge are not optimal for these zero-shot classifiers"</strong> — and indeed <strong>Laya went from 57.87% to 75.20% once the policies were tuned</strong> (same model, same data). (2) Models on GPU clusters carry a minimum 56ms trans-Atlantic round trip, so their latency is not directly comparable to local CPU execution. In other words, <strong>this table is not a ranking of models; it is a record of what happens when you use them at their defaults.</strong>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> This is the only comparison from a third party rather than a vendor that publishes its methodology, datasets, model versions and latency measurement conditions. The authors' explicit statement of their own limits (immature prompting, network latency in the numbers) adds to its credibility.<br>
+                <strong>Weaknesses:</strong> The tasks are confined to two guardrail problems, so the business judgments Jev markets itself on — ticket triage, invoice processing — were not measured. It is a single run, with no variance across repeats reported.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat independent benchmark (2026-10-02)</a> |
+            <a href="https://huggingface.co/RedHatAI/deberta-v3-base-prompt-injection-v2" target="_blank">deberta-v3-base-prompt-injection-v2</a> |
+            <a href="https://github.com/NVIDIA/NeMo-Guardrails" target="_blank">NeMo Guardrails</a>
+        </div>
+
+        <p><strong>Outlook:</strong> Where the task is fixed and labeled data exists — guardrails being the clearest case — <strong>small purpose-built classifiers still win</strong>. The value of a decision model lies elsewhere: where there are no labels and the questions keep changing.</p>
+
+        <h3 class="subsection-title">5. The Real Argument Is Calibration and Generalization, Not Accuracy</h3>
+        <p><strong>Where things stand:</strong> Line the numbers up and the category's actual fault line appears. On the typed-decisions benchmark, <strong>the fine-tuned Laya scores 0.766 accuracy against Jev's 0.727. Yet calibration error (ECE) runs 0.213 for Laya against 0.144 for Jev, and on the general intent task Banking77 the gap doubles the other way — Jev 0.870 against Laya 0.425.</strong> Decisively, <strong>Laya's zero-shot accuracy is 0.362</strong>: Laya is not a generalist but a <strong>specialist</strong>. Its own model card says performance drops outside its four target workflows.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The fine-tuned Laya in detail (model card)</h4>
+                <p>• <strong>Overall:</strong> accuracy 0.766 · soft 0.471 · Brier 0.062 · <strong>ECE 0.213</strong> · Score MAE 0.242<br>
+                • <strong>By workflow:</strong> invoice processing 0.804 · security incidents 0.766 · customer service 0.764 · agent-trace observability 0.730<br>
+                • <strong>By question type:</strong> noul 0.857 · choice 0.733 · <strong>score 0.723 ← weakest</strong><br>
+                • <strong>Self-admission:</strong> the probability distributions are over-confident; per-type temperatures were fitted on training data, so <strong>refit on held-out data before relying on them</strong><br>
+                • <strong>Guidance:</strong> keep choice questions under roughly 20 options</p>
+            </div>
+            <div class="trend-card">
+                <h4>Why calibration matters more than accuracy</h4>
+                <p>• Production routing works by <strong>placing a threshold on confidence</strong><br>
+                • So <strong>an over-confident 96% model is operationally worse than an honest 94% one</strong> — the threshold loses its meaning<br>
+                • <strong>Accept/escalate design:</strong> the paper "JEV-as-a-Judge" (arXiv:2609.26550; Li, Miao, Krishnan, Padman) evaluates settling cases autonomously when confident and escalating to a stronger judge when not — <strong>roughly 20–40% escalate depending on the threshold</strong><br>
+                • The paper also states its own limit: <strong>threshold calibration remains task- and domain-dependent</strong></p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>🔍 Mind the gap between attention and usage:</strong> Jev drew 40 million views on X and the open clones passed 25. Yet <strong>Laya's typed-decisions checkpoint shows 722 downloads in the last month</strong> (HF model card, October 2026). Every metric Laya has published is <strong>Convai Innovations' own evaluation</strong>, and as of October 2026 <strong>no third-party research lab has replicated them</strong>. That is also the community's loudest objection: on r/LocalLLaMA and Hacker News the most common point was that <strong>a classifier with calibrated probabilities is a solved problem, and TypeSafe has not published enough architecture to verify the interesting claims.</strong>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> All of Laya's figures and its own admissions (over-confidence, the recommendation to refit temperature, the 20-option guidance) are primary material from the official model card, as is the 722-download count. The accept/escalate design comes from the arXiv paper's text.<br>
+                <strong>Weaknesses:</strong> Jev's typed-decisions accuracy splits by source between <strong>0.727 and 67.8%</strong> (both are shown above). The benchmark itself consists of four synthetic workflows published by the Laya side, so a bias in Laya's favor cannot be ruled out.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/abs/2609.26550" target="_blank">JEV-as-a-Judge (arXiv:2609.26550)</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">Laya model card (metrics and limits)</a> |
+            <a href="https://news.ycombinator.com/item?id=49768024" target="_blank">The Hacker News debate</a>
+        </div>
+
+        <p><strong>Outlook:</strong> If this category survives, it will be decided by <strong>knowing when it might be wrong, not by how often it is right</strong>. Designs like accept/escalate hold only when probabilities mean what they say — and only then does putting a cheap judge in front of an expensive model actually pay.</p>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+        <h3 class="subsection-title">A four-tier market structure</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">This market does not split on which model is smarter. It splits on <strong>whether you get the weights, where the thing runs, and whether it generalizes or specializes</strong>. All four tiers implement the same three question types (choice, noul, score), so in practice the choice is usually decided by deployment constraints rather than model quality.</p>
+
+        <table>
+            <thead>
+                <tr><th>Tier</th><th>Key players</th><th>Scale</th><th>License and deployment</th><th>Strengths / weaknesses</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Tier 1</strong><br>Hosted frontier decision APIs</td><td><strong>Jev</strong> (TypeSafe AI), OpenAI Decisions API, Liquid AI d1</td><td>Undisclosed</td><td>Proprietary · cloud only</td><td>Zero-shot generality, 64k context, low ECE / closed weights, data leaves your estate, unit price is "a bet"</td></tr>
+                <tr><td><strong>Tier 2</strong><br>Open-weight LLM-derived decision models</td><td>Decider (2B/4B/35B-a3b), Nimble 9B, Cloudflare Clef 27B/9B, Tev1 4B, OpenDecider</td><td>2B–35B</td><td>Apache 2.0 / MIT · local, vLLM, edge</td><td>Inherits an LLM's world knowledge, long context / needs GPUs, 18–41ms and up, operational burden</td></tr>
+                <tr><td><strong>Tier 3</strong><br>Open-weight encoder decision models</td><td><strong>Laya</strong> 421M/322M, Von 395M, open-jev-deberta 434M, GLiNER2.5-Decide 340M, Anarkali 68M</td><td>68M–434M</td><td>Apache 2.0 · CPU, CUDA, Apple Silicon</td><td>7–33ms, $0 per token, runs on CPU / short context (512–1,024), zero-shot 0.362, a specialist</td></tr>
+                <tr><td><strong>Tier 4</strong><br>Incumbent alternatives (the reigning champions)</td><td>deberta-v3 prompt-injection detectors, Granite Guardian 125M, ShieldGemma and Shieldstral, Nemotron Content Safety, LLM-as-a-judge (Qwen3.6-35B)</td><td>125M–35B</td><td>Mostly open · local</td><td>Best accuracy and lowest latency on fixed tasks (33–54ms) / needs labeled data per task, retrain when the question changes</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">Shifts visible in the market</h3>
+        <p style="font-size:0.95rem; line-height:1.8;">
+        • <strong>The contract standardized before the models did:</strong> Jev's <code>/v1/systemone</code> request shape became Ollama's default endpoint in two weeks. That is unusual speed for a category, and it turns models into swappable parts.<br>
+        • <strong>The barrier to entry was proven to be effectively zero:</strong> everything from a 68M encoder (Anarkali) to methods needing no training at all (AnyJev, SemIf) satisfied the same contract. A proprietary model's only moat is zero-shot generality and honest probabilities.<br>
+        • <strong>Competition dropped from quality to price, latency and placement:</strong> Jev at $0.042 per million (output free), Cloudflare Clef at $0.09 per million, Laya at $0 per token. One tier has already reached zero.<br>
+        • <strong>Independent verification is cooling the hype:</strong> the first third-party benchmark, two and a half weeks after the category appeared, concluded there is no reliable advantage — and almost every published metric is a vendor self-evaluation.<br>
+        • <strong>The adjacent market is real:</strong> the LLM observability and evaluation platform market is projected to grow from $2.69B in 2026 to $9.26B by 2030 (36.2% CAGR), and LLM-as-a-judge is 500–5,000× cheaper than human review while agreeing with human preference about 80% of the time. Decision models are an attempt to push that cost curve down one more step.
+        </p>
+
+        <h3 class="subsection-title">Independent benchmark: accuracy versus latency</h3>
+        <div class="chart-container">
+            <canvas id="benchChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: Red Hat (2026-10-02), prompt-injection dataset. Models on GPU clusters include a minimum 56ms network round trip, so latency is not strictly comparable across rows (stated by the authors).</p>
+
+        <h3 class="subsection-title">Capability comparison by tier</h3>
+        <div class="chart-container">
+            <canvas id="tierChart"></canvas>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The basis for the tiers — license, parameter count, deployment form and unit price — comes from each model's own documentation, model card or pricing page. The accuracy and latency chart reproduces the third-party benchmark's own table.<br>
+                <strong>Weaknesses:</strong> Scores in the tier radar are <strong>this report's qualitative assessment</strong> based on published specs, not measurements. Market sizes come from the public summaries of paid reports, and no research firm has yet sized "decision models" as a market of their own.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat benchmark</a> |
+            <a href="https://docs.typesafe.ai/models" target="_blank">Jev pricing and limits</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Laya</a> |
+            <a href="https://github.com/bespokelabsai/nimble" target="_blank">Nimble (Bespoke Labs)</a>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">Approaches observed in the market.</p>
+
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>A like-for-like contest against the classifier you already run</strong> — pick one live classification point and compare the current approach with a decision model on the same data under the same measurement conditions. As the Red Hat results showed, the small purpose-built classifier winning is not unusual.</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>Evaluate calibration before accuracy</strong> — measure ECE and Brier first, refit temperature on held-out data, and only then set the threshold. There are model cards that admit over-confidence and recommend exactly this.</p>
+            <p style="line-height:1.6;">3. <strong>Design the two-stage accept/escalate path</strong> — put a cheap judge in front, settle only the confident band autonomously, and escalate the uncertain band to a stronger model or a person. Published research sees 20–40% escalate depending on the threshold.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">Key findings</h3>
+            <ul class="key-findings">
+                <li><strong>A new category appeared in three weeks:</strong> TypeSafe AI released Jev on 2026-09-15 and named the "System One model" (a $40M seed led by DCVC, roughly $200M post-money, founded by RLHF co-inventor Diogo Almeida). Three days later Laya published its weights under Apache 2.0; two weeks after that, Ollama shipped <code>/v1/systemone</code>.</li>
+                <li><strong>The output is a different kind of thing:</strong> not prose but three typed answers with probabilities — <strong>choice (up to 255 options), noul (a yes/no probability), score (a level)</strong>. The category's claim is that software can use these directly as branch conditions.</li>
+                <li><strong>The barrier to entry was proven to be zero:</strong> open implementations passed 25, spanning a 68M encoder, a 35B mixture-of-experts, and methods needing no training at all (AnyJev, SemIf). OpenAI, Cloudflare and Liquid AI all entered within two weeks.</li>
+                <li><strong>⚠️ The first independent benchmark is not friendly:</strong> in Red Hat's comparison (2026-10-02), on prompt injection <strong>a 2023-era deberta-v3 beat Jev at 89.01% / 54ms versus 86.35% / 348ms</strong>; on content safety Jev leads at 86.20% but runs 11× slower than a 125M model. The conclusion is that there is no reliable advantage in speed or accuracy.</li>
+                <li><strong>The real axis is calibration:</strong> Laya beats Jev on accuracy (0.766 vs 0.727) but loses on ECE (0.213 vs 0.144), and its zero-shot accuracy of 0.362 means it is no generalist. Production routing thresholds on probability, so <strong>an over-confident 96% model is worse than an honest 94% one</strong>.</li>
+                <li><strong>Watch the gap between attention and usage:</strong> 40 million views on X and 25-plus clones, against <strong>722 downloads last month</strong> for Laya's typed-decisions checkpoint — and published metrics that are almost entirely vendor self-evaluations. The "$100 million in seven days" claim is hard to reconcile with the disclosed valuation, so this report does not adopt it.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Selection Guide</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>If the task is fixed and you have labeled data → keep the purpose-built classifier (Tier 4)</strong><br>
+                Why: under the same conditions it is more accurate at one-sixth to one-eleventh the latency. The data does not support switching to the new category.<br>
+                <strong>If the questions change often and there are no labels → a hosted API such as Jev (Tier 1)</strong><br>
+                Why: usable zero-shot, 64k of context, low ECE. The costs are closed weights, data leaving your estate, and exposure to price changes.<br>
+                <strong>If data sovereignty and zero marginal cost come first → an encoder model such as Laya (Tier 3)</strong><br>
+                Why: 7–33ms on CPU, $0 per token, Apache 2.0. But context is 512–1,024 tokens and <strong>it is a specialist — it only becomes useful once fine-tuned on your own data</strong>.<br>
+                <strong>If you need long context and world knowledge together → Decider, Nimble or Clef (Tier 2)</strong><br>
+                Why: LLM-derived, so knowledge comes along and context runs past 8k. The price is GPUs and operational load.
+            </p>
+        </div>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility Assessment</h3>
+            <div class="overall-credibility-score">8.3/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Overall:</strong> This report leans heavily on primary sources. Specs and pricing come from vendor documentation, performance figures from Hugging Face model cards and the third-party benchmark's own table, funding facts from the disclosure release, and the design arguments from an arXiv paper.</p>
+                <p><strong>Main strengths:</strong> Every point where vendor claims and independent measurement diverge is surfaced — the 0.727 versus 67.8% split on Jev's accuracy, the rejection of "$100M in seven days," the absence of third-party replication for any Laya metric, and the Red Hat authors' own stated limits (immature prompting, network latency folded into the numbers).</p>
+                <p><strong>Improvement priorities:</strong> (1) re-measure Jev, Laya and the incumbent classifier on your own task under identical conditions; (2) verify the 25-plus derivative list repository by repository; (3) close the gap left by substituting an adjacent market (observability and evaluation platforms), since no firm has sized decision models on their own.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">Key Terminology</h2>
+        <div style="background:#fafafa; padding:0.5rem 0.75rem; border-left:3px solid #e5e5e5;">
+            <div style="margin-bottom:0.4rem;"><strong>Decision model / System One model</strong> — A model that, instead of generating text, returns a bounded answer: one of a set of options, a score, or a yes/no probability. The name borrows from fast intuitive human judgment ("System 1"), and the central claim is that software can drop the value straight into a conditional.</div>
+            <div style="margin-bottom:0.4rem;"><strong>choice · noul · score</strong> — The category's three question types. Choice picks one of up to 255 options, noul returns the probability a condition is true, and score returns a level on an ordered rubric. The names Jev gave them became the industry's shared vocabulary.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Calibration / ECE</strong> — Whether a model that says "90% confident" is actually right nine times out of ten. ECE (expected calibration error) measures how far off that is; lower means the probabilities can be trusted. In any system that automates on a threshold, it can matter more than accuracy.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Non-autoregressive</strong> — Producing the answer in a single computation rather than writing one word after another. Far faster because nothing is generated, but it cannot explain itself in prose. This is why Laya hits 33ms, or 7.2ms batched.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Encoder model (BERT family)</strong> — An architecture specialized in reading text and compressing its meaning, as opposed to the decoders (GPT family) that write. ModernBERT and DeBERTa are examples: small and fast, but with a short context window.</div>
+            <div style="margin-bottom:0.4rem;"><strong>RLCD</strong> — The post-training TypeSafe says it applied to Jev, rewarding correct verdicts and usable probabilities rather than replies people prefer. The claim is that its objective differs from conversational RLHF; the method itself is unpublished.</div>
+            <div style="margin-bottom:0.4rem;"><strong>LLM-as-a-judge</strong> — Having a large language model evaluate another model's output or a user's input. Hundreds to thousands of times cheaper than human review, but it agrees with human preference only about 80% of the time and is slow because it generates a response. This is precisely the slot decision models aim to take.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Guardrails / prompt injection</strong> — Guardrails filter an AI's inputs and outputs against a policy; prompt injection is an attack that hijacks a model's instructions through malicious input. These are the two tasks the Red Hat benchmark measured.</div>
+            <div><strong>Accept/escalate</strong> — A two-stage design that settles cases itself when confident and hands the ambiguous ones to a stronger model or a human. It lowers total cost by putting a cheap judge first, and it only works when the probabilities are honest.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> October 8, 2026</p>
+            <ul>
+                <li>• <a href="https://docs.typesafe.ai/models" target="_blank">TypeSafe AI official docs — jev-1.13.0 specs, pricing, limits, constraints</a></li>
+                <li>• <a href="https://www.morningstar.com/news/business-wire/20260915525333/typesafe-ai-emerges-from-stealth-with-40m-in-funding-with-new-model-for-composable-ai" target="_blank">Business Wire — TypeSafe AI's $40M seed led by DCVC, 2026-09-15</a></li>
+                <li>• <a href="https://www.turingpost.com/p/what-is-jev-rlcd" target="_blank">Turing Post — RLCD and Jev explained</a></li>
+                <li>• <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat Developer — decision models versus traditional guardrails, independent benchmark (9 models, 4 paradigms)</a></li>
+                <li>• <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Hugging Face — convaiinnovations/laya (421M and 322M, Apache 2.0)</a></li>
+                <li>• <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">Hugging Face — laya-typed-decisions model card (0.766, ECE 0.213, limits, 722 downloads)</a></li>
+                <li>• <a href="https://arxiv.org/abs/2609.26550" target="_blank">Li, Miao, Krishnan, Padman — JEV-as-a-Judge: Accept When Confident, Escalate When Unsure (arXiv:2609.26550)</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2609.28940" target="_blank">arXiv:2609.28940 — JEV and Laya as System One decision layers for penetration-testing harnesses</a></li>
+                <li>• <a href="https://github.com/ollama/ollama/releases" target="_blank">Ollama releases — the <code>/v1/systemone</code> endpoint in 0.35 (2026-09-29)</a></li>
+                <li>• <a href="https://ollama.com/library/nimble" target="_blank">Ollama Library — Nimble 9B</a></li>
+                <li>• <a href="https://github.com/bespokelabsai/nimble" target="_blank">Bespoke Labs — Nimble (GitHub)</a></li>
+                <li>• <a href="https://github.com/Mapika/decider" target="_blank">Mapika — Decider (Qwen3.5-derived 2B/4B/35B-a3b)</a></li>
+                <li>• <a href="https://www.orcarouter.ai/blog/laya-vs-decider" target="_blank">Laya vs Decider — a 421M encoder against a 35B mixture</a></li>
+                <li>• <a href="https://mchromiak.github.io/articles/2026/Sep/17/Typed-Decision-Models-Jev-and-Laya-in-Agentic-AI/" target="_blank">M. Chromiak — Typed Decision Models: Jev and Laya in Agentic AI</a></li>
+                <li>• <a href="https://news.ycombinator.com/item?id=49768024" target="_blank">Hacker News — the debate over Jev's "frontier intelligence" claim and Laya's generalization</a></li>
+                <li>• <a href="https://news.ycombinator.com/item?id=49767192" target="_blank">Hacker News — criticism of the launch language</a></li>
+                <li>• <a href="https://www.researchandmarkets.com/reports/6215671/large-language-model-llm-observability" target="_blank">Research and Markets — LLM observability platform market $2.69B (2026) → $9.26B (2030), 36.2% CAGR</a></li>
+                <li>• <a href="https://www.evidentlyai.com/llm-guide/llm-as-a-judge" target="_blank">Evidently AI — LLM-as-a-judge guide (cost, human agreement)</a></li>
+            </ul>
+            <p style="margin-top:0.5rem; font-size:0.7rem; color:#808080;"><em>Note: the list of 25-plus derivative models rests mainly on a community aggregator site; individual repositories were not exhaustively verified. The "$100 million in seven days" claim is hard to reconcile with the disclosed valuation and was not adopted. No research firm had sized "decision models" as a standalone market as of October 2026, so an adjacent market (LLM observability and evaluation platforms) is shown instead.</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('benchChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Qwen3.6-35B\n(LLM-as-judge)', 'deberta-v3-base\n(2023-era classifier)', 'DiffusionGemma-26B', 'Jev-1.13.0\n(TypeSafe)', 'Laya\n(421M encoder)'],
+        datasets: [
+            { label: 'Accuracy (%)', data: [89.31, 89.01, 87.72, 86.35, 85.44], yAxisID: 'y',
+              backgroundColor:'rgba(59,130,246,0.75)' },
+            { label: 'Latency (ms)', data: [312.5, 54.1, 561.7, 348.1, 119.3], yAxisID: 'y1',
+              backgroundColor:'rgba(249,115,22,0.75)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{
+        y:{ position:'left', min:80, max:92, title:{ display:true, text:'Accuracy (%)' } },
+        y1:{ position:'right', beginAtZero:true, grid:{ drawOnChartArea:false }, title:{ display:true, text:'Latency (ms)' } }
+      },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'Prompt-injection task — higher accuracy is better, lower latency is better (Red Hat, 2026-10-02)', font:{ size:11 } } } }
+});
+
+new Chart(document.getElementById('tierChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['Zero-shot generality', 'Calibration trustworthiness', 'Latency (lower = higher score)', 'Self-hosting & data sovereignty', 'Context length'],
+        datasets: [
+            { label: 'Tier 1 Jev · OpenAI Decisions', data: [90, 85, 45, 10, 95],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'Tier 2 Decider · Nimble · Clef', data: [70, 60, 60, 85, 75],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'Tier 3 Laya · Von · Anarkali', data: [35, 50, 95, 95, 25],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'Tier 4 DeBERTa · Guardian classifiers', data: [20, 75, 90, 95, 30],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'Capability by tier (qualitative assessment by this report, out of 100)', font:{ size:12 } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>

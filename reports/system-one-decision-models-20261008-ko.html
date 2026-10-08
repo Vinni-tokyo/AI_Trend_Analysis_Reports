@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>의사결정 모델 — Jev·Laya 와 System One 범주의 3주</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← 홈</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='system-one-decision-models-20261008-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='system-one-decision-models-20261008-ko.html'" class="lang-btn active">한국어</button>
+                <button onclick="window.location.href='system-one-decision-models-20261008-en.html'" class="lang-btn">English</button>
+            </div>
+        </div>
+        <h1>의사결정 모델 글로벌 조사 —<br>Jev·Laya 와 「System One」 범주가 생긴 3주</h1>
+        <div class="subtitle">말하지 않고 판정하는 모델: 25종 넘는 오픈 클론, Ollama 와이어 포맷 표준화, 그리고 2023년 분류기가 Jev 를 이긴 첫 독립 벤치마크</div>
+        <div class="meta">보고서 작성일: 2026년 10월 8일 | 상세 보고서 | 데이터 수집: 2026-10-08</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+        <h3 class="subsection-title">1. Jev — 글을 쓰지 않고 「판정」을 돌려주는 모델</h3>
+        <p><strong>현황:</strong> TypeSafe AI 가 2026년 9월 15일 <strong>Jev</strong> 를 공개하며 스스로 <strong>「System One 모델」</strong>이라는 범주명을 붙였습니다. LLM 이 문장을 생성하는 대신, Jev 는 텍스트에 대한 <strong>타입이 정해진 질문에 확률과 함께 답</strong>합니다. 소프트웨어가 그 값을 그대로 분기 조건으로 쓸 수 있다는 것이 요점입니다. 같은 날 TypeSafe 는 <strong>DCVC 주도 4,000만 달러 시드</strong>로 스텔스를 벗었고, Forbes 는 투자 후 기업가치를 약 2억 달러로 보도했습니다. 창업자는 <strong>전 OpenAI 연구자이자 RLHF·ChatGPT 공동 개발자인 Diogo Almeida</strong>, 그리고 Erik Gafni·Sasha Sheng 입니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>질문 유형 3종 (프리미티브)</h4>
+                <p>• <strong>Choice:</strong> 최대 255개 선택지 중 하나 + 선택지별 확률 분포<br>
+                • <strong>Score:</strong> 순서가 있는 평가 기준 위의 위치(2~10단계) + 단계별 분포<br>
+                • <strong>Noul:</strong> 조건이 참일 확률(예·아니오)<br>
+                • 세 유형 모두 <strong>신뢰도 값</strong>을 함께 반환<br>
+                • 학습법은 <strong>RLCD</strong>(Reinforcement Learning for Calibrated Decisions) — 「선호되는 대화 응답」이 아니라 「판정과 쓸 만한 확률 추정」을 목표로 한 사후학습</p>
+            </div>
+            <div class="trend-card">
+                <h4>공식 문서 기준 운영 스펙</h4>
+                <p>• <strong>버전:</strong> <code>jev-1.13.0</code>, 엔드포인트 <code>POST /v1/systemone</code><br>
+                • <strong>컨텍스트:</strong> 요청당 64k 토큰, <code>state</code>+최장 질문은 32k 예산<br>
+                • <strong>병렬 평가:</strong> <code>state</code> 를 한 번 읽고 모든 질문을 병렬로 판정<br>
+                • <strong>요율:</strong> 입력 100만 토큰당 <strong>$0.042 · 출력 토큰 무료</strong><br>
+                • <strong>한도:</strong> 초당 10만 토큰 / 초당 80요청<br>
+                • <strong>제약:</strong> 텍스트 전용(이미지·음성 미지원), 주 언어는 영어, <strong>계정별 파인튜닝 없음</strong>(전 고객 동일 가중치)</p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>⚠️ 검증되지 않은 수치 한 건:</strong> Sequoia 파트너 Pat Grady 가 「Jev 가 7일 만에 0 → 매출 1억 달러」라고 언급했고 일부 매체가 이를 그대로 실었습니다. 본 보고서는 <strong>이 수치를 채택하지 않습니다</strong>. 같은 시기 공시된 시드는 4,000만 달러이고 투자 후 기업가치가 약 2억 달러인데, 시드 단계 회사가 주당 1억 달러 매출을 낸다면 그 기업가치와 양립하기 어렵습니다. TypeSafe 는 고객사를 하나도 공개하지 않았습니다.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 스펙·요율·한도·제약은 TypeSafe 공식 문서(docs.typesafe.ai/models)에서, 투자 사실은 Business Wire 배포 원문에서 확인했습니다. 창업자 이력도 같은 배포문 기준입니다.<br>
+                <strong>개선점:</strong> 파라미터 수·아키텍처·RLCD 세부는 비공개로, 「왜 빠른가」를 검증할 수 없습니다. 지연시간 수치는 공식 문서에 아예 없습니다.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://docs.typesafe.ai/models" target="_blank">TypeSafe 공식 모델 문서</a> |
+            <a href="https://www.morningstar.com/news/business-wire/20260915525333/typesafe-ai-emerges-from-stealth-with-40m-in-funding-with-new-model-for-composable-ai" target="_blank">$40M 시드 발표 (Business Wire)</a> |
+            <a href="https://www.turingpost.com/p/what-is-jev-rlcd" target="_blank">RLCD 해설 (Turing Post)</a>
+        </div>
+
+        <p><strong>전망:</strong> Jev 의 진짜 발명은 모델이 아니라 <strong>인터페이스</strong>일 가능성이 높습니다. 「타입이 정해진 질문 3종 + 확률」이라는 계약은 뒤에 어떤 모델이 있든 성립하고, 실제로 3주 만에 그 계약을 구현한 모델이 25종 넘게 나왔습니다.</p>
+
+        <h3 class="subsection-title">2. 3주 만의 클론 러시 — Laya 를 포함해 오픈 가중치 25종 이상</h3>
+        <p><strong>현황:</strong> Jev 공개 3일 뒤인 <strong>2026년 9월 18일, Convai Innovations 가 Laya 의 가중치를 Apache 2.0 으로 Hugging Face 에 공개</strong>했습니다. Laya 는 Jev 와 접근이 근본적으로 다릅니다. LLM 을 줄인 것이 아니라 <strong>인코더(BERT 계열)에 타입 판정 헤드를 붙인 비자동회귀 모델</strong>로, 텍스트를 생성하지 않고 단일 순전파로 답을 냅니다. 영어용 <strong>ModernBERT-large 421M</strong>, 100개 이상 언어용 <strong>mmBERT-base 322M</strong>, 그리고 문자 체계를 감지해 적절한 모델로 보내는 라우터로 구성됩니다. 이후 한 달 사이 Jev 의 질문 유형 3종을 그대로 구현한 오픈 모델이 쏟아졌습니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Laya 실측 스펙 (HF 모델 카드)</h4>
+                <p>• <strong>구성:</strong> 421M(영어) / 322M(다국어) / 421M(typed-decisions 파인튜닝판)<br>
+                • <strong>라이선스:</strong> Apache 2.0 · <strong>실행:</strong> CPU·CUDA·Apple Silicon<br>
+                • <strong>지연:</strong> 단건 약 <strong>33ms</strong>, 배치 시 질문당 <strong>7.2ms</strong><br>
+                • <strong>비용:</strong> 자체 하드웨어에서 토큰당 $0 (인프라 비용만)<br>
+                • <strong>컨텍스트:</strong> 영어 512 / 다국어 1,024 토큰 — <strong>Jev 의 64k 와 자릿수가 다름</strong><br>
+                • <strong>학습 규모:</strong> 1,200케이스(6,000판정)로 파인튜닝, 400케이스(2,000판정)로 평가</p>
+            </div>
+            <div class="trend-card">
+                <h4>파생 모델 스펙트럼 (일부)</h4>
+                <p>• <strong>Decider</strong> (Mapika): Qwen3.5 기반 2B/4B/35B-a3b — 35B 는 활성 3B·라우팅 전문가 256개 중 8개 활성<br>
+                • <strong>Nimble</strong> (Bespoke Labs): 9B, Qwen3.5-9B 파인튜닝, 8,192 토큰, 선택지 255개<br>
+                • <strong>Clef</strong> (Cloudflare, 10-01): 27B/9B Apache 2.0, Workers AI, 100만 토큰당 $0.09<br>
+                • <strong>Anarkali</strong> (ToufiqQureshi): <strong>68M</strong> — 최소 인코더, 1/6 크기로 Jev 를 앞선다고 주장<br>
+                • <strong>AnyJev</strong> (Nokia Applied Research): <strong>학습 불필요</strong> — 기존 LLM 의 은닉상태를 읽어 디바이어싱<br>
+                • <strong>Jev-Omni</strong>: 12B 멀티모달(텍스트·이미지·음성·영상) — Jev 가 못 하는 영역</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> Laya 수치는 Hugging Face 공식 모델 카드(convaiinnovations/laya-typed-decisions)에서 직접 확인했습니다 — 학습·평가 케이스 수, 워크플로별 정확도까지 1차 자료입니다.<br>
+                <strong>개선점:</strong> 25종 넘는 파생 모델 목록은 <strong>단일 집계 사이트</strong>를 주 출처로 했고 개별 저장소를 전수 검증하지 않았습니다. 「1/6 크기로 Jev 를 앞선다」류의 주장은 모두 공개자 자체 평가입니다.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Laya (Hugging Face)</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">laya-typed-decisions 모델 카드</a> |
+            <a href="https://github.com/Mapika/decider" target="_blank">Decider (GitHub)</a> |
+            <a href="https://ollama.com/library/nimble" target="_blank">Nimble (Ollama)</a>
+        </div>
+
+        <p><strong>전망:</strong> 이 클론 러시의 의미는 「누가 이겼나」가 아니라 <strong>진입 장벽이 사실상 없다는 사실의 증명</strong>입니다. 68M 인코더부터 35B MoE 까지, 심지어 학습이 전혀 필요 없는 방식(AnyJev·SemIf)까지 같은 계약을 만족시켰습니다.</p>
+
+        <h3 class="subsection-title">3. 와이어 포맷의 표준화 — Ollama 가 <code>/v1/systemone</code> 을 넣었다</h3>
+        <p><strong>현황:</strong> 2026년 9월 29일, <strong>Ollama 0.35 가 <code>/v1/systemone</code> 엔드포인트를 추가</strong>했습니다. 중요한 점은 이것이 <strong>Jev 의 와이어 포맷과 호환</strong>된다는 것입니다. 상용 API 의 요청·응답 형식이 2주 만에 로컬 런타임의 표준 엔드포인트가 된 셈입니다. 같은 날 <strong>OpenAI 가 Decisions API(GPT-6 Luna 계열, 지연 150ms, 제한 프리뷰)</strong>를, <strong>Liquid AI 가 d1</strong> 을 내놓았고, 이틀 뒤 <strong>Cloudflare 가 Clef</strong> 를 공개했습니다. 즉 범주가 생긴 지 2주 만에 하이퍼스케일러 3곳이 들어왔습니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Ollama 0.35 (2026-09-29)</h4>
+                <p>• <strong>엔드포인트:</strong> <code>/v1/systemone</code> — 입력 텍스트·질문·선택지를 함께 전달<br>
+                • <strong>응답:</strong> 산문이 아니라 <strong>타입 답변 + 확률 + 사용량</strong><br>
+                • <strong>질문 유형:</strong> choice · noul · score (Jev 와 동일 명칭)<br>
+                • <strong>초기 탑재 모델 3종:</strong> Nimble 9B(Bespoke Labs), Together AI 의 Tev1 4B 와 0.8B(실험판)<br>
+                • <strong>효과:</strong> 로컬 실행 시 추가 비용 0 + 지연 감소 — 티켓 분류·모델 라우팅·콘텐츠 중재 용도</p>
+            </div>
+            <div class="trend-card">
+                <h4>같은 주에 들어온 플랫폼 3곳</h4>
+                <p>• <strong>OpenAI Decisions API</strong> (09-29): GPT-6 Luna 변종, <strong>150ms</strong>, 제한 프리뷰, API 전용<br>
+                • <strong>Liquid AI d1</strong> (09-29): 무료 티어 제공, 자칭 Jev Decision Index 1위<br>
+                • <strong>Cloudflare Clef</strong> (10-01): Qwen 파인튜닝 27B/9B, <strong>Apache 2.0</strong>, Workers AI + 자체 호스팅, 100만 토큰당 $0.09<br>
+                • <strong>의미:</strong> 엣지(Cloudflare)·프런티어(OpenAI)·로컬(Ollama) 세 경로가 <strong>같은 인터페이스</strong>로 동시에 열렸습니다</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> Ollama 0.35 의 엔드포인트 추가와 초기 탑재 모델 3종은 복수의 독립 보도에서 일치했고, 엔드포인트 경로명이 TypeSafe 공식 문서의 <code>POST /v1/systemone</code> 과 동일하다는 점은 직접 대조로 확인했습니다.<br>
+                <strong>개선점:</strong> OpenAI Decisions API 와 Liquid AI d1 은 제한 프리뷰·자체 순위 기반이라 1차 문서로 스펙을 확정하지 못했습니다. 「Jev Decision Index 1위」는 벤더 주장입니다.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://github.com/ollama/ollama/releases" target="_blank">Ollama 릴리스</a> |
+            <a href="https://ollama.com/library/nimble" target="_blank">Nimble on Ollama</a> |
+            <a href="https://www.cloudflare.com/developer-platform/products/workers-ai/" target="_blank">Cloudflare Workers AI</a> |
+            <a href="https://www.liquid.ai/" target="_blank">Liquid AI</a>
+        </div>
+
+        <p><strong>전망:</strong> 범주의 승자는 아직 정해지지 않았지만 <strong>인터페이스는 이미 정해진 것으로 보입니다</strong>. 와이어 포맷이 표준화되면 모델은 교체 가능한 부품이 되고, 경쟁축은 모델 품질보다 <strong>지연·단가·배치 위치</strong>로 내려갑니다. 이는 Jev 에게 불리한 구조입니다.</p>
+
+        <h3 class="subsection-title">4. 첫 독립 벤치마크의 역풍 — 2023년 DeBERTa 분류기가 Jev 를 이겼다</h3>
+        <p><strong>현황:</strong> 2026년 10월 2일 <strong>Red Hat 개발자 블로그</strong>가 4개 계열 9개 모델을 같은 조건에서 비교한 결과를 공개했습니다. NeMo Guardrails 평가 벤치마크의 균형 데이터셋 두 개(프롬프트 인젝션, 유해성·안전)에서 측정했고, 결론은 단호합니다 — <strong>「Jev 같은 의사결정 모델이 LLM-as-a-judge, 사전학습 예측 모델, 오픈소스 의사결정 모델을 속도나 정확도에서 안정적으로 능가하지는 못한다.」</strong></p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>프롬프트 인젝션 (정확도 / 지연)</h4>
+                <p>• <strong>Qwen3.6-35B (LLM-as-judge): 89.31%</strong> / 312.5ms<br>
+                • <strong>deberta-v3-base-prompt-injection-v2: 89.01% / 54.1ms ← 가장 빠름</strong><br>
+                • DiffusionGemma-26B: 87.72% / 561.7ms<br>
+                • <strong>Jev-1.13.0: 86.35% / 348.1ms</strong><br>
+                • <strong>Laya: 85.44% / 119.3ms</strong><br>
+                • → 2023년 계열의 작은 전용 분류기가 <strong>정확도는 2.7%p 높고 지연은 1/6</strong></p>
+            </div>
+            <div class="trend-card">
+                <h4>콘텐츠 안전 (정확도 / 지연)</h4>
+                <p>• <strong>Jev: 86.20% ← 1위</strong> / 360.4ms<br>
+                • DiffusionGemma: 85.53% / 499.3ms<br>
+                • Qwen3.6-35B: 85.47% / 307.6ms<br>
+                • Nemotron-3.5 (커스텀): 85.07% / 241.5ms<br>
+                • granite-guardian-hap-125m: 80.27% / <strong>33.2ms</strong><br>
+                • → Jev 가 1위지만 <strong>125M 모델 대비 11배 느리고 격차는 5.9%p</strong></p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>📌 이 벤치마크를 읽는 법:</strong> 저자들 스스로 두 가지를 인정합니다. ① <strong>「LLM-as-a-judge 에 맞는 프롬프트 방식이 제로샷 분류기에는 최적이 아니다」</strong> — 실제로 <strong>Laya 는 정책 문구를 조정하자 57.87% → 75.20% 로 올랐습니다</strong>(같은 모델, 같은 데이터). ② GPU 클러스터 모델은 최소 56ms 대서양 왕복 지연이 포함돼 로컬 CPU 실행과 지연을 직접 비교할 수 없습니다. 즉 <strong>이 표는 「모델 서열」이 아니라 「기본값으로 쓰면 무슨 일이 생기나」의 기록</strong>으로 읽어야 합니다.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 벤더가 아닌 제3자(Red Hat)가 방법론·데이터셋·모델 버전·지연 측정 조건을 공개한 유일한 비교입니다. 저자들이 자기 결과의 한계(프롬프트 방식 미숙, 네트워크 지연 혼입)를 명시한 점도 신뢰를 높입니다.<br>
+                <strong>개선점:</strong> 과제가 가드레일 두 종류로 한정돼 Jev 가 내세우는 업무 판정(티켓 분류·청구 처리)은 측정되지 않았습니다. 단일 실행이며 반복 측정의 분산이 제시되지 않았습니다.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat 독립 벤치마크 (2026-10-02)</a> |
+            <a href="https://huggingface.co/RedHatAI/deberta-v3-base-prompt-injection-v2" target="_blank">deberta-v3-base-prompt-injection-v2</a> |
+            <a href="https://github.com/NVIDIA/NeMo-Guardrails" target="_blank">NeMo Guardrails</a>
+        </div>
+
+        <p><strong>전망:</strong> 가드레일처럼 <strong>과제가 고정돼 있고 레이블된 데이터가 있는 영역에서는 전용 소형 분류기가 여전히 우세</strong>합니다. 의사결정 모델의 값은 그쪽이 아니라, 레이블이 없고 질문이 계속 바뀌는 영역에 있습니다.</p>
+
+        <h3 class="subsection-title">5. 진짜 쟁점은 정확도가 아니라 캘리브레이션과 일반화</h3>
+        <p><strong>현황:</strong> 수치를 나란히 놓으면 이 범주의 실제 대립축이 드러납니다. typed-decisions 벤치마크에서 <strong>파인튜닝한 Laya 는 정확도 0.766 으로 Jev(0.727)를 앞섭니다. 그런데 캘리브레이션 오차(ECE)는 Laya 0.213 vs Jev 0.144 로 Jev 가 낫고, 범용 의도분류 Banking77 에서는 Jev 0.870 vs Laya 0.425 로 격차가 두 배입니다.</strong> 그리고 결정적으로 <strong>Laya 의 제로샷 정확도는 0.362</strong> — 즉 Laya 는 범용기가 아니라 <strong>전용기</strong>입니다. 모델 카드도 「네 개 워크플로 밖에서는 성능이 떨어진다」고 직접 적고 있습니다.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Laya 파인튜닝판 세부 (모델 카드)</h4>
+                <p>• <strong>전체:</strong> 정확도 0.766 · soft 0.471 · Brier 0.062 · <strong>ECE 0.213</strong> · Score MAE 0.242<br>
+                • <strong>워크플로별:</strong> 청구서 0.804 · 보안사고 0.766 · 고객응대 0.764 · 에이전트 추적 0.730<br>
+                • <strong>질문 유형별:</strong> noul 0.857 · choice 0.733 · <strong>score 0.723 ← 가장 약함</strong><br>
+                • <strong>자기 고백:</strong> 「확률 분포가 과신(overconfident)」, 온도는 학습데이터로 맞춘 값이므로 <strong>홀드아웃으로 재조정 후 쓸 것</strong><br>
+                • <strong>권고:</strong> choice 선택지는 20개 이하로</p>
+            </div>
+            <div class="trend-card">
+                <h4>캘리브레이션이 왜 정확도보다 중요한가</h4>
+                <p>• 운영 라우팅은 <strong>신뢰도에 임계값을 걸어</strong> 동작합니다<br>
+                • 따라서 <strong>「과신하는 96% 모델」은 「정직한 94% 모델」보다 실무에서 나쁩니다</strong> — 임계값이 의미를 잃기 때문<br>
+                • <strong>accept/escalate 설계:</strong> 논문 「JEV-as-a-Judge」(arXiv:2609.26550, Li·Miao·Krishnan·Padman)는 확신할 때 자체 확정, 불확실할 때만 상위 심판으로 올리는 구조를 평가 — <strong>임계값에 따라 20~40% 가 상위로 에스컬레이션</strong><br>
+                • 단, 논문 역시 <strong>「임계값 조정은 과제·도메인 의존」</strong>이라고 한계를 명시</p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>🔍 열기와 사용량의 간격:</strong> Jev 는 X 에서 4,000만 조회를 기록했고 오픈 클론은 25종을 넘겼습니다. 그런데 <strong>Laya 의 typed-decisions 체크포인트는 월 다운로드 722건</strong>입니다(HF 모델 카드, 2026-10 기준). 또한 Laya 가 공개한 모든 지표는 <strong>Convai Innovations 자체 평가</strong>이며, 2026년 10월 현재 <strong>제3자 연구기관이 재현한 사례가 없습니다</strong>. 커뮤니티의 가장 큰 반론도 이 지점입니다 — r/LocalLLaMA 와 Hacker News 에서는 <strong>「캘리브레이션된 확률을 내는 분류기는 이미 풀린 문제이고, TypeSafe 는 흥미로운 주장을 검증할 만큼의 아키텍처를 공개하지 않았다」</strong>는 지적이 가장 많이 나왔습니다.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> Laya 수치 전부와 자기 고백(과신·온도 재조정 권고·선택지 20개 권고)은 공식 모델 카드 1차 자료이고, 다운로드 722건도 같은 페이지에서 확인했습니다. accept/escalate 구조는 arXiv 논문 본문 기준입니다.<br>
+                <strong>개선점:</strong> Jev 의 typed-decisions 정확도가 출처에 따라 <strong>0.727 과 67.8% 로 갈립니다</strong>(본문에 양쪽 표기). 이 벤치마크 자체가 Laya 측이 공개한 합성 워크플로 4종이라 Laya 에 유리할 수 있다는 편향을 배제하지 못했습니다.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://arxiv.org/abs/2609.26550" target="_blank">JEV-as-a-Judge (arXiv:2609.26550)</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">Laya 모델 카드 (지표·한계)</a> |
+            <a href="https://news.ycombinator.com/item?id=49768024" target="_blank">Hacker News 논쟁</a>
+        </div>
+
+        <p><strong>전망:</strong> 이 범주가 살아남는다면 승부는 <strong>「얼마나 맞히나」가 아니라 「틀릴 때를 아는가」</strong>에서 갈립니다. 확률이 말 그대로의 의미를 가질 때만 accept/escalate 같은 설계가 성립하고, 그때 비로소 값싼 판정기를 앞단에 두고 비싼 모델을 뒤로 미는 구조가 경제성을 만듭니다.</p>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+        <h3 class="subsection-title">4계층 시장 구조</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">이 시장은 「누가 더 똑똑한가」로 나뉘지 않습니다. <strong>가중치를 주는가, 어디서 돌아가는가, 범용인가 전용인가</strong>로 갈립니다. 4계층 모두 같은 질문 유형 3종(choice·noul·score)을 구현하므로, 실무 선택은 모델 품질보다 배치 제약에서 결정되는 경우가 많습니다.</p>
+
+        <table>
+            <thead>
+                <tr><th>계층</th><th>주요 플레이어</th><th>규모</th><th>라이선스·배치</th><th>강점 / 약점</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Tier 1</strong><br>호스팅 프런티어 판정 API</td><td><strong>Jev</strong> (TypeSafe AI), OpenAI Decisions API, Liquid AI d1</td><td>비공개</td><td>독점 · 클라우드 전용</td><td>제로샷 범용성·64k 컨텍스트·낮은 ECE / 가중치 비공개·데이터 반출·단가가 「베팅」</td></tr>
+                <tr><td><strong>Tier 2</strong><br>LLM 파생 오픈 판정 모델</td><td>Decider (2B/4B/35B-a3b), Nimble 9B, Cloudflare Clef 27B/9B, Tev1 4B, OpenDecider</td><td>2B~35B</td><td>Apache 2.0 / MIT · 로컬·vLLM·엣지</td><td>LLM 의 세계 지식 상속·긴 컨텍스트 / GPU 필수·지연 18~41ms+·운영 부담</td></tr>
+                <tr><td><strong>Tier 3</strong><br>인코더 기반 오픈 판정 모델</td><td><strong>Laya</strong> 421M/322M, Von 395M, open-jev-deberta 434M, GLiNER2.5-Decide 340M, Anarkali 68M</td><td>68M~434M</td><td>Apache 2.0 · CPU·CUDA·Apple Silicon</td><td>7~33ms·토큰당 $0·CPU 가능 / 짧은 컨텍스트(512~1,024)·제로샷 0.362·전용기</td></tr>
+                <tr><td><strong>Tier 4</strong><br>기존 대안 (현직 챔피언)</td><td>deberta-v3 프롬프트 인젝션, Granite Guardian 125M, ShieldGemma·Shieldstral, Nemotron Content Safety, LLM-as-a-judge (Qwen3.6-35B)</td><td>125M~35B</td><td>대부분 오픈 · 로컬</td><td>고정 과제에서 최고 정확도·최저 지연(33~54ms) / 과제별 레이블 데이터 필요·질문 변경 시 재학습</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">시장에서 관찰되는 이동</h3>
+        <p style="font-size:0.95rem; line-height:1.8;">
+        • <strong>모델이 아니라 계약이 먼저 표준화됐습니다:</strong> Jev 의 <code>/v1/systemone</code> 요청 형식이 2주 만에 Ollama 의 기본 엔드포인트가 됐습니다. 범주 역사상 드문 속도이며, 모델을 교체 가능한 부품으로 만듭니다.<br>
+        • <strong>진입 장벽이 사실상 없음이 증명됐습니다:</strong> 68M 인코더(Anarkali)부터 학습 자체가 불필요한 방식(AnyJev·SemIf)까지 같은 계약을 만족시켰습니다. 독점 모델의 방어선은 제로샷 일반화와 캘리브레이션뿐입니다.<br>
+        • <strong>경쟁축이 품질에서 단가·지연·배치 위치로 내려갔습니다:</strong> Jev $0.042/1M(출력 무료) vs Cloudflare Clef $0.09/1M vs Laya 토큰당 $0. 가격이 이미 0 에 닿은 계층이 존재합니다.<br>
+        • <strong>독립 검증이 열기를 식히고 있습니다:</strong> 범주 공개 2.5주 만에 나온 첫 제3자 벤치마크가 「안정적 우위 없음」으로 결론냈고, 공개된 지표는 거의 전부 벤더 자체 평가입니다.<br>
+        • <strong>인접 시장은 실재합니다:</strong> LLM 관측·평가 플랫폼 시장은 2026년 26.9억 달러에서 2030년 92.6억 달러(CAGR 36.2%)로 전망되며, LLM-as-a-judge 는 인간 검수 대비 500~5,000배 저렴하되 인간 선호와 약 80% 일치 수준입니다. 판정 모델은 이 비용 곡선을 한 단계 더 내리려는 시도입니다.
+        </p>
+
+        <h3 class="subsection-title">독립 벤치마크: 정확도 대 지연</h3>
+        <div class="chart-container">
+            <canvas id="benchChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">※ Red Hat (2026-10-02) 프롬프트 인젝션 데이터셋. GPU 클러스터 모델에는 최소 56ms 네트워크 왕복이 포함되어 지연의 직접 비교에는 한계가 있습니다(저자 명시).</p>
+
+        <h3 class="subsection-title">계층별 역량 비교</h3>
+        <div class="chart-container">
+            <canvas id="tierChart"></canvas>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                <span class="credibility-score-value">7.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>강점:</strong> 계층 구분의 근거(라이선스·파라미터·배치 형태·단가)는 각 모델의 공식 문서·모델 카드·요금 페이지에서 가져왔습니다. 정확도·지연 그래프는 제3자 벤치마크 원표 기준입니다.<br>
+                <strong>개선점:</strong> 계층별 레이더의 점수는 공개 스펙에 기반한 <strong>본 보고서의 정성 평가</strong>이며 측정값이 아닙니다. 시장 규모는 유료 리포트의 공개 요약이고 「판정 모델」만의 시장 추정치는 아직 어느 조사기관도 내놓지 않았습니다.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 관련 링크:</strong>
+            <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat 벤치마크</a> |
+            <a href="https://docs.typesafe.ai/models" target="_blank">Jev 요금·한도</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Laya</a> |
+            <a href="https://github.com/bespokelabsai/nimble" target="_blank">Nimble (Bespoke Labs)</a>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">활용 아이디어</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">시장에서 관찰되는 주요 활용 접근을 소개합니다.</p>
+
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>기존 분류기와 동일 조건 대조</strong> — 이미 돌고 있는 분류 지점 한 곳을 골라, 현행 방식과 판정 모델을 같은 데이터·같은 측정 조건에서 비교하는 접근. Red Hat 결과가 보여준 대로 전용 소형 분류기가 이기는 경우가 드물지 않습니다.</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>캘리브레이션을 먼저 재는 평가</strong> — 정확도보다 ECE·Brier 를 먼저 측정하고, 홀드아웃으로 온도를 재조정한 뒤 임계값을 정하는 접근. 모델 카드 자신이 과신을 인정하고 재조정을 권고하는 사례가 있습니다.</p>
+            <p style="line-height:1.6;">3. <strong>accept/escalate 2단 구조 설계</strong> — 값싼 판정기를 앞단에 두고 확신 구간만 자체 확정, 불확실 구간은 상위 모델이나 사람으로 올리는 접근. 공개 연구에서는 임계값에 따라 20~40%가 에스컬레이션됩니다.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">에그제큐티브 서머리</h2>
+
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">중요한 포인트</h3>
+            <ul class="key-findings">
+                <li><strong>새 범주가 3주 만에 생겼습니다:</strong> TypeSafe AI 가 2026-09-15 Jev 를 공개하며 「System One 모델」을 제시했고(DCVC 주도 $40M 시드, 기업가치 약 $2억, 창업자는 RLHF 공동 개발자 Diogo Almeida), 3일 뒤 Laya 가 Apache 2.0 으로 가중치를 공개, 2주 뒤 Ollama 가 <code>/v1/systemone</code> 을 탑재했습니다.</li>
+                <li><strong>산출물이 다릅니다:</strong> 문장이 아니라 <strong>choice(최대 255지)·noul(예·아니오 확률)·score(단계)</strong> 세 가지 타입 답변과 확률입니다. 소프트웨어가 분기 조건으로 바로 쓸 수 있다는 것이 범주의 주장입니다.</li>
+                <li><strong>진입 장벽이 없다는 것이 증명됐습니다:</strong> 68M 인코더부터 35B MoE, 학습이 아예 불필요한 방식(AnyJev·SemIf)까지 오픈 구현이 25종을 넘겼습니다. OpenAI·Cloudflare·Liquid AI 도 2주 안에 들어왔습니다.</li>
+                <li><strong>⚠️ 첫 독립 벤치마크는 우호적이지 않습니다:</strong> Red Hat(2026-10-02)에서 프롬프트 인젝션은 <strong>2023년 계열 deberta-v3 가 89.01%·54ms 로 Jev(86.35%·348ms)를 이겼고</strong>, 콘텐츠 안전에서 Jev 가 1위(86.20%)지만 125M 모델보다 11배 느립니다. 결론은 「속도나 정확도에서 안정적 우위 없음」입니다.</li>
+                <li><strong>진짜 축은 캘리브레이션입니다:</strong> Laya 는 정확도(0.766)로 Jev(0.727)를 앞서지만 ECE 는 0.213 vs 0.144 로 지고, 제로샷은 0.362 로 범용기가 아닙니다. 운영 라우팅은 확률에 임계값을 걸므로 <strong>과신하는 96% 모델이 정직한 94% 모델보다 나쁩니다</strong>.</li>
+                <li><strong>열기와 사용량의 간격을 보십시오:</strong> X 조회 4,000만 건·클론 25종인데 Laya 의 typed-decisions 체크포인트는 <strong>월 다운로드 722건</strong>이고, 공개 지표는 거의 전부 벤더 자체 평가입니다. 「7일 만에 매출 1억 달러」주장은 공시된 기업가치와 양립하기 어려워 본 보고서는 채택하지 않았습니다.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Selection Guide</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>과제가 고정되고 레이블 데이터가 있다면 → 기존 전용 분류기 유지 (Tier 4)</strong><br>
+                이유: 같은 조건에서 정확도가 높고 지연이 1/6~1/11 입니다. 새 범주로 갈아타는 근거가 데이터로 나오지 않습니다.<br>
+                <strong>질문이 자주 바뀌고 레이블이 없다면 → Jev 등 호스팅 API (Tier 1)</strong><br>
+                이유: 제로샷으로 쓸 수 있고 64k 컨텍스트에 ECE 가 낮습니다. 단 가중치 비공개·데이터 반출·단가 변동 위험을 안습니다.<br>
+                <strong>데이터 주권·비용 0 이 우선이라면 → Laya 등 인코더 계열 (Tier 3)</strong><br>
+                이유: CPU 에서 7~33ms, 토큰당 $0, Apache 2.0. 단 컨텍스트 512~1,024 토큰이고 <strong>전용기이므로 자기 데이터로 파인튜닝해야 쓸 만해집니다</strong>.<br>
+                <strong>긴 문맥과 세계 지식이 함께 필요하다면 → Decider·Nimble·Clef (Tier 2)</strong><br>
+                이유: LLM 파생이라 지식을 상속하고 컨텍스트가 8k 이상입니다. 대가는 GPU 와 운영 부담입니다.
+            </p>
+        </div>
+
+        <div class="overall-credibility">
+            <h3>📋 종합 신뢰도 평가</h3>
+            <div class="overall-credibility-score">8.3/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>종합 평가:</strong> 1차 출처 비중이 높은 보고서입니다. 스펙·요율은 벤더 공식 문서, 성능 수치는 Hugging Face 모델 카드와 제3자 벤치마크 원표, 투자 사실은 공시 배포문, 설계 논점은 arXiv 논문에서 확인했습니다.</p>
+                <p><strong>주요 강점:</strong> 벤더 주장과 독립 측정이 갈리는 지점을 전부 노출했습니다 — Jev 정확도 0.727/67.8% 출처 불일치, 「7일 1억 달러」미채택, Laya 전 지표의 제3자 재현 부재, 그리고 Red Hat 저자들이 밝힌 자기 결과의 한계(프롬프트 미숙·네트워크 지연 혼입)까지 함께 실었습니다.</p>
+                <p><strong>개선 우선순위:</strong> ① 자체 과제에서 Jev·Laya·기존 분류기를 동일 조건 재측정, ② 파생 모델 25종 목록의 개별 저장소 전수 검증, ③ 「판정 모델」 단독 시장 규모는 아직 어느 조사기관도 추정하지 않아 인접 시장(관측·평가 플랫폼)으로 대체했다는 점 보완.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">주요 용어 설명</h2>
+        <div style="background:#fafafa; padding:0.5rem 0.75rem; border-left:3px solid #e5e5e5;">
+            <div style="margin-bottom:0.4rem;"><strong>의사결정 모델 / System One 모델</strong> — 글을 생성하는 대신 「선택지 중 하나」, 「점수」, 「예·아니오 확률」처럼 범위가 정해진 답을 돌려주는 모델입니다. 사람의 빠른 직관적 판단(시스템 1)에서 따온 이름이며, 소프트웨어가 그 값을 바로 조건문에 쓸 수 있다는 점이 핵심 주장입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>choice · noul · score</strong> — 이 범주의 질문 유형 3종입니다. choice 는 선택지 중 하나를 고르고(최대 255개), noul 은 조건이 참일 확률을 내고, score 는 순서가 있는 기준 위의 단계를 냅니다. Jev 가 붙인 이름이 그대로 업계 표준 어휘가 됐습니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>캘리브레이션 / ECE</strong> — 모델이 「90% 확신」이라고 말할 때 실제로 열 번 중 아홉 번 맞는지를 보는 성질입니다. ECE(기대 캘리브레이션 오차)는 그 어긋남의 크기로, 낮을수록 확률을 믿을 수 있습니다. 임계값을 걸어 자동 처리하는 시스템에서는 정확도보다 중요할 수 있습니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>비자동회귀(non-autoregressive)</strong> — 단어를 하나씩 이어 쓰지 않고 한 번의 연산으로 답을 내는 방식입니다. 생성을 하지 않으므로 훨씬 빠르지만, 대신 문장으로 설명하지 못합니다. Laya 가 33ms, 배치 7.2ms 를 내는 이유입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>인코더 모델 (BERT 계열)</strong> — 문장을 읽어 의미를 압축하는 데 특화된 구조로, 글을 쓰는 디코더(GPT 계열)와 대비됩니다. ModernBERT·DeBERTa 가 그 예이며, 작고 빠르지만 다루는 문맥 길이가 짧습니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>RLCD</strong> — TypeSafe 가 Jev 에 적용했다고 밝힌 사후학습으로, 「사람이 선호하는 답변」이 아니라 「올바른 판정과 쓸 만한 확률」을 보상으로 삼습니다. 대화형 모델의 RLHF 와 목표가 다르다는 주장이며, 세부 방법은 공개되지 않았습니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>LLM-as-a-judge</strong> — 큰 언어모델에게 다른 모델의 출력이나 사용자 입력을 평가하게 하는 방식입니다. 사람 검수보다 수백~수천 배 싸지만 인간 선호와의 일치는 약 80% 수준이고, 응답을 생성하므로 느립니다. 의사결정 모델이 대체를 노리는 바로 그 자리입니다.</div>
+            <div style="margin-bottom:0.4rem;"><strong>가드레일 / 프롬프트 인젝션</strong> — 가드레일은 AI 입출력을 정책에 맞게 걸러내는 장치이고, 프롬프트 인젝션은 악의적 입력으로 모델의 지시를 가로채는 공격입니다. Red Hat 벤치마크가 측정한 두 과제가 이 영역입니다.</div>
+            <div><strong>accept/escalate</strong> — 확신이 높을 때는 스스로 확정하고 애매할 때만 상위 모델이나 사람에게 넘기는 2단 구조입니다. 값싼 판정기를 앞에 두어 전체 비용을 낮추는 설계이며, 확률이 정직할 때만 성립합니다.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>참고 자료</h3>
+            <p><strong>데이터 수집:</strong> 2026년 10월 8일</p>
+            <ul>
+                <li>• <a href="https://docs.typesafe.ai/models" target="_blank">TypeSafe AI 공식 문서 — jev-1.13.0 스펙·요율·한도·제약</a></li>
+                <li>• <a href="https://www.morningstar.com/news/business-wire/20260915525333/typesafe-ai-emerges-from-stealth-with-40m-in-funding-with-new-model-for-composable-ai" target="_blank">Business Wire — TypeSafe AI $40M 시드 (DCVC 주도), 2026-09-15</a></li>
+                <li>• <a href="https://www.turingpost.com/p/what-is-jev-rlcd" target="_blank">Turing Post — RLCD 와 Jev 해설</a></li>
+                <li>• <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat Developer — 의사결정 모델 vs 기존 가드레일 독립 벤치마크 (9모델·4계열)</a></li>
+                <li>• <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Hugging Face — convaiinnovations/laya (421M·322M, Apache 2.0)</a></li>
+                <li>• <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">Hugging Face — laya-typed-decisions 모델 카드 (0.766·ECE 0.213·한계·다운로드 722)</a></li>
+                <li>• <a href="https://arxiv.org/abs/2609.26550" target="_blank">Li, Miao, Krishnan, Padman — JEV-as-a-Judge: Accept When Confident, Escalate When Unsure (arXiv:2609.26550)</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2609.28940" target="_blank">arXiv:2609.28940 — 침투테스트 하니스의 System One 판정 계층으로서 JEV·Laya</a></li>
+                <li>• <a href="https://github.com/ollama/ollama/releases" target="_blank">Ollama 릴리스 — 0.35 의 <code>/v1/systemone</code> 엔드포인트 (2026-09-29)</a></li>
+                <li>• <a href="https://ollama.com/library/nimble" target="_blank">Ollama Library — Nimble 9B</a></li>
+                <li>• <a href="https://github.com/bespokelabsai/nimble" target="_blank">Bespoke Labs — Nimble (GitHub)</a></li>
+                <li>• <a href="https://github.com/Mapika/decider" target="_blank">Mapika — Decider (Qwen3.5 기반 2B/4B/35B-a3b)</a></li>
+                <li>• <a href="https://www.orcarouter.ai/blog/laya-vs-decider" target="_blank">Laya vs Decider — 421M 인코더 대 35B MoE 비교</a></li>
+                <li>• <a href="https://mchromiak.github.io/articles/2026/Sep/17/Typed-Decision-Models-Jev-and-Laya-in-Agentic-AI/" target="_blank">M. Chromiak — Typed Decision Models: Jev and Laya in Agentic AI</a></li>
+                <li>• <a href="https://news.ycombinator.com/item?id=49768024" target="_blank">Hacker News — Jev 의 「프런티어 지능」주장과 Laya 의 일반화 논쟁</a></li>
+                <li>• <a href="https://news.ycombinator.com/item?id=49767192" target="_blank">Hacker News — 출시 당시 표현에 대한 비판</a></li>
+                <li>• <a href="https://www.researchandmarkets.com/reports/6215671/large-language-model-llm-observability" target="_blank">Research and Markets — LLM 관측 플랫폼 시장 $2.69B(2026) → $9.26B(2030), CAGR 36.2%</a></li>
+                <li>• <a href="https://www.evidentlyai.com/llm-guide/llm-as-a-judge" target="_blank">Evidently AI — LLM-as-a-judge 가이드 (비용·인간 일치율)</a></li>
+            </ul>
+            <p style="margin-top:0.5rem; font-size:0.7rem; color:#808080;"><em>주: 파생 모델 25종 이상의 목록은 커뮤니티 집계 사이트를 주 출처로 하여 개별 저장소를 전수 검증하지 않았습니다. 「7일 만에 매출 1억 달러」주장은 공시 기업가치와 양립하기 어려워 채택하지 않았습니다. 「판정 모델」 단독 시장 규모를 추정한 조사기관은 2026-10 현재 확인되지 않아, 인접 시장(LLM 관측·평가 플랫폼)으로 대체 제시했습니다.</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('benchChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Qwen3.6-35B\n(LLM-as-judge)', 'deberta-v3-base\n(2023 계열 분류기)', 'DiffusionGemma-26B', 'Jev-1.13.0\n(TypeSafe)', 'Laya\n(421M 인코더)'],
+        datasets: [
+            { label: '정확도 (%)', data: [89.31, 89.01, 87.72, 86.35, 85.44], yAxisID: 'y',
+              backgroundColor:'rgba(59,130,246,0.75)' },
+            { label: '지연 (ms)', data: [312.5, 54.1, 561.7, 348.1, 119.3], yAxisID: 'y1',
+              backgroundColor:'rgba(249,115,22,0.75)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{
+        y:{ position:'left', min:80, max:92, title:{ display:true, text:'정확도 (%)' } },
+        y1:{ position:'right', beginAtZero:true, grid:{ drawOnChartArea:false }, title:{ display:true, text:'지연 (ms)' } }
+      },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'프롬프트 인젝션 과제 — 정확도 높을수록 좋고 지연 낮을수록 좋음 (Red Hat, 2026-10-02)', font:{ size:11 } } } }
+});
+
+new Chart(document.getElementById('tierChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['제로샷 범용성', '캘리브레이션 신뢰도', '지연 (낮을수록 높은 점수)', '자체 호스팅·데이터 주권', '컨텍스트 길이'],
+        datasets: [
+            { label: 'Tier 1 Jev · OpenAI Decisions', data: [90, 85, 45, 10, 95],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'Tier 2 Decider · Nimble · Clef', data: [70, 60, 60, 85, 75],
+              borderColor:'rgb(34,197,94)', backgroundColor:'rgba(34,197,94,0.2)' },
+            { label: 'Tier 3 Laya · Von · Anarkali', data: [35, 50, 95, 95, 25],
+              borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.2)' },
+            { label: 'Tier 4 DeBERTa · Guardian 분류기', data: [20, 75, 90, 95, 30],
+              borderColor:'rgb(168,85,247)', backgroundColor:'rgba(168,85,247,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'계층별 역량 비교 (본 보고서 정성 평가, 100점 기준)', font:{ size:12 } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">이름 (선택)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">댓글</label>
+                <textarea id="comment-content" placeholder="의견을 남겨주세요..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">댓글 등록</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
