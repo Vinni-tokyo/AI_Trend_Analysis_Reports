@@ -7,6 +7,17 @@ var SITE = {
   url:  'https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/'
 };
 
+/* 눈에 보이는 대각선 워터마크 — 기본 꺼짐 (true 로 켤 수 있음) */
+var SHOW_WATERMARK = false;
+
+/* 보이지 않는 워터마크 — 디지털 복사본에 출처가 남는다
+   ① 제로폭 서명: 문단마다 눈에 안 보이는 유니코드로 서명을 심는다.
+      텍스트만 복사해 붙여넣어도 그대로 따라가며, verify.html 로 판별 가능.
+   ② 화면 밖 출처줄: 전체 선택·복사하면 함께 복사되는 출처 문구.
+   ③ 복사 이벤트: 일정 길이 이상 복사 시 출처를 덧붙인다. */
+var INVISIBLE_MARK = true;
+var MARK_TAG = 'ATR1';                       /* 서명 식별자 */
+
 /* 밝기 전환: 시스템 설정 연동 + 수동 토글(localStorage 기억) */
 (function () {
   var root = document.documentElement, KEY = 'theme';
@@ -83,6 +94,7 @@ var SITE = {
 
   /* ① 화면·인쇄 워터마크 (본문 뒤, 클릭 통과) */
   function watermark() {
+    if (!SHOW_WATERMARK) return;
     var host = document.querySelector('.container');
     if (!host || host.querySelector('.wm-layer')) return;
     var layer = document.createElement('div');
@@ -140,7 +152,51 @@ var SITE = {
     }
   }
 
-  function run() { watermark(); printFoot(); copyAttribution(); canonical(); }
+  /* ① 제로폭 서명 — ZWSP(0) / ZWNJ(1), 시작·끝은 WORD JOINER */
+  function zwEncode(str) {
+    var bits = '';
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i).toString(2);
+      bits += '00000000'.slice(c.length) + c;
+    }
+    var out = '\u2060';
+    for (var j = 0; j < bits.length; j++) out += (bits[j] === '1' ? '\u200C' : '\u200B');
+    return out + '\u2060';
+  }
+
+  function invisibleMark() {
+    if (!INVISIBLE_MARK) return;
+    var host = document.querySelector('.content') || document.querySelector('.container');
+    if (!host || host.dataset.marked) return;
+    host.dataset.marked = '1';
+
+    var sig = zwEncode(MARK_TAG);
+    var paras = host.querySelectorAll('p, li, td');
+    var n = 0;
+    paras.forEach(function (el, i) {
+      if (el.closest('.wm-layer, .interaction-section, .print-source')) return;
+      if ((el.textContent || '').trim().length < 60) return;
+      if (i % 2) return;                                  /* 절반에만 — 용량 절약 */
+      el.appendChild(document.createTextNode(sig));
+      n++;
+    });
+
+    /* ② 화면 밖 출처줄 — display:none 은 복사되지 않으므로 화면 밖으로 밀어낸다 */
+    function srcLine() {
+      var d = document.createElement('div');
+      d.className = 'copy-source';
+      d.setAttribute('aria-hidden', 'true');
+      d.textContent = '[' + SITE.name + '] ' +
+        (document.title || '') + ' — ' +
+        (location.protocol === 'file:' ? SITE.url : location.href.split('#')[0]);
+      return d;
+    }
+    host.insertBefore(srcLine(), host.firstChild);
+    host.appendChild(srcLine());
+    return n;
+  }
+
+  function run() { watermark(); invisibleMark(); printFoot(); copyAttribution(); canonical(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
   else run();
 })();

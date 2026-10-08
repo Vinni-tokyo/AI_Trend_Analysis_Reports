@@ -1,0 +1,117 @@
+<!DOCTYPE html><html lang="ko"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>출처 판별 — AI Trend Analysis Reports</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--page:#f4f1ec;--surf:#fbf9f5;--text:#1f1d1a;--muted:#6a635a;--faint:#9a9186;
+ --line:#e5dfd4;--line2:#d3cabb;--ink:#2e2b26;--link:#7a5230;--ok:#2f6b3f;--no:#8f4a38}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --page:#161513;--surf:#1b1a17;--text:#e9e5de;--muted:#a49c90;--faint:#7c746a;
+ --line:#2c2a26;--line2:#3b3831;--ink:#e0dbd2;--link:#d3a173;--ok:#7fb98e;--no:#e2957f}}
+html{color-scheme:light dark}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+ background:var(--page);color:var(--text);line-height:1.7}
+header{background:var(--surf);border-bottom:3px solid var(--ink)}
+.hin{max-width:860px;margin:0 auto;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.05rem;font-weight:600;color:var(--ink);text-decoration:none}
+.logo b{color:var(--no)}
+.back{font-size:.82rem;color:var(--muted);text-decoration:none;border:1px solid var(--line2);
+ padding:.3rem .6rem;border-radius:4px}
+main{max-width:860px;margin:0 auto;padding:2rem}
+h1{font-size:1.3rem;letter-spacing:-.3px;margin-bottom:.4rem}
+.lede{color:var(--muted);font-size:.92rem;margin-bottom:1.4rem}
+textarea{width:100%;min-height:200px;padding:.9rem;font-family:inherit;font-size:.9rem;
+ background:var(--surf);color:var(--text);border:1px solid var(--line2);border-radius:4px;resize:vertical}
+textarea:focus{outline:none;border-color:var(--ink)}
+.row{display:flex;gap:.6rem;margin-top:.8rem;flex-wrap:wrap}
+button{background:var(--ink);color:var(--surf);border:none;padding:.6rem 1.2rem;
+ font-size:.9rem;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit}
+button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line2)}
+#out{margin-top:1.4rem;padding:1.1rem;border-radius:4px;border:1px solid var(--line);
+ background:var(--surf);display:none}
+#out.on{display:block}
+.verdict{font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+.verdict.yes{color:var(--ok)} .verdict.no{color:var(--no)}
+.detail{font-size:.86rem;color:var(--muted);line-height:1.6}
+.detail code{background:var(--page);padding:.1rem .3rem;border-radius:3px;font-size:.82rem}
+.note{margin-top:2rem;padding:.9rem 1.1rem;background:var(--surf);border-left:3px solid var(--line2);
+ font-size:.84rem;color:var(--muted);line-height:1.65}
+</style></head><body>
+<header><div class="hin">
+  <a class="logo" href="index.html"><b>AI</b> Trend Analysis Reports</a>
+  <a class="back" href="index.html">← 홈</a>
+</div></header>
+<main>
+<h1>출처 판별</h1>
+<p class="lede">다른 곳에서 본 글이 이 사이트에서 나온 것인지 확인합니다. 의심되는 본문을 <b>그대로 붙여넣으세요.</b></p>
+
+<textarea id="in" placeholder="여기에 붙여넣기 (Ctrl+V)"></textarea>
+<div class="row">
+  <button id="go">판별하기</button>
+  <button id="clear" class="ghost">지우기</button>
+</div>
+
+<div id="out">
+  <div class="verdict" id="v"></div>
+  <div class="detail" id="d"></div>
+</div>
+
+<div class="note">
+<b>판별 방식</b> — 이 사이트의 본문에는 눈에 보이지 않는 유니코드 서명이 심어져 있습니다.
+글자처럼 보이지 않으므로 화면에서는 전혀 티가 나지 않지만, <b>텍스트를 복사해 다른 곳에 붙여넣으면 그대로 따라갑니다.</b><br><br>
+<b>한계</b> — 일부 편집기·CMS 는 보이지 않는 문자를 자동으로 제거합니다. 서명이 없다고 해서
+"우리 글이 아니다"라고 단정할 수는 없으며, <b>있으면 우리 글이 맞다</b>는 쪽으로만 확실합니다.
+사진으로 다시 찍거나 손으로 옮겨 적은 경우에도 서명은 남지 않습니다.
+</div>
+</main>
+
+<script>
+var TAG='ATR1';
+function decodeAll(text){
+  var hits=[], re=/⁠([​‌]+)⁠/g, m;
+  while((m=re.exec(text))!==null){
+    var bits=m[1].split('').map(function(c){return c==='‌'?'1':'0'}).join('');
+    var out='';
+    for(var i=0;i+8<=bits.length;i+=8) out+=String.fromCharCode(parseInt(bits.substr(i,8),2));
+    hits.push(out);
+  }
+  return hits;
+}
+function run(){
+  var t=document.getElementById('in').value;
+  var out=document.getElementById('out'), v=document.getElementById('v'), d=document.getElementById('d');
+  out.classList.add('on');
+  if(!t.trim()){ v.className='verdict no'; v.textContent='붙여넣은 내용이 없습니다'; d.textContent=''; return; }
+  var sigs=decodeAll(t);
+  var mine=sigs.filter(function(s){return s===TAG});
+  var zw=(t.match(/[​‌⁠]/g)||[]).length;
+  var srcLine=/\[AI Trend Analysis Reports\]/.test(t);
+  var urlHit=/vinni-tokyo\.github\.io\/AI_Trend_Analysis_Reports/.test(t);
+
+  if(mine.length){
+    v.className='verdict yes';
+    v.textContent='✓ 이 사이트에서 나온 글입니다';
+    d.innerHTML='제로폭 서명 <code>'+TAG+'</code> 을(를) <b>'+mine.length+'곳</b>에서 찾았습니다.'
+      +'<br>보이지 않는 문자 '+zw+'개 검출.'
+      +(srcLine?'<br>출처줄도 함께 복사되었습니다.':'')
+      +(urlHit?'<br>원본 URL 이 본문에 포함되어 있습니다.':'');
+  } else if(srcLine||urlHit){
+    v.className='verdict yes';
+    v.textContent='✓ 출처 표기가 남아 있습니다';
+    d.innerHTML='제로폭 서명은 제거되었지만, 복사 시 붙는 <b>출처 문구/URL</b> 이 남아 있습니다.'
+      +'<br>중간에 편집기를 거치며 보이지 않는 문자가 걸러진 것으로 보입니다.';
+  } else {
+    v.className='verdict no';
+    v.textContent='— 서명을 찾지 못했습니다';
+    d.innerHTML='이 사이트의 서명이 없습니다. 다만 <b>우리 글이 아니라는 뜻은 아닙니다</b> — '
+      +'편집기가 보이지 않는 문자를 제거했거나, 다시 타이핑·캡처된 경우에도 서명은 사라집니다.'
+      +(zw?'<br>보이지 않는 문자 '+zw+'개가 있으나 서명 형식과는 다릅니다.':'');
+  }
+}
+document.getElementById('go').addEventListener('click',run);
+document.getElementById('clear').addEventListener('click',function(){
+  document.getElementById('in').value=''; document.getElementById('out').classList.remove('on');
+});
+document.getElementById('in').addEventListener('paste',function(){ setTimeout(run,60); });
+</script>
+</body></html>
