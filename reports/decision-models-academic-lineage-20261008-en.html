@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where Decision Models Sit in AI Research, and Where Their Roots Are</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --primary-navy:#001e5c; --secondary-navy:#003d8f; --accent-navy:#0052b8;
+  --primary-color:#1a1a1a; --secondary-color:#4a4a4a; --tertiary-color:#808080;
+  --bg-white:#ffffff; --bg-subtle:#fafafa; --border-color:#e5e5e5; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  line-height:1.7; color:#1a1a1a; background:#fafafa; font-size:16px; }
+.container { max-width:1000px; margin:2rem auto; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.header { background:linear-gradient(135deg,var(--primary-navy) 0%,var(--secondary-navy) 100%);
+  color:white; padding:2rem 2.5rem 1.5rem; text-align:center; position:relative; border-bottom:3px solid var(--primary-navy); }
+.header-actions { position:absolute; top:1rem; right:1.5rem; display:flex; gap:0.75rem; z-index:10; }
+.back-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; text-decoration:none;
+  display:inline-flex; align-items:center; gap:0.3rem; }
+.back-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.language-switcher { display:flex; gap:0.3rem; }
+.lang-btn { padding:0.3rem 0.6rem; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1);
+  color:white; border-radius:3px; cursor:pointer; font-size:0.75rem; font-weight:500; transition:all 0.2s ease; }
+.lang-btn:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.5); }
+.lang-btn.active { background:white; color:var(--primary-navy); border-color:white; }
+.header h1 { font-size:1.2rem; margin-bottom:0.15rem; line-height:1.3; }
+.header .subtitle { font-size:0.9rem; margin-top:0.25rem; opacity:0.9; }
+.header .meta { margin-top:0.5rem; font-size:0.75rem; opacity:0.8; }
+.content { padding:1.5rem; }
+.section { margin-bottom:1.5rem; page-break-inside:avoid; }
+.section-title { font-size:1.4rem; color:#1a1a1a; margin-bottom:0.4rem; padding-bottom:0.25rem; border-bottom:2px solid #1a1a1a; }
+.subsection-title { font-size:1.1rem; color:#1a1a1a; margin-top:1rem; margin-bottom:0.5rem; font-weight:600; }
+.executive-summary { background:#fafafa; border-left:3px solid #e5e5e5; padding:1rem; margin-bottom:1rem; border-radius:4px; }
+.key-findings { list-style:none; }
+.key-findings li { padding:0.4rem 0; padding-left:1.5rem; position:relative; font-size:0.95rem; }
+.key-findings li:before { content:"→"; position:absolute; left:0; color:#1a1a1a; font-weight:bold; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.75rem; }
+th, td { padding:0.5rem; text-align:left; border-bottom:1px solid #e5e5e5; vertical-align:top; }
+th { background:#fafafa; font-weight:600; }
+tr:hover { background:#fafafa; }
+.chart-container { position:relative; height:300px; margin:1rem 0; padding:0.75rem; border-radius:4px; border:1px solid #e5e5e5; }
+.sources { background:#fafafa; padding:1rem; border-radius:4px; margin-top:1rem; font-size:0.75rem; }
+.sources ul { list-style:none; } .sources li { padding:0.25rem 0; }
+.sources a { color:#0052b8; text-decoration:none; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem; }
+.trend-card { background:white; border:1px solid #e5e5e5; border-radius:4px; padding:1.5rem; }
+.trend-card h4 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.trend-card p { font-size:0.9rem; line-height:1.6; }
+.related-links { background:#f0f7ff; border-left:3px solid #0052b8; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+.related-links strong { color:#001e5c; font-size:0.85rem; display:block; margin-bottom:0.4rem; }
+.related-links a { color:#0052b8; text-decoration:none; font-weight:500; }
+.related-links a:hover { text-decoration:underline; }
+.credibility-score { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:0.75rem 1rem; margin:0.75rem 0; font-size:0.85rem; }
+.credibility-score-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+.credibility-score-label { font-weight:600; color:#334155; }
+.credibility-score-value { font-weight:700; color:#0052b8; }
+.credibility-score-details { color:#475569; line-height:1.55; }
+.overall-credibility { background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; }
+.overall-credibility h3 { font-size:1rem; margin-bottom:0.5rem; color:#1a1a1a; }
+.overall-credibility-score { font-size:1.6rem; font-weight:800; color:#0052b8; margin-bottom:0.5rem; }
+.overall-credibility-details p { font-size:0.9rem; line-height:1.6; margin-bottom:0.3rem; }
+.callout { background:#fffbeb; border-left:3px solid #f59e0b; padding:0.75rem 1rem; margin:1rem 0; border-radius:4px; font-size:0.9rem; }
+@media (max-width:768px) { .trend-grid { grid-template-columns:1fr; }
+  .header-actions { position:static; display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .header { padding-top:1rem; } }
+@media print { body { padding:0; font-size:12px; } .container { box-shadow:none; } .header-actions { display:none; } }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-actions">
+            <a href="../index.html" class="back-btn">← Home</a>
+            <div class="language-switcher">
+                <button onclick="window.location.href='decision-models-academic-lineage-20261008-ja.html'" class="lang-btn">日本語</button>
+                <button onclick="window.location.href='decision-models-academic-lineage-20261008-ko.html'" class="lang-btn">한국어</button>
+                <button onclick="window.location.href='decision-models-academic-lineage-20261008-en.html'" class="lang-btn active">English</button>
+            </div>
+        </div>
+        <h1>Where Decision Models Sit in AI Research —<br>and Where Jev and Laya's Roots Actually Are</h1>
+        <div class="subtitle">Discriminative, not generative: tracing 76 years from the 1950 Brier score through Chow's 1957 reject option and 2019 zero-shot entailment classification to ModernBERT in 2024</div>
+        <div class="meta">Report date: October 8, 2026 | Comprehensive report | Data collected: 2026-10-08 (primary literature)</div>
+    </div>
+
+    <div class="content">
+
+    <section id="trends" class="section">
+        <h2 class="section-title">Top 5 Findings</h2>
+
+        <h3 class="subsection-title">1. The Academic Coordinates — Discriminative Classification, Not Generation: a 1961 Problem in 2026 Clothing</h3>
+        <p><strong>Where things stand:</strong> Decision models are not a new discipline. Because the output is "a label and a probability about a text," the academic position is <strong>supervised machine learning → probabilistic classification</strong>, with <strong>text classification in natural language processing</strong> as the applied field. That is the opposite side of the house from natural language generation (NLG), where generative language models live: this is the <strong>discriminative model</strong> family. It fits inside arXiv's existing cs.LG, cs.CL and stat.ML categories without needing a new one.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>The direct lineage of text classification</h4>
+                <p>• <strong>1961, Maron (RAND):</strong> proposed <strong>naive Bayes text classification</strong> in order to assign subject categories to journal abstracts — the task the algorithm was invented for was precisely "put a label on a document"<br>
+                • <strong>1998, Joachims:</strong> turned text into fixed-length vectors (bag-of-words) and <strong>classified with SVMs</strong>, selecting features by information gain<br>
+                • <strong>2018, BERT:</strong> a bidirectional encoder plus a <strong>sequence-classification head</strong>, fine-tuned, becomes the standard recipe<br>
+                • <strong>2024, ModernBERT</strong> (Warner et al., ACL 2025): trained on 2 trillion tokens, 8,192-token context, base 149M / <strong>large 395M</strong><br>
+                • <strong>2025, mmBERT</strong> (JHU-CLSP, arXiv:2509.06888): 3 trillion tokens, <strong>1,833 languages</strong>, base 307M / small 140M</p>
+            </div>
+            <div class="trend-card">
+                <h4>Laya is simply the latest point on that line</h4>
+                <p>• <strong>English checkpoint 421M = ModernBERT-large 395M + a typed decision head</strong><br>
+                • <strong>Multilingual checkpoint 322M = mmBERT-base 307M + the head</strong><br>
+                • In other words, a published encoder with the output layer swapped; the parameter difference (roughly 15–26M) is that head<br>
+                • <strong>Note:</strong> Laya says "100+ languages," but its mmBERT base was pretrained on 1,833 — the 100+ is the reach of Laya's own decision fine-tuning<br>
+                • <strong>Structural implication:</strong> "non-autoregressive, single forward pass" is not an invention; it is <strong>how encoder classifiers have always worked</strong></p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Each point on the lineage was confirmed against original papers or official releases. ModernBERT's parameter counts (large 395M) come from Answer.AI's release and the ACL 2025 paper; mmBERT's counts and language coverage from arXiv:2509.06888; Maron 1961 and Joachims 1998 were cross-checked in the ACM Computing Surveys text-classification survey.<br>
+                <strong>Weaknesses:</strong> Attributing Laya's parameter delta to "the decision head" is <strong>this report's inference</strong> from published figures (395M→421M, 307M→322M); the model card does not break down the internal composition.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/abs/2412.13663" target="_blank">ModernBERT (arXiv:2412.13663)</a> |
+            <a href="https://arxiv.org/abs/2509.06888" target="_blank">mmBERT (arXiv:2509.06888)</a> |
+            <a href="https://dl.acm.org/doi/full/10.1145/3495162" target="_blank">Text classification survey (ACM)</a> |
+            <a href="https://huggingface.co/convaiinnovations/laya" target="_blank">Laya (Hugging Face)</a>
+        </div>
+
+        <p><strong>Reading:</strong> "A model that returns a label and a probability" continues a task that began in 1961. What changed is not the task but <strong>how it is called</strong>.</p>
+
+        <h3 class="subsection-title">2. "Define the Label in Plain Language and Get a Probability" — the 2019 Zero-Shot Entailment Paper Is the Prototype</h3>
+        <p><strong>Where things stand:</strong> Jev's pitch is that you need no labeled data: write the question in natural language and a verdict comes back. The paper that established that paradigm is <strong>Yin, Hay and Roth (2019), "Benchmarking Zero-shot Text Classification: Datasets, Evaluation and Entailment Approach" (EMNLP-IJCNLP 2019)</strong>. The method is simple: <strong>put the label name into a template such as "This is a text about …" to form a hypothesis, and let an entailment model return the probability that the hypothesis holds</strong>. Defining labels as sentences rather than as code starts here.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>A statistical ancestor for each primitive</h4>
+                <p>• <strong>noul (a yes/no probability)</strong> → binary classification / entailment. Ancestor: logistic regression; direct prototype: the 2019 entailment approach<br>
+                • <strong>choice (up to 255 options)</strong> → multinomial classification. The same task Maron tackled in 1961<br>
+                • <strong>score (an ordered 2–10 level rubric)</strong> → <strong>ordinal regression</strong>. The prototype is <strong>McCullagh's (1980) proportional odds model</strong>, which formalized in 1980 that grades carry order rather than being nominal categories<br>
+                • <strong>Novelty assessment:</strong> all three are standard problems in statistics and machine learning; what is new is <strong>binding the three into a single API contract</strong></p>
+            </div>
+            <div class="trend-card">
+                <h4>That prototype is still in the benchmark</h4>
+                <p>• Red Hat's independent benchmark of 2026-10-02 includes <strong>bart-large-mnli — the 2019-era entailment-based zero-shot classifier</strong> — as a baseline<br>
+                • So an implementation of a seven-year-old paradigm is being compared <strong>in the same table</strong> as the 2026 entrants<br>
+                • In that same benchmark Laya rose from <strong>57.87% to 75.20% purely by tuning the policy wording</strong> — the classic weakness of zero-shot classification (sensitivity to template and label phrasing) reproduced intact<br>
+                • That sensitivity has been the central issue in zero-shot classification literature since Yin et al. 2019; it is not a new phenomenon</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Yin, Hay and Roth 2019 is openly available in the ACL Anthology (D19-1404), where the approach and template form were read directly. McCullagh's 1980 proportional odds model is cross-confirmed in multiple statistics sources as the standard model for ordinal logistic regression.<br>
+                <strong>Weaknesses:</strong> Whether Jev's internals are actually entailment-based <strong>cannot be verified</strong> — the architecture is closed, so calling 2019 "the ancestor of the paradigm" describes a functional correspondence, not a proven implementation lineage.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://aclanthology.org/D19-1404/" target="_blank">Yin, Hay, Roth 2019 (ACL Anthology)</a> |
+            <a href="https://arxiv.org/abs/1909.00161" target="_blank">Same paper (arXiv:1909.00161)</a> |
+            <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat independent benchmark</a>
+        </div>
+
+        <p><strong>Reading:</strong> "Just write the schema" is a genuine advance in developer experience. But the academic mechanism beneath it was settled in 2019 — and its weakness, phrasing sensitivity, came along with it.</p>
+
+        <h3 class="subsection-title">3. "The Probabilities Must Be Honest" — Brier (1950) → Platt (1999) → ECE (2015) → Temperature Scaling (2017)</h3>
+        <p><strong>Where things stand:</strong> The calibration this category puts ahead of accuracy is a <strong>76-year research tradition</strong>. The decisive evidence is Laya's own model card: the reported metrics are <strong>a Brier score of 0.062 and an ECE of 0.213</strong>, and it states that "per-type temperatures were fitted." Those three items come from the literature of 1950, 2015 and 2017 respectively.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Four stages of the calibration lineage</h4>
+                <p>• <strong>1950, Brier:</strong> proposed the <strong>Brier score</strong> for evaluating weather forecasts — a proper scoring rule that explicitly minimizes calibration loss<br>
+                • <strong>1999, Platt:</strong> <strong>Platt scaling</strong> — post-hoc correction turning classifier outputs into calibrated probabilities<br>
+                • <strong>2015, Naeini et al.:</strong> established <strong>ECE</strong> (expected calibration error) as the metric<br>
+                • <strong>2017, Guo, Pleiss, Sun, Weinberger (ICML):</strong> showed that modern neural networks are poorly calibrated and over-confident, and that <strong>temperature scaling</strong> — a single-parameter variant of Platt scaling — is surprisingly effective, leaving accuracy untouched while fixing the probabilities<br>
+                • <strong>What Laya does is exactly that 2017 procedure</strong></p>
+            </div>
+            <div class="trend-card">
+                <h4>Further upstream: decision theory and proper scoring rules</h4>
+                <p>• <strong>1950, Wald, "Statistical Decision Functions":</strong> formalized the output of inference as an <strong>action, a decision function</strong>, rather than a description — the framework that makes "return a verdict" thinkable at all<br>
+                • <strong>2007, Gneiting &amp; Raftery (JASA):</strong> <strong>strictly proper scoring rules</strong> — evaluation functions under which stating your true belief minimizes expected loss. They are described as a "truth serum"<br>
+                • <strong>The connection:</strong> the claim that RLCD swapped the reward from "replies people prefer" to "calibrated correctness" corresponds, academically, to <strong>using a proper scoring rule (Brier, log loss) as the reward</strong><br>
+                • TypeSafe has not published RLCD's details, so this correspondence remains an inference</p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>⚠️ The field is already past ECE:</strong> the metric this category offers as evidence of quality is one whose flaws are documented in the measurement literature — (1) <strong>its value depends on the number and placement of bins</strong>, creating a bias–variance tradeoff; (2) in its classic form it <strong>looks only at the single largest predicted probability and ignores the rest of the distribution</strong>, understating miscalibration in multiclass settings; (3) as a global average it <strong>masks systematic miscalibration in subpopulations</strong>; and (4) it is <strong>only a loose upper bound on decision loss</strong>. The alternative tradition is <strong>conformal prediction (Vovk, Gammerman, Shafer, 2005)</strong>, which gives finite-sample coverage guarantees with no distributional assumptions. In short, <strong>the calibration these 2026 products advertise is a 2017-vintage tool by academic standards</strong>, and a framework offering stronger guarantees has existed for twenty years.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">9/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Guo et al. 2017 was read in the PMLR (v70) original, confirming both "temperature scaling is a single-parameter variant of Platt scaling" and the over-confidence finding; ECE's attribution to Naeini et al. 2015, Brier 1950's role, Gneiting &amp; Raftery 2007 and Vovk et al. 2005 were all cross-checked in academic sources. The four criticisms of ECE are drawn from measurement-methodology papers.<br>
+                <strong>Weaknesses:</strong> Linking RLCD to proper scoring rules is <strong>this report's interpretation</strong>. Because TypeSafe has not published the method, whether the reward is in fact a proper scoring rule cannot be verified.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://proceedings.mlr.press/v70/guo17a/guo17a.pdf" target="_blank">Guo et al. 2017, On Calibration of Modern Neural Networks (PMLR)</a> |
+            <a href="https://sites.stat.washington.edu/raftery/Research/PDF/Gneiting2007jasa.pdf" target="_blank">Gneiting &amp; Raftery 2007 (JASA)</a> |
+            <a href="https://arxiv.org/abs/2005.07972" target="_blank">Conformal prediction review (arXiv:2005.07972)</a>
+        </div>
+
+        <p><strong>Reading:</strong> Putting calibration front and centre is the right call. But it is not a new contribution — it is <strong>an old correctness brought into a product</strong> — and not adopting the stronger alternative (conformal) is where the next criticism lands.</p>
+
+        <h3 class="subsection-title">4. Accept/Escalate Is Chow's 1957 Reject Option — a 69-Year-Old Rule, Rediscovered</h3>
+        <p><strong>Where things stand:</strong> "Settle it yourself when confident, pass it up when unsure" is this category's economic argument. It is also a classical rule of pattern recognition. <strong>C. K. Chow formalized it in "An optimum character recognition system using decision functions" (IRE Transactions on Electronic Computers, 1957) and "On optimum recognition error and reject tradeoff" (IEEE Transactions on Information Theory, 1970)</strong>. <strong>Chow's rule</strong>: reject the decision when the highest posterior probability falls below a threshold — the optimal tradeoff that minimizes error rate at a given reject rate.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>Reject option → selective prediction</h4>
+                <p>• <strong>1957 and 1970, Chow:</strong> characterized the optimal reject option — abstain whenever the posterior risk of misclassification exceeds the cost of rejecting<br>
+                • <strong>2000s, El-Yaniv, Wiener and others:</strong> <strong>selective classification</strong> — the coverage-versus-risk tradeoff<br>
+                • <strong>2019, SelectiveNet:</strong> the reject option built into a neural network<br>
+                • <strong>2025 onward, reject option + conformal:</strong> abstention with distribution-free error guarantees, applied to clinical triage among others<br>
+                • <strong>2026, "JEV-as-a-Judge"</strong> (arXiv:2609.26550; Li, Miao, Krishnan, Padman): reproduces the structure with Jev, with <strong>20–40% escalating depending on the threshold</strong>. The paper also restates the limit that has held since Chow: threshold calibration is task- and domain-dependent</p>
+            </div>
+            <div class="trend-card">
+                <h4>The cascade lineage — the decisive link</h4>
+                <p>• <strong>2001, Viola &amp; Jones:</strong> the boosted <strong>cascade</strong> — discard easy background fast and spend computation only on promising regions, described as a focus-of-attention mechanism<br>
+                • <strong>2023, FrugalGPT</strong> (Stanford): LLM cascades delivering <strong>up to 98% cost reduction</strong>. The key detail: <strong>the scorer predicting answer correctness was a fine-tuned DistilBERT — a small encoder</strong> — with a fixed per-stage threshold<br>
+                • <strong>2024–25, RouteLLM</strong> (UC Berkeley, ICLR 2025): <strong>over 85% cost reduction</strong> on MT-Bench, sending only <strong>14%</strong> of queries to the strong model<br>
+                • <strong>→ Conclusion:</strong> <strong>Laya amounts to taking FrugalGPT's "small encoder scorer" and shipping it as a standalone product</strong>. What was a component inside a system in 2023 became a category in 2026</p>
+            </div>
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Chow 1957 and 1970 are cited consistently across the selective-classification and reject-option literature for both their bibliographic details and the content of the rule; the Viola-Jones cascade description comes from the original paper. That FrugalGPT's scorer was a DistilBERT was confirmed in LLM-routing comparison literature.<br>
+                <strong>Weaknesses:</strong> "Laya equals the productization of FrugalGPT's scorer" is <strong>this report's interpretation based on structural isomorphism</strong>, not a factual claim about development history. Chow's original papers sit behind paywalled archives and were confirmed through secondary citation.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://arxiv.org/pdf/1901.09192" target="_blank">SelectiveNet (arXiv:1901.09192)</a> |
+            <a href="https://arxiv.org/pdf/2506.21802" target="_blank">Reject option + conformal (arXiv:2506.21802)</a> |
+            <a href="https://arxiv.org/abs/2609.26550" target="_blank">JEV-as-a-Judge (arXiv:2609.26550)</a> |
+            <a href="https://www.merl.com/publications/docs/TR2004-043.pdf" target="_blank">Viola &amp; Jones, Boosted Cascade</a>
+        </div>
+
+        <p><strong>Reading:</strong> Every structure this category invokes when arguing economics — thresholds, abstention, staged escalation — was already analyzed to optimality in 1957 and 2001. What is new is only <strong>that the structure now sits on the LLM cost curve</strong>.</p>
+
+        <h3 class="subsection-title">5. The Lineage of the Names — "System One" and "Decision Model" Both Already Have Owners</h3>
+        <p><strong>Where things stand:</strong> The naming borrows terms established in other fields — and in one case <strong>points the opposite way from the original</strong>. It is worth separating them out, because this is where literature searches and internal conversations go wrong.</p>
+
+        <div class="trend-grid">
+            <div class="trend-card">
+                <h4>"System One" — cognitive psychology, and Bengio's opposite direction</h4>
+                <p>• <strong>Origin:</strong> <strong>dual-process theory</strong> in cognitive psychology — fast intuitive judgment (System 1) versus slow deliberate reasoning (System 2), widely known through Kahneman's work<br>
+                • <strong>Use in AI:</strong> <strong>Bengio's NeurIPS 2019 Posner Lecture, "From System 1 Deep Learning to System 2 Deep Learning"</strong><br>
+                • <strong>The decisive difference:</strong> Bengio's argument was that <strong>what deep learning is already good at is System 1 (perception, intuition), and where it must go is System 2 (reasoning, causality, planning, systematic generalization)</strong><br>
+                • In the 2019 academic framing, System 1 was <strong>the place already reached</strong> and System 2 was the goal. The 2026 market took the vocabulary and made <strong>System 1 the product name</strong> — the arrow is reversed</p>
+            </div>
+            <div class="trend-card">
+                <h4>"Decision Model" — OMG DMN got there eleven years earlier</h4>
+                <p>• <strong>OMG DMN (Decision Model and Notation):</strong> version 1.0 formally released in <strong>September 2015</strong>, followed by 1.1 (2016), 1.2 (2019), 1.3 (2021), 1.4 (2023) and <strong>1.5 (August 2024)</strong><br>
+                • <strong>What it is:</strong> a <strong>graphical notation</strong> for dependencies between decisions, plus an expression language called <strong>FEEL</strong> (Friendly Enough Expression Language), plus <strong>decision tables</strong><br>
+                • <strong>Purpose:</strong> an industry standard bridging the gap between business decision design and implementation in a notation business users can read<br>
+                • <strong>The collision:</strong> in enterprise decision management (BRMS), "decision model" means <strong>a model of rule-based decision logic</strong> — not a neural network emitting probabilities<br>
+                • The same phrase carries three different meanings across <strong>cognitive psychology, enterprise decision management, and the 2026 LLM market</strong></p>
+            </div>
+        </div>
+
+        <div class="callout">
+            <strong>📌 RLCD's lineage, and a correction to a press-release phrase:</strong> RLCD is a variant in the RLHF family — <strong>Christiano et al. (2017), deep RL from human preferences → Ouyang et al. (2022), InstructGPT</strong>. Here TypeSafe founder Diogo Almeida's record needs stating precisely. What is verifiable is that he is a <strong>co-author of the InstructGPT paper (arXiv:2203.02155), named among the contributors to ChatGPT, and a co-author of the GPT-4 technical report</strong>. The phrase <strong>"co-inventor of RLHF"</strong> used in some coverage — and in this series' own market report of 2026-10-08 — is press-release language that overstates matters if read as inventing the technique itself: he co-authored the paper that <strong>applied RLHF to language models and demonstrated it worked</strong>. Notably, he has since voiced criticism of RLHF from that insider vantage point, and RLCD — swapping the reward from "preference" to "calibrated correctness" — reads as an extension of that critique.
+        </div>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8.5/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> The title, content and year of Bengio's lecture come from the official NeurIPS 2019 page; the DMN version timeline from OMG's own specification pages (1.0 through 1.5). Almeida's record was cross-checked against the InstructGPT author list and his own speaker profile.<br>
+                <strong>Weaknesses:</strong> "The arrow is reversed" is <strong>this report's assessment</strong> based on comparing the two usages; there is no public evidence that TypeSafe named the category with Bengio's usage in mind. Attribution of the System 1/2 coinage (Stanovich and West versus Kahneman) could not be settled from primary sources here, so the text says only that it is widely known through Kahneman's work.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://neurips.cc/virtual/2019/invited-talk/15488" target="_blank">Bengio, NeurIPS 2019 Posner Lecture</a> |
+            <a href="https://www.omg.org/spec/DMN/1.5/About-DMN" target="_blank">OMG DMN 1.5 specification</a> |
+            <a href="https://arxiv.org/abs/2203.02155" target="_blank">InstructGPT (arXiv:2203.02155)</a> |
+            <a href="https://ai.engineer/speakers/diogo-almeida" target="_blank">Diogo Almeida profile</a>
+        </div>
+
+        <p><strong>Reading:</strong> The naming is a marketing success — "System One model" became the name of an Ollama endpoint (<code>/v1/systemone</code>) within three weeks. But to find the actual research, <strong>search for calibrated classification, selective prediction and ordinal regression — not "decision model."</strong></p>
+    </section>
+
+    <section id="competitive" class="section">
+        <h2 class="section-title">The Map of Fields and the Lineage Coordinates</h2>
+
+        <h3 class="subsection-title">A four-tier disciplinary structure</h3>
+        <p style="margin-bottom:1rem; color:#4a4a4a; font-size:0.95rem;">Decision models are not the product of one field but sit <strong>where four of them overlap</strong>. Which layer you look from changes the answer to "is this new?" — the further down you go, the older the roots and the smaller the novelty.</p>
+
+        <table>
+            <thead>
+                <tr><th>Tier</th><th>Field</th><th>Representative work (year)</th><th>Trace left in Jev and Laya</th><th>Novelty</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Tier 1</strong><br>Core field</td><td>Machine learning → supervised learning → <strong>probabilistic classification and ordinal regression</strong></td><td>Maron 1961 (naive Bayes text classification) · McCullagh 1980 (proportional odds) · Joachims 1998 (SVM) · BERT 2018 · ModernBERT 2024 · mmBERT 2025</td><td>All three primitives — choice, noul, score. Laya's encoder backbone itself</td><td>Low — both the task and the architecture are inherited</td></tr>
+                <tr><td><strong>Tier 2</strong><br>Measurement field</td><td>Uncertainty quantification → <strong>calibration, selective prediction, conformal prediction</strong></td><td>Brier 1950 · Chow 1957/1970 (reject option) · Platt 1999 · Vovk et al. 2005 (conformal) · Naeini 2015 (ECE) · Guo 2017 (temperature scaling) · SelectiveNet 2019</td><td>Laya's Brier 0.062, ECE 0.213 and "per-type temperatures fitted." The entire accept/escalate structure</td><td>Low — the tooling is 2017-vintage, and the stronger alternative (conformal) is unused</td></tr>
+                <tr><td><strong>Tier 3</strong><br>Purpose field</td><td>Statistical decision theory / operations research → <strong>proper scoring rules, decision-focused learning</strong></td><td>Wald 1950 ("Statistical Decision Functions") · Gneiting &amp; Raftery 2007 · Elmachtoub &amp; Grigas, Smart Predict-then-Optimize (Management Science 2022)</td><td>The premise that the output of inference should be an action. The claim that RLCD rewards correctness and probability quality</td><td>Medium — the idea is inherited, but applying it to LLM post-training is new</td></tr>
+                <tr><td><strong>Tier 4</strong><br>Applied and naming fields</td><td>NLP text classification + <strong>enterprise decision management (DMN)</strong> + cognitive psychology (dual process)</td><td>Yin, Hay, Roth 2019 (zero-shot entailment) · Bengio NeurIPS 2019 (System 1→2) · OMG DMN 1.0 2015 to 1.5 2024 · Zheng et al. 2023 (LLM-as-a-judge, 80%+ human agreement)</td><td>The interface of writing questions in natural language. The names "System One" and "decision model"</td><td>High — the wire format and API contract are a genuine contribution</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="subsection-title">What the research lineage shows</h3>
+        <p style="font-size:0.95rem; line-height:1.8;">
+        • <strong>The task is from 1961, the architecture from 2024, the contract from 2026:</strong> labeling as a task (Maron 1961) and the encoder architecture (ModernBERT 2024) are both off the shelf; the only thing newly built is the API contract binding the three primitives.<br>
+        • <strong>"Calibration matters" is not a new claim but a restoration:</strong> a 76-year tradition dating to Brier 1950 was briefly displaced in the generative-LLM era, and became mandatory again once automatic branching was the requirement.<br>
+        • <strong>The field is already a step ahead:</strong> ECE's flaws are catalogued (bin dependence, only the top probability evaluated, subpopulations masked, a loose bound on decision loss), and conformal prediction offers distribution-free guarantees. The product side has yet to adopt it.<br>
+        • <strong>A rival tradition, LLM-as-a-judge, was established in 2023:</strong> Zheng et al. (NeurIPS 2023) set the paradigm with MT-Bench and Chatbot Arena, showing <strong>over 80% agreement with human judgment</strong> while naming position bias, verbosity bias and self-enhancement bias as systematic failure modes. Decision models are aiming at that slot.<br>
+        • <strong>The cost argument also has 2001 and 2023 prototypes:</strong> the Viola-Jones cascade plus FrugalGPT (up to 98% reduction, with a DistilBERT scorer) and RouteLLM (85%+ reduction, 14% of queries to the strong model) already demonstrated the economics of putting a cheap judge in front.
+        </p>
+
+        <h3 class="subsection-title">Seventy-six years of lineage — the branch points</h3>
+        <div class="chart-container">
+            <canvas id="timelineChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: each entry is the year that component was first formalized. The chart exists to show when each part Jev and Laya (2026) assembled was actually made.</p>
+
+        <h3 class="subsection-title">Inherited versus newly contributed, by component</h3>
+        <div class="chart-container">
+            <canvas id="noveltyChart"></canvas>
+        </div>
+        <p style="font-size:0.8rem; color:#808080; margin-top:-0.5rem;">Note: this is a qualitative assessment by this report, not a measurement. It visualizes the basis for the judgment that the novelty sits in the interface rather than the science.</p>
+
+        <div class="credibility-score">
+            <div class="credibility-score-header">
+                <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                <span class="credibility-score-value">8/10</span>
+            </div>
+            <div class="credibility-score-details">
+                <strong>Strengths:</strong> Every representative work in the table has a confirmed year and venue, and the disciplinary placement follows how these literatures classify themselves — the ACM Computing Surveys text-classification survey, the selective-classification literature, and the calibration measurement literature.<br>
+                <strong>Weaknesses:</strong> The "Novelty" column and the inherited-versus-new radar are <strong>this report's qualitative judgments</strong>. And because Jev's architecture is closed, its attribution to Tiers 1 and 2 is reverse-inferred from published behavior and metrics.
+            </div>
+        </div>
+
+        <div class="related-links">
+            <strong>🔗 Related Links:</strong>
+            <a href="https://proceedings.neurips.cc/paper_files/paper/2023/file/91f18a1287b398d378ef22505bf41832-Paper-Datasets_and_Benchmarks.pdf" target="_blank">Zheng et al. 2023, Judging LLM-as-a-Judge (NeurIPS)</a> |
+            <a href="https://arxiv.org/pdf/1710.08005" target="_blank">Elmachtoub &amp; Grigas, Smart Predict-then-Optimize</a> |
+            <a href="https://www.omg.org/spec/DMN/1.5/About-DMN" target="_blank">OMG DMN</a>
+        </div>
+    </section>
+
+    <section id="application-ideas" class="section">
+        <h2 class="section-title">Application Ideas</h2>
+        <p style="margin-bottom:1rem; color:#4a4a4a;">Approaches observed when reading the research lineage.</p>
+
+        <div style="background:#fafafa; padding:1.5rem; border-left:3px solid #e5e5e5;">
+            <p style="margin-bottom:1rem; line-height:1.6;">1. <strong>Translate the search terms into academic ones</strong> — "decision model" returns DMN standards documents. Searching for calibrated classification, selective prediction, ordinal regression and zero-shot text classification reaches the actual methods and their known limits.</p>
+            <p style="margin-bottom:1rem; line-height:1.6;">2. <strong>Measure conformal guarantees rather than ECE</strong> — since ECE's bin dependence and global averaging are documented flaws, set thresholds from distribution-free coverage guarantees instead.</p>
+            <p style="line-height:1.6;">3. <strong>Derive the threshold from Chow's rule</strong> — put numbers on the cost of a misclassification and the cost of escalation first, derive the reject threshold from the 1957 optimal rule, and compare it against the product's default.</p>
+        </div>
+    </section>
+
+    <section id="executive-summary" class="section">
+        <h2 class="section-title">Executive Summary</h2>
+
+        <div class="executive-summary">
+            <h3 style="font-size:1rem; margin-bottom:0.4rem; color:#1a1a1a;">Key findings</h3>
+            <ul class="key-findings">
+                <li><strong>The academic coordinates are clear:</strong> this is <strong>discriminative classification</strong>, not generation. Probabilistic classification plus ordinal regression is the core field, with NLP text classification as the application. It fits inside arXiv's cs.LG, cs.CL and stat.ML and <strong>creates no new discipline</strong>.</li>
+                <li><strong>Each primitive has an ancestor:</strong> noul = binary classification and entailment, choice = multinomial classification (Maron's 1961 original task), <strong>score = ordinal regression (McCullagh's 1980 proportional odds model)</strong>. The novelty lies in binding the three into one contract.</li>
+                <li><strong>"Define the label in plain language" dates to 2019:</strong> Yin, Hay and Roth (EMNLP 2019) created the paradigm, and its implementation (bart-large-mnli) still serves as a baseline in Red Hat's benchmark. The weakness came with it — Laya moving from 57.87% to 75.20% on policy wording alone is the proof.</li>
+                <li><strong>Calibration is a 76-year tradition restored:</strong> the Brier score (1950), ECE (2015) and temperature scaling (Guo et al. 2017) that Laya reports are all off-the-shelf tools. ⚠️ And <strong>the field has already catalogued ECE's flaws</strong> (bin dependence, only the top probability evaluated, subpopulations masked, a loose bound on decision loss), while <strong>conformal prediction (2005)</strong> offers distribution-free guarantees — the products remain on 2017 tooling.</li>
+                <li><strong>Accept/escalate is Chow's 1957 reject option:</strong> the optimal rule — abstain when the highest posterior falls below a threshold — was formalized 69 years ago. The cost argument's prototypes run from the Viola-Jones cascade (2001) through <strong>FrugalGPT (2023, up to 98% reduction — its scorer was a small DistilBERT)</strong> to RouteLLM (2025, 85%+ reduction). <strong>Laya amounts to shipping that scorer as a standalone product</strong>.</li>
+                <li><strong>The names are borrowed from two fields, and one points the other way:</strong> "System 1/2" is dual-process theory from cognitive psychology, and in AI <strong>Bengio (NeurIPS 2019) used it to mean "System 1 is the part already achieved; System 2 is where we must go."</strong> "Decision model" is established terminology in enterprise decision management via <strong>OMG DMN (2015 onward)</strong>.</li>
+                <li><strong>⚠️ One correction to this series' previous report:</strong> the market report of 2026-10-08 described Diogo Almeida, following the press release, as a "co-developer of RLHF and ChatGPT." What is verifiable is <strong>co-author of the InstructGPT paper, named contributor to ChatGPT, and co-author of the GPT-4 technical report</strong>; "co-inventor of RLHF" overstates matters if read as inventing the technique.</li>
+            </ul>
+
+            <h3 style="font-size:1rem; margin-top:1rem; margin-bottom:0.5rem; color:#1a1a1a;">Selection Guide — by what you are trying to learn</h3>
+            <p style="font-size:0.95rem; line-height:1.8;">
+                <strong>To understand the methods and their limits → the calibrated classification and selective prediction literature</strong><br>
+                Why: Guo et al. 2017, Chow 1957/1970 and SelectiveNet 2019 have already analyzed thresholds, over-confidence and the error-reject tradeoff.<br>
+                <strong>To judge whether the probabilities can be trusted → the conformal prediction literature</strong><br>
+                Why: ECE's value shifts with the number of bins and is only a loose bound on decision loss. The Vovk et al. (2005) line guarantees finite-sample coverage without distributional assumptions.<br>
+                <strong>To design for cost reduction → the cascade and routing literature</strong><br>
+                Why: FrugalGPT and RouteLLM report measured reduction rates and strong-model call rates, and compare scorer design choices.<br>
+                <strong>If the goal is automating business rules → OMG DMN</strong><br>
+                Why: writing rules explicitly with decision tables and FEEL often fits better, and no probabilistic model is needed. The shared name makes this easy to confuse.
+            </p>
+        </div>
+
+        <div class="overall-credibility">
+            <h3>📋 Overall Credibility Assessment</h3>
+            <div class="overall-credibility-score">8.8/10</div>
+            <div class="overall-credibility-details">
+                <p><strong>Overall:</strong> the most primary-source-heavy report in this series. Each branch point in the lineage was confirmed against original papers (PMLR, JASA, ACL Anthology, NeurIPS Proceedings, arXiv) and official standards documents (OMG DMN).</p>
+                <p><strong>Main strengths:</strong> every divergence between product claims and academic fact is surfaced — that ECE is a metric the field already criticizes, that "System One" points the opposite way from Bengio's usage, that "decision model" has a prior owner in OMG DMN, and a correction to the founder's record as this series stated it in the previous report.</p>
+                <p><strong>Improvement priorities:</strong> (1) read Chow 1957 and 1970 directly and replace the secondary citation; (2) strengthen the Tier 1 and 2 attribution, currently reverse-inferred because Jev's architecture is closed, as more becomes public; (3) settle the attribution of the System 1/2 coinage (Stanovich and West versus Kahneman) from primary sources.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminology" class="section">
+        <h2 class="section-title" style="font-size:1rem; margin-bottom:0.4rem;">Key Terminology</h2>
+        <div style="background:#fafafa; padding:0.5rem 0.75rem; border-left:3px solid #e5e5e5;">
+            <div style="margin-bottom:0.4rem;"><strong>Discriminative versus generative models</strong> — A discriminative model concentrates on telling which category an input belongs to; a generative model produces plausible continuations. Classifiers are discriminative; a language model like ChatGPT is generative. Decision models sit on the discriminative side.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Ordinal regression</strong> — Predicting grades that carry an order, such as high/medium/low. Treat them as unordered categories and you cannot distinguish "called a high a low" from "called a high a medium." McCullagh's (1980) proportional odds model is the standard, and this category's score type belongs here.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Calibration, ECE, Brier score</strong> — Calibration is the property that "90% confident" actually means right nine times out of ten. ECE averages that discrepancy across bins; the Brier score is the squared error between predicted probability and outcome, and comes from evaluating weather forecasts in 1950.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Temperature scaling</strong> — Post-hoc correction that leaves accuracy untouched and only softens or sharpens the probabilities. With a single parameter it is simple, and that parameter is fitted on data held out from training. Guo et al. (2017) showed it works well on modern neural networks.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Proper scoring rule</strong> — An evaluation function designed so that a forecaster's expected score is best when they state their true belief. Lying costs you, which is why these are called a "truth serum." The Brier score and log loss are the standard examples.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Reject option / selective prediction</strong> — A design that lets a model abstain — say "I don't know" — when it lacks confidence. Chow (1957, 1970) established the optimal rule: reject when the highest posterior probability falls below a threshold. Today's accept/escalate is exactly this.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Conformal prediction</strong> — A method that makes guarantees such as "the true answer is in this set with at least 95% probability" from a finite sample, with no assumptions about the data distribution. Formalized by Vovk, Gammerman and Shafer (2005), it gives stronger guarantees than ECE.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Dual-process theory</strong> — The cognitive-psychology account dividing human thought into a fast intuitive System 1 and a slow deliberate System 2. Widely known through Kahneman's work; in AI, Bengio used it to argue that deep learning is good at System 1 and must move toward System 2.</div>
+            <div style="margin-bottom:0.4rem;"><strong>DMN (Decision Model and Notation)</strong> — An industry standard for writing business decision logic as decision tables plus a dedicated expression language (FEEL). OMG released 1.0 in 2015 and has updated it through 1.5 in 2024. It is the prior owner of the phrase "decision model," and it is not a neural network emitting probabilities.</div>
+            <div style="margin-bottom:0.4rem;"><strong>Zero-shot entailment classification</strong> — Classifying without training data by writing the label as a sentence and asking whether the text entails it. Systematized by Yin, Hay and Roth (2019), it is the prototype of today's "write the question in natural language" interface.</div>
+            <div><strong>Cascade</strong> — A structure that runs a cheap model first to handle easy inputs and passes only the hard ones to an expensive model. Made widely known by Viola and Jones (2001) in face detection; in the LLM era, FrugalGPT and RouteLLM cut costs sharply with the same structure.</div>
+        </div>
+    </section>
+
+    <section id="sources" class="section">
+        <div class="sources">
+            <h3>References</h3>
+            <p><strong>Data collected:</strong> October 8, 2026 (primary academic literature)</p>
+            <ul>
+                <li>• <a href="https://aclanthology.org/D19-1404/" target="_blank">Yin, Hay, Roth (2019) — Benchmarking Zero-shot Text Classification: Datasets, Evaluation and Entailment Approach, EMNLP-IJCNLP</a></li>
+                <li>• <a href="https://proceedings.mlr.press/v70/guo17a/guo17a.pdf" target="_blank">Guo, Pleiss, Sun, Weinberger (2017) — On Calibration of Modern Neural Networks, ICML (PMLR v70)</a></li>
+                <li>• <a href="https://sites.stat.washington.edu/raftery/Research/PDF/Gneiting2007jasa.pdf" target="_blank">Gneiting &amp; Raftery (2007) — Strictly Proper Scoring Rules, Prediction, and Estimation, JASA</a></li>
+                <li>• <a href="https://arxiv.org/abs/2005.07972" target="_blank">Conformal Prediction: a Unified Review of Theory and New Challenges (the Vovk et al. 2005 line)</a></li>
+                <li>• <a href="https://arxiv.org/pdf/2506.21802" target="_blank">Classification with Reject Option: Distribution-free Error Guarantees via Conformal Prediction (citing Chow 1957/1970)</a></li>
+                <li>• <a href="https://arxiv.org/pdf/1901.09192" target="_blank">Geifman &amp; El-Yaniv — SelectiveNet: A Deep Neural Network with an Integrated Reject Option</a></li>
+                <li>• <a href="https://www.merl.com/publications/docs/TR2004-043.pdf" target="_blank">Viola &amp; Jones — Rapid Object Detection using a Boosted Cascade of Simple Features</a></li>
+                <li>• <a href="https://arxiv.org/abs/2412.13663" target="_blank">Warner et al. — ModernBERT (arXiv:2412.13663, ACL 2025): base 149M / large 395M, 8,192 tokens, 2T tokens of training</a></li>
+                <li>• <a href="https://arxiv.org/abs/2509.06888" target="_blank">mmBERT: A Modern Multilingual Encoder with Annealed Language Learning (JHU-CLSP): 3T tokens, 1,833 languages, base 307M</a></li>
+                <li>• <a href="https://dl.acm.org/doi/full/10.1145/3495162" target="_blank">A Survey on Text Classification: From Traditional to Deep Learning, ACM Computing Surveys (the Maron 1961 / Joachims 1998 line)</a></li>
+                <li>• <a href="https://proceedings.neurips.cc/paper_files/paper/2023/file/91f18a1287b398d378ef22505bf41832-Paper-Datasets_and_Benchmarks.pdf" target="_blank">Zheng et al. (2023) — Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena, NeurIPS</a></li>
+                <li>• <a href="https://arxiv.org/pdf/1710.08005" target="_blank">Elmachtoub &amp; Grigas — Smart "Predict, then Optimize" (Management Science 2022)</a></li>
+                <li>• <a href="https://neurips.cc/virtual/2019/invited-talk/15488" target="_blank">Bengio — From System 1 Deep Learning to System 2 Deep Learning, NeurIPS 2019 Posner Lecture</a></li>
+                <li>• <a href="https://www.omg.org/spec/DMN/1.5/About-DMN" target="_blank">OMG — Decision Model and Notation (DMN) 1.5 (1.0 formally released 2015-09)</a></li>
+                <li>• <a href="https://arxiv.org/abs/2203.02155" target="_blank">Ouyang et al. (2022) — Training language models to follow instructions with human feedback (InstructGPT)</a></li>
+                <li>• <a href="https://ai.engineer/speakers/diogo-almeida" target="_blank">Diogo Almeida — profile (InstructGPT co-author, ChatGPT contributor, GPT-4 technical report co-author)</a></li>
+                <li>• <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions" target="_blank">Hugging Face — laya-typed-decisions model card (Brier 0.062, ECE 0.213, temperature fitting noted)</a></li>
+                <li>• <a href="https://developers.redhat.com/articles/2026/10/02/benchmarking-ai-decision-models-against-traditional-guardrails" target="_blank">Red Hat Developer (2026-10-02) — decision models versus traditional guardrails, independent benchmark (includes bart-large-mnli as a baseline)</a></li>
+            </ul>
+            <p style="margin-top:0.5rem; font-size:0.7rem; color:#808080;"><em>Note: Chow (1957, IRE Trans. Electronic Computers) and Chow (1970, IEEE Trans. Information Theory) sit behind paywalled archives and could not be read directly; their bibliographic details and the content of the rule were confirmed through secondary citation in the selective-classification and reject-option literature. McCullagh (1980) on proportional odds likewise rests on secondary citation in the statistics literature. The inherited-versus-new radar and the "Novelty" column in the field table are qualitative assessments by this report.</em></p>
+        </div>
+    </section>
+
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('timelineChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: ['Brier score (calibration metric)','Wald statistical decision functions','Chow reject option','Maron naive Bayes text classification','McCullagh proportional odds (ordinal)','Joachims SVM text classification','Platt scaling','Viola-Jones cascade','Vovk conformal prediction','Naeini ECE','Guo temperature scaling','Yin zero-shot entailment classification','Bengio System 1→2','Zheng LLM-as-a-judge','FrugalGPT cascade','ModernBERT','mmBERT','Jev · Laya'],
+        datasets: [{
+            label: 'Year first formalized',
+            data: [1950,1950,1957,1961,1980,1998,1999,2001,2005,2015,2017,2019,2019,2023,2023,2024,2025,2026],
+            backgroundColor: ['rgba(59,130,246,0.75)','rgba(59,130,246,0.75)','rgba(59,130,246,0.75)','rgba(34,197,94,0.75)','rgba(34,197,94,0.75)','rgba(34,197,94,0.75)','rgba(59,130,246,0.75)','rgba(168,85,247,0.75)','rgba(59,130,246,0.75)','rgba(59,130,246,0.75)','rgba(59,130,246,0.75)','rgba(34,197,94,0.75)','rgba(249,115,22,0.75)','rgba(249,115,22,0.75)','rgba(168,85,247,0.75)','rgba(34,197,94,0.75)','rgba(34,197,94,0.75)','rgba(239,68,68,0.85)']
+        }]
+    },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ min:1945, max:2030, title:{ display:true, text:'Year' } }, y:{ ticks:{ font:{ size:9 } } } },
+      plugins:{ legend:{ display:false },
+        title:{ display:true, text:'Blue = calibration / decision theory · Green = classification / NLP · Purple = cascades · Orange = naming and evaluation paradigms · Red = the 2026 products', font:{ size:10 } } } }
+});
+
+new Chart(document.getElementById('noveltyChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+        labels: ['Problem definition (label + probability)','Model architecture (encoder + head)','Calibration technique','Reject / escalation design','Interface and wire format'],
+        datasets: [
+            { label: 'Inherited from prior research (%)', data: [95, 90, 95, 95, 30],
+              borderColor:'rgb(59,130,246)', backgroundColor:'rgba(59,130,246,0.2)' },
+            { label: 'Newly contributed in 2026 (%)', data: [5, 10, 5, 5, 70],
+              borderColor:'rgb(239,68,68)', backgroundColor:'rgba(239,68,68,0.2)' }
+        ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ beginAtZero:true, max:100 } },
+      plugins:{ legend:{ labels:{ font:{ size:11 } } },
+        title:{ display:true, text:'Inherited versus newly contributed, by component (qualitative assessment by this report)', font:{ size:12 } } } }
+});
+</script>
+
+<div class="interaction-section" style="max-width:1000px;margin:1.5rem auto;padding:0 1.5rem;">
+    <div class="interaction-card" style="background:#fafafa;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;">
+        <div class="interaction-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #ddd;">
+            <h2 class="interaction-title" style="font-size:1.1rem;font-weight:600;color:#333;">💬 Comments &amp; Reactions</h2>
+            <div class="like-section" style="display:flex;align-items:center;gap:0.75rem;">
+                <button id="like-btn" class="like-btn" style="background:#fff;color:#666;border:1px solid #ddd;padding:0.4rem 0.8rem;cursor:pointer;font-size:0.9rem;"><span>🤍</span> Like</button>
+                <span class="like-count" id="like-count" style="font-size:0.9rem;color:#666;">0</span>
+            </div>
+        </div>
+        <div class="comment-form" style="margin-bottom:1.5rem;">
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-author" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Name (optional)</label>
+                <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;">
+            </div>
+            <div class="comment-input-group" style="margin-bottom:0.75rem;">
+                <label for="comment-content" style="display:block;margin-bottom:0.3rem;font-weight:500;color:#555;font-size:0.85rem;">Your Comment</label>
+                <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000" style="width:100%;padding:0.5rem;border:1px solid #ddd;font-family:inherit;font-size:0.9rem;min-height:80px;resize:vertical;"></textarea>
+            </div>
+            <button id="comment-submit" class="comment-submit-btn" style="background:#333;color:white;border:none;padding:0.5rem 1.2rem;cursor:pointer;font-size:0.9rem;">Post Comment</button>
+        </div>
+        <div id="comments-list" class="comments-list" style="margin-top:1.5rem;">
+            <p style="color:#999;text-align:center;padding:2rem;">Loading comments...</p>
+        </div>
+    </div>
+</div>
+<script src="../assets/interaction.js"></script>
+</body>
+</html>
