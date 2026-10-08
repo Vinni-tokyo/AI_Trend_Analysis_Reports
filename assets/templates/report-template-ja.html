@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[報告書タイトル]</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fafafa;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white;
+            padding: 2rem 2.5rem 1.5rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+        .back-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .language-switcher {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .lang-btn {
+            padding: 0.3rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .lang-btn.active {
+            background: white;
+            color: var(--primary-navy);
+            border-color: white;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            margin-bottom: 0.15rem;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            opacity: 0.9;
+        }
+        .header .meta {
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .subsection-title {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .executive-summary {
+            background: #fafafa;
+            border-left: 3px solid #e5e5e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .key-findings { list-style: none; }
+        .key-findings li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .key-findings li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.7rem;
+        }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+        .sources {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links {
+            background: #f0f7ff;
+            border-left: 3px solid #0052b8;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .related-links strong {
+            color: #001e5c;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .related-links a {
+            color: #0052b8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .related-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { flex-direction: column; gap: 0.3rem; }
+        }
+        @media print {
+            body { padding: 0; font-size: 12px; }
+            .container { box-shadow: none; }
+            .header-actions { display: none; }
+        }
+    </style>
+<link rel="stylesheet" href="../assets/theme.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="index.html" class="back-btn">← トップ</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="밝기 전환" aria-label="밝기 전환">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='[FILENAME]-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='[FILENAME]-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='[FILENAME]-ja.html'" class="lang-btn active">日本語</button>
+                </div>
+            </div>
+            <h1>[報告書タイトル]<br>[サブタイトル（必要に応じて）]</h1>
+            <div class="subtitle">[副題または概要説明]</div>
+            <div class="meta">レポート作成日：[YYYY年MM月DD日] | 標準版レポート（5-8ページ）</div>
+        </div>
+
+        <!-- AI Audio Overview Banner (Optional - Hidden by default) -->
+        <div class="audio-overview-banner" style="background:linear-gradient(135deg,#f0f7ff 0%,#e3f2fd 100%);border-bottom:2px solid #0052b8;padding:0.75rem 2.5rem;display:none;" id="audio-overview-section">
+            <div style="max-width:1000px;margin:0 auto">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:0.75rem">
+                    <div style="display:flex;align-items:center;gap:0.75rem;flex:1">
+                        <span style="font-size:1.3rem">🎧</span>
+                        <div>
+                            <span style="font-size:0.85rem;font-weight:600;color:#001e5c">AIオーディオ概要</span>
+                            <span style="font-size:0.75rem;color:#555;margin-left:0.5rem">NotebookLMがこのレポートをポッドキャストに要約しました</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-shrink:0">
+                        <a href="#" class="notebooklm-link" style="padding:0.4rem 0.9rem;background:#001e5c;color:white;border-radius:4px;text-decoration:none;font-size:0.8rem;font-weight:600;white-space:nowrap;display:none;" target="_blank">📝 ノートブックを見る</a>
+                    </div>
+                </div>
+                <!-- Audio player will be inserted here by insert_audio.py -->
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- SECTION 1: 主要トレンド Top 5 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <h3 class="subsection-title">1. [トレンド1のタイトル]</h3>
+                <p><strong>現状：</strong>[現在の状況を2-3文で説明。市場規模、主要プレーヤー、採用状況など]</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>[カテゴリ1名]</h4>
+                        <p>• <strong>[項目1]：</strong>[説明]<br>
+                        • <strong>[項目2]：</strong>[説明]<br>
+                        • <strong>[項目3]：</strong>[説明]</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>[カテゴリ2名]</h4>
+                        <p>• <strong>[項目1]：</strong>[説明]<br>
+                        • <strong>[項目2]：</strong>[説明]<br>
+                        • <strong>[項目3]：</strong>[説明]</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="[URL1]" target="_blank">[サービス名1]</a> |
+                    <a href="[URL2]" target="_blank">[サービス名2]</a> |
+                    <a href="[URL3]" target="_blank">[サービス名3]</a>
+                </div>
+
+                <p><strong>展望：</strong>[将来予測を1-2文で。2025年以降の見通し、影響など]</p>
+
+                <!-- トレンド2-5も同様の構造で追加 -->
+            </section>
+
+            <!-- SECTION 2: 競争環境と市場ポジショニング -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">[X]層市場構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">[市場構造の説明。4層構造の場合、各層の特徴を簡潔に]</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>プラットフォーム</th>
+                            <th>カテゴリ</th>
+                            <th>特徴</th>
+                            <th>対象ユーザー</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>[プラットフォーム名1]</strong></td>
+                            <td>[カテゴリ]</td>
+                            <td>[主要特徴]</td>
+                            <td>[対象ユーザー]</td>
+                        </tr>
+                        <!-- 追加行 -->
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場トレンド</h3>
+                <ul class="key-findings">
+                    <li><strong>[トレンド1]：</strong>[説明]</li>
+                    <li><strong>[トレンド2]：</strong>[説明]</li>
+                    <li><strong>[トレンド3]：</strong>[説明]</li>
+                    <li><strong>[トレンド4]：</strong>[説明]</li>
+                    <li><strong>[トレンド5]：</strong>[説明]</li>
+                </ul>
+
+                <h3 class="subsection-title">主要プラットフォーム比較チャート</h3>
+                <div class="chart-container">
+                    <canvas id="competitiveChart"></canvas>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 活用アイデア -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>[アイデア1タイトル]</strong> - [一行説明]</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>[アイデア2タイトル]</strong> - [一行説明]</p>
+                    <p style="line-height: 1.6;">3. <strong>[アイデア3タイトル]</strong> - [一行説明]</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: エグゼクティブサマリー -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>[ポイント1]：</strong>[説明]</li>
+                        <li><strong>[ポイント2]：</strong>[説明]</li>
+                        <li><strong>[ポイント3]：</strong>[説明]</li>
+                        <li><strong>[ポイント4]：</strong>[説明]</li>
+                        <li><strong>[ポイント5]：</strong>[説明]</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">選定ガイド</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>[対象1] → [推奨ツール]</strong><br>
+                        理由：[説明]<br>
+                        <strong>[対象2] → [推奨ツール]</strong><br>
+                        理由：[説明]<br>
+                        <strong>[対象3] → [推奨ツール]</strong><br>
+                        理由：[説明]
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>総合評価：</strong>[ポジティブ/ネガティブ/中立]（[理由]）</p>
+            </section>
+
+            <!-- SECTION 5: 主要用語の説明 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-left: 3px solid #e5e5e5;">
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>[用語1]</strong> - [簡単な説明（1-2文）]
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>[用語2]</strong> - [簡単な説明]
+                    </div>
+                    <div style="margin-bottom: 0.4rem;">
+                        <strong>[用語3]</strong> - [簡単な説明]
+                    </div>
+                    <!-- 5-8個の用語を追加 -->
+                </div>
+            </section>
+
+            <!-- SECTION 6: 参考資料 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>[YYYY年MM月DD日]</p>
+                    <ul>
+                        <li>• <a href="[URL1]" target="_blank">[出典1タイトル]</a></li>
+                        <li>• <a href="[URL2]" target="_blank">[出典2タイトル]</a></li>
+                        <li>• <a href="[URL3]" target="_blank">[出典3タイトル]</a></li>
+                        <!-- 9-12個のソースを追加 -->
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js レーダーチャート
+        // 区別可能な色を使用（グレースケール禁止）
+        const ctx = document.getElementById('competitiveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['[評価軸1]', '[評価軸2]', '[評価軸3]', '[評価軸4]', '[評価軸5]'],
+                datasets: [
+                    {
+                        label: '[プラットフォーム1]',
+                        data: [85, 70, 90, 60, 75],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        pointBackgroundColor: 'rgb(59, 130, 246)'
+                    },
+                    {
+                        label: '[プラットフォーム2]',
+                        data: [70, 85, 75, 80, 90],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        pointBackgroundColor: 'rgb(34, 197, 94)'
+                    },
+                    {
+                        label: '[プラットフォーム3]',
+                        data: [90, 60, 80, 85, 65],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)'
+                    },
+                    {
+                        label: '[プラットフォーム4]',
+                        data: [75, 80, 85, 90, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        pointBackgroundColor: 'rgb(168, 85, 247)'
+                    },
+                    {
+                        label: '[プラットフォーム5]',
+                        data: [80, 75, 70, 75, 85],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        pointBackgroundColor: 'rgb(239, 68, 68)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 10
+                            },
+                            padding: 8
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+<script src="../assets/theme.js"></script>
+</body>
+</html>
