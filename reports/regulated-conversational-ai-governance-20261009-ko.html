@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>증명부터 설계한다 — 금융·법률·공공의 대화형 AI 개발 방법론</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.92rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.82rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.88rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 공유 테마 (Ink & Paper) : 이 줄이 없으면 색이 통일되지 않습니다 -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="일반 챗봇은 기능부터 만들고, 규제 산업은 감사받을 것부터 짠다">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ko.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="증명부터 설계한다 — 금융·법률·공공의 대화형 AI 개발 방법론">
+<meta property="og:description" content="일반 챗봇은 기능부터 만들고, 규제 산업은 감사받을 것부터 짠다">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ko.html">
+<meta property="og:locale" content="ko_KR">
+<meta property="article:published_time" content="2026-10-09">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="증명부터 설계한다 — 금융·법률·공공의 대화형 AI 개발 방법론">
+<meta name="twitter:description" content="일반 챗봇은 기능부터 만들고, 규제 산업은 감사받을 것부터 짠다">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="밝기 전환" aria-label="밝기 전환">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='regulated-conversational-ai-governance-20261009-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='regulated-conversational-ai-governance-20261009-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='regulated-conversational-ai-governance-20261009-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>증명부터 설계한다<br>— 금융·법률·공공의 대화형 AI 개발 방법론</h1>
+            <div class="subtitle">일반 챗봇은 기능부터 만들고, 규제 산업은 감사받을 것부터 짠다</div>
+            <div class="meta">보고서 작성일: 2026년 10월 9일 | 표준 보고서 (5-8페이지) | 데이터 수집: 2026년 10월 9일</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <div class="callout">
+                    <strong>이 보고서의 중심 주장</strong><br>
+                    일반 챗봇은 기능을 먼저 만들고 나중에 검증합니다. 규제 산업의 대화형 AI는 반대입니다.
+                    <strong>「무엇을 증명해야 하는가」가 「어떻게 짜야 하는가」와 「어떤 순서로 만드나」를 거꾸로 결정합니다.</strong>
+                    이 글은 규제 목록을 나열하지 않고, 각 규제가 개발 현장에서 만들어내는 작업으로 번역합니다.
+                </div>
+
+                <h3 class="subsection-title">1. 이름이 셋인 이유 — 같은 것을 학계·업계·규제가 다르게 부른다</h3>
+                <p><strong>현황:</strong> 예약·상담·민원처럼 「끝내야 할 일」이 있는 대화를 다루는 시스템은
+                부르는 쪽에 따라 이름이 달라집니다. 같은 것을 가리키면서도 강조점이 다르기 때문에,
+                어느 이름으로 검색하느냐에 따라 전혀 다른 자료가 나옵니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>세 갈래 호칭</h4>
+                        <p>• <strong>학계:</strong> 과업 지향 대화 시스템(Task-Oriented Dialogue, TOD).
+                        자연어 이해 → 상태 추적 → 정책 → 자연어 생성의 네 부품 구조<br>
+                        • <strong>업계:</strong> 대화형 AI(Conversational AI)·가상 상담원.
+                        도구 호출과 검색을 붙이면 LLM 에이전트로 부릅니다<br>
+                        • <strong>규제:</strong> 고위험 AI 시스템. EU AI 법이 신용평가·필수 공공서비스·사법 행정을
+                        고위험으로 분류하면서 이 이름이 굳었습니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>도메인별 호칭과 공통 성격</h4>
+                        <p>• <strong>금융:</strong> 대화형 뱅킹(Conversational Banking)·로보어드바이저<br>
+                        • <strong>법률:</strong> 리걸테크 인테이크·트리아지(접수와 분류)<br>
+                        • <strong>공공:</strong> 시민 서비스 챗봇·전자정부 도우미<br>
+                        세 도메인의 공통 성격은 <strong>상담·안내·접수·분류</strong>이며,
+                        최종 결정은 사람에게 넘기는 <strong>인간 이관(human handoff)</strong>이 반드시 들어갑니다</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act 포털</a> |
+                    <a href="https://aclanthology.org/" target="_blank">ACL Anthology</a>
+                </div>
+
+                <p><strong>전망:</strong> 이름이 갈린 것은 단순한 용어 차이가 아닙니다.
+                학계는 <strong>구조</strong>를, 업계는 <strong>제품</strong>을, 규제는 <strong>위험</strong>을 봅니다.
+                규제 산업에서 만든다면 세 관점을 다 읽어야 하며, 그중 <strong>규제의 시선이 개발 순서를 정합니다.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> TOD 의 네 부품 구조와 EU AI 법의 고위험 분류는 각각 학술 문헌과 법령으로 확인됩니다.<br>
+                        <strong>개선점:</strong> 「세 갈래 호칭」이라는 정리는 본 분석의 구분이며 공인된 분류가 아닙니다. 실무에서는 경계가 겹쳐 쓰입니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 책임이 현실이 된 사건들 — 판결·제재·되돌아온 사례</h3>
+                <p><strong>현황:</strong> 「틀리면 책임이 생긴다」는 말은 더 이상 경고가 아닙니다.
+                2024년부터 2025년 사이, 서로 다른 네 가지 방식으로 그것이 현실이 됐습니다.
+                각 사건이 가리키는 결함의 위치가 다르다는 점이 중요합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>① 판결 — 챗봇의 말은 회사의 말이다</h4>
+                        <p><strong>Moffatt v. Air Canada (2024 BCCRT 149)</strong><br>
+                        2022년 11월, 조부를 잃은 Jake Moffatt 에게 Air Canada 챗봇은
+                        「여행 후 90일 안에 사별 요금을 신청할 수 있다」고 답했습니다. 실제 정책은 여행 후 신청을 받지 않았습니다.<br>
+                        항공사는 <strong>「챗봇은 자기 행동에 책임지는 별개의 법인」</strong>이라고 주장했고,
+                        재판관 Christopher Rivers 는 이를 <strong>「remarkable(놀랍다)」</strong>고 평하며 기각했습니다.
+                        챗봇은 웹사이트의 일부이므로 회사가 전적으로 책임진다는 판단이었고,
+                        요금 차액과 이자·비용 배상이 명령됐습니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>② 제재 — 검증하지 않은 것이 제재 사유가 됐다</h4>
+                        <p><strong>DoNotPay — 미국 연방거래위원회(FTC)</strong><br>
+                        「세계 최초의 로봇 변호사」를 내세운 구독 서비스에 대해 FTC 가 2024년 9월 제소했고,
+                        위원회는 <strong>2025년 1월 16일 5-0 만장일치</strong>로 최종 명령을 승인했습니다.
+                        <strong>19만 3,000달러</strong>의 금전적 구제와 2021~2023년 구독자 통지가 포함됐습니다.<br>
+                        주목할 점은 제재 사유입니다. FTC 는 이 회사가
+                        <strong>「AI 변호사」가 인간 변호사 수준으로 작동하는지 시험하지 않았고, 품질과 정확성을 검증할 변호사를 고용하지도 않았다</strong>고 지적했습니다.
+                        결함은 답변이 아니라 <strong>검증 공정의 부재</strong>에 있었습니다.</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>③ 되돌아온 사례 — 비용이 지배하면 품질이 떨어진다</h4>
+                        <p><strong>Klarna</strong><br>
+                        2024년 2월, AI 어시스턴트가 30일 동안 230만 건의 채팅을 처리했고
+                        이는 <strong>풀타임 상담원 700명분</strong>에 해당한다고 발표했습니다. 대화의 67%가 자동화됐고 연 4,000만 달러 절감이 전망됐습니다.<br>
+                        그런데 <strong>2025년 5월 방향을 틀어 사람 상담원을 다시 뽑기 시작</strong>했습니다.
+                        고객들이 답변이 일반적이고 복잡하고 미묘한 사안을 다루지 못한다고 불평했기 때문입니다.<br>
+                        CEO Sebastian Siemiatkowski 는 블룸버그에 이렇게 말했습니다.
+                        <strong>「비용이 안타깝게도 너무 지배적인 평가 요소가 되다 보니, 결국 품질이 낮아졌다」</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>④ 공공 — 면책 문구로는 해결되지 않는다</h4>
+                        <p><strong>뉴욕시 MyCity 챗봇</strong><br>
+                        2024년, 시의 사업자 지원 챗봇이 <strong>위법한 조언</strong>을 했습니다.
+                        고용주가 직원 팁의 일부를 가져가도 된다, 근무 일정 변경을 통지할 의무가 없다,
+                        임대 지원을 받는 세입자를 거부해도 된다 — 마지막 항목은 <strong>2008년부터 불법</strong>입니다.<br>
+                        시는 챗봇을 내리는 대신 <strong>면책 문구를 갱신</strong>했습니다.
+                        「응답이 부정확하거나 불완전할 수 있다」, 「법률·전문 조언으로 사용하지 말라」.
+                        Eric Adams 시장은 「일부 영역에서 틀렸고 고쳐야 한다」면서도 시범 사업임을 강조했습니다.</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.ftc.gov/news-events/news/press-releases/2025/02/ftc-finalizes-order-donotpay-prohibits-deceptive-ai-lawyer-claims-imposes-monetary-relief-requires" target="_blank">FTC — DoNotPay 최종 명령</a> |
+                    <a href="https://www.klarna.com/" target="_blank">Klarna</a> |
+                    <a href="https://www.aircanada.com/" target="_blank">Air Canada</a> |
+                    <a href="https://www.nyc.gov/" target="_blank">New York City</a>
+                </div>
+
+                <p><strong>전망:</strong> 네 사건이 가리키는 곳이 모두 다릅니다.
+                판결은 <strong>책임의 소재</strong>를, 제재는 <strong>검증 공정의 부재</strong>를,
+                Klarna 는 <strong>평가 지표 설계</strong>를, 뉴욕시는 <strong>면책의 한계</strong>를 보여줍니다.
+                뒤의 세 꼭지는 이 네 가지에 대한 답입니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 네 사건 모두 1차 자료로 확인됩니다. 판결은 사건 번호(2024 BCCRT 149)와 재판관 발언, FTC 건은 공식 보도자료와 표결 결과·금액, Klarna 는 CEO 의 직접 인용, 뉴욕시는 시장 발언과 시의 조치가 보도로 확인됩니다.<br>
+                        <strong>개선점:</strong> Air Canada 판결의 배상 금액은 「요금 차액 + 이자·비용」으로만 확인되어 총액을 명시하지 않았습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 거버넌스 층 — 무엇을 증명해야 하는가</h3>
+                <p><strong>현황:</strong> 규제는 금지 목록이 아니라 <strong>증명 목록</strong>입니다.
+                무엇을 하지 말라가 아니라, 무엇을 했다는 것을 어떻게 보일 것인가를 요구합니다.
+                그래서 개발 방법이 여기서부터 거꾸로 풀려 나옵니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>미국·EU</h4>
+                        <p>• <strong>NIST AI RMF 1.0</strong> — 통치(GOVERN)·지도(MAP)·측정(MEASURE)·관리(MANAGE)
+                        네 기능으로 수명주기 전반의 위험을 다룹니다<br>
+                        • <strong>NIST AI 600-1</strong>(생성형 AI 프로파일) — 생성형 AI 고유의 위험을
+                        <strong>12개 범주</strong>로 정리했습니다. 작화(confabulation), 유해 콘텐츠, 프라이버시, 보안 취약점 등<br>
+                        • <strong>EU AI 법</strong> — 고위험에 위험관리·데이터 거버넌스·기록·<strong>인간 감독</strong>·정확성을 의무화.
+                        제50조 투명성 의무는 2026년 8월 2일 적용 개시, 위반 시 최대 1,500만 유로 또는 전 세계 매출 3%<br>
+                        • <strong>ISO/IEC 42001</strong> — AI 경영시스템 인증 규격</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>한국·일본</h4>
+                        <p>• <strong>한국 AI 기본법 — 2026년 1월 22일 시행.</strong>
+                        EU 에 이어 <strong>세계 두 번째</strong>, 아시아태평양에서는 <strong>최초</strong>의 포괄적·구속력 있는 국가 AI 법입니다<br>
+                        • 고영향 AI 에 <strong>다섯 가지 핵심 의무</strong>: 위험관리 계획 수립, 설명 제공,
+                        이용자 보호 조치, <strong>인간 감독 보장</strong>, 문서화 유지. 개발자와 이용 사업자 모두에게 적용됩니다<br>
+                        • AI 기반 제품·서비스는 <strong>사전 고지</strong> 의무. 국내 대리인 지정 요구<br>
+                        • 과태료 상한은 3,000만 원이며 최소 1년의 계도기간이 운영됩니다<br>
+                        • <strong>일본 AI 사업자 가이드라인 제1.1판</strong>(2025년 3월) — 총무성·경제산업성의 세 가이드라인을 통합</p>
+                    </div>
+                </div>
+
+                <p>금융권에는 한 층이 더 있습니다. <strong>모델 리스크 관리(MRM)</strong> 입니다.
+                LLM 도 「모델」이므로 검증·모니터링·재검증 주기가 <strong>문서로</strong> 존재해야 합니다.
+                대화 품질이 좋다는 느낌이 아니라, 언제 누가 어떻게 검증했는지가 남아야 합니다.</p>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI RMF</a> |
+                    <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a> |
+                    <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act</a> |
+                    <a href="https://www.soumu.go.jp/" target="_blank">일본 총무성</a> |
+                    <a href="https://www.federalreserve.gov/supervisionreg/srletters/SR2602.htm" target="_blank">美 연준 SR 26-2</a>
+                </div>
+
+                <p><strong>전망:</strong> 네 관할권이 서로 다른 법을 쓰지만 요구하는 것은 비슷합니다.
+                <strong>인간 감독·설명·기록</strong>이 공통으로 들어 있습니다.
+                이 셋이 다음 절의 설계 원칙을 그대로 결정합니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 한국 AI 기본법의 시행일(2026-01-22)·다섯 가지 의무·과태료 상한, 일본 가이드라인 제1.1판(2025-03)과 통합 경위, NIST 의 네 기능과 12개 위험 범주가 모두 출처로 확인됩니다.<br>
+                        <strong>개선점:</strong> 금융권 MRM 의 구체적 적용 방식(LLM 에 대한 재검증 주기 등)은 공개된 감독 지침에서 명시적으로 확인하지 못했습니다. 일반 원칙으로만 서술했습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 설계 층 — 판단은 코드, 문장은 LLM</h3>
+                <p><strong>현황:</strong> 거버넌스가 요구하는 「인간 감독·설명·기록」을 코드로 옮기면
+                설계 원칙 하나가 남습니다. <strong>판단은 결정적 코드가 하고, LLM 은 정해진 값을 문장으로만 만든다.</strong>
+                규제 산업에서 이 분리는 취향이 아니라 감사 요건입니다.
+                「왜 그렇게 답했는가」를 나중에 LLM 에게 다시 물어서는 설명이 되지 않기 때문입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>네 가지 설계 규칙</h4>
+                        <p>• <strong>판단과 문장의 분리:</strong> 물을지·답할지·거절할지·이관할지는 코드가 정합니다<br>
+                        • <strong>상태를 문맥 밖에 둔다:</strong> 슬롯·출처·확인 여부·거절 이력·근거를 변수로 보존합니다.
+                        대화 이력에만 담아 두면 재현되지 않습니다<br>
+                        • <strong>검색 + 인용 강제:</strong> 모든 사실 문장은 검색된 원문에 묶이고, 원문이 없으면 「없다」고 말합니다<br>
+                        • <strong>가드레일을 양쪽에:</strong> 입력(개인정보·탈옥·범위 밖)과 출력(금지 표현·보호속성·단정적 법률 판단)을
+                        각각 코드 필터로 거릅니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>규제 산업이 플랫폼을 고르는 기준</h4>
+                        <p>기능 목록이 아니라 세 가지를 봅니다.<br>
+                        • <strong>데이터 위치:</strong> 온프레미스·전용 환경이 가능한가 (Rasa·Cognigy·boost.ai·Kore.ai)<br>
+                        • <strong>감사 로그:</strong> 모든 턴의 상태와 판단을 남길 수 있는가<br>
+                        • <strong>모델 고정:</strong> 모델 버전을 묶어 둘 수 있는가. 뒤에서 모델이 바뀌면 재검증이 무효가 됩니다<br>
+                        하이퍼스케일러(Google Dialogflow CX·Microsoft Copilot Studio·Amazon Lex·IBM watsonx Assistant)는
+                        관리 편의와 규정 준수 기능을 함께 제공하지만, 데이터 위치 조건이 먼저 맞아야 선택지에 듭니다</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>이어 읽기 —</strong> 본 사이트의 2026년 10월 9일 보고서
+                    <a href="gpt-61-astra-withheld-release-bar-20261009-ko.html">「접힌 모델이 남긴 기준 — GPT-6.1 Astra 철회가 드러낸 것」</a>은
+                    OpenAI 가 자사 모델을 내보내지 않은 이유를 <strong>「권한 안에 머무는 능력」</strong>으로 정리했습니다.
+                    이 글은 같은 요구를 <strong>모델이 아니라 시스템과 개발 공정</strong> 쪽에서 봅니다.
+                    모델이 범위를 지키는지와, 시스템이 그 범위를 코드로 강제하는지는 한 쌍의 질문입니다.
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://rasa.com/" target="_blank">Rasa</a> |
+                    <a href="https://www.cognigy.com/" target="_blank">Cognigy</a> |
+                    <a href="https://www.boost.ai/" target="_blank">boost.ai</a> |
+                    <a href="https://kore.ai/" target="_blank">Kore.ai</a> |
+                    <a href="https://cloud.google.com/dialogflow" target="_blank">Dialogflow CX</a> |
+                    <a href="https://www.ibm.com/products/watsonx-assistant" target="_blank">IBM watsonx Assistant</a>
+                </div>
+
+                <p><strong>전망:</strong> 인간 이관은 뒤에 붙이는 안전장치가 아니라 <strong>처음부터 설계하는 기능</strong>입니다.
+                어떤 조건에서 넘기는지, 넘길 때 대화 상태를 어떻게 전달하는지가 정해져 있지 않으면,
+                장애가 났을 때 시스템은 빈 답변을 내보냅니다. 규제 산업에서 빈 답변은 사람 이관보다 나쁜 결과입니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 「인간 감독·설명·기록」이 각 규제의 명시적 요구라는 점은 3번 꼭지에서 확인된 사실이며, 설계 원칙은 그로부터 논리적으로 도출됩니다. 플랫폼 목록은 각 사의 공개 자료로 확인됩니다.<br>
+                        <strong>개선점:</strong> 「판단은 코드, 문장은 LLM」이라는 정식화와 플랫폼 선택 기준 세 가지는 <strong>본 분석의 권고</strong>이며, 특정 감독 지침에 그대로 적힌 문구가 아닙니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 공정 층 — 기능보다 자를 먼저 만든다</h3>
+                <p><strong>현황:</strong> 규제 산업에서는 만드는 순서가 다릅니다. <strong>평가 주도 개발</strong>입니다.
+                기능을 먼저 만들고 나중에 재는 것이 아니라, <strong>재는 도구와 문항 모음을 먼저 만들고</strong> 그다음에 기능을 올립니다.
+                DoNotPay 제재의 사유가 정확히 이 공정의 부재였다는 점을 떠올리면 이유가 분명해집니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>두 축 + 상시 조건</h4>
+                        <p>• <strong>과제 성공:</strong> 목적지 도달률, 턴 예산(몇 번 만에 끝났는가)<br>
+                        • <strong>대화 비용:</strong> 재질문 횟수, 이관률, 응답 시간<br>
+                        이 두 축의 틀은 PARADISE 로 알려진 대화 평가 체계에서 왔습니다<br>
+                        • <strong>안전성은 그 위의 상시 조건:</strong> 차별·정보 누출·범위 밖 답변은
+                        점수가 아니라 통과·불통과로 다룹니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>운영 규율</h4>
+                        <p>• <strong>릴리즈 게이트:</strong> 버전이 오르면 고정 문항 세트를 전량 돌리고, 기준 버전 대비 악화면 FAIL<br>
+                        • <strong>레드팀:</strong> 탈옥·개인정보 유도·보호속성 차별 전용 문항 모음. 금융·법률은 외부 레드팀이 관행<br>
+                        • <strong>실사용 전사 검토:</strong> 자동 지표가 전부 통과해도 사람이 대화 기록을 읽어야 보이는 결함이 있습니다<br>
+                        • <strong>작업 단위를 작게:</strong> 1 과제 = 1 지표 = 1 수정 자리. 큰 리팩터링은 재검증 비용이 너무 큽니다<br>
+                        • <strong>재현성:</strong> 모델·프롬프트·코드 버전을 함께 고정합니다</p>
+                    </div>
+                </div>
+
+                <p>이 공정이 실제로 공개된 사례가 있습니다. 영국 정부의 <strong>GOV.UK Chat</strong> 입니다.
+                18개월간 두 차례 공개 시범에서 <strong>1만 명 이상</strong>이 약 <strong>2만 6,000개</strong> 질문을 던졌고,
+                정확도는 초기 기준선 <strong>76%에서 90%</strong>로 올랐습니다. 유용하다는 응답이 73%, 만족이 64%였습니다.</p>
+
+                <p>주목할 것은 숫자가 아니라 <strong>재는 방법</strong>입니다.
+                답변은 <strong>주제 전문가와 평가 도구를 함께</strong> 써서 심사했고,
+                평가자는 <strong>게시된 GOV.UK 콘텐츠의 모든 기준을 충족할 때만</strong> 「정확」으로 매겼습니다.
+                정확의 정의가 먼저 있고, 그 정의로 반복해서 쟀기 때문에 76에서 90으로 가는 길이 보인 것입니다.</p>
+
+                <div class="callout">
+                    <strong>이어 읽기 —</strong> 본 사이트의 2026년 9월 30일 보고서
+                    <a href="task-oriented-dialogue-systems-20260930-ko.html">「과업 지향 대화 시스템(TOD) 심층 분석」</a>은
+                    다섯 번째 꼭지를 <strong>「평가 방법론의 공백 — 벤치마크는 정확도를, 현장은 목적지 도달을 본다」</strong>로 맺었습니다.
+                    <strong>이 절이 그 공백을 메우는 자리입니다.</strong>
+                    그 글이 공백을 지적했다면, 이 글은 규제 산업이 그 공백을 어떤 공정으로 메우고 있는지를 다룹니다.
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.gov.uk/" target="_blank">GOV.UK</a> |
+                    <a href="https://github.com/NVIDIA/NeMo-Guardrails" target="_blank">NVIDIA NeMo Guardrails</a> |
+                    <a href="https://www.giskard.ai/" target="_blank">Giskard</a> |
+                    <a href="https://www.patronus.ai/" target="_blank">Patronus AI</a> |
+                    <a href="https://www.credo.ai/" target="_blank">Credo AI</a>
+                </div>
+
+                <p>도구 생태계도 이 공정을 따라 나뉘어 있습니다.
+                <strong>NeMo Guardrails</strong>(Apache 2.0)는 Colang 이라는 전용 언어로 대화 흐름 자체를 정의하고
+                입력·대화·검색·실행·출력 <strong>다섯 종류의 레일</strong>을 둡니다 — 개별 문장을 거르는 데 그치지 않고
+                승인된 주제 안에 대화를 묶는 것이 강점입니다.
+                <strong>Patronus AI</strong> 의 Lynx 는 사고 과정을 남기는 방식이라
+                <strong>문서화된 환각 탐지와 설명 가능한 출력</strong>이 필요한 규제 산업에 맞춰져 있습니다.
+                <strong>Giskard</strong> 는 환각·유해 콘텐츠·보안 취약점을 함께 보는 오픈소스 평가 도구를 내놓고 있습니다.</p>
+
+                <p><strong>전망:</strong> 플랫폼 선택보다 <strong>평가 체계 구축이 먼저</strong>라는 순서가 굳어지고 있습니다.
+                Klarna 가 남긴 교훈이 여기에 닿습니다. 비용이 지배적인 평가 요소가 되면 품질이 떨어집니다.
+                무엇을 재느냐가 무엇을 만드느냐를 결정합니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> GOV.UK Chat 의 정확도 추이(76→90%)·참여 규모·만족도와 <strong>평가 방법</strong>이 영국 정부 디지털 서비스 자료로 확인됩니다. NeMo Guardrails 의 다섯 레일과 Colang, Patronus 의 규제 산업 지향도 각 사 자료로 확인됩니다.<br>
+                        <strong>개선점:</strong> PARADISE 틀의 원 논문 연도·저자는 이번 조사에서 1차 자료로 재확인하지 못해 명시하지 않았습니다. 「평가 주도 개발」이라는 용어 자체는 업계에서 통일돼 쓰이는 공식 명칭이 아닙니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">규제 강도에 따른 4계층</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">
+                    제품 비교가 아니라 <strong>무엇을 할 수 있고 무엇을 증명해야 하는가</strong>로 나눈 계층입니다.
+                    계층이 올라갈수록 근거 기록·인간 감독·감사 로그 요구가 촘촘해집니다.
+                    <em>(본 분석에 따른 분류입니다.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>계층</th>
+                            <th>하는 일</th>
+                            <th>요구되는 증명</th>
+                            <th>틀렸을 때</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1계층 — 정보 제공</strong></td>
+                            <td>공개된 안내문을 찾아 읽어 줍니다</td>
+                            <td>출처 표시, 원문 링크</td>
+                            <td>잘못 안내해도 원문이 함께 있으면 확인이 가능합니다</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2계층 — 접수·분류</strong></td>
+                            <td>민원·상담을 받아 담당으로 분류합니다</td>
+                            <td>위 + 분류 근거 기록, 이관 조건 명시</td>
+                            <td>잘못 분류되면 처리가 늦어지고 책임 소재가 흐려집니다</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3계층 — 개인 맞춤 안내</strong></td>
+                            <td>개인의 상황에 맞춘 선택지를 제시합니다</td>
+                            <td>위 + 전 턴 감사 로그, 설명 의무 대응, 인간 감독 경로</td>
+                            <td>적합성·설명의무 위반이 될 수 있습니다 (금융)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4계층 — 결정 보조</strong></td>
+                            <td>승인·거절 같은 결정에 쓰이는 판단을 제공합니다</td>
+                            <td>위 + 위험관리 계획, 모델 검증 문서, 재검증 주기, 사전 고지</td>
+                            <td>고위험 AI 로 분류돼 규제 의무가 전면 적용됩니다</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">도메인별 대표 서비스</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>서비스</th>
+                            <th>운영 주체</th>
+                            <th>도달 계층</th>
+                            <th>공개된 규모</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Erica</strong></td>
+                            <td>Bank of America (금융)</td>
+                            <td>1~3계층</td>
+                            <td>2018년 출시, 누적 <strong>32억 건</strong> 상호작용, 월 5,800만 건, 2,000만 명 이상 이용. 선제적 인사이트 17억 건. Merrill 고객에게 투자 관련 약 50개 주제 안내</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Eno · Ceba · Fargo</strong></td>
+                            <td>Capital One · Commonwealth Bank · Wells Fargo (금융)</td>
+                            <td>1~2계층 중심</td>
+                            <td>계좌 조회·알림·거래 안내 중심. 조언 영역은 제한적으로 운영</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Harvey</strong></td>
+                            <td>Harvey (법률)</td>
+                            <td>2~3계층 (법률 자문은 변호사가 수행)</td>
+                            <td>2026년 9월 <strong>155억 달러</strong> 가치 평가. 70여 개국 2,400곳 이상 로펌·사내 법무팀에서 20만 명 이상 사용. Am Law 100 의 80%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CoCounsel</strong></td>
+                            <td>Thomson Reuters (법률)</td>
+                            <td>2~3계층</td>
+                            <td>2026년 2월 기준 107개국 <strong>100만 사용자</strong>. Westlaw 와 통합</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GOV.UK Chat</strong></td>
+                            <td>영국 정부 디지털 서비스 (공공)</td>
+                            <td>1~2계층</td>
+                            <td>두 차례 공개 시범에서 <strong>1만 명 이상</strong>이 약 2만 6,000개 질문. 정확도 76% → <strong>90%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">평가를 공개한 공공 사례 — GOV.UK Chat</h3>
+                <div class="chart-container">
+                    <canvas id="govukChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    출처: 영국 정부 디지털 서비스 공개 자료. 정확도는 「게시된 GOV.UK 콘텐츠의 모든 기준을 충족할 때만 정확으로 평가」한 결과입니다.
+                </p>
+
+                <h3 class="subsection-title">계층별 증명 요구의 강도</h3>
+                <div class="chart-container">
+                    <canvas id="tierChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    본 분석에 따른 권고 수준입니다. 다섯 축은 각 규제가 공통으로 요구하는 항목에서 뽑았습니다.
+                </p>
+
+                <h3 class="subsection-title">시장 변화 다섯 가지</h3>
+                <ul class="key-findings">
+                    <li><strong>챗봇의 말이 회사의 말로 확정됐습니다:</strong> 「별개 법인」이라는 항변이 법정에서 기각됐습니다.</li>
+                    <li><strong>검증하지 않은 것이 제재 사유가 됐습니다:</strong> 답변의 품질이 아니라 검증 공정의 부재가 문제였습니다.</li>
+                    <li><strong>비용 중심 평가가 품질을 떨어뜨렸습니다:</strong> Klarna 가 1년 만에 사람 상담원을 다시 뽑았습니다.</li>
+                    <li><strong>면책 문구로는 공공의 오답을 덮지 못합니다:</strong> 뉴욕시 사례가 보여 줍니다.</li>
+                    <li><strong>규제가 수렴하고 있습니다:</strong> EU·한국·일본·미국이 모두 인간 감독·설명·기록을 요구합니다.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>계층 자리 확인</strong> - 운영 중이거나 기획 중인 대화 서비스가 1~4계층 중 어디에 있는지 적고, 그 계층이 요구하는 증명이 갖춰져 있는지 대조</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>정확의 정의 먼저</strong> - 기능을 올리기 전에 「무엇을 정확으로 볼 것인가」를 문서로 정하고, 고정 문항 세트를 만들어 기준선을 측정</p>
+                    <p style="line-height: 1.6;">3. <strong>이관 경로 점검</strong> - 장애·쿼터 초과·범위 밖 질문일 때 빈 답변이 나가는지, 사람에게 넘어가는지를 실제로 확인</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">경영진 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 발견</h3>
+                    <ul class="key-findings">
+                        <li><strong>책임 소재가 판결로 확정됐습니다:</strong> Air Canada 가 「챗봇은 별개 법인」이라고 주장했으나 재판부는 이를 기각하고 회사의 전적인 책임을 인정했습니다.</li>
+                        <li><strong>제재 사유는 답변이 아니라 공정이었습니다:</strong> FTC 는 DoNotPay 가 품질·정확성을 검증할 변호사를 고용하지 않았다는 점을 지적했고, 19만 3,000달러의 명령이 2025년 1월 확정됐습니다.</li>
+                        <li><strong>비용 중심 평가는 품질을 떨어뜨립니다:</strong> Klarna 는 700명분 자동화를 발표한 뒤 1년여 만에 사람 상담원을 다시 뽑았습니다.</li>
+                        <li><strong>규제가 요구하는 것은 금지가 아니라 증명입니다:</strong> EU·한국·일본·미국이 공통으로 인간 감독·설명·기록을 요구합니다. 한국 AI 기본법은 2026년 1월 22일 시행됐습니다.</li>
+                        <li><strong>공개된 모범 사례가 있습니다:</strong> GOV.UK Chat 은 「정확」의 정의를 먼저 세우고 반복 측정해 76%에서 90%로 올렸습니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">상황별 참고</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>이미 운영 중인 조직 → 계층 확인과 이관 경로 점검부터</strong><br>
+                        이유: 지금 어느 계층에서 돌고 있는지와, 장애 시 빈 답변이 나가는지를 아는 것이 가장 비용이 적은 점검입니다.<br>
+                        <strong>신규 구축을 앞둔 조직 → 평가 체계를 먼저</strong><br>
+                        이유: 기능을 올린 뒤에 재는 체계를 만들면 기준선이 없어 개선을 증명할 수 없습니다.<br>
+                        <strong>규제 대응이 임박한 조직 → 기록과 인간 감독부터</strong><br>
+                        이유: 네 관할권이 공통으로 요구하는 항목이고, 나중에 소급해서 만들 수 없는 종류의 증거입니다.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 중립에서 긍정 (판결과 제재는 단기적으로는 부담이지만, 무엇을 증명해야 하는지가 구체적으로 드러난 것은 설계를 명확하게 만듭니다. 다만 4계층에 해당하는 결정 보조 영역은 요구 수준이 급격히 높아지므로, 당분간은 1~2계층에서 증명 체계를 갖추는 쪽이 현실적입니다.)</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">8.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> 판결문 사건 번호, 규제 기관 보도자료, 정부 공개 평가 자료, 기업 공식 발표를 1차 자료로 사용한 사실 기반 분석입니다.</p>
+                        <p><strong>주요 강점:</strong> 네 건의 사건이 모두 날짜·기관·결과까지 확인됩니다. 서비스 규모와 GOV.UK Chat 의 평가 방법도 공개 자료로 뒷받침됩니다. 한국·일본 규제의 시점과 내용이 명시적으로 확인됩니다.</p>
+                        <p><strong>개선 우선순위:</strong> ① 4계층 분류와 설계 원칙은 <strong>본 분석의 제안</strong>이며 공인된 체계가 아닙니다. ② 금융권 모델 리스크 관리의 LLM 적용 세부(재검증 주기 등)는 감독 지침에서 확인하지 못해 일반 원칙으로만 서술했습니다. ③ PARADISE 틀의 원 논문 정보는 1차 자료로 재확인하지 못해 연도·저자를 명시하지 않았습니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>과업 지향 대화 시스템(TOD)</strong> — 예약·상담·민원처럼 끝내야 할 일이 있는 대화를 다루는 시스템입니다. 잡담용 챗봇과 달리 목적지가 있습니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>인간 이관(Human Handoff)</strong> — 시스템이 처리할 수 없거나 처리해서는 안 되는 상황에서 사람 상담원에게 대화를 넘기는 것입니다. 규제 산업에서는 제품의 일부입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>근거(Provenance)</strong> — 답변이 어느 조문·약관·고시에서 나왔는지를 그 자리에서 기록해 두는 것입니다. 나중에 설명해야 할 때 이 기록만 씁니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>가드레일(Guardrail)</strong> — 입력과 출력을 검사해 위험한 내용을 막는 장치입니다. 프롬프트로 부탁하는 것이 아니라 코드가 거릅니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>작화(Confabulation)</strong> — 모델이 사실이 아닌 내용을 그럴듯하게 지어내는 현상입니다. NIST 는 생성형 AI 의 고유 위험 가운데 하나로 분류합니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>모델 리스크 관리(MRM)</strong> — 금융권에서 모델의 검증·모니터링·재검증을 문서로 관리하는 체계입니다. LLM 도 「모델」이므로 이 대상에 들어갑니다.
+                    </div>
+                    <div>
+                        <strong>고영향·고위험 AI</strong> — 사람의 생명·안전·기본권에 중대한 영향을 줄 수 있는 영역의 AI 입니다. 한국 AI 기본법은 「고영향」, EU AI 법은 「고위험」이라 부르며 각각 추가 의무를 둡니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 10월 9일</p>
+                    <ul>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Moffatt_v._Air_Canada" target="_blank">Moffatt v. Air Canada (2024 BCCRT 149)</a></li>
+                        <li>• <a href="https://www.americanbar.org/groups/business_law/resources/business-law-today/2024-february/bc-tribunal-confirms-companies-remain-liable-information-provided-ai-chatbot/" target="_blank">BC Tribunal Confirms Companies Remain Liable for AI Chatbot Information — American Bar Association</a></li>
+                        <li>• <a href="https://www.ftc.gov/news-events/news/press-releases/2025/02/ftc-finalizes-order-donotpay-prohibits-deceptive-ai-lawyer-claims-imposes-monetary-relief-requires" target="_blank">FTC Finalizes Order with DoNotPay — Federal Trade Commission</a></li>
+                        <li>• <a href="https://www.ftc.gov/legal-library/browse/cases-proceedings/donotpay" target="_blank">FTC Case File — DoNotPay</a></li>
+                        <li>• <a href="https://themarkup.org/news/2024/04/02/malfunctioning-nyc-ai-chatbot-still-active-despite-widespread-evidence-its-encouraging-illegal-behavior" target="_blank">Malfunctioning NYC AI Chatbot Still Active — The Markup</a></li>
+                        <li>• <a href="https://www.civilserviceworld.com/professions/article/govuk-ai-chatbot-achieves-90-accuracy" target="_blank">GOV.UK AI chatbot achieves 90% accuracy — Civil Service World</a></li>
+                        <li>• <a href="https://insidegovuk.blog.gov.uk/2026/05/15/developing-gov-uk-chat-our-data-science-and-ai-engineering-journey/" target="_blank">Developing GOV.UK Chat — Inside GOV.UK Blog</a></li>
+                        <li>• <a href="https://newsroom.bankofamerica.com/content/newsroom/press-releases/2025/08/a-decade-of-ai-innovation--bofa-s-virtual-assistant-erica-surpas.html" target="_blank">BofA's Virtual Assistant Erica Surpasses 3 Billion Client Interactions</a></li>
+                        <li>• <a href="https://www.cnbc.com/2026/03/25/legal-ai-startup-harvey-raises-200-million-at-11-billion-valuation.html" target="_blank">Legal AI startup Harvey raises $200 million — CNBC</a></li>
+                        <li>• <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI Risk Management Framework</a></li>
+                        <li>• <a href="https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf" target="_blank">NIST AI 600-1: Generative AI Profile</a></li>
+                        <li>• <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act 포털</a></li>
+                        <li>• <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a></li>
+                        <li>• <a href="https://www.soumu.go.jp/main_content/001055184.pdf" target="_blank">AI 事業者ガイドライン 第1.1版 — 総務省・経済産業省</a></li>
+                        <li>• <a href="https://docs.nvidia.com/nemo/guardrails/" target="_blank">NVIDIA NeMo Guardrails 문서</a></li>
+                        <li>• <a href="https://www.federalreserve.gov/supervisionreg/srletters/SR2602.htm" target="_blank">SR 26-2: Revised Guidance on Model Risk Management (2026-04-17 · SR 11-7 대체) — 美 연방준비제도</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 차트 1 — GOV.UK Chat 공개 평가 지표
+        const ctx1 = document.getElementById('govukChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['초기 정확도', '현재 정확도', '유용하다는 응답', '만족한다는 응답'],
+                datasets: [{
+                    label: '비율 (%)',
+                    data: [76, 90, 73, 64],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(34, 197, 94)', 'rgb(59, 130, 246)', 'rgb(249, 115, 22)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'GOV.UK Chat — 정의를 먼저 세우고 반복해서 잰 결과' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+
+        // 차트 2 — 계층별 증명 요구 강도 (본 분석의 권고)
+        const ctx2 = document.getElementById('tierChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['근거 기록', '인간 감독', '감사 로그', '거절·이관 정책', '재현성 확보'],
+                datasets: [
+                    {
+                        label: '1계층 정보 제공',
+                        data: [60, 20, 30, 25, 30],
+                        borderColor: 'rgb(148, 163, 184)',
+                        backgroundColor: 'rgba(148, 163, 184, 0.15)'
+                    },
+                    {
+                        label: '2계층 접수·분류',
+                        data: [75, 45, 60, 65, 50],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: '3계층 개인 맞춤 안내',
+                        data: [90, 75, 85, 85, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    },
+                    {
+                        label: '4계층 결정 보조',
+                        data: [100, 100, 100, 95, 100],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '계층이 올라갈수록 증명 요구가 촘촘해진다' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 공유 테마 (Ink & Paper) : 반드시 포함할 것 -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

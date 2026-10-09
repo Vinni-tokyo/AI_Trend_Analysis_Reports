@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design From the Proof — How Finance, Law and Government Build Conversational AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.92rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.82rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.88rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 Shared theme (Ink & Paper): required for consistent colours -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="Ordinary chatbots start with features; regulated industries start with what must survive an audit">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-en.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="Design From the Proof — How Finance, Law and Government Build Conversational AI">
+<meta property="og:description" content="Ordinary chatbots start with features; regulated industries start with what must survive an audit">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-en.html">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-09">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Design From the Proof — How Finance, Law and Government Build Conversational AI">
+<meta name="twitter:description" content="Ordinary chatbots start with features; regulated industries start with what must survive an audit">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/regulated-conversational-ai-governance-20261009-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='regulated-conversational-ai-governance-20261009-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='regulated-conversational-ai-governance-20261009-en.html'" class="lang-btn active">English</button>
+                    <button onclick="window.location.href='regulated-conversational-ai-governance-20261009-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>Design From the Proof<br>— How Finance, Law and Government Build Conversational AI</h1>
+            <div class="subtitle">Ordinary chatbots start with features; regulated industries start with what must survive an audit</div>
+            <div class="meta">Report date: October 9, 2026 | Standard report (5-8 pages) | Data collected: October 9, 2026</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <div class="callout">
+                    <strong>The central claim of this report</strong><br>
+                    Ordinary chatbots are built first and validated later. In regulated industries it runs the other way.
+                    <strong>What must be proven (governance) determines how the system is built (design) and in what order it is built (process).</strong>
+                    Rather than listing regulations, this report translates each into the work it creates on the development floor.
+                </div>
+
+                <h3 class="subsection-title">1. Why it has three names — academia, industry and regulators see different things</h3>
+                <p><strong>Situation:</strong> Systems that handle conversations with something to finish — a booking, an enquiry, a filing —
+                get different names depending on who is speaking. They point at the same thing with different emphasis,
+                which means the name you search by determines the literature you find.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Three naming traditions</h4>
+                        <p>• <strong>Academia:</strong> Task-Oriented Dialogue (TOD), built from four parts —
+                        natural language understanding, state tracking, policy, and generation<br>
+                        • <strong>Industry:</strong> Conversational AI or virtual agent. Add tool calling and retrieval and it becomes an LLM agent<br>
+                        • <strong>Regulators:</strong> high-risk AI system. The name hardened once the EU AI Act classified
+                        credit scoring, essential public services and administration of justice as high-risk</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Domain names and the shared shape</h4>
+                        <p>• <strong>Finance:</strong> conversational banking, robo-advisory<br>
+                        • <strong>Law:</strong> legal intake and triage<br>
+                        • <strong>Public sector:</strong> civic service chatbot, e-government assistant<br>
+                        All three share the same shape — <strong>advising, guiding, intake and triage</strong> —
+                        and all three must include a <strong>human handoff</strong> that passes the final decision to a person</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act portal</a> |
+                    <a href="https://aclanthology.org/" target="_blank">ACL Anthology</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The split in naming is not merely terminological.
+                Academia looks at <strong>structure</strong>, industry at <strong>product</strong>, regulators at <strong>risk</strong>.
+                Building in a regulated industry means reading all three — and it is <strong>the regulatory view that sets the build order</strong>.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The four-part TOD architecture and the EU AI Act's high-risk classification are confirmed in academic literature and in the legislation respectively.<br>
+                        <strong>Weaknesses:</strong> The "three naming traditions" framing is this report's own organisation, not an accepted taxonomy. In practice the boundaries blur.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. When liability became real — a ruling, an enforcement action, a reversal</h3>
+                <p><strong>Situation:</strong> "If it is wrong, liability follows" is no longer a warning.
+                Between 2024 and 2025 it became fact in four distinct ways.
+                What matters is that each case points at a different place where the defect sat.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>① The ruling — what the chatbot says, the company said</h4>
+                        <p><strong>Moffatt v. Air Canada (2024 BCCRT 149)</strong><br>
+                        In November 2022, after losing a grandparent, Jake Moffatt was told by Air Canada's chatbot
+                        that he could claim a bereavement fare within 90 days of travel. The actual policy accepted no claims after travel.<br>
+                        The airline argued the chatbot was <strong>"a separate legal entity that is responsible for its own actions."</strong>
+                        Tribunal member Christopher Rivers called that submission <strong>"remarkable"</strong> and rejected it.
+                        The chatbot forms part of Air Canada's website, so Air Canada is fully responsible for what it says.
+                        The tribunal ordered the fare difference plus interest and fees.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>② The enforcement — not testing was the violation</h4>
+                        <p><strong>DoNotPay — US Federal Trade Commission</strong><br>
+                        The FTC filed a complaint in September 2024 against the subscription service marketed as
+                        "the world's first robot lawyer." The Commission voted <strong>5-0 on January 16, 2025</strong> to approve the final order,
+                        which required <strong>$193,000</strong> in monetary relief and notice to subscribers from 2021 to 2023.<br>
+                        Note what the violation was. The FTC found the company
+                        <strong>had not tested whether its "AI lawyer" performed at the level of a human lawyer, and had not hired or retained attorneys to test the quality and accuracy of its law-related features.</strong>
+                        The defect was not in an answer. It was <strong>the absence of a validation process</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>③ The reversal — when cost dominates, quality drops</h4>
+                        <p><strong>Klarna</strong><br>
+                        In February 2024 the company announced its AI assistant had handled 2.3 million chats in 30 days —
+                        <strong>the workload of 700 full-time agents</strong> — automating 67% of conversations with roughly $40 million in projected annual savings.<br>
+                        Then in <strong>May 2025 it reversed course and began rehiring human agents</strong>,
+                        after customers complained about generic answers and the system's inability to handle complicated, nuanced cases.<br>
+                        CEO Sebastian Siemiatkowski told Bloomberg:
+                        <strong>"As cost unfortunately seems to have been a too predominant evaluation factor when organizing this, what you end up having is lower quality."</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>④ Public sector — a disclaimer does not fix it</h4>
+                        <p><strong>New York City's MyCity chatbot</strong><br>
+                        In 2024 the city's business-support chatbot gave <strong>unlawful advice</strong>:
+                        that employers could take a cut of workers' tips, that no rules required notice of schedule changes,
+                        and that landlords could refuse tenants on rental assistance — the last of which
+                        <strong>has been illegal since 2008</strong>.<br>
+                        Rather than taking it offline, the city <strong>updated its disclaimers</strong>:
+                        responses "may sometimes be inaccurate or incomplete," and businesses should "not use its responses as legal or professional advice."
+                        Mayor Eric Adams acknowledged "it's wrong in some areas, and we've got to fix it," while stressing it was a pilot.</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.ftc.gov/news-events/news/press-releases/2025/02/ftc-finalizes-order-donotpay-prohibits-deceptive-ai-lawyer-claims-imposes-monetary-relief-requires" target="_blank">FTC — DoNotPay final order</a> |
+                    <a href="https://www.klarna.com/" target="_blank">Klarna</a> |
+                    <a href="https://www.aircanada.com/" target="_blank">Air Canada</a> |
+                    <a href="https://www.nyc.gov/" target="_blank">New York City</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The four cases point in four different directions.
+                The ruling settles <strong>where liability sits</strong>; the enforcement action exposes <strong>a missing validation process</strong>;
+                Klarna exposes <strong>how evaluation metrics were designed</strong>; New York shows <strong>the limits of a disclaimer</strong>.
+                The three sections that follow are the answers to those four.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> All four are confirmed in primary sources — the case citation (2024 BCCRT 149) and the tribunal member's words, the FTC's own press release with the vote and the amount, Klarna's CEO quoted directly, and the mayor's statement plus the city's response as reported.<br>
+                        <strong>Weaknesses:</strong> The Air Canada award is confirmed only as "fare difference plus interest and fees," so no total figure is stated.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. The governance layer — what must be proven</h3>
+                <p><strong>Situation:</strong> Regulation is not a list of prohibitions. It is a <strong>list of things to prove</strong>.
+                It asks less what you must not do than how you will show what you did.
+                That is why the development method unwinds backwards from here.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>United States and EU</h4>
+                        <p>• <strong>NIST AI RMF 1.0</strong> — four functions, GOVERN, MAP, MEASURE and MANAGE,
+                        structuring risk across the system lifecycle<br>
+                        • <strong>NIST AI 600-1</strong> (Generative AI Profile) — organises risks unique to or worsened by generative AI into
+                        <strong>12 categories</strong>, including confabulation, harmful content, privacy and security vulnerabilities<br>
+                        • <strong>EU AI Act</strong> — obliges high-risk systems to maintain risk management, data governance, record-keeping,
+                        <strong>human oversight</strong> and accuracy. Article 50 transparency duties applied from August 2, 2026,
+                        with fines up to €15 million or 3% of worldwide turnover<br>
+                        • <strong>ISO/IEC 42001</strong> — the AI management system certification standard</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Korea and Japan</h4>
+                        <p>• <strong>Korea's AI Basic Act took effect on January 22, 2026.</strong>
+                        It makes Korea the <strong>second jurisdiction after the EU</strong>, and the <strong>first in Asia-Pacific</strong>,
+                        to have a comprehensive binding national AI law<br>
+                        • High-impact AI carries <strong>five core obligations</strong> applying to developers and deploying operators alike:
+                        a risk management plan, explanations, user protection measures, <strong>human supervision</strong>, and documentation<br>
+                        • AI-based products and services require <strong>advance notice</strong> to individuals, and a Korea-based local representative must be designated<br>
+                        • Fines top out at 30 million won, with a guidance period of at least one year<br>
+                        • <strong>Japan's AI Business Operator Guidelines v1.1</strong> (March 2025) consolidated three earlier guidelines
+                        from the Ministry of Internal Affairs and Communications and METI</p>
+                    </div>
+                </div>
+
+                <p>Finance carries one additional layer: <strong>model risk management (MRM)</strong>.
+                An LLM is a "model," so validation, monitoring and revalidation cycles must exist <strong>on paper</strong>.
+                Not a sense that conversation quality is good, but a record of when, by whom, and how it was validated.</p>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI RMF</a> |
+                    <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a> |
+                    <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act</a> |
+                    <a href="https://www.soumu.go.jp/" target="_blank">Japan MIC</a> |
+                    <a href="https://www.federalreserve.gov/supervisionreg/srletters/SR2602.htm" target="_blank">US Federal Reserve SR 26-2</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Four jurisdictions write different laws but ask for similar things.
+                <strong>Human oversight, explanation and record-keeping</strong> appear in all of them.
+                Those three determine the design principles in the next section outright.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Korea's effective date (January 22, 2026), its five obligations and fine ceiling, Japan's v1.1 guidelines (March 2025) and their consolidation, and NIST's four functions and 12 risk categories are all sourced.<br>
+                        <strong>Weaknesses:</strong> The specifics of applying financial MRM to LLMs — revalidation cycles in particular — were not confirmed explicitly in published supervisory guidance, so only the general principle is described.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. The design layer — code decides, the model writes</h3>
+                <p><strong>Situation:</strong> Translate "human oversight, explanation and record-keeping" into code and one design principle remains.
+                <strong>Deterministic code makes the decisions; the LLM turns fixed values into sentences.</strong>
+                In a regulated industry this separation is not taste but an audit requirement,
+                because asking the LLM afterwards why it answered that way is not an explanation.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Four design rules</h4>
+                        <p>• <strong>Separate decision from phrasing:</strong> whether to ask, answer, refuse or hand off is decided by code<br>
+                        • <strong>Keep state outside the context window:</strong> slots, sources, confirmations, refusal history and evidence are preserved as variables.
+                        Kept only in conversation history, they cannot be reproduced<br>
+                        • <strong>Retrieval with forced citation:</strong> every factual sentence is bound to retrieved source text; with no source, the system says there is none<br>
+                        • <strong>Guardrails on both sides:</strong> input (PII, jailbreak, out of scope) and output (prohibited phrasing, protected attributes, categorical legal determinations)
+                        each pass through code filters</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>How regulated industries pick a platform</h4>
+                        <p>Not by a feature list, but by three questions.<br>
+                        • <strong>Where the data sits:</strong> is on-premises or a dedicated environment possible (Rasa, Cognigy, boost.ai, Kore.ai)<br>
+                        • <strong>Audit logs:</strong> can state and decisions be recorded for every turn<br>
+                        • <strong>Model pinning:</strong> can a model version be fixed. If the model changes underneath, prior validation is void<br>
+                        Hyperscalers (Google Dialogflow CX, Microsoft Copilot Studio, Amazon Lex, IBM watsonx Assistant)
+                        bundle operational convenience with compliance features, but the data-location question must be satisfied before they enter the shortlist</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>Continue reading —</strong> This site's October 9, 2026 report,
+                    <a href="gpt-61-astra-withheld-release-bar-20261009-en.html">"The Bar a Shelved Model Left Behind"</a>,
+                    framed OpenAI's reason for not shipping its own model as <strong>"the ability to stay within authorization."</strong>
+                    This report views the same requirement from <strong>the system and the development process</strong> rather than the model.
+                    Whether a model respects its scope, and whether a system enforces that scope in code, are a matched pair of questions.
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://rasa.com/" target="_blank">Rasa</a> |
+                    <a href="https://www.cognigy.com/" target="_blank">Cognigy</a> |
+                    <a href="https://www.boost.ai/" target="_blank">boost.ai</a> |
+                    <a href="https://kore.ai/" target="_blank">Kore.ai</a> |
+                    <a href="https://cloud.google.com/dialogflow" target="_blank">Dialogflow CX</a> |
+                    <a href="https://www.ibm.com/products/watsonx-assistant" target="_blank">IBM watsonx Assistant</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Human handoff is not a safety net bolted on afterwards but <strong>a feature designed from the start</strong>.
+                Without defined conditions for handing off and a defined way of carrying conversation state across,
+                a system under failure emits an empty answer. In a regulated industry an empty answer is worse than a handoff.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> That human oversight, explanation and record-keeping are explicit regulatory requirements was established in section 3, and the design principles follow logically. The platform list is confirmed in each vendor's public material.<br>
+                        <strong>Weaknesses:</strong> The formulation "code decides, the model writes" and the three platform criteria are <strong>this report's recommendations</strong>, not language taken from any supervisory guidance.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. The process layer — build the ruler before the feature</h3>
+                <p><strong>Situation:</strong> In regulated industries the build order differs. It is <strong>evaluation-driven development</strong>.
+                Rather than building features and measuring afterwards, <strong>the measurement tools and the question set come first</strong>, and features are laid on top.
+                Recall that the DoNotPay violation was precisely the absence of this process, and the reason becomes obvious.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Two axes plus a standing condition</h4>
+                        <p>• <strong>Task success:</strong> destination reached, turn budget (how many turns it took)<br>
+                        • <strong>Dialogue cost:</strong> re-asks, handoff rate, response time<br>
+                        This two-axis framing descends from the dialogue evaluation framework known as PARADISE<br>
+                        • <strong>Safety sits above as a standing condition:</strong> discrimination, data leakage and out-of-scope answers
+                        are treated as pass or fail, not as a score</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Operating discipline</h4>
+                        <p>• <strong>Release gate:</strong> on a version bump, run the full fixed question set; fail if it regresses against the baseline<br>
+                        • <strong>Red teaming:</strong> dedicated question sets for jailbreaks, PII elicitation and protected-attribute discrimination.
+                        External red teams are customary in finance and law<br>
+                        • <strong>Transcript review:</strong> some defects appear only when a person reads real conversation logs, even when every automated metric passes<br>
+                        • <strong>Keep units small:</strong> one task = one metric = one place to change. Large refactors cost too much to revalidate<br>
+                        • <strong>Reproducibility:</strong> pin model, prompt and code versions together</p>
+                    </div>
+                </div>
+
+                <p>There is a published example of this process in practice: the UK government's <strong>GOV.UK Chat</strong>.
+                Across two public pilots over 18 months, <strong>more than 10,000 participants</strong> asked around <strong>26,000 questions</strong>,
+                and accuracy rose from an early benchmark of <strong>76% to 90%</strong>.
+                73% said they found it useful and 64% said they were satisfied.</p>
+
+                <p>What deserves attention is not the number but <strong>how it was measured</strong>.
+                Answers were assessed using <strong>a combination of subject-matter experts and evaluation tools</strong>,
+                and assessors rated an answer "accurate" <strong>only if it met all the standards of published GOV.UK content</strong>.
+                The definition of accurate came first, and because the same definition was applied repeatedly, the path from 76 to 90 became visible.</p>
+
+                <div class="callout">
+                    <strong>Continue reading —</strong> This site's September 30, 2026 report,
+                    <a href="task-oriented-dialogue-systems-20260930-en.html">"Task-Oriented Dialogue Systems: A Deep Analysis"</a>,
+                    closed its fifth section with <strong>"the gap in evaluation methodology — benchmarks measure accuracy, the field measures whether the destination was reached."</strong>
+                    <strong>This section is where that gap is filled.</strong>
+                    That report identified the gap; this one covers the process regulated industries are using to close it.
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.gov.uk/" target="_blank">GOV.UK</a> |
+                    <a href="https://github.com/NVIDIA/NeMo-Guardrails" target="_blank">NVIDIA NeMo Guardrails</a> |
+                    <a href="https://www.giskard.ai/" target="_blank">Giskard</a> |
+                    <a href="https://www.patronus.ai/" target="_blank">Patronus AI</a> |
+                    <a href="https://www.credo.ai/" target="_blank">Credo AI</a>
+                </div>
+
+                <p>The tooling ecosystem divides along the same process.
+                <strong>NeMo Guardrails</strong> (Apache 2.0) defines conversation flows themselves through a domain-specific language called Colang,
+                with <strong>five rail types</strong> — input, dialog, retrieval, execution and output —
+                so that an assistant is held to approved subjects rather than merely having isolated sentences filtered.
+                <strong>Patronus AI</strong>'s Lynx uses chain-of-thought reasoning, aimed at regulated industries that need
+                <strong>documented hallucination detection with explainable outputs</strong>.
+                <strong>Giskard</strong> is building open-source evaluation tooling covering hallucination, toxic content and security vulnerabilities together.</p>
+
+                <p><strong>Outlook:</strong> The order is hardening: <strong>build the evaluation system before choosing the platform</strong>.
+                Klarna's lesson lands here. When cost becomes the predominant evaluation factor, quality falls.
+                What you measure decides what you build.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> GOV.UK Chat's accuracy trajectory (76→90%), participation scale, satisfaction figures and — critically — <strong>its assessment method</strong> are confirmed in UK Government Digital Service material. NeMo Guardrails' five rails and Colang, and Patronus's regulated-industry orientation, are confirmed in vendor documentation.<br>
+                        <strong>Weaknesses:</strong> The original PARADISE paper's year and authors were not re-confirmed against primary sources in this round, so they are not stated. "Evaluation-driven development" is not a formally standardised industry term.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape</h2>
+
+                <h3 class="subsection-title">Four tiers by regulatory intensity</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">
+                    Not a product comparison but a split by <strong>what the system may do and what must be proven</strong>.
+                    The higher the tier, the tighter the requirements on evidence records, human oversight and audit logs.
+                    <em>(This classification is our own analysis.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tier</th>
+                            <th>What it does</th>
+                            <th>What must be proven</th>
+                            <th>When it is wrong</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tier 1 — Information</strong></td>
+                            <td>Finds and reads back published guidance</td>
+                            <td>Source attribution, link to the original</td>
+                            <td>A wrong answer can still be checked if the source travels with it</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 2 — Intake and triage</strong></td>
+                            <td>Receives enquiries and routes them</td>
+                            <td>Above, plus recorded routing rationale and explicit handoff conditions</td>
+                            <td>Misrouting delays handling and blurs accountability</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 3 — Personalised guidance</strong></td>
+                            <td>Presents options tailored to the individual</td>
+                            <td>Above, plus per-turn audit logs, duty-to-explain readiness, a human oversight path</td>
+                            <td>Can breach suitability and disclosure duties (finance)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tier 4 — Decision support</strong></td>
+                            <td>Supplies judgements used in approvals or refusals</td>
+                            <td>Above, plus a risk management plan, model validation documents, revalidation cycles, advance notice</td>
+                            <td>Classified as high-risk AI, with the full regulatory regime applying</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Representative services by domain</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Operator</th>
+                            <th>Tier reached</th>
+                            <th>Published scale</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Erica</strong></td>
+                            <td>Bank of America (finance)</td>
+                            <td>Tiers 1–3</td>
+                            <td>Launched 2018; over <strong>3.2 billion</strong> interactions, more than 58 million a month, over 20 million clients. 1.7 billion proactive insights delivered. Guidance on nearly 50 investment topics for Merrill clients</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Eno · Ceba · Fargo</strong></td>
+                            <td>Capital One · Commonwealth Bank · Wells Fargo (finance)</td>
+                            <td>Mostly tiers 1–2</td>
+                            <td>Centred on balances, alerts and transaction guidance; advisory scope kept limited</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Harvey</strong></td>
+                            <td>Harvey (law)</td>
+                            <td>Tiers 2–3 (legal advice remains with lawyers)</td>
+                            <td>Valued at <strong>$15.5 billion</strong> in September 2026. Over 200,000 professionals at 2,400+ law firms and in-house teams across 70+ countries; 80% of the Am Law 100</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CoCounsel</strong></td>
+                            <td>Thomson Reuters (law)</td>
+                            <td>Tiers 2–3</td>
+                            <td><strong>1 million users</strong> in 107 countries as of February 2026, integrated with Westlaw</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GOV.UK Chat</strong></td>
+                            <td>UK Government Digital Service (public)</td>
+                            <td>Tiers 1–2</td>
+                            <td>Over <strong>10,000 participants</strong> asked around 26,000 questions across two public pilots. Accuracy 76% → <strong>90%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">A public case that published its evaluation — GOV.UK Chat</h3>
+                <div class="chart-container">
+                    <canvas id="govukChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    Source: UK Government Digital Service disclosures. Accuracy reflects answers rated accurate only when meeting all standards of published GOV.UK content.
+                </p>
+
+                <h3 class="subsection-title">Required proof intensity by tier</h3>
+                <div class="chart-container">
+                    <canvas id="tierChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    Recommended levels per this analysis. The five axes are drawn from items the regulations commonly require.
+                </p>
+
+                <h3 class="subsection-title">Five market shifts</h3>
+                <ul class="key-findings">
+                    <li><strong>What the chatbot says is now what the company said:</strong> the "separate legal entity" defence was rejected in a tribunal.</li>
+                    <li><strong>Not testing became the violation:</strong> the issue was the missing validation process, not the quality of an answer.</li>
+                    <li><strong>Cost-led evaluation degraded quality:</strong> Klarna was rehiring human agents within roughly a year.</li>
+                    <li><strong>Disclaimers do not cover public-sector error:</strong> the New York case demonstrates it.</li>
+                    <li><strong>Regulation is converging:</strong> the EU, Korea, Japan and the US all require human oversight, explanation and records.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Locate your tier</strong> - Write down where each running or planned conversational service sits across tiers 1-4, and check the proof that tier requires against what exists</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Define accurate first</strong> - Before adding features, document what counts as accurate, build a fixed question set, and measure a baseline</p>
+                    <p style="line-height: 1.6;">3. <strong>Test the handoff path</strong> - Verify in practice whether a failure, quota breach or out-of-scope question produces an empty answer or reaches a person</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Liability was settled by ruling:</strong> Air Canada argued its chatbot was a separate legal entity; the tribunal rejected that and held the company fully responsible.</li>
+                        <li><strong>The violation was process, not answers:</strong> the FTC found DoNotPay had not retained attorneys to test quality and accuracy, and a $193,000 order was finalised in January 2025.</li>
+                        <li><strong>Cost-led evaluation degrades quality:</strong> Klarna announced automation equal to 700 agents, then resumed hiring human agents roughly a year later.</li>
+                        <li><strong>Regulation asks for proof, not prohibition:</strong> the EU, Korea, Japan and the US commonly require human oversight, explanation and records. Korea's AI Basic Act took effect on January 22, 2026.</li>
+                        <li><strong>A published model exists:</strong> GOV.UK Chat defined "accurate" first and measured repeatedly, raising it from 76% to 90%.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Guidance by situation</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Already in operation → start by locating your tier and testing the handoff</strong><br>
+                        Why: knowing which tier you are running at, and whether a failure emits an empty answer, is the cheapest check available.<br>
+                        <strong>About to build → start with the evaluation system</strong><br>
+                        Why: build the measurement after the features and there is no baseline, so improvement cannot be demonstrated.<br>
+                        <strong>Facing imminent compliance → start with records and human oversight</strong><br>
+                        Why: all four jurisdictions require them, and they are the kind of evidence that cannot be created retroactively.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall sentiment:</strong> Neutral to positive. Rulings and enforcement are a near-term burden, but having what must be proven stated concretely makes design clearer. Tier 4 decision support raises requirements sharply, so for now building the proof system at tiers 1–2 is the realistic target.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">8.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> A fact-based analysis built on primary sources — a case citation, regulator press releases, government evaluation disclosures and company announcements.</p>
+                        <p><strong>Key strengths:</strong> All four incidents are confirmed down to date, body and outcome. Service scale and GOV.UK Chat's assessment method are backed by public material. Korean and Japanese regulatory timing and content are explicitly confirmed.</p>
+                        <p><strong>Priorities for improvement:</strong> ① The four-tier classification and the design principles are <strong>this report's proposal</strong>, not an accepted framework. ② The detail of applying financial model risk management to LLMs could not be confirmed in supervisory guidance, so only the general principle is described. ③ The original PARADISE paper's details were not re-confirmed against primary sources, so year and authors are not stated.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Task-Oriented Dialogue (TOD)</strong> — A system handling conversations with something to finish, such as a booking, an enquiry or a filing. Unlike a chit-chat bot, it has a destination.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Human handoff</strong> — Passing a conversation to a human agent when the system cannot, or must not, handle it. In regulated industries it is part of the product.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Provenance</strong> — Recording, at the moment of answering, which clause, term or notice the answer came from. Later explanations draw only on that record.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Guardrail</strong> — A mechanism inspecting inputs and outputs to block risky content. Not a request made in a prompt, but a filter enforced in code.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Confabulation</strong> — A model producing plausible-sounding content that is not true. NIST classifies it among the risks unique to generative AI.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Model risk management (MRM)</strong> — The financial sector's documented system for validating, monitoring and revalidating models. An LLM is a model and falls within scope.
+                    </div>
+                    <div>
+                        <strong>High-impact / high-risk AI</strong> — AI in domains that can materially affect life, safety or fundamental rights. Korea's AI Basic Act calls it "high-impact," the EU AI Act "high-risk," each attaching additional obligations.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> October 9, 2026</p>
+                    <ul>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Moffatt_v._Air_Canada" target="_blank">Moffatt v. Air Canada (2024 BCCRT 149)</a></li>
+                        <li>• <a href="https://www.americanbar.org/groups/business_law/resources/business-law-today/2024-february/bc-tribunal-confirms-companies-remain-liable-information-provided-ai-chatbot/" target="_blank">BC Tribunal Confirms Companies Remain Liable for AI Chatbot Information — American Bar Association</a></li>
+                        <li>• <a href="https://www.ftc.gov/news-events/news/press-releases/2025/02/ftc-finalizes-order-donotpay-prohibits-deceptive-ai-lawyer-claims-imposes-monetary-relief-requires" target="_blank">FTC Finalizes Order with DoNotPay — Federal Trade Commission</a></li>
+                        <li>• <a href="https://www.ftc.gov/legal-library/browse/cases-proceedings/donotpay" target="_blank">FTC Case File — DoNotPay</a></li>
+                        <li>• <a href="https://themarkup.org/news/2024/04/02/malfunctioning-nyc-ai-chatbot-still-active-despite-widespread-evidence-its-encouraging-illegal-behavior" target="_blank">Malfunctioning NYC AI Chatbot Still Active — The Markup</a></li>
+                        <li>• <a href="https://www.civilserviceworld.com/professions/article/govuk-ai-chatbot-achieves-90-accuracy" target="_blank">GOV.UK AI chatbot achieves 90% accuracy — Civil Service World</a></li>
+                        <li>• <a href="https://insidegovuk.blog.gov.uk/2026/05/15/developing-gov-uk-chat-our-data-science-and-ai-engineering-journey/" target="_blank">Developing GOV.UK Chat — Inside GOV.UK Blog</a></li>
+                        <li>• <a href="https://newsroom.bankofamerica.com/content/newsroom/press-releases/2025/08/a-decade-of-ai-innovation--bofa-s-virtual-assistant-erica-surpas.html" target="_blank">BofA's Virtual Assistant Erica Surpasses 3 Billion Client Interactions</a></li>
+                        <li>• <a href="https://www.cnbc.com/2026/03/25/legal-ai-startup-harvey-raises-200-million-at-11-billion-valuation.html" target="_blank">Legal AI startup Harvey raises $200 million — CNBC</a></li>
+                        <li>• <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI Risk Management Framework</a></li>
+                        <li>• <a href="https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf" target="_blank">NIST AI 600-1: Generative AI Profile</a></li>
+                        <li>• <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act portal</a></li>
+                        <li>• <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a></li>
+                        <li>• <a href="https://www.soumu.go.jp/main_content/001055184.pdf" target="_blank">AI Business Operator Guidelines v1.1 — MIC and METI, Japan</a></li>
+                        <li>• <a href="https://docs.nvidia.com/nemo/guardrails/" target="_blank">NVIDIA NeMo Guardrails documentation</a></li>
+                        <li>• <a href="https://www.federalreserve.gov/supervisionreg/srletters/SR2602.htm" target="_blank">SR 26-2: Revised Guidance on Model Risk Management (17 April 2026, superseding SR 11-7) — US Federal Reserve</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Chart 1 — GOV.UK Chat published evaluation figures
+        const ctx1 = document.getElementById('govukChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Early accuracy', 'Current accuracy', 'Found it useful', 'Satisfied'],
+                datasets: [{
+                    label: 'Percentage (%)',
+                    data: [76, 90, 73, 64],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(34, 197, 94)', 'rgb(59, 130, 246)', 'rgb(249, 115, 22)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'GOV.UK Chat — define first, then measure repeatedly' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+
+        // Chart 2 — Required proof intensity by tier (this report's recommendation)
+        const ctx2 = document.getElementById('tierChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['Evidence records', 'Human oversight', 'Audit logs', 'Refusal and handoff policy', 'Reproducibility'],
+                datasets: [
+                    {
+                        label: 'Tier 1 Information',
+                        data: [60, 20, 30, 25, 30],
+                        borderColor: 'rgb(148, 163, 184)',
+                        backgroundColor: 'rgba(148, 163, 184, 0.15)'
+                    },
+                    {
+                        label: 'Tier 2 Intake and triage',
+                        data: [75, 45, 60, 65, 50],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: 'Tier 3 Personalised guidance',
+                        data: [90, 75, 85, 85, 75],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    },
+                    {
+                        label: 'Tier 4 Decision support',
+                        data: [100, 100, 100, 95, 100],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Proof requirements tighten as the tier rises' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- Shared theme (Ink & Paper): must be included -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
