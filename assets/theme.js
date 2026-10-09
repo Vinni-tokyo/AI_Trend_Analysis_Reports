@@ -423,3 +423,118 @@ var MAIL = {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wrap);
   else wrap();
 })();
+
+/* ============================================================
+   읽기 보조 — 소제목 앵커 · 목차 · 읽는 시간
+   보고서 HTML 을 건드리지 않고 여기서 만든다.
+   목록·소개 페이지에서는 동작하지 않는다(보고서 골격일 때만).
+   ============================================================ */
+(function () {
+  var T = {
+    ko: { toc: '목차', min: '읽는 데 약 %분', link: '이 절의 링크' },
+    en: { toc: 'Contents', min: 'About % min read', link: 'Link to this section' },
+    ja: { toc: '目次', min: '読むのに約%分', link: 'この節へのリンク' }
+  };
+  function lang() {
+    var sel = document.querySelector('.lang-selector-btn.active');
+    return (sel && sel.dataset.lang) || (document.documentElement.getAttribute('lang') || 'ko').slice(0, 2);
+  }
+  function L() { return T[lang()] || T.ko; }
+
+  /* 보고서 골격일 때만 — 목록 페이지에는 .content 안의 section 이 없다 */
+  function isReport() {
+    return !!document.querySelector('.container .content section.section')
+        && !document.querySelector('li.report-card');
+  }
+
+  /* 소제목에 id 를 붙인다. 한글·일본어 제목이 많으므로 번호를 기본으로 쓰되,
+     영문 제목이면 읽을 수 있는 슬러그를 만든다. */
+  function slug(txt, i) {
+    var s = txt.toLowerCase().replace(/[^a-z0-9가-힣ぁ-んァ-ヶ一-龯\s-]/g, '')
+               .trim().replace(/\s+/g, '-').slice(0, 40);
+    if (!/^[a-z0-9-]+$/.test(s) || !s) return 'sec-' + i;
+    return s + '-' + i;
+  }
+
+  function anchors() {
+    var hs = [].slice.call(document.querySelectorAll('.content h2, .content h3'))
+               .filter(function (h) { return !h.closest('.toc'); });
+    var used = {};
+    hs.forEach(function (h, i) {
+      if (!h.id) {
+        var id = slug(h.textContent || '', i + 1);
+        while (used[id] || document.getElementById(id)) id += '-x';
+        used[id] = 1; h.id = id;
+      }
+      if (h.querySelector('.h-anchor')) return;
+      var a = document.createElement('a');
+      a.className = 'h-anchor'; a.href = '#' + h.id;
+      a.setAttribute('aria-label', L().link); a.title = L().link;
+      a.textContent = '#';
+      h.appendChild(a);
+    });
+    return hs;
+  }
+
+  function toc(hs) {
+    if (hs.length < 3 || document.querySelector('.toc')) return;
+    var n = document.createElement('nav');
+    n.className = 'toc'; n.setAttribute('aria-labelledby', 'toc-h');
+    var h = document.createElement('h2');
+    h.className = 'toc-h'; h.id = 'toc-h'; h.textContent = L().toc;
+    var ul = document.createElement('ul');
+    hs.forEach(function (x) {
+      var li = document.createElement('li');
+      li.className = 'toc-' + x.tagName.toLowerCase();
+      var a = document.createElement('a');
+      a.href = '#' + x.id;
+      a.textContent = (x.textContent || '').replace(/#$/, '').trim();
+      li.appendChild(a); ul.appendChild(li);
+    });
+    n.appendChild(h); n.appendChild(ul);
+    var content = document.querySelector('.content');
+    var first = content.querySelector('section.section');
+    content.insertBefore(n, first || content.firstChild);
+  }
+
+  /* 읽는 시간 — 한글·가나·한자는 글자 수, 그 밖은 단어 수로 센다 */
+  function minutes() {
+    var el = document.querySelector('.content');
+    if (!el) return 0;
+    var toc = el.querySelector('.toc');
+    var tocLen = toc ? (toc.innerText || '').length : 0;
+    var txt = (el.innerText || '');
+    if (tocLen) txt = txt.slice(tocLen);   /* 목차는 본문이 아니다 */
+    var cjk = (txt.match(/[가-힣ぁ-んァ-ヶ一-龯]/g) || []).length;
+    var words = (txt.replace(/[가-힣ぁ-んァ-ヶ一-龯]/g, ' ').match(/[A-Za-z0-9][A-Za-z0-9'-]*/g) || []).length;
+    return Math.max(1, Math.round(cjk / 500 + words / 220));
+  }
+
+  function stamp(m) {
+    var meta = document.querySelector('.header .meta');
+    if (!meta || meta.querySelector('.read-min')) return;
+    var sp = document.createElement('span');
+    sp.className = 'read-min';
+    sp.textContent = ' | ' + L().min.replace('%', m);
+    meta.appendChild(sp);
+  }
+
+  function run() {
+    if (!isReport()) return;
+    var hs = anchors();
+    toc(hs);
+    stamp(minutes());
+    /* 언어를 바꾸면 목차 제목과 읽는 시간 문구도 따라간다 */
+    document.querySelectorAll('.lang-selector-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        setTimeout(function () {
+          var t = document.querySelector('.toc-h'); if (t) t.textContent = L().toc;
+          var r = document.querySelector('.read-min');
+          if (r) r.textContent = ' | ' + L().min.replace('%', minutes());
+        }, 0);
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
