@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>規格争いは起きなかった — MCP と A2A の役割分担</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c;
+            --secondary-navy: #003d8f;
+            --accent-navy: #0052b8;
+            --primary-color: #1a1a1a;
+            --secondary-color: #4a4a4a;
+            --tertiary-color: #808080;
+            --bg-white: #ffffff;
+            --bg-subtle: #fafafa;
+            --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 共有テーマ (Ink & Paper)：この一行がないと配色が統一されません -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="道具との接続は MCP、エージェント間の委任は A2A。その分担が組織に求めるもの">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/agent-protocols-mcp-a2a-convergence-20261009-ja.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="規格争いは起きなかった — MCP と A2A の役割分担">
+<meta property="og:description" content="道具との接続は MCP、エージェント間の委任は A2A。その分担が組織に求めるもの">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/agent-protocols-mcp-a2a-convergence-20261009-ja.html">
+<meta property="og:locale" content="ja_JP">
+<meta property="article:published_time" content="2026-10-09">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="規格争いは起きなかった — MCP と A2A の役割分担">
+<meta name="twitter:description" content="道具との接続は MCP、エージェント間の委任は A2A。その分担が組織に求めるもの">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/agent-protocols-mcp-a2a-convergence-20261009-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/agent-protocols-mcp-a2a-convergence-20261009-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/agent-protocols-mcp-a2a-convergence-20261009-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/agent-protocols-mcp-a2a-convergence-20261009-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="明るさ切り替え" aria-label="明るさ切り替え">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='agent-protocols-mcp-a2a-convergence-20261009-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='agent-protocols-mcp-a2a-convergence-20261009-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='agent-protocols-mcp-a2a-convergence-20261009-ja.html'" class="lang-btn active">日本語</button>
+                </div>
+            </div>
+            <h1>規格争いは起きなかった<br>— MCP と A2A の役割分担</h1>
+            <div class="subtitle">道具との接続は MCP、エージェント間の委任は A2A。その分担が組織に求めるもの</div>
+            <div class="meta">レポート作成日：2026年10月9日 | 標準レポート（5-8ページ） | データ収集：2026年10月9日</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <div class="callout">
+                    <strong>本レポートの中心的な主張</strong><br>
+                    MCP と A2A は競合ではなく、異なる層を受け持ちました。2026年の実務上の答えは両方を使う組み合わせであり、
+                    その選択が終わってはじめて本当の宿題が見えてきます。本レポートは「どちらが勝つか」ではなく
+                    <strong>「いま何を決めるべきか」</strong>に答えます。
+                </div>
+
+                <h3 class="subsection-title">1. 争いではなく層の分担だった — 同じ財団の傘に入った二つの規格</h3>
+                <p><strong>現状：</strong>2025年の時点では、これは規格争いとして読まれていました。しかし2026年、二つの規格は互いを押しのけませんでした。
+                <strong>MCP</strong> は2025年12月に Linux Foundation へ寄贈され、<strong>A2A</strong> は2026年8月17日に
+                <strong>Agentic AI Foundation</strong> のホスティング案件となりました。二つの規格はいま同じ財団の傘の下にあります。
+                勝敗がついたのではなく、受け持つ層が分かれたのです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>MCP — モデルと外の世界をつなぐ</h4>
+                        <p>• <strong>受け持つ層：</strong>一つのエージェントが外部のデータ・API・ファイルに届くための通り道<br>
+                        • <strong>仕組み：</strong>JSON-RPC によるクライアント・サーバー構成で、道具の呼び出しと型の定まったデータのやり取り<br>
+                        • <strong>出自：</strong>Anthropic が始め、公開規格へ移管<br>
+                        • <strong>問い：</strong>「このエージェントは何に手が届くのか」</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>A2A — エージェント同士で仕事を渡す</h4>
+                        <p>• <strong>受け持つ層：</strong>提供元も枠組みも異なるエージェントが相手を見つけ、仕事を委ねる<br>
+                        • <strong>仕組み：</strong>HTTPS 上の JSON-RPC 2.0。発見・認証・委任をまとめて定めています<br>
+                        • <strong>出自：</strong>Google が開発し Linux Foundation へ寄贈<br>
+                        • <strong>問い：</strong>「このエージェントは誰に仕事を渡せるのか」</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://modelcontextprotocol.io/" target="_blank">Model Context Protocol</a> |
+                    <a href="https://a2a-protocol.org/" target="_blank">A2A Protocol</a> |
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a>
+                </div>
+
+                <p><strong>展望：</strong>二つの規格が一つ屋根の下に入ったこと自体が合図です。
+                これからの論点は「どちらを選ぶか」ではなく「二つの層をどう噛み合わせるか」へ移っていきます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>Linux Foundation の公式発表、A2A の1周年発表（2026年4月9日）、Agentic AI Foundation への移管時期（2026年8月17日）がいずれも確認できます。<br>
+                        <strong>改善点：</strong>「争いではなかった」は結果から振り返った解釈です。2025年当時は実際に規格争いとして報じられていました。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 数字で見る普及 — MCP は月4億回、A2A は150組織</h3>
+                <p><strong>現状：</strong>二つの規格は広がり方の形が違います。
+                MCP は<strong>開発者ひとりずつ</strong>に広がり、A2A は<strong>組織単位</strong>で集まりました。
+                MCP の月間 SDK 取得回数は、2024年11月の公開当時のおよそ200万回から2026年3月には<strong>9,700万回</strong>を超え、
+                共同開発者の David Soria Parra 氏は16か月で<strong>1億1,000万回</strong>に達したと述べています。
+                React が3年かけた節目でした。さらに2026年7月28日に状態を持たない新しい仕様が出たあと、
+                <strong>月4億回</strong>を超えました。今年だけで4倍です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>MCP — 生態系の厚み</h4>
+                        <p>• <strong>月間 SDK 取得：</strong>2026年10月時点で<strong>4億回</strong>を突破<br>
+                        • <strong>公開サーバー：</strong>2025年12月の寄贈時点で1万件超、2026年第1四半期の独立調査では17,468件を収録<br>
+                        • <strong>企業への浸透：</strong><strong>フォーチュン500の28%</strong>が MCP を導入<br>
+                        • 伸び方の性格：個々の開発者が自分の道具をつなぎ、下から広がりました</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>A2A — 参加企業の顔ぶれ</h4>
+                        <p>• <strong>支持組織：</strong>2025年4月の50社ほどから2026年4月には<strong>150社超</strong>へ<br>
+                        • <strong>参加企業：</strong>AWS・Cisco・Google・IBM・Microsoft・Salesforce・SAP・ServiceNow<br>
+                        • <strong>稼働分野：</strong>供給網、金融、保険、IT 運用<br>
+                        • <strong>本番利用：</strong>IBM・Cisco・SAP・ServiceNow が確認されています</p>
+                    </div>
+                </div>
+
+                <p>指標の形が違うのは、狙う相手が違うからです。
+                MCP は一人が自分のエージェントに道具をつなげばすぐ使われます。A2A は二つの組織が合意してはじめて使われます。
+                前者を取得回数で、後者を参加企業数で数えるのが自然です。</p>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://modelcontextprotocol.io/" target="_blank">MCP 公式文書</a> |
+                    <a href="https://www.prnewswire.com/news-releases/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year-302737641.html" target="_blank">A2A 1周年の発表</a>
+                </div>
+
+                <p><strong>展望：</strong>MCP の4倍の伸びは7月の新仕様と結びついています。
+                つなぎ方が軽くなれば、つなげる先が増えます。一方で A2A の広がり方は、企業間の合意の速さに縛られます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>A2A の150組織は Linux Foundation の公式発表で確認できます。MCP の9,700万回・1億1,000万回の時点も複数の出典が一致します。<br>
+                        <strong>改善点：</strong>「月4億回」と公開サーバー数（15,930〜17,468）は集計主体と基準が異なるため幅があります。傾向は明らかですが、単一の数字で断定するのは早計です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 2026年の実務上の答えは組み合わせ — どこに何を載せるか</h3>
+                <p><strong>現状：</strong>現場の選択はすでに定まっています。
+                多くの本番構成は<strong>道具の層に MCP、エージェント間の調整に A2A</strong> を併用しています。
+                各エージェントが自分の道具を MCP でつなぎ、そのエージェント同士が仕事を渡し合う必要があるときだけ、上に A2A を載せる形です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>下の層 — 各エージェントの内側</h4>
+                        <p>• データベース・ファイル・社内 API への接続 → <strong>MCP</strong><br>
+                        • エージェントごとに必要な道具だけをつなぐ<br>
+                        • 権限はこの層で最も狭く取るのが原則です<br>
+                        • 変えやすい：道具を足しても引いても他のエージェントへの影響は小さく済みます</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>上の層 — エージェントの間</h4>
+                        <p>• 能力の公開・相手の発見・作業の委任 → <strong>A2A</strong><br>
+                        • 提供元の異なるエージェント同士をつなぐときだけ必要<br>
+                        • 組織の境界を越えると認証の方式が論点になります<br>
+                        • 変えにくい：相手の組織との合意がかかっています</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 本サイトの2025年1月のレポート
+                    <a href="anthropic-mcp-code-execution-20250114-ja.html">「Anthropic MCP：道具の呼び出しからコード実行へのパラダイム転換」</a>は、
+                    四つ目の項目を<strong>「標準化競争：OpenAI の採用 vs Google の A2A 公開」</strong>と記していました。
+                    1年9か月後、その競争は勝敗ではなく<strong>層の分担</strong>として決着しました。
+                    あのレポートが MCP の内側の設計を扱ったとすれば、本レポートは MCP の外側の位置を扱います。
+                </div>
+
+                <p><strong>展望：</strong>組み合わせが前提になると、判断の重みは「何を使うか」から「境界をどこに引くか」へ移ります。
+                どの作業を一つのエージェントの中で終えるか、どこから別のエージェントへ渡すかが設計の中心になります。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>「多くの本番構成が道具の層に MCP、エージェント間に A2A を使う」という記述は、複数の技術分析資料で一貫して確認できます。<br>
+                        <strong>改善点：</strong>「多く」の割合を数値で示した公開調査は見つかりませんでした。定量的な根拠ではなく業界観察に基づく記述です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. その他の候補 — ACP と ANP はどこにいるか</h3>
+                <p><strong>現状：</strong>規格は二つだけではありません。ただし狙う位置が少しずつ違います。
+                <strong>ACP（Agent Connect Protocol）</strong>は IBM と <strong>AGNTCY</strong> 連合が主導し、
+                エージェントのやり取りを HTTP の動詞にそのまま対応させる簡潔な方式を選びました。
+                作業の生成は POST、状態の確認は GET、更新は PUT、取り消しは DELETE です。
+                仕様が OpenAPI で記述されるため、REST を扱える道具であれば専用の開発キットなしでも接続できます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>ACP — REST 親和と中央登録所</h4>
+                        <p>• <strong>方式：</strong>HTTP の動詞への直接対応、OpenAPI による仕様記述<br>
+                        • <strong>発見：</strong>エージェントが能力を登録所に届け出て、利用側が問い合わせる中央登録の形<br>
+                        • <strong>主導：</strong>AGNTCY 連合 — Cisco・LangChain・LlamaIndex・Galileo・Dell・Oracle・Red Hat<br>
+                        • <strong>移管：</strong>2025年7月に Linux Foundation へ寄贈</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>そのほかの流れ</h4>
+                        <p>• <strong>ANP（Agent Network Protocol）：</strong>開かれた網の上でのエージェント間通信を狙う<br>
+                        • <strong>Matrix 系：</strong>アリババの HiClaw などで採用<br>
+                        • <strong>XMPP：</strong>長い歴史を持つ通信規格の再利用で、エージェント専用の設計ではありません<br>
+                        • 三つとも、まだ MCP・A2A ほどの普及規模には届いていません</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://agntcy.org/" target="_blank">AGNTCY</a> |
+                    <a href="https://www.linuxfoundation.org/projects" target="_blank">Linux Foundation のプロジェクト</a>
+                </div>
+
+                <p><strong>展望：</strong>ACP の REST 親和性は既存の仕組みに載せやすいという利点がありますが、
+                中央登録の形は A2A の分散した発見の仕方とは設計思想が異なります。
+                当面は MCP と A2A の組み合わせが既定値であり、ACP は REST の資産が厚い組織での選択肢として残る見込みです。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>ACP の設計方式（HTTP 動詞への対応・OpenAPI・中央登録所）、AGNTCY の構成企業、Linux Foundation への寄贈時期が確認できます。<br>
+                        <strong>改善点：</strong>ANP と Matrix 系は公開された普及指標が乏しく、位置づけのみを記述しました。比較可能な数値は示せていません。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 分担が済んだあとの宿題 — 認証・権限・監査の空白</h3>
+                <p><strong>現状：</strong>規格が整えば通信は片づきます。しかし<strong>「このエージェントがその仕事をしてよいのか」</strong>は残ります。
+                A2A は発見・認証・委任を定め、規制産業の要請を受けて認証の方式を増やしてきましたが、
+                規格は<strong>誰が何を許されているか</strong>を組織の代わりに決めてはくれません。
+                エージェントが別のエージェントへ仕事を渡すとき権限も一緒に渡るのか、監査の記録が境界を越えて続くのかは、
+                いまも各組織の設計しだいです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>規格が答えてくれること</h4>
+                        <p>• どうやって相手を見つけるか（発見）<br>
+                        • どんな形でやり取りするか（伝送と表現形式）<br>
+                        • どんな能力があると知らせるか（能力の公開）<br>
+                        • 相手が本物かをどう確かめるか（認証方式の枠組み）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>組織が自ら決めること</h4>
+                        <p>• <strong>権限の伝わり方：</strong>委任のとき権限は狭まるのか、そのまま付いていくのか<br>
+                        • <strong>監査の連続性：</strong>境界を越えたあとの行動を誰が記録するのか<br>
+                        • <strong>逸脱の検知：</strong>許した範囲を越えたとき何が知らせてくれるのか<br>
+                        • <strong>巻き戻し：</strong>渡した仕事が誤ったとき、どこで止めるのか</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 本サイトの2026年10月9日のレポート
+                    <a href="gpt-61-astra-withheld-release-bar-20261009-ja.html">「見送られたモデルが残した基準 — GPT-6.1 Astra 中止が明らかにしたもの」</a>は、
+                    OpenAI が自社モデルを出さなかった理由を<strong>「与えられた権限の内側に留まる力」</strong>として整理しました。
+                    本節の空白は、同じ問題をモデルではなく<strong>規格の層</strong>から見たものです。
+                    一つのモデルが範囲を守るかと、複数のエージェントの間で範囲が正しく伝わるかは、一対の問いです。
+                </div>
+
+                <p><strong>展望：</strong>通信の規格が安定すると、次の標準化の圧力は<strong>権限と監査</strong>へ移ります。
+                委任のときに権限を狭めて渡す方法、境界を越える監査記録の形式が、次の議論の中心になる可能性が高いと見られます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>A2A が規制産業の要請に合わせて認証方式を広げてきた点は確認できます。規格と権限設計が別の問題だという切り分けも技術文書と一致します。<br>
+                        <strong>改善点：</strong>「権限・監査が次の標準化の対象になる」という見通しは本分析の判断です。具体的な標準化作業が進行中だという公開の根拠は確認できていません。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">規格の層による4層構造</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    エージェントの仕組みを立てるとき決めるべき層は四つです。下へ行くほど変えやすく、上へ行くほど引き返す費用が大きくなります。
+                    <em>（本分析による分類です。）</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>層</th>
+                            <th>決める内容</th>
+                            <th>代表的な選択肢</th>
+                            <th>引き返す費用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>第1層 — 道具との接続</strong></td>
+                            <td>エージェントがデータ・API・ファイルに届く通り道</td>
+                            <td>MCP</td>
+                            <td>低い — 道具ごとに足し引きできます</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第2層 — 内部の調整</strong></td>
+                            <td>同じ組織の中でエージェント同士の作業を振り分ける</td>
+                            <td>枠組み自体の機能、または A2A</td>
+                            <td>中程度 — 内部の設計変更で吸収できます</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第3層 — 組織をまたぐ委任</strong></td>
+                            <td>提供元や会社の異なるエージェントへ仕事を渡す</td>
+                            <td>A2A（一部 ACP）</td>
+                            <td>高い — 相手の組織との合意がかかります</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第4層 — 権限と監査</strong></td>
+                            <td>誰が何を許され、何が記録されるか</td>
+                            <td>規格なし — 組織が自ら設計</td>
+                            <td>非常に高い — 事故のあとで変えるのでは遅い</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">MCP 月間 SDK 取得回数の伸び</h3>
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    出典：複数の公開集計。集計主体によって幅があるため、時点ごとの代表値を用いています。
+                </p>
+
+                <h3 class="subsection-title">規格の比較</h3>
+                <div class="chart-container">
+                    <canvas id="protocolChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    本分析による相対評価です。五つの軸は、各規格が定める範囲と現在の普及規模を基準にしています。
+                </p>
+
+                <h3 class="subsection-title">市場の五つの変化</h3>
+                <ul class="key-findings">
+                    <li><strong>規格争いが層の分担として決着しました：</strong>MCP と A2A が同じ財団の傘に入りました。</li>
+                    <li><strong>普及指標の性格が分かれます：</strong>MCP は取得回数で、A2A は参加企業数で数えるのが自然です。</li>
+                    <li><strong>軽い仕様が普及を押し上げました：</strong>2026年7月の新仕様のあと、MCP の月間取得が4倍になりました。</li>
+                    <li><strong>主要クラウド3社がすべて A2A を取り込みました：</strong>AWS・Google・Microsoft が揃い、事実上の伝送規格になりました。</li>
+                    <li><strong>次の空白は権限と監査です：</strong>通信は規格化されましたが、「してよいか」は依然として組織の仕事です。</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>層ごとの現状整理</strong> - 稼働中のエージェントを道具との接続・内部の調整・組織をまたぐ委任の三層に分け、いま何を使っているかを一枚に書き出す</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>境界の設計を先に</strong> - A2A の導入前に、どの作業を一つのエージェントの中で終えるかの境界を先に引き、引き返す費用の大きい判断を後回しにする</p>
+                    <p style="line-height: 1.6;">3. <strong>権限の伝わり方の点検</strong> - エージェントが別のエージェントへ仕事を渡すとき権限が狭まるか、監査の記録が境界を越えて続くかを確認</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>争いではなく分担でした：</strong>MCP は2025年12月、A2A は2026年8月にそれぞれ Linux Foundation 系の財団へ入り、同じ傘の下に置かれました。</li>
+                        <li><strong>普及の規模が異なります：</strong>MCP は月間 SDK 取得が4億回を超えフォーチュン500の28%が導入、A2A は支持組織が150社を超えました。</li>
+                        <li><strong>実務上の答えはすでに出ています：</strong>道具との接続は MCP、エージェント間の委任は A2A という組み合わせが既定値です。</li>
+                        <li><strong>引き返す費用は層ごとに違います：</strong>道具との接続は変えやすい一方、組織をまたぐ委任は相手との合意がかかるため慎重さが要ります。</li>
+                        <li><strong>次の空白は権限と監査です：</strong>規格は通信を定めますが、委任のとき権限がどう伝わり監査がどう続くかは組織の設計課題です。</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">状況別の参考</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>これからエージェントを作り始める組織 → MCP から</strong><br>
+                        理由：道具との接続は引き返す費用が最も小さく、生態系が厚いためつなげる先が多くあります。<br>
+                        <strong>複数チームのエージェントをつなぐ組織 → 境界の設計から</strong><br>
+                        理由：A2A を載せる前に、どこまで一つのエージェントの中で終えるかを決める必要があります。境界を後から変えると費用がかさみます。<br>
+                        <strong>規制産業にある組織 → 第4層（権限・監査）から</strong><br>
+                        理由：規格が答えてくれない領域であり、事故のあとに設計するのでは遅いためです。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>肯定。規格が分裂せず層として整理されたことは導入する組織にとって有利です。ただし通信の規格化が済んだからといって権限の問題まで解決したわけではない、という点は明確にしておく必要があります。</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">7.8/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>Linux Foundation の公式発表や1周年の発表といった一次資料を中心に確認し、普及の数値は複数の集計を照合しました。</p>
+                        <p><strong>主な強み：</strong>A2A の参加組織数、財団への移管時期、参加企業の名前が公式資料で確認できます。二つの規格の役割の分かれ方も技術文書と一致します。</p>
+                        <p><strong>改善の優先順位：</strong>① MCP の月間取得回数は集計主体による幅が大きいものです（9,700万〜4億）。傾向は明らかですが単一の数値で断定しにくい状況です。② 「多くの本番構成が組み合わせ」という記述の定量的な根拠は確認できていません。③ 4層の分類と引き返す費用の評価は筆者の提案です。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>MCP（Model Context Protocol）</strong> — AI モデルを外部のデータ・API・ファイルにつなぐための規格です。差込口の規格にたとえると、どんな道具でも同じ形で挿せるようにするものです。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>A2A（Agent2Agent）</strong> — 異なる会社や枠組みで作られたエージェントが、相手を見つけ、身元を確かめ、仕事を渡せるようにする規格です。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ACP（Agent Connect Protocol）</strong> — IBM と AGNTCY 連合が主導する規格で、エージェントのやり取りを HTTP の動詞（POST・GET・PUT・DELETE）にそのまま対応させます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>JSON-RPC</strong> — プログラム同士が「この機能をこの値で実行してほしい」と頼むための簡単な取り決めです。MCP と A2A の両方がこの方式を使っています。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>状態を持たない設計</strong> — サーバーが以前のやり取りを覚えず、要求のたびに必要な情報をすべて受け取る方式です。接続が軽くなり、規模を広げやすくなります。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>能力の公開</strong> — エージェントが「自分はこういう仕事ができる」と知らせることです。相手が仕事を渡すかどうかを判断する手がかりになります。
+                    </div>
+                    <div>
+                        <strong>Agentic AI Foundation</strong> — 自律エージェント関連の規格を扱うために Linux Foundation の下に作られた財団です。MCP と A2A の両方がここに属しています。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年10月9日</p>
+                    <ul>
+                        <li>• <a href="https://www.prnewswire.com/news-releases/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year-302737641.html" target="_blank">A2A Protocol Surpasses 150 Organizations — PR Newswire</a></li>
+                        <li>• <a href="https://www.hpcwire.com/aiwire/2026/04/09/linux-foundation-a2a-protocol-marks-one-year-with-broad-enterprise-and-cloud-adoption/" target="_blank">Linux Foundation A2A Protocol Marks One Year — AIwire</a></li>
+                        <li>• <a href="https://www.flowhunt.io/blog/agentic-ai-foundation-a2a-mcp-standards/" target="_blank">A2A Joins MCP at the Linux Foundation — FlowHunt</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Agent2Agent" target="_blank">Agent2Agent — Wikipedia</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Model_Context_Protocol" target="_blank">Model Context Protocol — Wikipedia</a></li>
+                        <li>• <a href="https://www.digitalapplied.com/blog/mcp-97-million-downloads-model-context-protocol-mainstream" target="_blank">MCP Hits 97M Monthly Downloads — Digital Applied</a></li>
+                        <li>• <a href="https://bex.co/blog/2026/10/04/mcp-sdk-400m-downloads-agent-tool-governance" target="_blank">MCP at 400M Downloads a Month — Bex</a></li>
+                        <li>• <a href="https://www.digitalapplied.com/blog/mcp-dev-summit-2026-readout-protocol-roadmap-analysis" target="_blank">MCP Dev Summit 2026 Readout — Digital Applied</a></li>
+                        <li>• <a href="https://cybertizeweb.com/blog/ai/mcp-adoption-report-2026/" target="_blank">State of Enterprise MCP Adoption 2026 — Cybertize</a></li>
+                        <li>• <a href="https://zylos.ai/research/2026-03-05-multi-agent-communication-protocols-comparison" target="_blank">The Protocol Layer: Comparing Communication Standards — Zylos</a></li>
+                        <li>• <a href="https://k21academy.com/agentic-ai/agentic-ai-protocols-comparison/" target="_blank">MCP vs A2A vs ACP vs ANP Comparison — K21 Academy</a></li>
+                        <li>• <a href="https://philippdubach.com/posts/mcp-vs-a2a-in-2026-how-the-ai-protocol-war-ends/index.md" target="_blank">MCP vs A2A in 2026: How the AI Protocol War Ends</a></li>
+                        <li>• <a href="https://www.besthub.dev/articles/choosing-the-right-2026-ai-agent-interoperability-protocol-mcp-a2a-anp-acp-a16bf41bf995" target="_blank">Choosing the Right 2026 AI Agent Interoperability Protocol — BestHub</a></li>
+                        <li>• <a href="https://prefactor.tech/learn/ai-agent-adoption-statistics" target="_blank">AI Agent Adoption Statistics 2026 — Prefactor</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 図1 — MCP 月間 SDK 取得回数の伸び
+        const ctx1 = document.getElementById('growthChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['2024年11月 公開', '2026年3月', '2026年半ば', '2026年10月'],
+                datasets: [{
+                    label: '月間 SDK 取得回数（百万）',
+                    data: [2, 97, 110, 400],
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'MCP 月間 SDK 取得回数（単位：百万）' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 図2 — 規格の比較（本分析による相対評価）
+        const ctx2 = document.getElementById('protocolChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['道具との接続', 'エージェント間の委任', '相手の発見', '認証の規定', '生態系の規模'],
+                datasets: [
+                    {
+                        label: 'MCP',
+                        data: [100, 25, 40, 50, 100],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: 'A2A',
+                        data: [20, 100, 95, 85, 70],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    },
+                    {
+                        label: 'ACP',
+                        data: [35, 75, 70, 55, 35],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '受け持つ層が違う — 相対比較' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 共有テーマ (Ink & Paper)：必ず含めること -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
