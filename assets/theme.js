@@ -400,3 +400,26 @@ var MAIL = {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inject);
   else inject();
 })();
+
+/* ============================================================
+   넓은 표를 가로 스크롤 상자에 담는다
+   좁은 화면에서 표가 페이지 전체를 밀어내 가로 스크롤이 생기던 문제를 막는다.
+   보고서 HTML 을 건드리지 않고 여기서 감싼다.
+   ============================================================ */
+(function () {
+  function wrap() {
+    document.querySelectorAll('table').forEach(function (t) {
+      var pa = t.parentElement;
+      if (pa && pa.classList.contains('table-scroll')) return;
+      var w = document.createElement('div');
+      w.className = 'table-scroll';
+      w.setAttribute('tabindex', '0');            /* 키보드로도 스크롤할 수 있게 */
+      w.setAttribute('role', 'region');
+      w.setAttribute('aria-label', '표');
+      t.parentNode.insertBefore(w, t);
+      w.appendChild(t);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wrap);
+  else wrap();
+})();
