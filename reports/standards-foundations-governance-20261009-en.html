@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Rival Standards End Up Under the Same Roof</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.92rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.82rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.88rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 Shared theme (Ink & Paper): required for consistent colours -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="What foundations take on, and the strengths and limits of that structure">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-en.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="Why Rival Standards End Up Under the Same Roof">
+<meta property="og:description" content="What foundations take on, and the strengths and limits of that structure">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-en.html">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-09">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Why Rival Standards End Up Under the Same Roof">
+<meta name="twitter:description" content="What foundations take on, and the strengths and limits of that structure">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-en.html'" class="lang-btn active">English</button>
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>Why Rival Standards<br>End Up Under the Same Roof</h1>
+            <div class="subtitle">What foundations take on, and the strengths and limits of that structure</div>
+            <div class="meta">Report date: October 9, 2026 | Standard report (5-8 pages) | Data collected: October 9, 2026</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <div class="callout">
+                    <strong>The central claim of this report</strong><br>
+                    For a technology built by one company to become an industry standard, it has to leave that company's hands.
+                    A foundation is the neutral ground that receives the transfer, and in AI those transfers are happening all at once.
+                    Rather than listing foundations, this report covers <strong>why companies give away their own assets</strong>
+                    and <strong>what that structure guarantees — and what it does not</strong>.
+                </div>
+
+                <h3 class="subsection-title">1. Three rivals founded one foundation together — the Agentic AI Foundation</h3>
+                <p><strong>Situation:</strong> In December 2025 the Linux Foundation announced the formation of the
+                <strong>Agentic AI Foundation (AAIF)</strong>. What matters is how it was formed.
+                This was not an empty shell that later gathered projects:
+                <strong>three companies each brought a core asset, and the foundation was built out of them.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Founding project contributions</h4>
+                        <p>• <strong>MCP</strong> — Anthropic's Model Context Protocol<br>
+                        • <strong>goose</strong> — Block's agent tooling<br>
+                        • <strong>AGENTS.md</strong> — donated by OpenAI<br>
+                        These three compete in the market. That they stood together as founding members under one name
+                        is the substance of this event.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Who gathered</h4>
+                        <p>• <strong>Founding:</strong> OpenAI · Anthropic · Block<br>
+                        • <strong>Backing:</strong> Google · Microsoft · AWS · Bloomberg · Cloudflare<br>
+                        • <strong>Structure:</strong> AAIF operates as a <strong>directed fund</strong> under the Linux Foundation<br>
+                        • <strong>Since:</strong> Google's <strong>A2A</strong> joined as a hosted project on August 17, 2026</p>
+                    </div>
+                </div>
+
+                <p>Add the move from a year earlier and the picture completes.
+                The <strong>AGNTCY</strong> collective — Cisco, LangChain, LlamaIndex, Dell, Oracle and Red Hat —
+                donated <strong>ACP</strong> to the Linux Foundation in July 2025.
+                Three of the major agent-era specifications moved under the same umbrella <strong>within roughly a year</strong>.</p>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" target="_blank">AAIF formation announcement (Linux Foundation)</a> |
+                    <a href="https://anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank">Anthropic — donating MCP</a> |
+                    <a href="https://openai.com/index/agentic-ai-foundation/" target="_blank">OpenAI — donating AGENTS.md</a>
+                </div>
+
+                <p><strong>Outlook:</strong> When a standards contest moves inside a foundation, its character changes.
+                It stops being a fight to push rivals out of the market and becomes
+                <strong>a contest over board seats and decision procedures at the same table</strong>.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The Linux Foundation press release, Anthropic's and OpenAI's own announcements, and TechCrunch's coverage (December 9, 2025) all agree. Founding projects and participants are confirmed in primary sources.<br>
+                        <strong>Weaknesses:</strong> How AAIF's directed-fund structure differs in governance from an ordinary Linux Foundation project was not confirmed in detail from public material.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. What a foundation provides — neutrality, trademark, legal, operations</h3>
+                <p><strong>Situation:</strong> What a company receives in exchange for handing over a project is more concrete than it sounds.
+                Foundations exist to formally govern open source projects and <strong>ensure no single vendor holds too much control</strong>.
+                That role is carried out through practical work, not declarations.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>What the foundation supplies</h4>
+                        <p>• <strong>Legal and licensing support:</strong> license hygiene, contributor agreements<br>
+                        • <strong>Trademark management:</strong> who may use the name and logo, and how<br>
+                        • <strong>Project operations tooling:</strong> established collaboration infrastructure and process<br>
+                        • <strong>Event support:</strong> the venues that gather a community<br>
+                        • <strong>Neutrality as a signal:</strong> "this is not one company's" is itself an adoption argument</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>What is given up</h4>
+                        <p>In donating the software, a company <strong>relinquishes control of it.</strong><br>
+                        • Other foundation members are granted <strong>the same rights</strong><br>
+                        • Those members <strong>include competitors</strong><br>
+                        • Direction can no longer be set alone; process must be followed<br>
+                        This is the essential price of donation.</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>Continue reading —</strong> This site's October 9, 2026 report,
+                    <a href="agent-protocols-mcp-a2a-convergence-20261009-en.html">"There Was No Protocol War — How MCP and A2A Divided the Layers"</a>,
+                    argued that the two specifications ended not in competition but in a division of layers.
+                    <strong>The institutional device that made that ending possible is precisely this foundation structure.</strong>
+                    Neither side needed to beat the other once neither belonged to any one company.
+                </div>
+
+                <p><strong>Outlook:</strong> Neutrality is not free. It is traded for control,
+                and the trade works because <strong>a standard everyone uses is larger than a standard you own alone</strong>.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The legal, trademark and operational support foundations provide, and the price of "relinquishing control and granting competitors the same rights," are confirmed in open source governance research.<br>
+                        <strong>Weaknesses:</strong> No quantitative material was obtained showing which of these supports is decisive in practice.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. Different types decide different things — a map in five branches</h3>
+                <p><strong>Situation:</strong> "Foundation" and "standards body" are often used interchangeably, but they do different work.
+                Knowing which is which makes it clear <strong>which question belongs to whom</strong>.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>The formally recognised side</h4>
+                        <p>• <strong>ISO · IEC · ITU</strong> — internationally recognised standards bodies.
+                        They produce <strong>certifiable specifications</strong> such as ISO/IEC 42001<br>
+                        • What they issue are <strong>de jure standards</strong><br>
+                        • Certificates can be granted, and regulation can reference them</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Not formally recognised, but widely used</h4>
+                        <p>• <strong>W3C · IETF · IEEE · OASIS · OMG</strong><br>
+                        • Strictly speaking the W3C is not a standards body. Groups of experts produce <strong>Recommendations</strong>,
+                        with no power to enforce implementation — yet most are taken as de facto standards<br>
+                        • <strong>IETF</strong> defines Internet standards through RFCs; <strong>IEEE</strong> issues LAN standards such as Ethernet</p>
+                    </div>
+                </div>
+
+                <p>Add two open source branches and the domain consortia, and you have five.
+                Governance foundations such as <strong>Linux Foundation, Apache and Eclipse</strong>;
+                the domain foundations beneath them such as <strong>CNCF, Agentic AI Foundation, PyTorch Foundation, LF AI &amp; Data and OpenSSF</strong>;
+                and domain consortia such as <strong>1EdTech</strong> (Open Badges, CLR), <strong>HL7</strong> (health) and <strong>OGC</strong> (geospatial).</p>
+
+                <p>The practical value of the distinction is clear.
+                <strong>Foundations run code and communities; standards bodies confer official status on specifications.</strong>
+                There is also a path from de facto to de jure — PDF went to ISO, HTML to ISO/IEC.</p>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a> |
+                    <a href="https://www.apache.org/foundation/" target="_blank">Apache Software Foundation</a> |
+                    <a href="https://www.cncf.io/" target="_blank">CNCF</a> |
+                    <a href="https://www.w3.org/" target="_blank">W3C</a> |
+                    <a href="https://www.ietf.org/" target="_blank">IETF</a> |
+                    <a href="https://www.1edtech.org/" target="_blank">1EdTech</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Once AI specifications settle inside foundations, the likely next step is movement toward
+                formally recognised bodies, because a form that regulation can reference becomes necessary.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The recognised status of ISO, IEC and ITU, the W3C's position as a body issuing Recommendations, and the de facto to de jure examples (PDF, HTML) are confirmed in standardisation literature.<br>
+                        <strong>Weaknesses:</strong> The five-branch division is this report's own organisation. It is not an official taxonomy, and some organizations straddle boundaries.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. Why companies give it away — what is lost, what is gained</h3>
+                <p><strong>Situation:</strong> Donation is not altruism. It is a calculated trade.
+                MCP illustrates the calculation well. After Anthropic let go of control,
+                MCP became a specification with over <strong>400 million</strong> monthly SDK downloads,
+                deployed by <strong>28% of the Fortune 500</strong>.
+                Those numbers were out of reach for one company's connection format.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>What is gained</h4>
+                        <p>• <strong>The standing of neutrality:</strong> competitors become able to adopt it. This is the largest gain<br>
+                        • <strong>Adoption speed:</strong> "it belongs to no one" makes approval easier<br>
+                        • <strong>Distributed legal burden:</strong> the foundation takes on trademark and licensing<br>
+                        • <strong>Longevity:</strong> the specification survives even if the originating company's strategy changes</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>What is lost</h4>
+                        <p>• <strong>Directional control:</strong> decisions follow process rather than one company<br>
+                        • <strong>Speed:</strong> consensus is slower<br>
+                        • <strong>Differentiation:</strong> competitors use the same specification<br>
+                        Companies still donate, for a clear reason: <strong>control over a technology that never becomes a standard is worth little.</strong></p>
+                    </div>
+                </div>
+
+                <p>The same calculation explains three rivals founding AAIF together.
+                A fragmented agent ecosystem costs all of them.
+                <strong>Competing on products atop a shared specification is worth more to all three than each holding its own.</strong></p>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/" target="_blank">TechCrunch coverage</a> |
+                    <a href="https://agntcy.org/" target="_blank">AGNTCY</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The calculation holds <strong>while the market is still unsettled</strong>.
+                Once a winner is established the incentive to donate disappears.
+                That transfers clustered now is itself a signal that the agent market is still forming.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The gain/loss structure of donation (neutrality gained, control lost) is confirmed in open source governance research, and MCP's adoption figures are corroborated across sources.<br>
+                        <strong>Weaknesses:</strong> The reading of why three rivals founded it together is this report's inference. Each company's official explanation stays at the general level of neutral development and standardisation.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. Being in a foundation does not make it safe — the limits of the structure</h3>
+                <p><strong>Situation:</strong> The label "foundation project" signals neutrality, but the character of that neutrality differs by foundation.
+                The sharpest contrast is between the <strong>Linux Foundation and the Apache Software Foundation</strong>.
+                Both are widely trusted, yet who decides is the exact opposite.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Linux Foundation — corporate membership</h4>
+                        <p>• Legal form: <strong>501(c)(6)</strong> trade organization<br>
+                        • Members: <strong>corporate</strong>, with tiered sponsorship<br>
+                        • Fees: Silver <strong>$5,000–$20,000</strong> (by employee count) · Gold <strong>$100,000</strong> · Platinum <strong>$500,000</strong><br>
+                        • <strong>Platinum includes a dedicated board seat</strong><br>
+                        • Large sponsors hold structured governance seats and help direct projects</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Apache Software Foundation — individual merit</h4>
+                        <p>• Legal form: <strong>501(c)(3)</strong> charity<br>
+                        • Members: <strong>individuals</strong>, earned exclusively through sustained contribution merit<br>
+                        • <strong>Pay-to-play governance is strictly prohibited</strong> — a company can donate millions and receive zero influence over technical direction; only individual code contributors earn votes<br>
+                        • Operations: roughly <strong>$2.29M</strong> a year in corporate sponsorship, with decentralised project management committees</p>
+                    </div>
+                </div>
+
+                <p>What to read here is not superiority but <strong>a difference in design</strong>.
+                Corporate membership is strong at gathering resources and building industry consensus quickly;
+                individual merit is more resistant to the influence of any single company.
+                <strong>Knowing which foundation a project sits in tells you whose hands its direction is in.</strong></p>
+
+                <p>Three further limits deserve attention.
+                <strong>Decision speed</strong> slows under consensus structures;
+                the possibility of a <strong>fork</strong> always remains under an open license;
+                and above all, <strong>"being in a foundation" guarantees neither code quality nor security.</strong>
+                A foundation provides governance; it does not perform your audit.</p>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.apache.org/foundation/" target="_blank">Apache Software Foundation</a> |
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a> |
+                    <a href="https://openssf.org/" target="_blank">OpenSSF</a>
+                </div>
+
+                <p><strong>Outlook:</strong> As AI specifications gather into foundations, <strong>"which foundation" becomes the next question</strong>.
+                A specification under corporate membership is necessarily more sensitive to the interests of its largest sponsors,
+                and knowing that sensitivity belongs in an adopting organization's risk management.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Fee tiers, the 501(c)(6) versus 501(c)(3) distinction, and Apache's prohibition on pay-to-play alongside its individual merit model are confirmed in each foundation's public material and governance analyses.<br>
+                        <strong>Weaknesses:</strong> No case study showing how far large sponsors have actually changed technical decisions was obtained in this round. This describes a structural possibility, not an accusation about a specific case.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape</h2>
+
+                <h3 class="subsection-title">The five-branch map — who decides what</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">
+                    Setting what each type can and cannot decide side by side makes it clear where a given question belongs.
+                    <em>(The classification is this report's own organisation, and some organizations straddle boundaries.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Representative</th>
+                            <th>What it decides</th>
+                            <th>What it cannot decide</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① Open source governance foundations</strong></td>
+                            <td>Linux Foundation, Apache, Eclipse</td>
+                            <td>Project process, trademarks, licensing, community rules</td>
+                            <td>Legally recognised specifications — they cannot issue certificates</td>
+                        </tr>
+                        <tr>
+                            <td><strong>② Domain foundations</strong></td>
+                            <td>CNCF, Agentic AI Foundation, PyTorch Foundation, LF AI &amp; Data, OpenSSF</td>
+                            <td>Project acceptance and graduation in their domain, technical steering composition</td>
+                            <td>The parent foundation's membership and fee structure</td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ Formal standards bodies</strong></td>
+                            <td>ISO, IEC, ITU</td>
+                            <td>De jure standards and certifiable specifications (e.g. ISO/IEC 42001)</td>
+                            <td>They do not build implementations or run code</td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ Web and Internet standards</strong></td>
+                            <td>W3C, IETF, WHATWG</td>
+                            <td>Recommendations and RFCs that become de facto standards</td>
+                            <td>They cannot enforce implementation (the W3C is strictly not a standards body)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ Domain consortia</strong></td>
+                            <td>1EdTech, HL7, OGC</td>
+                            <td>Sector data specifications and conformance certification</td>
+                            <td>They carry almost no weight outside their sector</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Linux Foundation membership tiers</h3>
+                <div class="chart-container">
+                    <canvas id="feeChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    Source: Linux Foundation published membership material. Silver ranges from $5,000 to $20,000 by employee count; the chart shows the upper bound. Platinum includes a board seat.
+                </p>
+
+                <h3 class="subsection-title">The character of the two governance models</h3>
+                <div class="chart-container">
+                    <canvas id="govChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    Relative assessment per this analysis. The comparison shows a difference in design intent, not superiority.
+                </p>
+
+                <h3 class="subsection-title">Five market shifts</h3>
+                <ul class="key-findings">
+                    <li><strong>Rivals founded a foundation together:</strong> OpenAI, Anthropic and Block each brought an asset to establish AAIF.</li>
+                    <li><strong>Transfers clustered within a year:</strong> ACP (July 2025), MCP (December 2025) and A2A (August 2026) all moved under the same umbrella.</li>
+                    <li><strong>Neutrality became a condition of adoption:</strong> "it belongs to no one" makes the adoption decision easier.</li>
+                    <li><strong>Who decides differs by foundation:</strong> corporate membership (LF) and individual merit (ASF) are opposite designs.</li>
+                    <li><strong>Foundation membership does not guarantee quality:</strong> governance is provided; audit is separate.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Check where your dependencies sit</strong> - Identify which foundation each specification you rely on belongs to, and whether that foundation runs on corporate membership or individual merit</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Trace the transfer date</strong> - Knowing when a specification moved from a company to a foundation lets you read how its direction changed around that point</p>
+                    <p style="line-height: 1.6;">3. <strong>Check the path to formal recognition</strong> - Where regulatory compliance matters, confirm in advance whether a specification has a route toward a body such as ISO</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Three rivals founded a foundation together:</strong> in December 2025 OpenAI, Anthropic and Block established the Agentic AI Foundation with AGENTS.md, MCP and goose.</li>
+                        <li><strong>Transfers clustered within a year:</strong> ACP (July 2025), MCP (December 2025) and A2A (August 2026) all moved into the Linux Foundation family.</li>
+                        <li><strong>The trade is explicit:</strong> neutrality and adoption speed are gained; directional control and differentiation are given up.</li>
+                        <li><strong>Decision rights differ by foundation:</strong> the Linux Foundation runs corporate membership (Platinum at $500,000 includes a board seat); Apache runs individual merit and forbids pay-to-play.</li>
+                        <li><strong>Membership does not guarantee quality:</strong> a foundation supplies governance, not code audit or security.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Guidance by situation</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>Choosing a specification → start with the foundation's membership structure</strong><br>
+                        Why: who holds the seats is the best available predictor of where that specification goes next.<br>
+                        <strong>Facing regulatory requirements → start with the path to formal recognition</strong><br>
+                        Why: foundation specifications cannot issue certificates. Whether a route to a body such as ISO exists matters.<br>
+                        <strong>Wanting your own technology to become a standard → act before the market settles</strong><br>
+                        Why: the incentive to donate only holds while a market is forming. After a winner emerges the trade no longer works.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>Overall sentiment:</strong> Positive. Specifications converging on neutral ground rather than being tied to one company favours adopters. It does need to be paired with the caution of not reading "it is in a foundation" as a warranty of quality or neutrality.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">8.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> Built on primary sources — Linux Foundation, Anthropic and OpenAI announcements plus each foundation's published membership material — with governance comparisons reinforced by research literature.</p>
+                        <p><strong>Key strengths:</strong> AAIF's founding projects and participants, the fee tiers and the 501(c)(6)/501(c)(3) distinction are all sourced facts. Apache's prohibition on pay-to-play is confirmed.</p>
+                        <p><strong>Priorities for improvement:</strong> ① The five-branch classification is this report's own organisation, not an official taxonomy. ② No case of large sponsors actually changing a decision was obtained, so only structural possibility is described. ③ The reading of why rivals founded a foundation together is inference; official explanations stay at the general level of neutral development.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Foundation</strong> — An organization created to run an open source project in a state where it belongs to no single company, taking on legal, trademark and operational work.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Directed fund</strong> — A sub-organization created inside a parent foundation for a specific purpose. The Agentic AI Foundation is a directed fund within the Linux Foundation.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>De jure standard</strong> — A standard issued by an officially recognised body such as ISO. Certificates can be granted and regulation can reference it.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>De facto standard</strong> — Something widely used enough to function as a standard without official approval. PDF and HTML later became formal standards.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>501(c)(6) · 501(c)(3)</strong> — US non-profit classifications. (c)(6) is a trade organization and (c)(3) a charity; they differ in membership structure and tax treatment.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Pay-to-play</strong> — A structure where money buys influence over decisions. Apache forbids it; the Linux Foundation ties board seats to sponsorship tiers.
+                    </div>
+                    <div>
+                        <strong>Fork</strong> — Copying an open source project and developing it in a separate direction. Always possible under an open license, it is the ultimate check on governance.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> October 9, 2026</p>
+                    <ul>
+                        <li>• <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" target="_blank">Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF)</a></li>
+                        <li>• <a href="https://anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank">Donating the Model Context Protocol and Establishing the Agentic AI Foundation — Anthropic</a></li>
+                        <li>• <a href="https://openai.com/index/agentic-ai-foundation/" target="_blank">OpenAI co-founds Agentic AI Foundation, donates AGENTS.md</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/" target="_blank">OpenAI, Anthropic, and Block join new Linux Foundation effort — TechCrunch</a></li>
+                        <li>• <a href="https://www.flowhunt.io/blog/agentic-ai-foundation-a2a-mcp-standards/" target="_blank">A2A Joins MCP at the Linux Foundation — FlowHunt</a></li>
+                        <li>• <a href="https://www.hpcwire.com/aiwire/2026/04/09/linux-foundation-a2a-protocol-marks-one-year-with-broad-enterprise-and-cloud-adoption/" target="_blank">Linux Foundation A2A Protocol Marks One Year — AIwire</a></li>
+                        <li>• <a href="https://www.linuxfoundation.org/hubfs/lf_member_benefits_091624a.pdf" target="_blank">Benefits of Linux Foundation Membership (tiers and fees)</a></li>
+                        <li>• <a href="https://www.apache.org/foundation/" target="_blank">The Apache Software Foundation</a></li>
+                        <li>• <a href="https://timreview.ca/article/636" target="_blank">Governance of Open Source Software Foundations: Who Holds the Power? — TIM Review</a></li>
+                        <li>• <a href="https://dirkriehle.com/2019/09/09/managing-commercial-conflicts-of-interest-in-open-source-foundations-icsob-2019/" target="_blank">Managing Commercial Conflicts of Interest in Open Source Foundations</a></li>
+                        <li>• <a href="https://pytorch.org/blog/pytorch-foundation-announces-new-members-as-agentic-ai-demand-grows/" target="_blank">PyTorch Foundation Announces New Members</a></li>
+                        <li>• <a href="https://www.cncf.io/" target="_blank">Cloud Native Computing Foundation</a></li>
+                        <li>• <a href="https://agntcy.org/" target="_blank">AGNTCY</a></li>
+                        <li>• <a href="https://www.w3.org/" target="_blank">W3C</a></li>
+                        <li>• <a href="https://www.ietf.org/" target="_blank">IETF</a></li>
+                        <li>• <a href="https://www.1edtech.org/" target="_blank">1EdTech</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Chart 1 — Linux Foundation membership tiers
+        const ctx1 = document.getElementById('feeChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Silver (upper bound)', 'Gold', 'Platinum (board seat included)'],
+                datasets: [{
+                    label: 'Annual membership fee (USD)',
+                    data: [20000, 100000, 500000],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(59, 130, 246, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(249, 115, 22)', 'rgb(59, 130, 246)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Linux Foundation annual membership fees' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Chart 2 — Governance model comparison (relative assessment per this analysis)
+        const ctx2 = document.getElementById('govChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['Formal corporate influence', 'Individual contributor power', 'Resource mobilisation', 'Speed of industry consensus', 'Resistance to single-company influence'],
+                datasets: [
+                    {
+                        label: 'Linux Foundation (corporate membership)',
+                        data: [90, 35, 95, 90, 45],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: 'Apache Software Foundation (individual merit)',
+                        data: [15, 95, 40, 50, 90],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'A difference in design intent, not superiority' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- Shared theme (Ink & Paper): must be included -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

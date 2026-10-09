@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경쟁하던 규격이 같은 지붕으로 가는 이유</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.4rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.1rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.8rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.78rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.9rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.9rem; }
+        .related-links strong { color: #001e5c; font-size: 0.85rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.92rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.82rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.88rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.9rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.85rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.9rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.9rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.85rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.9rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 공유 테마 (Ink & Paper) : 이 줄이 없으면 색이 통일되지 않습니다 -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="재단이 떠맡은 역할, 그리고 그 구조가 가진 힘과 한계">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="경쟁하던 규격이 같은 지붕으로 가는 이유">
+<meta property="og:description" content="재단이 떠맡은 역할, 그리고 그 구조가 가진 힘과 한계">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+<meta property="og:locale" content="ko_KR">
+<meta property="article:published_time" content="2026-10-09">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="경쟁하던 규격이 같은 지붕으로 가는 이유">
+<meta name="twitter:description" content="재단이 떠맡은 역할, 그리고 그 구조가 가진 힘과 한계">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="밝기 전환" aria-label="밝기 전환">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>경쟁하던 규격이<br>같은 지붕으로 가는 이유</h1>
+            <div class="subtitle">재단이 떠맡은 역할, 그리고 그 구조가 가진 힘과 한계</div>
+            <div class="meta">보고서 작성일: 2026년 10월 9일 | 표준 보고서 (5-8페이지) | 데이터 수집: 2026년 10월 9일</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <div class="callout">
+                    <strong>이 보고서의 중심 주장</strong><br>
+                    한 회사가 만든 기술이 「업계 표준」이 되려면 그 회사의 손을 떠나야 합니다.
+                    재단은 그 이전(移轉)을 받아주는 중립 지대이고, 지금 AI 분야에서 그 이동이 한꺼번에 일어나고 있습니다.
+                    이 글은 재단 목록을 나열하지 않고, <strong>왜 기업이 자기 자산을 내놓는지</strong>와
+                    <strong>그 구조가 무엇을 보장하고 무엇은 보장하지 못하는지</strong>를 다룹니다.
+                </div>
+
+                <h3 class="subsection-title">1. 경쟁사 셋이 한 재단을 함께 세웠다 — Agentic AI Foundation</h3>
+                <p><strong>현황:</strong> 2025년 12월, Linux Foundation 이 <strong>Agentic AI Foundation(AAIF)</strong> 의 설립을 발표했습니다.
+                주목할 것은 설립 방식입니다. 빈 껍데기를 만들고 프로젝트를 모은 것이 아니라,
+                <strong>세 회사가 각자의 핵심 자산을 들고 와 그것으로 재단을 세웠습니다.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>창립 기여 프로젝트</h4>
+                        <p>• <strong>MCP</strong> — Anthropic 의 Model Context Protocol<br>
+                        • <strong>goose</strong> — Block 의 에이전트 도구<br>
+                        • <strong>AGENTS.md</strong> — OpenAI 가 기증<br>
+                        세 회사는 시장에서 서로 경쟁합니다. 그 셋이 창립 멤버로 같은 이름 아래 섰다는 점이
+                        이 사건의 핵심입니다.</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>모인 이름들</h4>
+                        <p>• <strong>창립:</strong> OpenAI · Anthropic · Block<br>
+                        • <strong>후원:</strong> Google · Microsoft · AWS · Bloomberg · Cloudflare<br>
+                        • <strong>구조:</strong> AAIF 는 Linux Foundation 산하의 <strong>지정 기금(directed fund)</strong> 입니다<br>
+                        • <strong>이후:</strong> Google 의 <strong>A2A</strong> 가 2026년 8월 17일 이 재단의 호스팅 프로젝트로 합류했습니다</p>
+                    </div>
+                </div>
+
+                <p>여기에 한 해 전의 움직임을 더하면 그림이 완성됩니다.
+                Cisco·LangChain·LlamaIndex·Dell·Oracle·Red Hat 이 모인 <strong>AGNTCY</strong> 연합은
+                2025년 7월 <strong>ACP</strong> 를 Linux Foundation 에 기증했습니다.
+                에이전트 분야의 주요 규격 셋이 <strong>1년 남짓 사이에</strong> 모두 같은 우산 밑으로 들어간 셈입니다.</p>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" target="_blank">AAIF 설립 발표 (Linux Foundation)</a> |
+                    <a href="https://anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank">Anthropic — MCP 기증</a> |
+                    <a href="https://openai.com/index/agentic-ai-foundation/" target="_blank">OpenAI — AGENTS.md 기증</a>
+                </div>
+
+                <p><strong>전망:</strong> 규격을 둘러싼 다툼이 재단 안으로 들어가면 싸움의 성격이 바뀝니다.
+                시장에서 밀어내는 경쟁이 아니라, <strong>같은 테이블에서 의석과 의사결정 절차를 두고 벌이는 경쟁</strong>이 됩니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Linux Foundation 보도자료, Anthropic·OpenAI 각 사의 공식 발표, TechCrunch 보도(2025-12-09)가 모두 일치합니다. 창립 프로젝트와 참여사 명단이 1차 자료로 확인됩니다.<br>
+                        <strong>개선점:</strong> AAIF 의 지정 기금 구조가 일반 Linux Foundation 프로젝트와 거버넌스에서 어떻게 다른지는 공개 자료에서 상세히 확인하지 못했습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 재단은 무엇을 해주는가 — 중립성·상표·법률·운영</h3>
+                <p><strong>현황:</strong> 기업이 재단에 프로젝트를 넘길 때 받는 것은 생각보다 구체적입니다.
+                재단은 <strong>어느 한 벤더가 지나친 통제력을 갖지 못하도록</strong> 프로젝트를 공식적으로 관리하기 위해 만들어진 조직입니다.
+                그 역할은 선언이 아니라 실무로 이루어집니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>재단이 제공하는 것</h4>
+                        <p>• <strong>법률·라이선스 지원:</strong> 라이선스 정리, 기여자 동의 처리<br>
+                        • <strong>상표 관리:</strong> 이름과 로고를 누가 어떻게 쓸 수 있는지 정리<br>
+                        • <strong>프로젝트 운영 도구:</strong> 이미 갖춰진 협업 기반과 절차<br>
+                        • <strong>행사 지원:</strong> 커뮤니티를 모으는 자리<br>
+                        • <strong>중립성이라는 신호:</strong> 「한 회사 것이 아니다」라는 사실 자체가 채택을 돕습니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>내주는 것</h4>
+                        <p>소프트웨어를 기증하면서 기업은 <strong>그 소프트웨어에 대한 통제를 내려놓습니다.</strong><br>
+                        • 다른 재단 회원들에게 <strong>동일한 권리</strong>가 부여됩니다<br>
+                        • 그 회원에는 <strong>경쟁사가 포함됩니다</strong><br>
+                        • 방향을 혼자 정할 수 없게 되고, 절차를 따라야 합니다<br>
+                        이것이 기증의 본질적인 대가입니다.</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>이어 읽기 —</strong> 본 사이트의 2026년 10월 9일 보고서
+                    <a href="agent-protocols-mcp-a2a-convergence-20261009-ko.html">「프로토콜 전쟁은 없었다 — MCP 와 A2A 의 역할 분담」</a>은
+                    두 규격이 경쟁이 아니라 층 분담으로 끝났다고 적었습니다.
+                    <strong>그 결말을 가능하게 한 제도적 장치가 바로 이 재단 구조입니다.</strong>
+                    한쪽이 다른 쪽을 이길 필요가 없어진 것은, 둘 다 어느 한 회사의 것이 아니게 됐기 때문입니다.
+                </div>
+
+                <p><strong>전망:</strong> 중립성은 공짜가 아닙니다. 통제권과 맞바꾼 것이며,
+                그 거래가 성립하는 이유는 <strong>혼자 가진 표준보다 모두가 쓰는 표준이 더 크기 때문</strong>입니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 재단이 제공하는 법률·상표·운영 지원과 「통제를 내려놓고 경쟁사에 동일 권리를 준다」는 대가는 오픈소스 거버넌스 연구 자료에서 확인됩니다.<br>
+                        <strong>개선점:</strong> 항목별 비중(어느 지원이 실제로 가장 결정적인가)을 보여주는 정량 자료는 확보하지 못했습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 유형이 다르면 결정하는 것도 다르다 — 다섯 갈래 지도</h3>
+                <p><strong>현황:</strong> 「재단」과 「표준 기구」는 자주 뒤섞여 불리지만, 하는 일이 다릅니다.
+                어디에 무엇이 있는지 구분해 두면 <strong>어떤 질문을 누구에게 해야 하는지</strong>가 분명해집니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>공식 인정을 받은 쪽</h4>
+                        <p>• <strong>ISO · IEC · ITU</strong> — 국제적으로 공식 인정된 표준화 기구입니다.
+                        ISO/IEC 42001 같은 <strong>인증 가능한 규격</strong>을 냅니다<br>
+                        • 이들이 내는 것은 <strong>de jure(법적·공식) 표준</strong>입니다<br>
+                        • 인증서가 발급되고, 규제가 참조할 수 있습니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>공식 인정은 아니지만 널리 쓰이는 쪽</h4>
+                        <p>• <strong>W3C · IETF · IEEE · OASIS · OMG</strong><br>
+                        • W3C 는 엄밀히 말하면 표준 기구가 아닙니다. 전문가 모임이 <strong>권고(Recommendation)</strong> 를 내며,
+                        그 이행을 강제할 힘은 없습니다. 다만 대부분이 사실상의 표준으로 받아들여집니다<br>
+                        • <strong>IETF</strong> 는 RFC 로 인터넷 표준을 정의하고, <strong>IEEE</strong> 는 이더넷 같은 LAN 표준을 냅니다</p>
+                    </div>
+                </div>
+
+                <p>여기에 오픈소스 쪽 두 갈래와 분야 특화 컨소시엄을 더하면 다섯이 됩니다.
+                <strong>Linux Foundation · Apache · Eclipse</strong> 같은 거버넌스 재단,
+                그 산하의 <strong>CNCF · Agentic AI Foundation · PyTorch Foundation · LF AI &amp; Data · OpenSSF</strong> 같은 분야별 재단,
+                그리고 <strong>1EdTech</strong>(Open Badges·CLR), <strong>HL7</strong>(의료), <strong>OGC</strong>(공간정보) 같은 분야 특화 컨소시엄입니다.</p>
+
+                <p>구분의 실익은 분명합니다. <strong>재단은 코드와 커뮤니티를 운영하고, 표준화 기구는 규격을 공인합니다.</strong>
+                de facto 로 자리 잡은 뒤 de jure 로 넘어가는 경로도 있습니다. PDF 가 ISO 로, HTML 이 ISO/IEC 로 간 것이 그 예입니다.</p>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a> |
+                    <a href="https://www.apache.org/foundation/" target="_blank">Apache Software Foundation</a> |
+                    <a href="https://www.cncf.io/" target="_blank">CNCF</a> |
+                    <a href="https://www.w3.org/" target="_blank">W3C</a> |
+                    <a href="https://www.ietf.org/" target="_blank">IETF</a> |
+                    <a href="https://www.1edtech.org/" target="_blank">1EdTech</a>
+                </div>
+
+                <p><strong>전망:</strong> AI 규격이 재단에서 자리를 잡으면, 다음 단계는 공인 기구로의 이동일 가능성이 큽니다.
+                규제가 참조할 수 있는 형태가 필요해지기 때문입니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> ISO·IEC·ITU 의 공식 인정 지위와 W3C 가 권고를 내는 기구라는 점, de facto → de jure 전환 사례(PDF·HTML)가 표준화 연구 자료에서 확인됩니다.<br>
+                        <strong>개선점:</strong> 다섯 갈래라는 구분 자체는 본 분석의 정리입니다. 공인된 분류 체계가 아니며, 경계가 겹치는 조직도 있습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 기업은 왜 내놓는가 — 통제를 잃고 무엇을 얻는가</h3>
+                <p><strong>현황:</strong> 기증은 이타적 행위가 아닙니다. 계산이 선 거래입니다.
+                MCP 의 사례가 그 계산을 잘 보여줍니다. Anthropic 이 통제권을 내려놓은 뒤,
+                MCP 는 월간 SDK 내려받기가 <strong>4억</strong>을 넘고 <strong>포춘 500 의 28%</strong>가 배포하는 규격이 됐습니다.
+                한 회사의 연결 방식으로 남았다면 닿지 못했을 숫자입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>얻는 것</h4>
+                        <p>• <strong>중립성이라는 자격:</strong> 경쟁사가 채택할 수 있게 됩니다. 이것이 가장 큽니다<br>
+                        • <strong>채택 속도:</strong> 「누구의 것도 아니다」가 도입 결재를 쉽게 만듭니다<br>
+                        • <strong>법적 부담 분산:</strong> 상표와 라이선스 관리를 재단이 맡습니다<br>
+                        • <strong>지속성:</strong> 만든 회사의 사업 방향이 바뀌어도 규격은 남습니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>잃는 것</h4>
+                        <p>• <strong>방향 결정권:</strong> 혼자 정할 수 없고 절차를 따라야 합니다<br>
+                        • <strong>속도:</strong> 합의가 필요한 만큼 느려집니다<br>
+                        • <strong>차별화:</strong> 경쟁사도 같은 규격을 씁니다<br>
+                        그럼에도 내놓는 이유는 분명합니다. <strong>표준이 되지 못한 기술의 통제권은 가치가 작기 때문입니다.</strong></p>
+                    </div>
+                </div>
+
+                <p>경쟁사 셋이 AAIF 를 함께 세운 것도 같은 계산입니다.
+                에이전트 생태계가 파편화되면 모두가 손해를 봅니다.
+                <strong>각자 자기 규격을 쥐고 있는 것보다, 공통 규격 위에서 제품으로 경쟁하는 편이 셋 모두에게 큽니다.</strong></p>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/" target="_blank">TechCrunch 보도</a> |
+                    <a href="https://agntcy.org/" target="_blank">AGNTCY</a>
+                </div>
+
+                <p><strong>전망:</strong> 이 계산이 성립하는 조건은 <strong>시장이 아직 굳지 않았을 때</strong>입니다.
+                승자가 정해진 뒤에는 기증의 유인이 사라집니다. 지금 이전이 몰린 것은 에이전트 시장이 형성기라는 신호이기도 합니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 기증의 득실 구조(중립성 획득 ↔ 통제권 상실)는 오픈소스 거버넌스 연구에서 확인되며, MCP 의 채택 수치도 복수 출처로 확인됩니다.<br>
+                        <strong>개선점:</strong> 「경쟁사 셋이 함께 세운 이유」에 대한 해석은 본 분석의 추론입니다. 각 사가 밝힌 공식 설명은 중립적 발전과 표준화라는 일반적 표현에 머물러 있습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 재단에 있다고 안전한 것은 아니다 — 구조의 한계</h3>
+                <p><strong>현황:</strong> 「재단 프로젝트」라는 꼬리표는 중립성을 뜻하지만, 그 중립성의 성격은 재단마다 다릅니다.
+                가장 선명한 대비는 <strong>Linux Foundation 과 Apache Software Foundation</strong> 사이에 있습니다.
+                둘 다 널리 신뢰받지만, 누가 결정하는지가 정반대입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Linux Foundation — 기업 회원제</h4>
+                        <p>• 법적 성격: <strong>501(c)(6)</strong> 산업단체<br>
+                        • 회원: <strong>기업</strong> 중심, 계층형 후원<br>
+                        • 회비: Silver <strong>$5,000~$20,000</strong>(임직원 수 기준) · Gold <strong>$100,000</strong> · Platinum <strong>$500,000</strong><br>
+                        • <strong>Platinum 에는 이사회 의석이 포함됩니다</strong><br>
+                        • 대형 후원사가 거버넌스 의석을 갖고 방향에 관여하는 구조입니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Apache Software Foundation — 개인 실적제</h4>
+                        <p>• 법적 성격: <strong>501(c)(3)</strong> 자선단체<br>
+                        • 회원: <strong>개인</strong>, 자격은 지속적인 기여 실적으로만 얻습니다<br>
+                        • <strong>pay-to-play 를 엄격히 금지합니다</strong> — 수백만 달러를 내도 기술 방향에 영향력은 0이며, 코드를 기여한 개인만 투표권을 갖습니다<br>
+                        • 운영: 연 약 <strong>$2.29M</strong> 규모의 기업 후원, 분산된 프로젝트 관리 위원회(PMC)</p>
+                    </div>
+                </div>
+
+                <p>여기서 읽어야 할 것은 우열이 아니라 <strong>성격의 차이</strong>입니다.
+                기업 회원제는 자원을 모으고 산업의 합의를 빠르게 만드는 데 강하고,
+                개인 실적제는 특정 기업의 영향으로부터 더 단단합니다.
+                <strong>어느 재단에 있는지를 알면, 그 프로젝트의 방향이 누구 손에 있는지도 알 수 있습니다.</strong></p>
+
+                <p>그 밖에 함께 보아야 할 한계가 셋 있습니다.
+                <strong>의사결정 속도</strong>는 합의 구조인 만큼 느려지고,
+                <strong>포크(fork)</strong> 가능성은 오픈 라이선스인 한 늘 남아 있으며,
+                무엇보다 <strong>「재단에 있다」는 사실이 코드의 품질이나 보안을 보장하지는 않습니다.</strong>
+                재단은 거버넌스를 제공하지, 감사를 대신해 주지 않습니다.</p>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.apache.org/foundation/" target="_blank">Apache Software Foundation</a> |
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a> |
+                    <a href="https://openssf.org/" target="_blank">OpenSSF</a>
+                </div>
+
+                <p><strong>전망:</strong> AI 규격이 재단으로 모이면서, <strong>「어느 재단인가」가 다음 질문</strong>이 됩니다.
+                기업 회원제 아래 놓인 규격은 큰 후원사의 이해에 더 민감할 수밖에 없고,
+                그 민감도를 아는 것이 도입 조직의 위험 관리에 들어갑니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 회비 구간, 501(c)(6)/501(c)(3) 구분, Apache 의 pay-to-play 금지와 개인 실적제는 각 재단의 공개 자료 및 거버넌스 분석에서 확인됩니다.<br>
+                        <strong>개선점:</strong> 「대형 후원사의 영향이 실제 기술 결정을 얼마나 바꾸었는가」를 보여주는 사례 연구는 이번 조사에서 확보하지 못했습니다. 구조적 가능성을 서술한 것이지 특정 사례의 고발이 아닙니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">다섯 갈래 지도 — 누가 무엇을 결정하는가</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">
+                    각 유형이 결정할 수 있는 것과 결정하지 못하는 것을 나란히 두면, 어떤 질문을 어디에 해야 하는지가 분명해집니다.
+                    <em>(분류는 본 분석에 따른 정리이며, 경계가 겹치는 조직도 있습니다.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>유형</th>
+                            <th>대표</th>
+                            <th>결정하는 것</th>
+                            <th>결정하지 못하는 것</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① 오픈소스 거버넌스 재단</strong></td>
+                            <td>Linux Foundation, Apache, Eclipse</td>
+                            <td>프로젝트 운영 절차, 상표, 라이선스, 커뮤니티 규칙</td>
+                            <td>법적 효력을 가진 공인 규격 — 인증서를 낼 수 없습니다</td>
+                        </tr>
+                        <tr>
+                            <td><strong>② 분야별 재단</strong></td>
+                            <td>CNCF, Agentic AI Foundation, PyTorch Foundation, LF AI &amp; Data, OpenSSF</td>
+                            <td>해당 분야 프로젝트의 수용과 졸업, 기술 운영 위원회 구성</td>
+                            <td>상위 재단의 회원·회비 구조는 바꾸지 못합니다</td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ 공식 표준화 기구</strong></td>
+                            <td>ISO, IEC, ITU</td>
+                            <td>de jure 표준, 인증 가능한 규격 (예: ISO/IEC 42001)</td>
+                            <td>구현을 직접 만들거나 코드를 운영하지 않습니다</td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ 웹·인터넷 표준</strong></td>
+                            <td>W3C, IETF, WHATWG</td>
+                            <td>권고와 RFC — 사실상의 표준이 됩니다</td>
+                            <td>이행을 강제할 힘이 없습니다 (W3C 는 엄밀히 표준 기구가 아닙니다)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ 분야 특화 컨소시엄</strong></td>
+                            <td>1EdTech, HL7, OGC</td>
+                            <td>해당 산업의 데이터 규격과 적합성 인증</td>
+                            <td>산업 밖에서는 구속력이 거의 없습니다</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Linux Foundation 회원 등급</h3>
+                <div class="chart-container">
+                    <canvas id="feeChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    출처: Linux Foundation 공개 회원 안내. Silver 는 임직원 수에 따라 $5,000~$20,000 범위이며, 그래프는 상단값을 표시했습니다. Platinum 에는 이사회 의석이 포함됩니다.
+                </p>
+
+                <h3 class="subsection-title">두 거버넌스 모델의 성격</h3>
+                <div class="chart-container">
+                    <canvas id="govChart"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #4a4a4a;">
+                    본 분석에 따른 상대 평가입니다. 우열이 아니라 설계 의도의 차이를 보여주기 위한 비교입니다.
+                </p>
+
+                <h3 class="subsection-title">시장 변화 다섯 가지</h3>
+                <ul class="key-findings">
+                    <li><strong>경쟁사가 함께 재단을 세웠습니다:</strong> OpenAI·Anthropic·Block 이 각자의 자산을 들고 AAIF 를 창립했습니다.</li>
+                    <li><strong>이전이 1년 사이에 몰렸습니다:</strong> ACP(2025-07) · MCP(2025-12) · A2A(2026-08) 가 모두 같은 우산 아래로 갔습니다.</li>
+                    <li><strong>중립성은 채택의 조건이 됐습니다:</strong> 「누구의 것도 아니다」가 도입 결정을 쉽게 만듭니다.</li>
+                    <li><strong>재단마다 누가 결정하는지가 다릅니다:</strong> 기업 회원제(LF)와 개인 실적제(ASF)는 정반대의 설계입니다.</li>
+                    <li><strong>재단 소속이 품질을 보장하지는 않습니다:</strong> 거버넌스는 제공되지만 감사는 별개입니다.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 활용 접근을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>의존 규격의 소속 확인</strong> - 사용 중인 규격이 어느 재단에 있고 그 재단이 기업 회원제인지 개인 실적제인지 확인해 두기</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>이전 시점 추적</strong> - 특정 규격이 기업에서 재단으로 넘어간 시점을 확인하면, 그 전후로 방향이 어떻게 달라졌는지 읽을 수 있습니다</p>
+                    <p style="line-height: 1.6;">3. <strong>공인 경로 확인</strong> - 규제 대응이 필요한 영역이라면 해당 규격이 ISO 등 공인 기구로 가는 경로가 있는지 미리 확인</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">경영진 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.4rem; color: #1a1a1a;">핵심 발견</h3>
+                    <ul class="key-findings">
+                        <li><strong>경쟁사 셋이 함께 재단을 세웠습니다:</strong> 2025년 12월 OpenAI·Anthropic·Block 이 AGENTS.md·MCP·goose 를 들고 Agentic AI Foundation 을 창립했습니다.</li>
+                        <li><strong>이전이 1년 사이에 몰렸습니다:</strong> ACP(2025-07)·MCP(2025-12)·A2A(2026-08)가 모두 Linux Foundation 계열로 갔습니다.</li>
+                        <li><strong>기증의 거래 구조는 분명합니다:</strong> 중립성과 채택 속도를 얻고, 방향 결정권과 차별화를 내줍니다.</li>
+                        <li><strong>재단마다 결정권의 소재가 다릅니다:</strong> Linux Foundation 은 기업 회원제(Platinum $500,000에 이사회 의석), Apache 는 개인 실적제(pay-to-play 금지)입니다.</li>
+                        <li><strong>소속이 품질을 보장하지는 않습니다:</strong> 재단은 거버넌스를 제공할 뿐, 코드 감사나 보안을 대신하지 않습니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">상황별 참고</h3>
+                    <p style="font-size: 0.95rem; line-height: 1.8;">
+                        <strong>규격을 고르는 조직 → 소속 재단의 회원 구조부터</strong><br>
+                        이유: 누가 의석을 갖고 있는지가 그 규격의 향후 방향을 가장 잘 예고합니다.<br>
+                        <strong>규제 대응이 필요한 조직 → 공인 기구 경로부터</strong><br>
+                        이유: 재단 규격은 인증서를 내주지 못합니다. ISO 같은 공인 기구로 가는 경로가 있는지가 중요합니다.<br>
+                        <strong>자사 기술을 표준으로 만들고 싶은 조직 → 시장이 굳기 전에</strong><br>
+                        이유: 기증의 유인은 형성기에만 유효합니다. 승자가 정해진 뒤에는 거래가 성립하지 않습니다.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 1rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정 (규격이 한 회사에 묶이지 않고 중립 지대로 모이는 것은 도입 조직에게 유리합니다. 다만 「재단에 있다」는 사실을 품질이나 중립성의 보증서로 읽지 않는 신중함이 함께 필요합니다.)</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">8.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> Linux Foundation·Anthropic·OpenAI 의 공식 발표와 각 재단의 공개 회원 안내를 1차 자료로 사용하고, 거버넌스 비교는 연구 자료로 보강했습니다.</p>
+                        <p><strong>주요 강점:</strong> AAIF 창립 프로젝트와 참여사, 회비 구간, 501(c)(6)/501(c)(3) 구분이 모두 출처를 가진 사실입니다. Apache 의 pay-to-play 금지 원칙도 확인됩니다.</p>
+                        <p><strong>개선 우선순위:</strong> ① 다섯 갈래 분류는 본 분석의 정리이며 공인된 체계가 아닙니다. ② 「대형 후원사의 영향이 실제 결정을 바꾼 사례」는 확보하지 못해 구조적 가능성만 서술했습니다. ③ 경쟁사들이 함께 재단을 세운 동기에 대한 해석은 추론이며, 각 사의 공식 설명은 중립적 발전이라는 일반적 표현에 머물러 있습니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 1rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.9rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>재단(Foundation)</strong> — 오픈소스 프로젝트를 어느 한 회사의 소유가 아닌 상태로 운영하기 위해 만들어진 조직입니다. 법률·상표·운영을 맡습니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>지정 기금(Directed Fund)</strong> — 상위 재단 안에 특정 목적을 위해 만들어지는 하위 조직입니다. Agentic AI Foundation 이 Linux Foundation 안의 지정 기금입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>de jure 표준</strong> — ISO 처럼 공식 인정을 받은 기구가 낸 표준입니다. 인증서를 발급할 수 있고 규제가 참조할 수 있습니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>de facto 표준</strong> — 공식 승인은 없지만 널리 쓰여 사실상 표준이 된 것입니다. PDF 와 HTML 처럼 나중에 공식 표준이 되는 경우도 있습니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>501(c)(6) · 501(c)(3)</strong> — 미국 비영리 조직의 법적 분류입니다. (c)(6)은 산업단체, (c)(3)은 자선단체이며, 회원 구조와 세제가 다릅니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>pay-to-play</strong> — 돈을 내면 의사결정에 영향을 미칠 수 있는 구조를 가리킵니다. Apache 는 이를 금지하고, Linux Foundation 은 후원 등급에 의석을 연결합니다.
+                    </div>
+                    <div>
+                        <strong>포크(Fork)</strong> — 오픈소스 프로젝트를 복제해 다른 방향으로 따로 발전시키는 것입니다. 오픈 라이선스인 한 언제든 가능하며, 거버넌스에 대한 최후의 견제 수단이기도 합니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 10월 9일</p>
+                    <ul>
+                        <li>• <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" target="_blank">Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF)</a></li>
+                        <li>• <a href="https://anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank">Donating the Model Context Protocol and Establishing the Agentic AI Foundation — Anthropic</a></li>
+                        <li>• <a href="https://openai.com/index/agentic-ai-foundation/" target="_blank">OpenAI co-founds Agentic AI Foundation, donates AGENTS.md</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/" target="_blank">OpenAI, Anthropic, and Block join new Linux Foundation effort — TechCrunch</a></li>
+                        <li>• <a href="https://www.flowhunt.io/blog/agentic-ai-foundation-a2a-mcp-standards/" target="_blank">A2A Joins MCP at the Linux Foundation — FlowHunt</a></li>
+                        <li>• <a href="https://www.hpcwire.com/aiwire/2026/04/09/linux-foundation-a2a-protocol-marks-one-year-with-broad-enterprise-and-cloud-adoption/" target="_blank">Linux Foundation A2A Protocol Marks One Year — AIwire</a></li>
+                        <li>• <a href="https://www.linuxfoundation.org/hubfs/lf_member_benefits_091624a.pdf" target="_blank">Benefits of Linux Foundation Membership (회원 등급·회비)</a></li>
+                        <li>• <a href="https://www.apache.org/foundation/" target="_blank">The Apache Software Foundation</a></li>
+                        <li>• <a href="https://timreview.ca/article/636" target="_blank">Governance of Open Source Software Foundations: Who Holds the Power? — TIM Review</a></li>
+                        <li>• <a href="https://dirkriehle.com/2019/09/09/managing-commercial-conflicts-of-interest-in-open-source-foundations-icsob-2019/" target="_blank">Managing Commercial Conflicts of Interest in Open Source Foundations</a></li>
+                        <li>• <a href="https://pytorch.org/blog/pytorch-foundation-announces-new-members-as-agentic-ai-demand-grows/" target="_blank">PyTorch Foundation Announces New Members</a></li>
+                        <li>• <a href="https://www.cncf.io/" target="_blank">Cloud Native Computing Foundation</a></li>
+                        <li>• <a href="https://agntcy.org/" target="_blank">AGNTCY</a></li>
+                        <li>• <a href="https://www.w3.org/" target="_blank">W3C</a></li>
+                        <li>• <a href="https://www.ietf.org/" target="_blank">IETF</a></li>
+                        <li>• <a href="https://www.1edtech.org/" target="_blank">1EdTech</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 차트 1 — Linux Foundation 회원 등급
+        const ctx1 = document.getElementById('feeChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Silver (상단값)', 'Gold', 'Platinum (이사회 의석 포함)'],
+                datasets: [{
+                    label: '연간 회비 (달러)',
+                    data: [20000, 100000, 500000],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(59, 130, 246, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(249, 115, 22)', 'rgb(59, 130, 246)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Linux Foundation 연간 회원 회비' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 차트 2 — 거버넌스 모델 비교 (본 분석의 상대 평가)
+        const ctx2 = document.getElementById('govChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['기업의 공식 영향력', '개인 기여자의 결정권', '자원 동원력', '산업 합의 속도', '단일 기업 영향에 대한 내성'],
+                datasets: [
+                    {
+                        label: 'Linux Foundation (기업 회원제)',
+                        data: [90, 35, 95, 90, 45],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: 'Apache Software Foundation (개인 실적제)',
+                        data: [15, 95, 40, 50, 90],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '우열이 아니라 설계 의도의 차이' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 공유 테마 (Ink & Paper) : 반드시 포함할 것 -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

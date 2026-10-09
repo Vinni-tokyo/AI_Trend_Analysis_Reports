@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>競い合っていた規格が同じ屋根の下へ向かう理由</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 共有テーマ (Ink & Paper)：この一行がないと配色が統一されません -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="財団が引き受けた役割、そしてその仕組みが持つ力と限界">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ja.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="競い合っていた規格が同じ屋根の下へ向かう理由">
+<meta property="og:description" content="財団が引き受けた役割、そしてその仕組みが持つ力と限界">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ja.html">
+<meta property="og:locale" content="ja_JP">
+<meta property="article:published_time" content="2026-10-09">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="競い合っていた規格が同じ屋根の下へ向かう理由">
+<meta name="twitter:description" content="財団が引き受けた役割、そしてその仕組みが持つ力と限界">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/standards-foundations-governance-20261009-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="明るさ切り替え" aria-label="明るさ切り替え">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='standards-foundations-governance-20261009-ja.html'" class="lang-btn active">日本語</button>
+                </div>
+            </div>
+            <h1>競い合っていた規格が<br>同じ屋根の下へ向かう理由</h1>
+            <div class="subtitle">財団が引き受けた役割、そしてその仕組みが持つ力と限界</div>
+            <div class="meta">レポート作成日：2026年10月9日 | 標準レポート（5-8ページ） | データ収集：2026年10月9日</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <div class="callout">
+                    <strong>本レポートの中心的な主張</strong><br>
+                    一つの会社が作った技術が「業界標準」になるには、その会社の手を離れる必要があります。
+                    財団はその移管を受け入れる中立の場であり、いま AI の分野でその移動が一度に起きています。
+                    本レポートは財団を並べ上げるのではなく、<strong>なぜ企業が自社の資産を手放すのか</strong>と
+                    <strong>その仕組みが何を保証し、何を保証しないのか</strong>を扱います。
+                </div>
+
+                <h3 class="subsection-title">1. 競合三社が一つの財団を共に設立した — Agentic AI Foundation</h3>
+                <p><strong>現状：</strong>2025年12月、Linux Foundation が <strong>Agentic AI Foundation（AAIF）</strong> の設立を発表しました。
+                注目すべきは設立の仕方です。器を先に作って案件を集めたのではなく、
+                <strong>三社がそれぞれの中核資産を持ち寄り、それによって財団が立てられました。</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>設立時の寄贈案件</h4>
+                        <p>• <strong>MCP</strong> — Anthropic の Model Context Protocol<br>
+                        • <strong>goose</strong> — Block のエージェント向け道具<br>
+                        • <strong>AGENTS.md</strong> — OpenAI が寄贈<br>
+                        三社は市場で互いに競い合っています。その三社が設立メンバーとして同じ名の下に並んだことが、
+                        この出来事の本質です。</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>集まった顔ぶれ</h4>
+                        <p>• <strong>設立：</strong>OpenAI・Anthropic・Block<br>
+                        • <strong>後援：</strong>Google・Microsoft・AWS・Bloomberg・Cloudflare<br>
+                        • <strong>構造：</strong>AAIF は Linux Foundation の下の<strong>指定基金（directed fund）</strong>です<br>
+                        • <strong>その後：</strong>Google の <strong>A2A</strong> が2026年8月17日にこの財団のホスティング案件として加わりました</p>
+                    </div>
+                </div>
+
+                <p>ここに一年前の動きを加えると絵が完成します。
+                Cisco・LangChain・LlamaIndex・Dell・Oracle・Red Hat が集まった <strong>AGNTCY</strong> 連合は、
+                2025年7月に <strong>ACP</strong> を Linux Foundation へ寄贈しました。
+                エージェント分野の主要な規格三つが、<strong>一年あまりの間に</strong>すべて同じ傘の下へ入ったことになります。</p>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" target="_blank">AAIF 設立発表（Linux Foundation）</a> |
+                    <a href="https://anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank">Anthropic — MCP の寄贈</a> |
+                    <a href="https://openai.com/index/agentic-ai-foundation/" target="_blank">OpenAI — AGENTS.md の寄贈</a>
+                </div>
+
+                <p><strong>展望：</strong>規格をめぐる争いが財団の中に入ると、争いの性格が変わります。
+                市場で相手を押し出す競争ではなく、<strong>同じ机で議席と意思決定の手続きをめぐる競争</strong>になります。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>Linux Foundation の報道発表、Anthropic と OpenAI それぞれの公式発表、TechCrunch の報道（2025年12月9日）がすべて一致します。設立案件と参加企業が一次資料で確認できます。<br>
+                        <strong>改善点：</strong>AAIF の指定基金という形が、通常の Linux Foundation 案件と統治の面でどう異なるかは、公開資料では詳しく確認できませんでした。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 財団は何をしてくれるのか — 中立性・商標・法務・運営</h3>
+                <p><strong>現状：</strong>企業が財団に案件を渡すとき受け取るものは、思いのほか具体的です。
+                財団は<strong>どの一社も過度な支配力を持たないように</strong>案件を公式に管理するために作られた組織です。
+                その役割は宣言ではなく実務によって果たされます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>財団が提供するもの</h4>
+                        <p>• <strong>法務・ライセンス支援：</strong>ライセンスの整理、貢献者の同意処理<br>
+                        • <strong>商標の管理：</strong>名称とロゴを誰がどう使えるかの整理<br>
+                        • <strong>案件運営の道具：</strong>すでに整った協働の基盤と手続き<br>
+                        • <strong>行事の支援：</strong>共同体が集まる場<br>
+                        • <strong>中立性という合図：</strong>「一社のものではない」という事実そのものが採用を助けます</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>手放すもの</h4>
+                        <p>ソフトウェアを寄贈することで、企業は<strong>そのソフトウェアへの支配を手放します。</strong><br>
+                        • 他の財団会員に<strong>同じ権利</strong>が与えられます<br>
+                        • その会員には<strong>競合他社が含まれます</strong><br>
+                        • 方向を単独で決められなくなり、手続きに従う必要が生じます<br>
+                        これが寄贈の本質的な代価です。</p>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 本サイトの2026年10月9日のレポート
+                    <a href="agent-protocols-mcp-a2a-convergence-20261009-ja.html">「規格争いは起きなかった — MCP と A2A の役割分担」</a>は、
+                    二つの規格が競争ではなく層の分担で決着したと記しました。
+                    <strong>その決着を可能にした制度的な装置が、まさにこの財団の仕組みです。</strong>
+                    一方が他方に勝つ必要がなくなったのは、どちらも一社のものではなくなったからです。
+                </div>
+
+                <p><strong>展望：</strong>中立性はただでは手に入りません。支配権と引き換えに得たものであり、
+                その取引が成り立つ理由は<strong>一社が持つ標準より、皆が使う標準のほうが大きいから</strong>です。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>財団が提供する法務・商標・運営の支援と、「支配を手放し競合に同じ権利を与える」という代価は、オープンソースの統治に関する研究資料で確認できます。<br>
+                        <strong>改善点：</strong>どの支援が実際に最も決定的かを示す定量資料は得られていません。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 種類が違えば決めることも違う — 五つの枝の地図</h3>
+                <p><strong>現状：</strong>「財団」と「標準化機関」はしばしば混ぜて語られますが、やっていることが違います。
+                どこに何があるかを分けておくと、<strong>どの問いを誰に向けるべきか</strong>がはっきりします。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>公式に認められている側</h4>
+                        <p>• <strong>ISO・IEC・ITU</strong> — 国際的に公式に認められた標準化機関です。
+                        ISO/IEC 42001 のような<strong>認証が可能な規格</strong>を出します<br>
+                        • これらが出すのは<strong>de jure（公式）標準</strong>です<br>
+                        • 認証書が発行され、規制が参照できます</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>公式認定ではないが広く使われる側</h4>
+                        <p>• <strong>W3C・IETF・IEEE・OASIS・OMG</strong><br>
+                        • W3C は厳密には標準化機関ではありません。専門家の集まりが<strong>勧告（Recommendation）</strong>を出し、
+                        その実装を強制する力は持ちません。ただしほとんどが事実上の標準として受け入れられています<br>
+                        • <strong>IETF</strong> は RFC でインターネット標準を定め、<strong>IEEE</strong> はイーサネットなどの LAN 標準を出します</p>
+                    </div>
+                </div>
+
+                <p>ここにオープンソース側の二つの枝と分野特化の協議体を加えると五つになります。
+                <strong>Linux Foundation・Apache・Eclipse</strong> のような統治財団、
+                その下の <strong>CNCF・Agentic AI Foundation・PyTorch Foundation・LF AI &amp; Data・OpenSSF</strong> のような分野別財団、
+                そして <strong>1EdTech</strong>（Open Badges・CLR）、<strong>HL7</strong>（医療）、<strong>OGC</strong>（空間情報）のような分野特化の協議体です。</p>
+
+                <p>区別の実益は明らかです。<strong>財団はコードと共同体を運営し、標準化機関は規格を公認します。</strong>
+                de facto として定着したのち de jure へ移る道筋もあります。PDF が ISO へ、HTML が ISO/IEC へ進んだのがその例です。</p>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a> |
+                    <a href="https://www.apache.org/foundation/" target="_blank">Apache Software Foundation</a> |
+                    <a href="https://www.cncf.io/" target="_blank">CNCF</a> |
+                    <a href="https://www.w3.org/" target="_blank">W3C</a> |
+                    <a href="https://www.ietf.org/" target="_blank">IETF</a> |
+                    <a href="https://www.1edtech.org/" target="_blank">1EdTech</a>
+                </div>
+
+                <p><strong>展望：</strong>AI の規格が財団で落ち着くと、次の段階は公認機関への移動である可能性が高いと見られます。
+                規制が参照できる形が必要になるためです。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>ISO・IEC・ITU の公式認定の地位、W3C が勧告を出す機関であること、de facto から de jure への移行事例（PDF・HTML）が標準化の研究資料で確認できます。<br>
+                        <strong>改善点：</strong>五つの枝という区分自体は本分析による整理です。公認された分類体系ではなく、境界が重なる組織もあります。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 企業はなぜ手放すのか — 支配を失って何を得るのか</h3>
+                <p><strong>現状：</strong>寄贈は利他的な行為ではありません。計算の立った取引です。
+                MCP の事例がその計算をよく示しています。Anthropic が支配権を手放したのち、
+                MCP は月間 SDK 取得が<strong>4億回</strong>を超え、<strong>フォーチュン500の28%</strong>が導入する規格になりました。
+                一社の接続方式のままなら届かなかった数字です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>得るもの</h4>
+                        <p>• <strong>中立性という資格：</strong>競合他社が採用できるようになります。これが最も大きいものです<br>
+                        • <strong>採用の速さ：</strong>「誰のものでもない」が導入の決裁を容易にします<br>
+                        • <strong>法的負担の分散：</strong>商標とライセンスの管理を財団が担います<br>
+                        • <strong>継続性：</strong>作った会社の事業方針が変わっても規格は残ります</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>失うもの</h4>
+                        <p>• <strong>方向を決める権利：</strong>単独では決められず、手続きに従う必要があります<br>
+                        • <strong>速さ：</strong>合意が要る分だけ遅くなります<br>
+                        • <strong>差別化：</strong>競合他社も同じ規格を使います<br>
+                        それでも手放す理由は明快です。<strong>標準になれなかった技術の支配権は、価値が小さいからです。</strong></p>
+                    </div>
+                </div>
+
+                <p>競合三社が AAIF を共に設立したのも同じ計算です。
+                エージェントの生態系が分断されれば全員が損をします。
+                <strong>各自が自社の規格を握っているより、共通の規格の上で製品として競うほうが三社すべてにとって大きいのです。</strong></p>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/" target="_blank">TechCrunch の報道</a> |
+                    <a href="https://agntcy.org/" target="_blank">AGNTCY</a>
+                </div>
+
+                <p><strong>展望：</strong>この計算が成り立つのは<strong>市場がまだ固まっていないとき</strong>です。
+                勝者が決まったあとは寄贈の誘因が消えます。いま移管が集中しているのは、エージェント市場が形成期にあるという合図でもあります。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>寄贈の損得の構造（中立性の獲得と支配権の喪失）はオープンソース統治の研究で確認でき、MCP の普及数値も複数の出典で確認できます。<br>
+                        <strong>改善点：</strong>「競合三社が共に設立した理由」の解釈は本分析の推論です。各社の公式説明は中立的な発展と標準化という一般的な表現にとどまっています。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 財団にあるから安全とは限らない — 仕組みの限界</h3>
+                <p><strong>現状：</strong>「財団案件」という札は中立性を意味しますが、その中立性の性格は財団ごとに異なります。
+                最も鮮明な対比は <strong>Linux Foundation と Apache Software Foundation</strong> の間にあります。
+                どちらも広く信頼されていますが、誰が決めるのかが正反対です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Linux Foundation — 企業会員制</h4>
+                        <p>• 法的性格：<strong>501(c)(6)</strong> 業界団体<br>
+                        • 会員：<strong>企業</strong>中心、階層型の後援<br>
+                        • 会費：Silver <strong>5,000〜20,000ドル</strong>（従業員数による）・Gold <strong>100,000ドル</strong>・Platinum <strong>500,000ドル</strong><br>
+                        • <strong>Platinum には理事会の議席が含まれます</strong><br>
+                        • 大口の後援企業が統治の議席を持ち、方向に関与する仕組みです</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Apache Software Foundation — 個人の実績制</h4>
+                        <p>• 法的性格：<strong>501(c)(3)</strong> 慈善団体<br>
+                        • 会員：<strong>個人</strong>。資格は継続的な貢献の実績によってのみ得られます<br>
+                        • <strong>pay-to-play を厳しく禁じています</strong> — 数百万ドルを出しても技術の方向への影響力はゼロであり、コードを寄与した個人のみが投票権を持ちます<br>
+                        • 運営：年およそ <strong>229万ドル</strong>規模の企業後援、分散した案件管理委員会（PMC）</p>
+                    </div>
+                </div>
+
+                <p>ここで読み取るべきは優劣ではなく<strong>性格の違い</strong>です。
+                企業会員制は資源を集め、業界の合意を速く作ることに強く、
+                個人の実績制は特定企業の影響に対してより頑健です。
+                <strong>どの財団にあるかを知れば、その案件の方向が誰の手にあるかもわかります。</strong></p>
+
+                <p>そのほかに併せて見るべき限界が三つあります。
+                <strong>意思決定の速さ</strong>は合意の仕組みである分だけ遅くなり、
+                <strong>フォーク</strong>の可能性は公開ライセンスである限り常に残り、
+                何より<strong>「財団にある」という事実がコードの品質や安全性を保証するわけではありません。</strong>
+                財団は統治を提供するのであって、監査を代わりにしてくれるわけではありません。</p>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.apache.org/foundation/" target="_blank">Apache Software Foundation</a> |
+                    <a href="https://www.linuxfoundation.org/" target="_blank">Linux Foundation</a> |
+                    <a href="https://openssf.org/" target="_blank">OpenSSF</a>
+                </div>
+
+                <p><strong>展望：</strong>AI の規格が財団へ集まるにつれ、<strong>「どの財団か」が次の問い</strong>になります。
+                企業会員制の下に置かれた規格は大口後援企業の利害により敏感にならざるをえず、
+                その感度を知ることが導入組織の危険管理に入ってきます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>会費の区分、501(c)(6)と501(c)(3)の違い、Apache の pay-to-play 禁止と個人実績制は、各財団の公開資料および統治分析で確認できます。<br>
+                        <strong>改善点：</strong>「大口後援企業の影響が実際の技術判断をどれだけ変えたか」を示す事例研究は今回得られませんでした。構造上の可能性を述べたものであり、特定事例の告発ではありません。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">五つの枝の地図 — 誰が何を決めるのか</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    各種類が決められることと決められないことを並べると、どの問いをどこへ向けるべきかがはっきりします。
+                    <em>（分類は本分析による整理であり、境界が重なる組織もあります。）</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>種類</th>
+                            <th>代表</th>
+                            <th>決めること</th>
+                            <th>決められないこと</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① オープンソース統治財団</strong></td>
+                            <td>Linux Foundation、Apache、Eclipse</td>
+                            <td>案件の運営手続き、商標、ライセンス、共同体の規則</td>
+                            <td>法的効力を持つ公認規格 — 認証書は出せません</td>
+                        </tr>
+                        <tr>
+                            <td><strong>② 分野別財団</strong></td>
+                            <td>CNCF、Agentic AI Foundation、PyTorch Foundation、LF AI &amp; Data、OpenSSF</td>
+                            <td>当該分野の案件の受け入れと卒業、技術運営委員会の構成</td>
+                            <td>上位財団の会員・会費の仕組みは変えられません</td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ 公式標準化機関</strong></td>
+                            <td>ISO、IEC、ITU</td>
+                            <td>de jure 標準、認証が可能な規格（例：ISO/IEC 42001）</td>
+                            <td>実装を自ら作ったりコードを運営したりはしません</td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ ウェブ・インターネット標準</strong></td>
+                            <td>W3C、IETF、WHATWG</td>
+                            <td>勧告と RFC — 事実上の標準になります</td>
+                            <td>実装を強制する力がありません（W3C は厳密には標準化機関ではありません）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ 分野特化の協議体</strong></td>
+                            <td>1EdTech、HL7、OGC</td>
+                            <td>当該産業のデータ規格と適合性の認証</td>
+                            <td>産業の外ではほとんど拘束力がありません</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Linux Foundation の会員等級</h3>
+                <div class="chart-container">
+                    <canvas id="feeChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    出典：Linux Foundation の公開会員案内。Silver は従業員数により5,000〜20,000ドルの範囲で、図は上限値を示しています。Platinum には理事会の議席が含まれます。
+                </p>
+
+                <h3 class="subsection-title">二つの統治モデルの性格</h3>
+                <div class="chart-container">
+                    <canvas id="govChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    本分析による相対評価です。優劣ではなく設計意図の違いを示すための比較です。
+                </p>
+
+                <h3 class="subsection-title">市場の五つの変化</h3>
+                <ul class="key-findings">
+                    <li><strong>競合が共に財団を設立しました：</strong>OpenAI・Anthropic・Block がそれぞれの資産を持ち寄り AAIF を創設しました。</li>
+                    <li><strong>移管が一年の間に集中しました：</strong>ACP（2025-07）・MCP（2025-12）・A2A（2026-08）がすべて同じ傘の下へ移りました。</li>
+                    <li><strong>中立性が採用の条件になりました：</strong>「誰のものでもない」が導入の判断を容易にします。</li>
+                    <li><strong>財団ごとに誰が決めるかが違います：</strong>企業会員制（LF）と個人実績制（ASF）は正反対の設計です。</li>
+                    <li><strong>財団所属が品質を保証するわけではありません：</strong>統治は提供されますが、監査は別です。</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>依存する規格の所属確認</strong> - 使用中の規格がどの財団にあり、その財団が企業会員制か個人実績制かを確認しておく</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>移管時期の把握</strong> - ある規格が企業から財団へ移った時期を確認すると、その前後で方向がどう変わったかを読み取れます</p>
+                    <p style="line-height: 1.6;">3. <strong>公認への道筋の確認</strong> - 規制対応が必要な領域なら、その規格が ISO などの公認機関へ向かう道筋があるかを事前に確認</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>競合三社が共に財団を設立しました：</strong>2025年12月、OpenAI・Anthropic・Block が AGENTS.md・MCP・goose を持ち寄り Agentic AI Foundation を創設しました。</li>
+                        <li><strong>移管が一年の間に集中しました：</strong>ACP（2025-07）・MCP（2025-12）・A2A（2026-08）がすべて Linux Foundation 系へ移りました。</li>
+                        <li><strong>寄贈の取引構造は明快です：</strong>中立性と採用の速さを得て、方向を決める権利と差別化を手放します。</li>
+                        <li><strong>財団ごとに決定権の所在が違います：</strong>Linux Foundation は企業会員制（Platinum 50万ドルに理事会議席）、Apache は個人実績制（pay-to-play 禁止）です。</li>
+                        <li><strong>所属が品質を保証するわけではありません：</strong>財団は統治を提供するだけで、コードの監査や安全性を代行しません。</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">状況別の参考</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>規格を選ぶ組織 → 所属財団の会員構造から</strong><br>
+                        理由：誰が議席を持っているかが、その規格の今後の方向を最もよく予告します。<br>
+                        <strong>規制対応が必要な組織 → 公認機関への道筋から</strong><br>
+                        理由：財団の規格は認証書を出せません。ISO などの公認機関へ向かう道筋があるかが重要です。<br>
+                        <strong>自社技術を標準にしたい組織 → 市場が固まる前に</strong><br>
+                        理由：寄贈の誘因は形成期にのみ有効です。勝者が決まったあとは取引が成り立ちません。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>肯定。規格が一社に縛られず中立の場へ集まることは導入する組織にとって有利です。ただし「財団にある」という事実を品質や中立性の保証書として読まない慎重さも併せて必要です。</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">8.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>Linux Foundation・Anthropic・OpenAI の公式発表と各財団の公開会員案内を一次資料として用い、統治の比較は研究資料で補強しました。</p>
+                        <p><strong>主な強み：</strong>AAIF の設立案件と参加企業、会費の区分、501(c)(6)と501(c)(3)の違いがいずれも出典のある事実です。Apache の pay-to-play 禁止の原則も確認できます。</p>
+                        <p><strong>改善の優先順位：</strong>①五つの枝の分類は本分析による整理であり、公認された体系ではありません。②「大口後援企業の影響が実際の判断を変えた事例」は得られず、構造上の可能性のみを述べました。③競合が共に財団を設立した動機の解釈は推論であり、各社の公式説明は中立的な発展という一般的な表現にとどまっています。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>財団（Foundation）</strong> — オープンソース案件を一社の所有ではない状態で運営するために作られた組織です。法務・商標・運営を担います。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>指定基金（Directed Fund）</strong> — 上位財団の中に特定の目的のために作られる下位組織です。Agentic AI Foundation は Linux Foundation の中の指定基金です。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>de jure 標準</strong> — ISO のように公式に認められた機関が出した標準です。認証書を発行でき、規制が参照できます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>de facto 標準</strong> — 公式の承認はないものの広く使われ、事実上の標準になったものです。PDF や HTML のように後から公式標準になる場合もあります。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>501(c)(6)・501(c)(3)</strong> — 米国の非営利組織の法的分類です。(c)(6)は業界団体、(c)(3)は慈善団体で、会員構造と税制が異なります。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>pay-to-play</strong> — 金銭を出せば意思決定に影響を及ぼせる仕組みを指します。Apache はこれを禁じ、Linux Foundation は後援の等級に議席を結びつけています。
+                    </div>
+                    <div>
+                        <strong>フォーク（Fork）</strong> — オープンソース案件を複製して別の方向へ発展させることです。公開ライセンスである限りいつでも可能で、統治に対する最後の歯止めでもあります。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年10月9日</p>
+                    <ul>
+                        <li>• <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation" target="_blank">Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF)</a></li>
+                        <li>• <a href="https://anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank">Donating the Model Context Protocol and Establishing the Agentic AI Foundation — Anthropic</a></li>
+                        <li>• <a href="https://openai.com/index/agentic-ai-foundation/" target="_blank">OpenAI co-founds Agentic AI Foundation, donates AGENTS.md</a></li>
+                        <li>• <a href="https://techcrunch.com/2025/12/09/openai-anthropic-and-block-join-new-linux-foundation-effort-to-standardize-the-ai-agent-era/" target="_blank">OpenAI, Anthropic, and Block join new Linux Foundation effort — TechCrunch</a></li>
+                        <li>• <a href="https://www.flowhunt.io/blog/agentic-ai-foundation-a2a-mcp-standards/" target="_blank">A2A Joins MCP at the Linux Foundation — FlowHunt</a></li>
+                        <li>• <a href="https://www.hpcwire.com/aiwire/2026/04/09/linux-foundation-a2a-protocol-marks-one-year-with-broad-enterprise-and-cloud-adoption/" target="_blank">Linux Foundation A2A Protocol Marks One Year — AIwire</a></li>
+                        <li>• <a href="https://www.linuxfoundation.org/hubfs/lf_member_benefits_091624a.pdf" target="_blank">Benefits of Linux Foundation Membership（等級・会費）</a></li>
+                        <li>• <a href="https://www.apache.org/foundation/" target="_blank">The Apache Software Foundation</a></li>
+                        <li>• <a href="https://timreview.ca/article/636" target="_blank">Governance of Open Source Software Foundations: Who Holds the Power? — TIM Review</a></li>
+                        <li>• <a href="https://dirkriehle.com/2019/09/09/managing-commercial-conflicts-of-interest-in-open-source-foundations-icsob-2019/" target="_blank">Managing Commercial Conflicts of Interest in Open Source Foundations</a></li>
+                        <li>• <a href="https://pytorch.org/blog/pytorch-foundation-announces-new-members-as-agentic-ai-demand-grows/" target="_blank">PyTorch Foundation Announces New Members</a></li>
+                        <li>• <a href="https://www.cncf.io/" target="_blank">Cloud Native Computing Foundation</a></li>
+                        <li>• <a href="https://agntcy.org/" target="_blank">AGNTCY</a></li>
+                        <li>• <a href="https://www.w3.org/" target="_blank">W3C</a></li>
+                        <li>• <a href="https://www.ietf.org/" target="_blank">IETF</a></li>
+                        <li>• <a href="https://www.1edtech.org/" target="_blank">1EdTech</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 図1 — Linux Foundation の会員等級
+        const ctx1 = document.getElementById('feeChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Silver（上限値）', 'Gold', 'Platinum（理事会議席つき）'],
+                datasets: [{
+                    label: '年間会費（ドル）',
+                    data: [20000, 100000, 500000],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(59, 130, 246, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(249, 115, 22)', 'rgb(59, 130, 246)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Linux Foundation の年間会員会費' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 図2 — 統治モデルの比較（本分析による相対評価）
+        const ctx2 = document.getElementById('govChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['企業の公式な影響力', '個人の寄与者の決定権', '資源の動員力', '業界合意の速さ', '単一企業の影響への耐性'],
+                datasets: [
+                    {
+                        label: 'Linux Foundation（企業会員制）',
+                        data: [90, 35, 95, 90, 45],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: 'Apache Software Foundation（個人実績制）',
+                        data: [15, 95, 40, 50, 90],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '優劣ではなく設計意図の違い' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 共有テーマ (Ink & Paper)：必ず含めること -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
