@@ -4,7 +4,13 @@
 var SITE = {
   name: 'AI Trend Analysis Reports',
   short: 'AI Trend Reports',
-  url:  'https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/'
+  url:  'https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/',
+  /* 편집 선언 — 이 사이트가 다르게 하는 일 한 줄. 히어로·공유·인쇄 출처가 함께 참조합니다 */
+  claim: {
+    ko: '주장은 1차 자료로, 신뢰도는 공개로',
+    en: 'Primary sources, published confidence',
+    ja: '主張は一次資料に、信頼度は公開に'
+  }
 };
 
 /* 눈에 보이는 대각선 워터마크 — 기본 꺼짐 (true 로 켤 수 있음) */
@@ -109,6 +115,11 @@ var MAIL = {
     return (document.documentElement.getAttribute('lang') || 'ko').slice(0, 2);
   }
 
+  /* 편집 선언을 현재 언어로 */
+  function claim() {
+    return SITE.claim[lang2()] || SITE.claim.ko;
+  }
+
   /* ① 화면·인쇄 워터마크 (본문 뒤, 클릭 통과) */
   function watermark() {
     if (!SHOW_WATERMARK) return;
@@ -134,7 +145,8 @@ var MAIL = {
     var d = document.createElement('div');
     d.className = 'print-source';
     d.setAttribute('aria-hidden', 'true');
-    d.textContent = SITE.name + ' · ' + location.href.replace(/^file:.*\//, SITE.url);
+    d.textContent = SITE.name + ' — ' + claim() + ' · ' +
+                    location.href.replace(/^file:.*\//, SITE.url);
     document.body.appendChild(d);
   }
 
@@ -148,7 +160,8 @@ var MAIL = {
       var L = lang2();
       var line = { ko: '출처', en: 'Source', ja: '出典' }[L] || '출처';
       var url  = location.href.indexOf('http') === 0 ? location.href : SITE.url;
-      var note = '\n\n— ' + line + ': ' + (document.title || SITE.name) + ' / ' + SITE.name + '\n' + url;
+      var note = '\n\n— ' + line + ': ' + (document.title || SITE.name) + ' / ' + SITE.name +
+                 ' (' + claim() + ')\n' + url;
       e.clipboardData.setData('text/plain', text + note);
       e.preventDefault();
     });
