@@ -3,7 +3,26 @@
  * Handles comments, likes, and donations
  */
 
-const API_BASE = 'http://192.168.9.184:3389/api';
+/* 🔴 좋아요·댓글 백엔드는 개발 PC 의 사설 주소(192.168.x.x)에 있다.
+   이 주소를 공개 사이트에서 부르면
+     ① 브라우저가 "로컬 네트워크의 다른 기기에 액세스" 권한을 묻고
+     ② https 페이지에서 http 를 부르는 혼합 콘텐츠가 되며
+     ③ 실패 후 "Start the backend server" 라는 개발용 문구가 방문자에게 보인다.
+   그래서 공개 호스트에서는 아무 요청도 하지 않고 참여 영역 자체를 감춘다.
+   백엔드를 공개 주소(https)로 옮기면 PUBLIC_API 에 그 주소를 넣으면 된다. */
+const LOCAL_API  = 'http://192.168.9.184:3389/api';
+const PUBLIC_API = null;            /* 공개용 백엔드가 생기면 여기에 https 주소 */
+
+const IS_LOCAL = location.protocol === 'file:' ||
+  /^(localhost|127\.|0\.0\.0\.0|\[::1\]|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/
+    .test(location.hostname);
+
+const API_BASE = IS_LOCAL ? LOCAL_API : PUBLIC_API;
+
+/* 백엔드가 없으면 참여 영역을 감춘다 — 그려지기 전에 표시를 붙인다 */
+if (!API_BASE) {
+  document.documentElement.classList.add('no-interactions');
+}
 
 // Get report ID from filename
 function getReportId() {
@@ -171,6 +190,7 @@ function escapeHtml(text) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    if (!API_BASE) return;          /* 공개 사이트에서는 아무것도 부르지 않는다 */
     initLikeButton();
     initComments();
 });
