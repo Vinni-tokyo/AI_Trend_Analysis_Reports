@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新卒採用が減った理由は AI が仕事を取ったからではない — 見極められなくなったからだ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 共有テーマ (Ink & Paper)：この一行がないと配色が統一されません -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="評価が難しくなったと答えた雇用主は54%が新卒採用を減らし、そうでない雇用主は20%でした">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/entry-level-hiring-evaluation-collapse-20261013-ja.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="新卒採用が減った理由は AI が仕事を取ったからではない — 見極められなくなったからだ">
+<meta property="og:description" content="評価が難しくなったと答えた雇用主は54%が新卒採用を減らし、そうでない雇用主は20%でした">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/entry-level-hiring-evaluation-collapse-20261013-ja.html">
+<meta property="og:locale" content="ja_JP">
+<meta property="article:published_time" content="2026-10-13">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="新卒採用が減った理由は AI が仕事を取ったからではない — 見極められなくなったからだ">
+<meta name="twitter:description" content="評価が難しくなったと答えた雇用主は54%が新卒採用を減らし、そうでない雇用主は20%でした">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/entry-level-hiring-evaluation-collapse-20261013-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/entry-level-hiring-evaluation-collapse-20261013-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/entry-level-hiring-evaluation-collapse-20261013-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/entry-level-hiring-evaluation-collapse-20261013-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="明るさ切り替え" aria-label="明るさ切り替え">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='entry-level-hiring-evaluation-collapse-20261013-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='entry-level-hiring-evaluation-collapse-20261013-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='entry-level-hiring-evaluation-collapse-20261013-ja.html'" class="lang-btn active">日本語</button>
+                </div>
+            </div>
+            <h1>新卒採用が減った理由は AI が仕事を取ったからではない<br>— 見極められなくなったからだ</h1>
+            <div class="subtitle">評価が難しくなったと答えた雇用主は54%が新卒採用を減らし、そうでない雇用主は20%でした</div>
+            <div class="meta">レポート作成日：2026年10月13日 | 標準レポート（5-8ページ） | データ収集：2026年10月13日</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <div class="callout">
+                    <strong>本レポートの中心的な主張</strong><br>
+                    新卒採用の減少は、ふつう「AI が若手の仕事を置き換えている」と説明されます。
+                    2026年10月に出た三つの調査を重ねると、別の因果が見えてきます。
+                    <strong>AI によって評価が難しくなったと答えた雇用主のうち54%が新卒採用の縮小を報告し、そう答えなかった雇用主では20%でした。</strong>
+                    <strong>減ったのは仕事ではなく、応募者を見極められるという自信でした。</strong>
+                </div>
+
+                <h3 class="subsection-title">1. 評価そのものが崩れている — 雇用主の60%</h3>
+                <p><strong>現状：</strong>Western Governors University（WGU）の Workforce Decoded 報告書は、
+                米国の採用担当者<strong>3,128人</strong>を調査しました。最も際立った結果は、どのスキルが大事かではなく
+                <strong>スキルを見分けられるのか</strong>に関するものでした。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>効かなくなった指標</h4>
+                        <p>• <strong>60%：</strong>AI のために応募者の実際の力量を評価しにくくなったと答えました<br>
+                        • <strong>およそ5人に1人：</strong><strong>面接の相手が人なのか AI なのかを確かめること</strong>を
+                        主要な難題に挙げました<br>
+                        • <strong>16% → 32%：</strong>「AI スキルをどう効果的に評価するかまだ模索中」という回答が
+                        2025年から2026年のあいだに<strong>二倍</strong>になりました<br>
+                        • つまり時間が経って改善したのではなく、<strong>以前よりわからなくなっています</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>それでも資格は信頼されている</h4>
+                        <p>• <strong>68%：</strong>学位はいまも重要だと答えました<br>
+                        • <strong>86%：</strong>修了証を準備度の有効な指標として見ています<br>
+                        • <strong>46%：</strong>今後1年でスキル重視の採用に比重を移す計画です<br>
+                        • 注目すべきは学位と修了証を<strong>同時に</strong>信頼している点です —
+                        置き換えではなく<strong>判断の根拠を増やす</strong>方向に動きました</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.wgu.edu/" target="_blank">Western Governors University</a> |
+                    <a href="https://www.wgu.edu/content/dam/wgu-65-assets/web-sites/impact/wgus-workforce-decoded-report.pdf" target="_blank">Workforce Decoded 報告書（PDF）</a>
+                </div>
+
+                <p><strong>展望：</strong>「面接の相手が人かどうか確かめにくい」という回答は、この調査で最も新しい項目です。
+                履歴書の盛り過ぎは古くからの問題ですが、<strong>面接という最後の検証手段そのものが揺らぐこと</strong>は種類が違います。
+                次の項目がその結果を数字で示します。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>標本数（3,128人）と各数値（60%・およそ5人に1人・16→32%・68%・86%・46%）が、発表資料とこれを引用した報道で確認できます。<br>
+                        <strong>改善点：</strong>調査の実施時期と標本の抽出方法を一次資料で確認できていません。調査主体が学位と修了証を発行する大学である点も、解釈の参考として必要です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 見極められないことが新卒採用を減らした — 54%対20%</h3>
+                <p><strong>現状：</strong>同じ調査で最も重要な一行は相関です。
+                評価が難しくなったと答えた集団とそうでない集団に分けると、
+                <strong>新卒採用の縮小の比率が二倍半以上開きます。</strong></p>
+
+                <div class="chart-container">
+                    <canvas id="gapChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    出典：WGU Workforce Decoded（米国の採用担当者3,128人）。これは相関であり、因果を立証する設計ではありません — 下の信頼性評価に記しています。
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>数字が語ること</h4>
+                        <p>• <strong>54%：</strong>AI のために評価が難しくなったと答えた雇用主のうち、
+                        AI が自社の新卒採用を減らしたと答えた比率<br>
+                        • <strong>20%：</strong>評価が難しくなっていないと答えた雇用主の同じ回答の比率<br>
+                        • 差は<strong>34ポイント</strong>、比率では<strong>2.7倍</strong>です<br>
+                        • 二つの集団は同じ環境で同じ道具を使える状況にあります —
+                        違うのは<strong>見極められるかについての自己評価</strong>です</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>なぜ新卒が先に減るのか</h4>
+                        <p>• <strong>経験者は過去の実績で検証されます。</strong>
+                        前職の成果物と評判の照会ができます<br>
+                        • <strong>新卒は課題と面接がほぼすべてです。</strong>
+                        その二つが揺らぐと、残る根拠がありません<br>
+                        • <strong>採用を誤る費用が体感として大きくなります。</strong>
+                        見極められないなら、採用自体を保留するほうが安全に感じられます<br>
+                        • これは<strong>仕事が消えたのとは別の現象</strong>です —
+                        席はあるのに<strong>埋めないでいる</strong>のです</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.wgu.edu/newsroom/press-release/2026/01/employers-share-hiring-outlook-2026.html" target="_blank">WGU の発表</a> |
+                    <a href="https://www.ziprecruiter-research.org/economic-insights-research/ai-employer-report-2026" target="_blank">ZipRecruiter — 2026 AI Employer Report</a>
+                </div>
+
+                <p><strong>展望：</strong>この読み方が正しければ処方が変わります。
+                「AI に置き換えられる仕事を避けて進路を取れ」ではなく
+                <strong>「何ができるかを相手が確認できる形にせよ」</strong>になります。
+                個人にとっても、教育機関にとっても課題が変わります。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>54%と20%の二つの数値、そして二つの集団に分けて比べた構造が発表資料で確認できます。差の大きさから、単純な標本誤差とは見にくいです。<br>
+                        <strong>改善点：</strong>🔴 <strong>これは相関であり因果ではありません。</strong>「評価が難しくなったから採用を減らした」と「採用を減らした組織が難しさをより強く感じる」をこのデータでは分けられません。「なぜ新卒が先に減るのか」の四項目は<strong>本分析の推定</strong>です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 需要の構成が反転した — 基礎 −25%、手で作る側 +51%</h3>
+                <p><strong>現状：</strong>Workday が2026年10月5日に公表した Global Workforce Report は、
+                <strong>550社以上</strong>の採用要請（job requisition）に記されたスキルのデータを分析しました。
+                「AI スキルの需要が増えた」という通念が<strong>半分しか当たっていない</strong>ことが見えてきます。</p>
+
+                <div class="chart-container">
+                    <canvas id="demandChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    出典：Workday Global Workforce Report（2026-10-05）。550社以上の採用要請のスキルデータに基づきます。
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>二つの方向に分かれた需要</h4>
+                        <p>• <strong>基礎的な AI スキル −25%：</strong>単純な指示文の作成のような基礎の需要は
+                        2025年末まで上がり、<strong>2026年1月に頂点</strong>を打ってから25%下がりました<br>
+                        • <strong>手で作るスキル +51%：</strong>AI の道具づくり・業務の流れの自動化・AI エンジニアリングは
+                        2025年9月から2026年7月のあいだに51%上がりました<br>
+                        • つまり<strong>「AI を使える」の値が下がり、「AI を作れる」の値が上がりました</strong><br>
+                        • 基礎のスキルは早々に<strong>基本の素養</strong>になりました — 違いを作る点ではなくなりました</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>仕事は減っていない</h4>
+                        <p>• <strong>40%：</strong>経営層が AI によって
+                        <strong>いまいる従業員からより多くを引き出す</strong>ことを期待すると答えました<br>
+                        • <strong>28%：</strong>人員の削減を期待すると答えました — 前者のほうが多いです<br>
+                        • 報告書自身の言い方は<strong>「AI は仕事を削るより書き換えている」</strong>です<br>
+                        • 同時に<strong>従業員が必要と感じるものと会社が支援するもののあいだに隔たり</strong>があると指摘しています<br>
+                        • 標本：正社員<strong>6,000人</strong>の調査（2026年9月）と、別の調査<strong>5,944人</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://newsroom.workday.com/2026-10-05-Workday-Global-Workforce-Report-AI-Is-Rewriting-Jobs-More-Than-Its-Cutting-Them" target="_blank">Workday Global Workforce Report</a> |
+                    <a href="https://www.workday.com/" target="_blank">Workday</a>
+                </div>
+
+                <p><strong>展望：</strong>この二つの数字は第2項の評価の問題と噛み合います。
+                <strong>基礎のスキルは評価しやすいのに値が下がり、値が上がった側は評価しにくいのです。</strong>
+                指示文を書けるかは10分で確かめられますが、業務の流れを設計できるかはそうではありません。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>二つの数値（−25%・+51%）がいずれも期間とともに明示され、データの出所（550社以上の採用要請）と調査の標本（6,000人・5,944人）まで公開されています。40%／28%の比較も原文の引用です。<br>
+                        <strong>改善点：</strong>基礎スキルの下落は「2026年1月の頂点以降」と表現されており、下落幅を比べる絶対の基準線は示されていません。調査主体が採用管理ソフトの提供企業である点も参考として必要です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 新卒に先任の力量を求める — 7倍</h3>
+                <p><strong>現状：</strong>PwC の2026 Global AI Jobs Barometer は、労働市場が
+                <strong>二つの道筋に分かれつつある</strong>と整理しました。
+                そのうち新卒の段階の数値が第2項を裏づけます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>新卒の席で起きていること</h4>
+                        <p>• <strong>7倍：</strong>米国では AI への露出が高い新卒の職務が、
+                        判断力や統率力のように<strong>従来は先任に求められてきた「人の力量」</strong>を
+                        求める可能性が7倍高いです<br>
+                        • <strong>+35% 対 −10%：</strong>2019年以降、「先任化した」AI 露出の新卒職務は35%増え、
+                        それ以外の新卒職務は10%減りました<br>
+                        • つまり<strong>新卒の席が消えたのではなく、性格が変わりました</strong><br>
+                        • そして変わった側が求める力量は<strong>履歴書で示すのが最も難しいもの</strong>です</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>二つに分かれた労働市場</h4>
+                        <p>• <strong>専門化：</strong>AI が反復の作業を取り除き、
+                        人の専門性・判断・創造の値が上がる側<br>
+                        • <strong>民主化：</strong>複雑な仕事への入り口が低くなり、
+                        役割がより専門的でない活動へ移る側<br>
+                        • 専門化した職種（放射線診断医・採用担当など）は<strong>仕事の伸びが2倍</strong>、
+                        <strong>給与の伸びが42%速い</strong><br>
+                        • <strong>AI スキルの賃金上乗せ62%</strong>（前年の57%から上昇）、
+                        AI スキルを求める仕事は<strong>69%増</strong>に対し市場全体は<strong>9%</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.pwc.com/gx/en/issues/artificial-intelligence/job-barometer/2026/2026-global-ai-jobs-barometer-full-report.pdf" target="_blank">PwC 2026 Global AI Jobs Barometer（PDF）</a> |
+                    <a href="https://www.pwc.com/" target="_blank">PwC</a>
+                </div>
+
+                <p><strong>展望：</strong>新卒に先任の判断力を求めることは
+                <strong>構造としての矛盾</strong>です — 判断力は経験から出てくるのに、経験する席がそれを先に求めます。
+                この矛盾を埋められるのは<strong>経験を積んだ過程が外から確認できる形で残る</strong>場合だけです。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>数値（7倍・+35%／−10%・2倍・42%・62%・69%対9%）が PwC の公式発表と地域ごとの発表資料で一致して確認でき、専門化と民主化の定義も原文の表現です。<br>
+                        <strong>改善点：</strong>「7倍」と「+35%／−10%」は米国の数値であり、世界平均ではありません。「構造としての矛盾」という評価は<strong>本分析の解釈</strong>です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. では何が信頼されるのか — 作った過程が残る証拠</h3>
+                <p><strong>現状：</strong>三つの調査を重ねると一つの要求が見えてきます。
+                雇用主は<strong>成果物だけではもう見分けられない</strong>と言っています。
+                AI が作った成果物と人が作った成果物の差が縮んだからです。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>信頼を失っていく証拠</h4>
+                        <p>• <strong>提出型の課題：</strong>自宅で作って提出する作品集や課題物 —
+                        誰がどれだけ関わったかがわかりません<br>
+                        • <strong>自己申告：</strong>「○○ができます」という履歴書の文言<br>
+                        • <strong>非対面の面接の回答：</strong>回答者のおよそ5人に1人が
+                        <strong>人かどうか確かめること</strong>を難題に挙げました<br>
+                        • <strong>知識の確認試験：</strong>外部の道具で答えられる形の評価</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>相対的に信頼が残る証拠</h4>
+                        <p>• <strong>過程が記録された作業：</strong>途中の段階と修正の履歴が一緒に残る成果物<br>
+                        • <strong>第三者が発行した修了証：</strong>雇用主の<strong>86%</strong>が
+                        準備度の有効な指標として見ています<br>
+                        • <strong>学位：</strong><strong>68%</strong>がいまも重要だと答えました —
+                        評価が難しくなるほど、機関が保証した信号の値が上がります<br>
+                        • <strong>観察された遂行：</strong>実際の業務の場で人が一緒に見て確かめた記録<br>
+                        • 共通点は<strong>結果ではなく過程に第三者がいたこと</strong>です</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.1edtech.org/standards/open-badges" target="_blank">1EdTech Open Badges</a> |
+                    <a href="https://www.imsglobal.org/" target="_blank">1EdTech Consortium</a> |
+                    <a href="https://www.wgu.edu/" target="_blank">Western Governors University</a>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 本サイトの2026年10月9日のレポート
+                    <a href="credentials-continuous-verification-20261009-ja.html">「一度得た資格から、いまもできるという証拠へ」</a>は
+                    <strong>資格の有効な期間</strong>を扱いました。企業の82%が AI 研修を提供しているのに59%がいまもスキルの開きを報告している、という資料でした。<br>
+                    本レポートは同じ軸の<strong>別の問い</strong>です — あちらが「いつまで有効か」を問うたのに対し、
+                    こちらは<strong>「そもそも確認できるのか」</strong>を問います。評価の可能性が先に崩れると、有効期間は議論にすらなりません。
+                </div>
+
+                <p><strong>展望：</strong>資格の体系の次の課題は<strong>難しさを上げることではなく過程を残すこと</strong>に見えます。
+                何を学んだかより<strong>どう学び、誰がそれを見たか</strong>が信号になります。
+                ただしこれは測る費用を上げる方向なので、教育と採用のどちら負担を負うかが次の争点になります。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>86%（修了証）・68%（学位）・およそ5人に1人（人かどうかの確認）は確認された数値であり、評価が難しくなるほど機関の保証した信号が信頼されるという構図を裏づけます。<br>
+                        <strong>改善点：</strong>「信頼を失っていく証拠」と「信頼が残る証拠」の分類は<strong>本分析の提言</strong>であり、いずれの調査も証拠の種類ごとの信頼度を直接測ったものではありません。「過程の記録」が実際に採用の判断に使われる比率は確認できていません。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">力量の証拠の四層 — 確認できるかを基準に</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    製品の比較ではなく<strong>雇用主が力量を確かめる手段</strong>を、確認できる度合いの順に並べました。
+                    下へ行くほど偽りにくくなりますが、作る費用も確かめる費用も大きくなります。
+                    <em>（本分析による分類です。）</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>層</th>
+                            <th>証拠の形</th>
+                            <th>AI で揺らいだ度合い</th>
+                            <th>関連する実測</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>第1層 — 自己申告</strong></td>
+                            <td>履歴書の文言、志望書、「できます」</td>
+                            <td><strong>大きく揺らぎました</strong> — 書くこと自体が自動化されました</td>
+                            <td>雇用主の60%が実際の力量の評価が難しくなったと回答</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第2層 — 提出型の成果物</strong></td>
+                            <td>作品集、課題物、自宅で書いたコード</td>
+                            <td><strong>大きく揺らぎました</strong> — 関わりの度合いがわかりません</td>
+                            <td>「AI スキルの評価法を模索中」が16%→32%で二倍</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第3層 — 機関が発行した資格</strong></td>
+                            <td>学位、修了証、第三者の認証</td>
+                            <td><strong>比較的保たれています</strong> — 発行する主体が別にいます</td>
+                            <td>学位68%・修了証86%が有効な指標と回答</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第4層 — 観察された遂行</strong></td>
+                            <td>実際の業務の場で人が一緒に見た記録、過程が残る作業</td>
+                            <td><strong>最も揺らぎません</strong> — ただし測る費用が最大です</td>
+                            <td>およそ5人に1人が「相手は人か」を難題に挙げた背景</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">三つの調査がそれぞれ測ったもの</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>調査</th>
+                            <th>発表主体・時点</th>
+                            <th>標本</th>
+                            <th>本レポートで用いた主な数値</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Workforce Decoded</strong></td>
+                            <td>WGU・2026年10月</td>
+                            <td>米国の採用担当者3,128人</td>
+                            <td>評価が難しい60% / 新卒縮小 <strong>54%対20%</strong> / 模索中16→32% / 学位68%・修了証86%・スキル重視拡大46%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Global Workforce Report</strong></td>
+                            <td>Workday・2026-10-05</td>
+                            <td>550社以上の採用要請＋従業員6,000人・5,944人の調査</td>
+                            <td>基礎 AI スキル <strong>−25%</strong>（2026-01の頂点以降） / 手で作るスキル <strong>+51%</strong>（2025-09〜2026-07） / 成果拡大の期待40%対削減の期待28%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Global AI Jobs Barometer</strong></td>
+                            <td>PwC・2026年</td>
+                            <td>世界（一部の数値は米国基準）</td>
+                            <td>新卒に先任の力量を求める <strong>7倍</strong>（米国） / 先任化した新卒 <strong>+35%</strong> 対それ以外 <strong>−10%</strong>（2019年以降） / AI スキルの上乗せ <strong>62%</strong> / AI スキルの仕事69%対全体9%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hiring Benchmark Report</strong></td>
+                            <td>Criteria Corp・2026年10月</td>
+                            <td>採用の専門家</td>
+                            <td>適したスキルを備えた質の高い応募者を見つけることが最大の課題という回答 <strong>55%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場の五つの変化</h3>
+                <ul class="key-findings">
+                    <li><strong>評価の可能性が採用の規模を左右し始めました：</strong>評価が難しいと答えた側の新卒縮小の比率が2.7倍でした。</li>
+                    <li><strong>基礎的な AI スキルの値が下がりました：</strong>2026年1月の頂点以降25%下落。「AI を使える」はもう違いを作る点ではありません。</li>
+                    <li><strong>新卒の席の性格が変わりました：</strong>先任化した新卒職務は35%増え、それ以外の新卒職務は10%減りました。</li>
+                    <li><strong>機関が保証した信号の値が上がりました：</strong>学位68%、修了証86%。自己申告が揺らぐほど第三者の発行が信頼されます。</li>
+                    <li><strong>人員の削減より職務の組み替えが優勢です：</strong>経営層の40%が成果の拡大を、28%が人員の削減を期待しました。</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>証拠の層の点検</strong> - 自社の採用の流れが第1層から第4層のどの証拠に頼っているかを書き出し、揺らいだ層にかかる比重を確かめる</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>過程が残る課題の設計</strong> - 成果物だけを受け取る課題を、途中の段階と修正の履歴が一緒に残る形に変えてみる</p>
+                    <p style="line-height: 1.6;">3. <strong>基礎と構築の切り分け</strong> - 採用要請に書く AI スキルが基礎（指示文）なのか構築（業務の流れ・エンジニアリング）なのかを区別して記す</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>見極められるかが採用を左右しました：</strong>AI のために力量の評価が難しくなったと答えた雇用主のうち54%が新卒採用の縮小を報告し、そうでない雇用主は20%でした。差は2.7倍です。</li>
+                        <li><strong>面接という最後の検証が揺らいでいます：</strong>採用担当者のおよそ5人に1人が、面接の相手が人なのかを確かめることを主要な難題に挙げました。評価法を模索中という回答は16%から32%へ二倍になりました。</li>
+                        <li><strong>基礎的な AI スキルの値が下がりました：</strong>単純な指示文の水準の需要は2026年1月の頂点以降25%減り、AI の道具づくり・業務の流れの自動化の需要は51%増えました。</li>
+                        <li><strong>新卒に先任の力量を求めます：</strong>AI への露出が高い米国の新卒職務は判断力や統率力を求める可能性が7倍高く、先任化した新卒職務は2019年以降35%増えました。</li>
+                        <li><strong>機関が保証した信号の値が上がりました：</strong>学位68%、修了証86%が有効な指標と評価されました。自己申告と提出型の成果物が揺らいだ結果として読めます。</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">状況別の参考</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>採用する組織 → 証拠の層にかかる比重から</strong><br>
+                        理由：自己申告と提出型の成果物に頼る比重が大きいなら、評価の信頼度はすでに落ちています。採用の規模を減らすより、測り方を変えるほうが費用が小さいです。<br>
+                        <strong>教育や研修を設計する組織 → 基礎ではなく構築の側へ</strong><br>
+                        理由：基礎的な AI スキルの需要は頂点を過ぎて下落中です。値が上がる側は道具を作り、業務の流れを自動化する力量です。<br>
+                        <strong>個人の進路として → 過程が残る経験を</strong><br>
+                        理由：成果物だけでは見分けられません。誰が一緒に見て、どの段階を経たかが残る経験が、相対的に信頼を保ちます。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>中立。仕事そのものが消えつつあるという語りはデータに裏づけられていません — 経営層は削減（28%）より成果の拡大（40%）を期待しており、新卒の職務は消えたのではなく性格が変わりました。ただし評価の可能性の低下は明確で、それが新卒採用の縮小と強く結びついている点は、教育と採用の両方に具体的な課題を残します。</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">7.5/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>2026年10月に公表された互いに独立した三つの大規模調査（WGU・Workday・PwC）を重ねて読んだ事実に基づく分析です。</p>
+                        <p><strong>主な強み：</strong>三つの調査すべてが標本の規模と測定の期間を公開しており、主要な数値が公式の発表資料とこれを引用した報道で一致して確認できます。異なる主体が異なる方法で測ったのに、結論が同じ方向を指しています — 「評価が難しくなり、基礎スキルの値が下がり、新卒の席の要求が上がった」。</p>
+                        <p><strong>改善の優先順位：</strong>①🔴 <strong>54%対20%は相関であり因果ではありません。</strong>向きを逆にしてもデータと矛盾しません。②証拠の四層の分類は<strong>本分析の提案</strong>であり、公認された体系ではありません。③三つの調査はいずれも利害のある主体（大学・採用ソフトの提供企業・会計助言会社）が公表しています。④PwC の7倍と±35／10%は米国の数値であり、世界平均ではありません。⑤WGU の調査の実施時期と標本の抽出方法を一次資料で確認できていません。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>スキル重視の採用</strong> — 学位や勤続年数ではなく、実際にできる仕事を基準に選ぶ方式です。今回の調査では46%が比重を増やす計画と答えました。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>採用要請（job requisition）</strong> — 企業の内部で「こういう人を採る」と出す公式の要請書です。ここに記されたスキルを集めると、求人広告より正確な需要の指標になります。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>修了証</strong> — ある課程を終えたことを機関が発行して証明する文書です。学位より短く狭い範囲を扱い、雇用主の86%が準備度の有効な指標として見ています。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>専門化と民主化</strong> — PwC の区分です。専門化は AI が反復の作業を取り除いて人の専門性の値が上がる側、民主化は複雑な仕事への入り口が低くなり役割がより専門的でなくなる側です。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>先任化した新卒職務</strong> — 新卒の席でありながら、判断力や統率力のように従来は先任に求められてきた力量を要求する職務です。2019年以降35%増えました。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>賃金の上乗せ</strong> — 同じ職種のなかで、ある特定のスキルを持つ人が多く受け取る比率です。AI スキルでは62%で、前年の57%から上がりました。
+                    </div>
+                    <div>
+                        <strong>相関と因果</strong> — 二つの値が一緒に動くこと（相関）と、一方が他方を引き起こすこと（因果）は違います。本レポートの54%対20%は相関であり、その点を本文に記しています。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年10月13日</p>
+                    <ul>
+                        <li>• <a href="https://www.wgu.edu/content/dam/wgu-65-assets/web-sites/impact/wgus-workforce-decoded-report.pdf" target="_blank">Workforce Decoded: AI, Skills and the Future of Hiring (2026) — WGU（PDF）</a></li>
+                        <li>• <a href="https://www.manilatimes.net/2026/10/01/tmt-newswire/globenewswire/60-of-employers-say-ai-has-made-real-skills-harder-to-evaluate-wgu-workforce-decoded-report-finds/2436509" target="_blank">60% of Employers Say AI Has Made Real Skills Harder to Evaluate — WGU（GlobeNewswire）</a></li>
+                        <li>• <a href="https://www.wgu.edu/newsroom/press-release/2026/01/employers-share-hiring-outlook-2026.html" target="_blank">Employers Share New Hiring Outlook for 2026 — WGU</a></li>
+                        <li>• <a href="https://newsroom.workday.com/2026-10-05-Workday-Global-Workforce-Report-AI-Is-Rewriting-Jobs-More-Than-Its-Cutting-Them" target="_blank">Workday Global Workforce Report: AI Is Rewriting Jobs More Than It's Cutting Them（2026-10-05）</a></li>
+                        <li>• <a href="https://www.pwc.com/gx/en/issues/artificial-intelligence/job-barometer/2026/2026-global-ai-jobs-barometer-full-report.pdf" target="_blank">2026 Global AI Jobs Barometer: Two futures for jobs in an AI era — PwC（PDF）</a></li>
+                        <li>• <a href="https://www.pwc.com/gx/en/news-room/press-releases/2026/pwc-2026-ai-jobs-barometer.html" target="_blank">AI reshapes global labour market into two distinct paths — PwC の発表</a></li>
+                        <li>• <a href="https://www.ziprecruiter-research.org/economic-insights-research/ai-employer-report-2026" target="_blank">More Jobs, Higher Bar: The 2026 AI Employer Report — ZipRecruiter Economic Research</a></li>
+                        <li>• <a href="https://finance.yahoo.com/technology/ai/articles/ai-skill-gaps-workplace-readiness-130000346.html" target="_blank">AI, Skill Gaps and Workplace Readiness Are Reshaping Hiring — Criteria Corp の年次ベンチマーク</a></li>
+                        <li>• <a href="https://study.com/resources/state-of-ai-jobs-and-skills.html" target="_blank">State of AI Jobs and Skills Report 2026 — Study.com</a></li>
+                        <li>• <a href="https://www.forbes.com/sites/michaeledmondson/2026/10/06/why-the-ai-skills-race-needs-a-new-workforce-development-strategy/" target="_blank">Why The AI Skills Race Needs A New Workforce Development Strategy — Forbes</a></li>
+                        <li>• <a href="https://www.1edtech.org/standards/open-badges" target="_blank">Open Badges — 1EdTech</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 図1 — 評価の難しさと新卒採用の縮小
+        const ctx1 = document.getElementById('gapChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['評価が難しくなったと\n答えた雇用主', 'そうでないと\n答えた雇用主'],
+                datasets: [{
+                    label: 'AI が新卒採用を減らしたと答えた比率 (%)',
+                    data: [54, 20],
+                    backgroundColor: ['rgba(239, 68, 68, 0.7)', 'rgba(59, 130, 246, 0.7)'],
+                    borderColor: ['rgb(239, 68, 68)', 'rgb(59, 130, 246)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '見極められないと感じた側が2.7倍多く減らした' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 60, title: { display: true, text: '%' } } }
+            }
+        });
+
+        // 図2 — AI スキル需要の二つの方向
+        const ctx2 = document.getElementById('demandChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['基礎的な AI スキル\n（単純な指示文など）', '手で作るスキル\n（道具づくり・自動化・エンジニアリング）'],
+                datasets: [{
+                    label: '需要の変化 (%)',
+                    data: [-25, 51],
+                    backgroundColor: ['rgba(148, 163, 184, 0.7)', 'rgba(34, 197, 94, 0.7)'],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(34, 197, 94)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '「使える」の値は下がり「作れる」の値は上がった' },
+                    legend: { display: false }
+                },
+                scales: { y: { title: { display: true, text: '%' } } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 共有テーマ (Ink & Paper)：必ず含めること -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
