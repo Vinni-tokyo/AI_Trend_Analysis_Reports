@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点数をつける側が監査の対象になった — 対話システム開発の重心が移った場所</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 共有テーマ (Ink & Paper)：この一行がないと配色が統一されません -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="標準ベンチマークの標本50件のうち24件に欠陥がありました。モデルを選ぶ根拠が揺らいだのです">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ja.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="点数をつける側が監査の対象になった — 対話システム開発の重心が移った場所">
+<meta property="og:description" content="標準ベンチマークの標本50件のうち24件に欠陥がありました。モデルを選ぶ根拠が揺らいだのです">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ja.html">
+<meta property="og:locale" content="ja_JP">
+<meta property="article:published_time" content="2026-10-14">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="点数をつける側が監査の対象になった — 対話システム開発の重心が移った場所">
+<meta name="twitter:description" content="標準ベンチマークの標本50件のうち24件に欠陥がありました。モデルを選ぶ根拠が揺らいだのです">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="明るさ切り替え" aria-label="明るさ切り替え">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='benchmark-integrity-tod-development-20261014-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='benchmark-integrity-tod-development-20261014-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='benchmark-integrity-tod-development-20261014-ja.html'" class="lang-btn active">日本語</button>
+                </div>
+            </div>
+            <h1>点数をつける側が監査の対象になった<br>— 対話システム開発の重心が移った場所</h1>
+            <div class="subtitle">標準ベンチマークの標本50件のうち24件に欠陥がありました。モデルを選ぶ根拠が揺らいだのです</div>
+            <div class="meta">レポート作成日：2026年10月14日 | 標準レポート（5-8ページ） | データ収集：2026年10月14日</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <div class="callout">
+                    <strong>本レポートの中心的な主張</strong><br>
+                    対話型 AI の開発論議は、おおむね「どのモデルが優れているか」に流れます。
+                    ところが2026年に起きたことは、その問いの<strong>前提</strong>を揺らしました。
+                    <strong>点数を生み出すベンチマーク自体が監査の対象となり、標本50件のうち24件に欠陥が見つかりました。</strong>
+                    同じ年に、ベンチマークが利用者を誤って想定してきたという指摘も出ています。
+                    <strong>開発の重心は「モデルを大きくする・学習し直す」側から、「何をどう測り、どんな接点を与えるか」へ移りつつあります。</strong>
+                </div>
+
+                <h3 class="subsection-title">1. 点数をつける側が監査の対象になった</h3>
+                <p><strong>現状：</strong>道具呼び出しの能力を測る標準の尺度である
+                <strong>Berkeley Function Calling Leaderboard（BFCL）v4</strong> が、外部の検証で
+                <strong>「Flawed（欠陥あり）」</strong>の判定を受けました。
+                評価機関 Epoch AI が2026年9月10日の検討で、採点対象5,088問のうち
+                <strong>50問を無作為に抽出して直に調べた</strong>結果です。</p>
+
+                <div class="chart-container">
+                    <canvas id="defectChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    出典：Epoch AI の BFCL v4 検討（2026-09-10）。標本50件に基づき、範囲別の欠陥率は最も低い範囲と最も高い範囲を示しています。
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>見つかった三種の欠陥</h4>
+                        <p>• <strong>偽陰性：</strong>完全に正しく指示にも従った答えが<strong>誤りとして採点</strong>されます<br>
+                        • <strong>偽陽性：</strong>明らかに誤った答えが<strong>正しいとして採点</strong>されます<br>
+                        • <strong>課題の仕様の誤り：</strong>問題や正解そのものが誤って指定されています<br>
+                        • 範囲別の欠陥率は<strong>20%（non-live AST）から70%（memory）</strong>まで開きました<br>
+                        • 取り得る総得点の<strong>約20%</strong>が影響を受け、「Flawed」の基準に当たりました</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>このベンチマークは何を測っていたのか</h4>
+                        <p>• BFCL v4 は自然言語の要求から
+                        <strong>どの API を選び、どんな形式で呼ぶか</strong>を見ます<br>
+                        • 配点：<strong>エージェンティック40% · 多ターン30%</strong> · live 10% · non-live 10% · 幻覚の測定10%<br>
+                        • つまり最も重い二つの軸（エージェンティックと多ターン）が全体の<strong>70%</strong>を占めます<br>
+                        • この二つこそ<strong>対話システムの開発者がモデルを選ぶときに最も頼る軸</strong>です</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://epoch.ai/benchmarks/berkeley-function-calling-leaderboard/review" target="_blank">Epoch AI — BFCL v4 検討</a> |
+                    <a href="https://gorilla.cs.berkeley.edu/leaderboard.html" target="_blank">Berkeley Function Calling Leaderboard</a>
+                </div>
+
+                <p><strong>展望：</strong>これはベンチマークが無意味だという話ではありません。
+                <strong>点数が意思決定に使われ始めると、点数を作る過程が監査の対象になる</strong>という、成熟した市場の典型的な兆しです。
+                会計がそうでしたし、信用格付けもそうでした。これからはモデル選定の根拠を書くときに
+                <strong>「どのベンチマークで何点」だけでは足らず、「そのベンチマークの欠陥率はいくらか」が併せて必要</strong>になります。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>Epoch AI の検討ページを直に読んで確認しました — 標本50/5,088、欠陥24件（48%）、欠陥の三類型、範囲別20〜70%、配点10/10/10/30/40、「Flawed」判定の根拠（総得点の約20%が影響）、検討日2026-09-10 のいずれも原文に基づきます。<br>
+                        <strong>改善点：</strong>BFCL v4 の公開時期は二次出典が「2026年4月」としていますが一次確認はできていません。本文には確定した検討日のみ記しました。また Epoch AI の判定基準自体が外部で再検証されたものではありません。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. ベンチマークは利用者を誤って想定してきた</h3>
+                <p><strong>現状：</strong>欠陥とは別に、<strong>設計の前提</strong>への指摘が出ました。
+                従来の対話エージェント向けベンチマークは、<strong>エージェントだけが道具を使い、利用者は受け身で情報を渡すだけ</strong>と想定してきました。
+                <strong>τ²-bench</strong> はこの想定を崩し、利用者も共に世界の状態を変える<strong>二重制御</strong>の環境を作りました。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>なぜ前提が誤っていたのか</h4>
+                        <p>• 実際の技術支援を考えれば明らかです — 担当者が「ルーターを再起動してください」と言うとき、
+                        <strong>状態を変えるのは利用者</strong>です<br>
+                        • 単一制御の想定では、エージェントの<strong>指示して確かめる力</strong>が評価から抜け落ちます<br>
+                        • τ²-bench は通信の分野を対象にこの構造を実装しました<br>
+                        • つまり「道具をうまく呼べるか」ではなく
+                        <strong>「相手が動かなければ終わらない仕事を引き出せるか」</strong>を測り始めたのです</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>成績は思うより低い</h4>
+                        <p>新規の課題における <strong>pass^1</strong>（一度の試行で成功する割合）です。<br>
+                        • <strong>claude-3.7-sonnet 49%</strong><br>
+                        • <strong>o4-mini 42%</strong><br>
+                        • <strong>gpt-4.1 34%</strong><br>
+                        • 半分を超えません。単純な質疑応答の性能と
+                        <strong>「用務を終える力」の隔たり</strong>を示す数値です</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://arxiv.org/abs/2506.07982" target="_blank">τ²-Bench 論文</a> |
+                    <a href="https://arxiv.org/pdf/2406.12045" target="_blank">τ-bench 論文</a>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 本サイトの2026年9月30日のレポート
+                    <a href="tod-technical-evolution-20260930-ja.html">「課題指向対話の技術的進化」</a>は、
+                    <strong>評価がターンから軌跡へ移った経緯</strong>を扱いました。
+                    本レポートはその次の問いです — <strong>軌跡へ移ったその尺度は、果たして正しかったのか。</strong>
+                    一つ目の項目は尺度の「欠陥」を、この項目は尺度の「前提」を見ています。
+                </div>
+
+                <p><strong>展望：</strong>二つの指摘は性格が違います。一つ目は<strong>直せば済む欠陥</strong>であり、
+                この項目は<strong>何を測るべきかの再定義</strong>です。後者のほうが根本的です —
+                ベンチマークを精緻にする前に<strong>現場の対話が実際にどう流れるか</strong>を先に見よ、という意味だからです。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>二重制御という設計意図と単一制御の想定への批判、そして三つのモデルの pass^1 数値（34%・42%・49%）が論文の要旨の水準で確認できます。<br>
+                        <strong>改善点：</strong>ルーター再起動のような例は理解を助けるための<strong>本分析の説明</strong>であり、論文の事例ではありません。pass^1 の数値は「新規の課題」基準と明記されており、全課題の平均とは異なる可能性があります。論文の全文は読めていません。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 学習し直すのではなく名前を変える</h3>
+                <p><strong>現状：</strong>小さなモデルが道具をうまく呼べない原因は能力不足ではなく
+                <strong>スキーマの不一致</strong>であることが多いです。与えた一覧にない道具の名前をもっともらしく作り出す現象です。
+                事前学習で身についた表記と、こちらが与えた表記が違うからです。
+                では<strong>モデルを学習し直すのか、名前を変えるのか。</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>PA-Tool — 向きを逆にする</h4>
+                        <p>• モデルをスキーマに合わせるのではなく<strong>スキーマをモデルに合わせます</strong><br>
+                        • 道具・引数の名前の<strong>候補を複数生成</strong>し、
+                        事前学習での馴染み度の指標（peakedness）が最も高いものを選びます<br>
+                        • モデルが内在化した命名の慣習に合わせて<strong>スキーマの構成要素を改名</strong>します<br>
+                        • <strong>学習がまったく要りません</strong>（training-free）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>効き目</h4>
+                        <p>• MetaTool・RoTBench で<strong>正確度が最大17%上昇</strong><br>
+                        • <strong>スキーマ不一致の誤りが80%減少</strong><br>
+                        • 資源が限られたモデルで<strong>すでに持っていた力を引き出す</strong>取り組みです<br>
+                        • 再学習・再配備の連鎖が要らないので<strong>その日に適用してその日に確かめられます</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://arxiv.org/abs/2510.07248" target="_blank">PA-Tool 論文</a> |
+                    <a href="https://github.com/NVIDIA/NeMo-Guardrails" target="_blank">NVIDIA NeMo Guardrails</a>
+                </div>
+
+                <p><strong>展望：</strong>この結果が興味深いのは<strong>費用の構造がまったく違う</strong>点です。
+                微調整はデータ・学習・検証・配備・切り戻しの連鎖を全部必要としますが、改名は設定ファイルの修正です。
+                <strong>より大きな仕掛けを足す前に、すでにあるものの表記を先に見よ</strong>という教訓として読めます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>論文の要旨を直に確認しました — 手法（候補生成＋peakedness による選択＋改名）、学習不要、正確度が最大17%上昇、スキーマ不一致の誤りが80%減少、評価の対象（MetaTool・RoTBench）のいずれも原文に基づきます。<br>
+                        <strong>改善点：</strong>「最大17%」は上限値であり、平均の改善幅は確認できていません。この二つのベンチマーク以外での再現性と、名前を変えることで人が読む際の分かりやすさが落ちる副作用は調べていません。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 英語の外にも公開資産がある — 韓国語と日本語</h3>
+                <p><strong>現状：</strong>課題指向対話のコーパスを作る仕事は費用が大きく、
+                文献では<strong>英語と中国語の外に大規模な多領域データセットが乏しい</strong>ことが繰り返し指摘されます。
+                ところが韓国語と日本語には、それぞれ公開された大規模な資産があります。
+                <strong>自社データだけで指標を出してきた組織が、外部の基準線を持てるという意味です。</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>韓国語 — KLUE-WoS</h4>
+                        <p>• 韓国語理解の評価集 <strong>KLUE</strong> の8課題の一つで、
+                        対話状態の追跡を担います<br>
+                        • 別名 <strong>Wizard of Seoul（WoS）</strong><br>
+                        • 規模：<strong>1万対話 · 146,692ターン · 5領域</strong>（ホテル・飲食店・観光・タクシー・地下鉄）<br>
+                        • 収集の方式は<strong>自己対話（Self-dialog）</strong> — 一人の作業者が利用者と
+                        システムの両方を演じ、対話と状態を併せて生成しました</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>日本語 — JMultiWOZ、そして比べる相手</h4>
+                        <p>• <strong>JMultiWOZ</strong> — 日本語の大規模多領域の課題指向対話データセット<br>
+                        • 対比：日本語の単一領域コーパス <strong>SCUD</strong> は宿泊検索の
+                        <strong>210対話</strong>にとどまります<br>
+                        • 英語側の比較資産：<strong>SGD</strong>（2万+対話・20領域）・
+                        <strong>STAR</strong>（5,820対話・127,833発話・13領域）・
+                        <strong>ABCD</strong>（1万+の顧客対応対話・55の意図）<br>
+                        • SGD は意図・スロットを<strong>自然言語の説明として与え</strong>、
+                        動的な集合に対して予測させる方式です</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://huggingface.co/datasets/klue/klue" target="_blank">KLUE データセット</a> |
+                    <a href="https://arxiv.org/pdf/2403.17319" target="_blank">JMultiWOZ 論文</a> |
+                    <a href="https://github.com/google-research-datasets/dstc8-schema-guided-dialogue" target="_blank">Schema-Guided Dialogue</a>
+                </div>
+
+                <p><strong>展望：</strong>先の三項目が「尺度を疑え」だったのに対し、この項目は<strong>「尺度がそもそもない場合」</strong>の話です。
+                韓国語・日本語で対話システムを作る組織の多くが<strong>自社コーパスだけで指標を出しています。</strong>
+                その場合、性能が良くなったかは分かりますが<strong>他と比べてどのあたりかは分かりません。</strong>
+                公開コーパスで一度測ってみることが、その空白を埋めます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>KLUE-WoS の規模（1万対話・146,692ターン・5領域）と収集方式、SGD・STAR・ABCD の規模、SCUD の210対話との対比、そして「英語・中国語の外に大規模コーパスが乏しい」という文献の指摘が、いずれも出典で確認できます。<br>
+                        <strong>改善点：</strong>JMultiWOZ の正確な対話数・ターン数を確認できず「大規模」とのみ記しました。各データセットの利用許諾と商用利用の範囲は調べていません — 実際に使う前に必ず確認すべき項目です。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 詰まりは性能ではなく運用への移行だ</h3>
+                <p><strong>現状：</strong>ここまでの四つが「何をどう測るか」だったのに対し、最後は<strong>よく作ったものがなぜ使われないのか</strong>です。
+                複数の調査が同じ方向を指しています — <strong>失敗の原因として挙がるのはモデルの性能ではありません。</strong></p>
+
+                <div class="chart-container">
+                    <canvas id="pilotChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    出典：IDC · MIT NANDA（公開された導入300件）· McKinsey · IBM 2026 Think 調査。⚠️ <strong>互いに別の調査であるため、合算や直接の比較はできません。</strong>
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>買う側が作る側を追い越した</h4>
+                        <p>• 企業の AI 活用事例のうち<strong>購入</strong>の比重：2024年53% → <strong>76%</strong><br>
+                        • 専門の提供企業の製品の成功率<strong>約67%</strong> 対 自社構築<strong>約33%</strong><br>
+                        • 外部の提供企業・基盤を使う組織の拡張成功率が、内部構築のみの組織の<strong>2倍</strong><br>
+                        • ただし実際に成功する形は<strong>混成</strong>です —
+                        80%は提供企業の基盤、<strong>決定的な20%は自社構築</strong><br>
+                        • 失敗の要因として挙がるもの：<strong>データの品質・統治の不在・統合の複雑さ</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>価格が成果に基づく形へ移った</h4>
+                        <p>• <strong>Intercom Fin：</strong><strong>解決された結果ごとに $0.99</strong>
+                        （一つの対話で何度行動しても1回の課金）<br>
+                        • <strong>Sierra：</strong>成果に基づく交渉単価 · 基盤の最低額は
+                        <strong>年 $150,000</strong> から · 初期構築 $50,000〜$200,000 ·
+                        <strong>未解決の対話はおおむね課金しない</strong><br>
+                        • <strong>Decagon：</strong>年の基盤料 <strong>$50,000</strong> に加え、
+                        対話ごと または <strong>解決ごと</strong>（人の介入なしに完結した件のみ）·
+                        年間契約の中位は<strong>約 $386,000</strong>（調達データに基づく）</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.intercom.com/fin" target="_blank">Intercom Fin</a> |
+                    <a href="https://sierra.ai/" target="_blank">Sierra</a> |
+                    <a href="https://decagon.ai/" target="_blank">Decagon</a>
+                </div>
+
+                <p><strong>展望：</strong>成果に基づく課金は<strong>「解決」の定義と測定を契約の中心</strong>に引き入れます。
+                そうなると本レポートの最初の四項目と一本につながります — <strong>何を成功として数えるのか、それを信じられる形で測れるのか。</strong>
+                測定が技術の問題から<strong>商取引の契約条件</strong>へ昇格したのです。
+                同時に危うさも明らかです。「解決」の定義が提供側にあれば、買う側には検証する手立てがありません。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>各数値の出典機関が特定できます（IDC・MIT NANDA の300件・McKinsey・IBM）。三社の課金の構造は複数の価格分析資料で一貫して確認できます。<br>
+                        <strong>改善点：</strong>🔴 価格の数値は<strong>提供企業の公式な価格表ではなく、第三者の分析と調達データ</strong>に基づきます（Sierra・Decagon は交渉単価のため公開の定価がありません）。88%・95%・11%・31%・70% は<strong>互いに別の母集団の調査</strong>であり、合算も比較もできません。買う／作るの数値の一次出典も直に確認できていません。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">評価資産の四層 — 何を測るのか</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    製品の比較ではなく<strong>対話システムを評価するときに使う資産</strong>を、世代と性格で整理しました。
+                    下へ行くほど現場に近いですが、構築と維持の費用が大きくなります。
+                    <em>（本分析による分類です。）</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>層</th>
+                            <th>代表的な資産</th>
+                            <th>測るもの</th>
+                            <th>知られた限界</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>第1層 — ターン単位のコーパス</strong></td>
+                            <td>MultiWOZ · SGD · STAR · ABCD · <strong>KLUE-WoS</strong> · <strong>JMultiWOZ</strong></td>
+                            <td>意図・スロットの抽出と状態追跡の正確度</td>
+                            <td>有用な能力を切り分けて測りますが、複数のターンにわたり目標を推論し外部の状態を更新する過程は十分に試験できません</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第2層 — 道具呼び出しのベンチマーク</strong></td>
+                            <td>BFCL v4 · ToolBench</td>
+                            <td>API の選択・形式・実行の正確度</td>
+                            <td>🔴 BFCL v4 は標本50件のうち24件の欠陥で<strong>「Flawed」判定</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>第3層 — 軌跡のベンチマーク</strong></td>
+                            <td>τ-bench · <strong>τ²-bench</strong></td>
+                            <td>道具・利用者・方針が揃った多ターン課題での最終状態への到達</td>
+                            <td>τ-bench は利用者を受け身と想定 → τ²-bench が二重制御で補いました</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第4層 — 実装比較の枠組み</strong></td>
+                            <td>clem:todd</td>
+                            <td>利用者シミュレーターと対話システムの<strong>組み合わせ</strong>を、同じデータ・指標・計算の制約で比較</td>
+                            <td>立ち上げの費用が最も大きいです。構成・規模・指示文の戦略の影響を切り分けるのが目的です</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">公開されている対話コーパスの比較</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>データセット</th>
+                            <th>言語</th>
+                            <th>公開された規模</th>
+                            <th>性格</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>KLUE-WoS</strong>（Wizard of Seoul）</td>
+                            <td><strong>韓国語</strong></td>
+                            <td><strong>1万対話 · 146,692ターン · 5領域</strong></td>
+                            <td>KLUE の8課題のうち対話状態の追跡。自己対話の方式で収集</td>
+                        </tr>
+                        <tr>
+                            <td><strong>JMultiWOZ</strong></td>
+                            <td><strong>日本語</strong></td>
+                            <td>大規模多領域（細かな数値は未確認）</td>
+                            <td>日本語の大規模な公開資産。対比として SCUD は210対話</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SGD</strong></td>
+                            <td>英語</td>
+                            <td>2万+対話 · <strong>20領域</strong></td>
+                            <td>意図・スロットを自然言語の説明で与え、動的な集合を予測。API 連携を想定</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STAR</strong></td>
+                            <td>英語</td>
+                            <td>5,820対話 · 127,833発話 · 13領域</td>
+                            <td>課題・領域の転移学習を目的に設計</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ABCD</strong></td>
+                            <td>英語</td>
+                            <td>1万+の顧客対応対話 · <strong>55の意図</strong></td>
+                            <td>全件に注記。訓練された担当者とクラウドの利用者を組ませて収集</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MultiWOZ</strong></td>
+                            <td>英語</td>
+                            <td>多領域（2.0〜2.4 の整理版）</td>
+                            <td>この分野の事実上の標準となる基準線</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">市場の五つの変化</h3>
+                <ul class="key-findings">
+                    <li><strong>ベンチマークが監査の対象になりました：</strong>標準の尺度の一つが外部の検討で「Flawed」の判定を受けました。</li>
+                    <li><strong>評価の前提が見直されています：</strong>利用者を受け身と見た想定が崩れ、二重制御の環境が現れました。</li>
+                    <li><strong>学習し直す代わりに接点を直す道が開きました：</strong>スキーマの改名だけで正確度が上がります。</li>
+                    <li><strong>英語の外の公開資産が確認できます：</strong>韓国語・日本語ともに大規模なコーパスが存在します。</li>
+                    <li><strong>測定が商取引の条件へ昇格しました：</strong>成果に基づく課金は「解決」の定義と測定を契約条件にします。</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>道具の名前の点検</strong> - 稼働中のエージェントの道具・引数の名前がよくある表記かを確かめ、存在しない道具名を生成した件数を数える</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>外部の基準線で一度測る</strong> - 自社コーパスだけで指標を出しているなら、公開コーパスで一度測って位置を確かめる</p>
+                    <p style="line-height: 1.6;">3. <strong>ベンチマークの点数に割引率を定める</strong> - モデル選定の文書に「どのベンチマークで何点」と併せて、そのベンチマークの知られた欠陥率を記す規則を置く</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>標準ベンチマークが「Flawed」の判定を受けました：</strong>Epoch AI が BFCL v4 の採点対象5,088問のうち50問を調べ、24問（48%）に欠陥を見つけました。範囲別では20%から70%まで開きました。</li>
+                        <li><strong>前提も見直されています：</strong>従来の評価は利用者を受け身の情報提供者と想定していました。τ²-bench が二重制御でこれを崩し、そこでの最高性能モデルの pass^1 は34〜49%にとどまります。</li>
+                        <li><strong>学習し直さずに道具呼び出しを上げる道があります：</strong>道具・引数の名前をモデルが身につけた表記に変えるだけで、正確度が最大17%上がり、スキーマ不一致の誤りが80%減りました。</li>
+                        <li><strong>韓国語・日本語にも公開資産があります：</strong>KLUE-WoS は1万対話・146,692ターン、日本語には JMultiWOZ があります。自社データだけの組織が外部の基準線を持てます。</li>
+                        <li><strong>詰まりは性能ではなく運用への移行です：</strong>試験導入の88%が運用に至らず、購入の比重は53%から76%へ逆転しました。価格は成果に基づく形へ移り、「解決」の定義が契約条件になりました。</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">状況別の参考</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>モデルを選んでいる場合 → ベンチマークの欠陥率も見てください</strong><br>
+                        理由：点数だけを見ると、狂った尺度で選んだことになりかねません。欠陥率が公開された検討があるかを先に確かめるほうが安全です。<br>
+                        <strong>小さなモデルが道具を呼べない場合 → 微調整より先に名前を</strong><br>
+                        理由：スキーマの改名は学習が要らないので、その日に適用してその日に確かめられます。効き目がなければその時に微調整を検討すればよいです。<br>
+                        <strong>自社コーパスだけで指標を出している場合 → 公開コーパスで一度測ってください</strong><br>
+                        理由：自社の指標では良くなったかしか分からず、他と比べてどのあたりかは分かりません。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>中立。ベンチマークの欠陥が露わになったことは短期には混乱ですが、点数を作る過程が監査の対象になるのは市場が成熟する兆しです。学習し直さずに性能を上げる道と、英語の外に公開資産があることは、実務にすぐ使える前向きな材料です。ただし試験導入から運用への移行の失敗率はいまも高く、その原因がモデルの性能ではなくデータ・統治・統合である点は、開発の力量だけでは解けません。</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">7.5/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>1・3 の項目は一次資料（評価機関の検討ページ・論文の要旨）を直に読んで確認し、残りは論文の要旨と産業調査の要約に基づきます。</p>
+                        <p><strong>主な強み：</strong>BFCL v4 の欠陥分析は標本数・欠陥件数・欠陥の類型・範囲別の分布・判定の根拠・検討日まで原文で確認しました。PA-Tool の手法と二つの数値も原文に基づきます。データセットの規模は論文と公開の保管庫で突き合わせました。</p>
+                        <p><strong>改善の優先順位：</strong>①評価資産の四層の分類は<strong>本分析の提案</strong>であり、公認された体系ではありません。②🔴 5番の項目の88%・95%・11%・31%・70% は<strong>互いに別の調査</strong>であり、合算も直接の比較もできません。③価格の数値は第三者の分析と調達データで、提供企業の公式な価格表ではありません。④JMultiWOZ の正確な規模と各データセットの利用許諾を確認できていません。⑤τ²-bench と PA-Tool の論文の全文は読めず、要旨の水準での確認です。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>課題指向対話（TOD: Task-Oriented Dialogue）</strong> — 「予約・相談・申請」のように終わらせるべき用務がある対話を扱う仕組みです。雑談型と違って目的地があり、そこに届いたかで成否を分けます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>対話状態の追跡（DST: Dialogue State Tracking）</strong> — ターンが積み重なっても「いま何が確定しているか」を持ち運ぶ仕事です。公開コーパスの多くがこの力を評価の対象にしています。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>道具呼び出し（Function Calling）</strong> — モデルが外部の API を選び、定められた形式で呼ぶ仕事です。いまの対話システムの実質的な標準の接点です。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>スキーマの不一致（Schema misalignment）</strong> — 与えた一覧にない道具の名前を、モデルがもっともらしく作り出す現象です。事前学習で身についた表記とこちらが与えた表記が違うときに起きます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>pass^1</strong> — 同じ課題を一度試して成功する割合です。何度も試して一度当たればよい指標と違い、実際の利用の体感に近いです。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>二重制御（Dual control）</strong> — エージェントと利用者の双方が世界の状態を変えられる評価の環境です。「ルーターを再起動してください」のように、相手が動かなければ終わらない仕事を測るための設計です。
+                    </div>
+                    <div>
+                        <strong>成果に基づく課金（Outcome-based pricing）</strong> — 席数や呼び出し数ではなく「解決された結果」の単位で受け取る課金の方式です。そのため「解決」をどう定義し測るかが契約の核になります。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年10月14日</p>
+                    <ul>
+                        <li>• <a href="https://epoch.ai/benchmarks/berkeley-function-calling-leaderboard/review" target="_blank">Berkeley Function Calling Leaderboard (BFCL) v4 検討 — Epoch AI（検討日 2026-09-10）</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2506.07982" target="_blank">τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment — arXiv 2506.07982</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2406.12045" target="_blank">τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains — arXiv 2406.12045</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2510.07248" target="_blank">Don't Adapt Small Language Models for Tools; Adapt Tool Schemas to the Models (PA-Tool) — arXiv 2510.07248</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2505.05445" target="_blank">clem:todd: A Framework for the Systematic Benchmarking of LLM-Based Task-Oriented Dialogue System Realisations — arXiv 2505.05445</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2105.09680" target="_blank">KLUE: Korean Language Understanding Evaluation（Wizard of Seoul を含む）— arXiv 2105.09680</a></li>
+                        <li>• <a href="https://huggingface.co/datasets/klue/klue" target="_blank">KLUE データセット — Hugging Face</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2403.17319" target="_blank">JMultiWOZ: A Large-Scale Japanese Multi-Domain Task-Oriented Dialogue Dataset — arXiv 2403.17319</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/1909.05855" target="_blank">The Schema-Guided Dialogue Dataset — arXiv 1909.05855</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/1810.00278" target="_blank">MultiWOZ — arXiv 1810.00278</a></li>
+                        <li>• <a href="https://arxiv.org/html/2504.04717v6" target="_blank">Beyond Single-Turn: A Survey on Multi-Turn Interactions with Large Language Models — arXiv 2504.04717</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2503.22458" target="_blank">Evaluating LLM-based Agents for Multi-Turn Conversations: A Survey — arXiv 2503.22458</a></li>
+                        <li>• <a href="https://insoftex.com/insights/build-vs-buy-ai-agents/" target="_blank">Build vs. Buy AI Agents — What the Enterprise Data Actually Says</a></li>
+                        <li>• <a href="https://www.thewitn.com/blog/ai-agent-pricing-in-2026-what-fin-sierra-decagon-and-agentforce-actually-charge" target="_blank">AI Agent Pricing in 2026: Fin, Sierra, Decagon — The WITN</a></li>
+                        <li>• <a href="https://www.getmacha.com/blog/decagon-vs-sierra-ai" target="_blank">Decagon vs Sierra AI 2026: Pricing, Billing and Build Model — Macha</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 図1 — BFCL v4 の欠陥率（Epoch AI 検討、標本50件）
+        const ctx1 = document.getElementById('defectChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['標本全体の\n欠陥率', '最も低い範囲\n(non-live AST)', '最も高い範囲\n(memory)', '影響を受けた\n総得点の割合'],
+                datasets: [{
+                    label: '割合 (%)',
+                    data: [48, 20, 70, 20],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: ['rgb(239, 68, 68)', 'rgb(59, 130, 246)', 'rgb(168, 85, 247)', 'rgb(249, 115, 22)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '標準ベンチマークを開けてみると — 50件のうち24件に欠陥' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 80, title: { display: true, text: '%' } } }
+            }
+        });
+
+        // 図2 — 試験導入から運用へ（互いに別の調査）
+        const ctx2 = document.getElementById('pilotChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['試験導入が運用に\n至らず (IDC)', '損益への影響なし\n(MIT NANDA)', '実運用で稼働\n(McKinsey)', '優先課題が全面\n運用に到達', '統治が目的に\n適さず (IBM)'],
+                datasets: [{
+                    label: '割合 (%)',
+                    data: [88, 95, 11, 31, 70],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: ['rgb(239, 68, 68)', 'rgb(239, 68, 68)', 'rgb(34, 197, 94)', 'rgb(34, 197, 94)', 'rgb(249, 115, 22)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'よく作ることと使われることは別の問題だ（互いに別の調査）' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '%' } } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 共有テーマ (Ink & Paper)：必ず含めること -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

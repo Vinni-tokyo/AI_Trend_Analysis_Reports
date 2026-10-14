@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Scorekeepers Are Now Being Audited — Where Dialogue System Development Shifted</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 Shared theme (Ink & Paper) — without this line the palette will not match -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="Twenty-four of fifty sampled tasks in a standard benchmark had defects. The basis for choosing a model moved under our feet">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-en.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="The Scorekeepers Are Now Being Audited — Where Dialogue System Development Shifted">
+<meta property="og:description" content="Twenty-four of fifty sampled tasks in a standard benchmark had defects. The basis for choosing a model moved under our feet">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-en.html">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-14">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Scorekeepers Are Now Being Audited — Where Dialogue System Development Shifted">
+<meta name="twitter:description" content="Twenty-four of fifty sampled tasks in a standard benchmark had defects. The basis for choosing a model moved under our feet">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/benchmark-integrity-tod-development-20261014-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="Toggle brightness" aria-label="Toggle brightness">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='benchmark-integrity-tod-development-20261014-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='benchmark-integrity-tod-development-20261014-en.html'" class="lang-btn active">English</button>
+                    <button onclick="window.location.href='benchmark-integrity-tod-development-20261014-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>The Scorekeepers Are Now Being Audited<br>— Where Dialogue System Development Shifted</h1>
+            <div class="subtitle">Twenty-four of fifty sampled tasks in a standard benchmark had defects. The basis for choosing a model moved under our feet</div>
+            <div class="meta">Report date: 14 October 2026 | Standard report (5-8 pages) | Data collected: 14 October 2026</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <div class="callout">
+                    <strong>The argument of this report</strong><br>
+                    Conversational AI discussion usually runs toward "which model is better".
+                    What happened in 2026 unsettled the <strong>premise</strong> of that question.
+                    <strong>The benchmarks that produce the scores became audit subjects themselves, and defects were found in 24 of 50 sampled tasks.</strong>
+                    The same year brought a separate charge: that benchmarks had been modelling the user wrongly all along.
+                    <strong>The weight of development is shifting away from making models bigger or retraining them, toward what gets measured and what interface the model is handed.</strong>
+                </div>
+
+                <h3 class="subsection-title">1. The scorekeepers became audit subjects</h3>
+                <p><strong>Where things stand:</strong> The <strong>Berkeley Function Calling Leaderboard (BFCL) v4</strong>,
+                a standard yardstick for tool-calling ability, received a <strong>"Flawed"</strong> verdict in an external review.
+                The evaluation organisation Epoch AI, in a review dated 10 September 2026, <strong>pulled 50 tasks at random</strong>
+                from the benchmark's 5,088 scored items and examined them directly.</p>
+
+                <div class="chart-container">
+                    <canvas id="defectChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    Source: Epoch AI's BFCL v4 review (10 Sep 2026). Based on a 50-task sample; the category figures show the lowest and highest categories.
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Three kinds of defect found</h4>
+                        <p>• <strong>False negatives:</strong> a fully correct, instruction-following response
+                        <strong>marked wrong</strong><br>
+                        • <strong>False positives:</strong> a clearly incorrect response <strong>marked correct</strong><br>
+                        • <strong>Task specification issues:</strong> the task or its ground truth is itself misspecified<br>
+                        • Category defect rates ranged from <strong>20% (non-live AST) to 70% (memory)</strong><br>
+                        • Roughly <strong>20% of the total possible score</strong> was affected, meeting the threshold for "Flawed"</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>What this benchmark was measuring</h4>
+                        <p>• BFCL v4 assesses <strong>which API a model selects and how it formats the call</strong>
+                        from a natural-language request<br>
+                        • Weighting: <strong>agentic 40% · multi-turn 30%</strong> · live 10% · non-live 10% · hallucination 10%<br>
+                        • So the two heaviest axes (agentic and multi-turn) account for <strong>70%</strong> of the score<br>
+                        • Those are precisely <strong>the axes dialogue-system developers lean on most when choosing a model</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://epoch.ai/benchmarks/berkeley-function-calling-leaderboard/review" target="_blank">Epoch AI — BFCL v4 review</a> |
+                    <a href="https://gorilla.cs.berkeley.edu/leaderboard.html" target="_blank">Berkeley Function Calling Leaderboard</a>
+                </div>
+
+                <p><strong>Outlook:</strong> This does not mean benchmarks are useless.
+                It is the classic signal of a maturing market: <strong>once scores start driving decisions, the process that produces them becomes auditable.</strong>
+                Accounting went this way; credit ratings went this way. From here on, writing down the basis for a model choice
+                <strong>will need more than "N points on benchmark X" — it will need "and what is that benchmark's defect rate".</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">9/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Epoch AI's review page was read directly — sample of 50 from 5,088, 24 defective (48%), three defect types, category range 20–70%, weighting 10/10/10/30/40, the basis for the "Flawed" verdict (~20% of total score affected) and the review date of 10 Sep 2026 all come from the original.<br>
+                        <strong>Gaps:</strong> BFCL v4's release date is given as "April 2026" by a secondary source but was not verified at first hand; only the confirmed review date appears in the text. Epoch AI's own verdict criteria have not been independently re-verified.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. Benchmarks had been modelling the user wrongly</h3>
+                <p><strong>Where things stand:</strong> Separately from defects, a charge was levelled at the <strong>design premise</strong>.
+                Existing conversational-agent benchmarks assumed <strong>only the agent uses tools while the user passively supplies information</strong>.
+                <strong>τ²-bench</strong> broke that assumption, building a <strong>dual-control</strong> environment in which the user also changes the state of the world.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Why the premise was wrong</h4>
+                        <p>• Think about real technical support: when an agent says "please restart your router",
+                        <strong>the party changing the state is the user</strong><br>
+                        • Under single control, the agent's ability to <strong>instruct and then confirm</strong> drops out of the evaluation entirely<br>
+                        • τ²-bench implements this structure for the telecom domain<br>
+                        • So the question shifts from "can it call tools well" to
+                        <strong>"can it get the other party to do what only they can do"</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>The scores are lower than expected</h4>
+                        <p><strong>pass^1</strong> (succeeding on a single attempt) on new tasks:<br>
+                        • <strong>claude-3.7-sonnet 49%</strong><br>
+                        • <strong>o4-mini 42%</strong><br>
+                        • <strong>gpt-4.1 34%</strong><br>
+                        • None clears half. These figures expose the gap between
+                        <strong>question-answering performance and the ability to finish an errand</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://arxiv.org/abs/2506.07982" target="_blank">τ²-Bench paper</a> |
+                    <a href="https://arxiv.org/pdf/2406.12045" target="_blank">τ-bench paper</a>
+                </div>
+
+                <div class="callout">
+                    <strong>Read alongside —</strong> this site's 30 September 2026 report
+                    <a href="tod-technical-evolution-20260930-en.html">"The Technical Evolution of Task-Oriented Dialogue"</a>
+                    traced <strong>how evaluation moved from the turn to the trajectory</strong>.
+                    This report asks the next question — <strong>was the instrument it moved to actually right?</strong>
+                    The first section looks at the instrument's defects; this one looks at its premises.
+                </div>
+
+                <p><strong>Outlook:</strong> The two charges are different in kind. The first is <strong>a defect that can be fixed</strong>;
+                this one is <strong>a redefinition of what should be measured</strong>. The latter cuts deeper,
+                because it says that before refining the benchmark you have to look at
+                <strong>how conversations actually run in the field.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The dual-control design intent, the critique of the single-control assumption, and the three pass^1 figures (34%, 42%, 49%) are confirmed at abstract level.<br>
+                        <strong>Gaps:</strong> The router-restart illustration is <strong>this report's own explanation</strong>, not an example from the paper. The pass^1 figures are stated for "new tasks" and may differ from an all-task average. The full paper was not read.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. Rename the tools instead of retraining the model</h3>
+                <p><strong>Where things stand:</strong> When a small model fails to call tools properly, the common cause is not lack of capability but
+                <strong>schema misalignment</strong> — the model invents plausible tool names that are absent from the schema it was given,
+                because the naming it learned in pretraining differs from the naming we supplied.
+                Which raises the choice: <strong>retrain the model, or rename the tools?</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>PA-Tool — reverse the direction</h4>
+                        <p>• Instead of fitting the model to the schema, it <strong>fits the schema to the model</strong><br>
+                        • It <strong>generates multiple naming candidates</strong> for tools and parameters
+                        and selects the one with the highest "peakedness" — a measure of familiarity from pretraining<br>
+                        • Schema components are then <strong>renamed to the model's internalised conventions</strong><br>
+                        • <strong>No training at all</strong> is required (training-free)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>The effect</h4>
+                        <p>• Up to <strong>17% accuracy gains</strong> on MetaTool and RoTBench<br>
+                        • <strong>80% reduction in schema misalignment errors</strong><br>
+                        • The approach <strong>unlocks capability the model already had</strong> in resource-constrained settings<br>
+                        • With no retraining or redeployment chain, it can be <strong>applied and verified the same day</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://arxiv.org/abs/2510.07248" target="_blank">PA-Tool paper</a> |
+                    <a href="https://github.com/NVIDIA/NeMo-Guardrails" target="_blank">NVIDIA NeMo Guardrails</a>
+                </div>
+
+                <p><strong>Outlook:</strong> What makes this interesting is that <strong>the cost structure is entirely different</strong>.
+                Fine-tuning needs data, training, validation, deployment and a rollback path; renaming is a configuration edit.
+                It reads as a lesson: <strong>before bolting on a bigger apparatus, look at the naming of what you already have.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The paper's abstract was read directly — the method (candidate generation, peakedness selection, renaming), the training-free property, up to 17% accuracy gains, 80% fewer misalignment errors and the evaluation targets (MetaTool, RoTBench) all come from the original.<br>
+                        <strong>Gaps:</strong> "Up to 17%" is an upper bound; the average improvement was not verified. Replication beyond those two benchmarks, and the side effect of renaming making schemas less readable to humans, were not investigated.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. Public assets exist outside English — Korean and Japanese</h3>
+                <p><strong>Where things stand:</strong> Building task-oriented dialogue corpora is expensive, and the literature repeatedly notes that
+                <strong>large multi-domain datasets are scarce outside English and Chinese</strong>.
+                Yet both Korean and Japanese have substantial public assets.
+                <strong>That means organisations measuring only against their own data can have an external baseline.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Korean — KLUE-WoS</h4>
+                        <p>• One of the eight tasks in <strong>KLUE</strong>, the Korean language understanding
+                        evaluation suite, covering dialogue state tracking<br>
+                        • Known as <strong>Wizard of Seoul (WoS)</strong><br>
+                        • Scale: <strong>10,000 dialogues · 146,692 turns · 5 domains</strong>
+                        (hotel, restaurant, attraction, taxi, metro)<br>
+                        • Collected by a <strong>"self-dialog" scheme</strong> — a single worker plays both the user and the
+                        system role, generating dialogues and their states together</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Japanese — JMultiWOZ, and the comparisons</h4>
+                        <p>• <strong>JMultiWOZ</strong> — a large-scale Japanese multi-domain task-oriented dialogue dataset<br>
+                        • For contrast, the Japanese single-domain corpus <strong>SCUD</strong> holds only
+                        <strong>210 dialogues</strong> on accommodation search<br>
+                        • English comparisons: <strong>SGD</strong> (20k+ dialogues, 20 domains) ·
+                        <strong>STAR</strong> (5,820 dialogues, 127,833 utterances, 13 domains) ·
+                        <strong>ABCD</strong> (10k+ customer-service dialogues, 55 intents)<br>
+                        • SGD supplies intents and slots as <strong>natural-language descriptions</strong>
+                        and asks for predictions over a dynamic set</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://huggingface.co/datasets/klue/klue" target="_blank">KLUE dataset</a> |
+                    <a href="https://arxiv.org/pdf/2403.17319" target="_blank">JMultiWOZ paper</a> |
+                    <a href="https://github.com/google-research-datasets/dstc8-schema-guided-dialogue" target="_blank">Schema-Guided Dialogue</a>
+                </div>
+
+                <p><strong>Outlook:</strong> If the first three sections said "doubt the instrument", this one is about
+                <strong>having no instrument at all</strong>.
+                Many organisations building dialogue systems in Korean or Japanese are <strong>measuring only against their own corpora.</strong>
+                That tells them whether performance improved, but <strong>not where they stand relative to anyone else.</strong>
+                Measuring once on a public corpus closes that gap.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">8/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> KLUE-WoS's scale (10,000 dialogues, 146,692 turns, 5 domains) and collection method, the scales of SGD, STAR and ABCD, the 210-dialogue contrast with SCUD, and the literature's note that large corpora are scarce outside English and Chinese are all confirmed in the sources.<br>
+                        <strong>Gaps:</strong> JMultiWOZ's exact dialogue and turn counts could not be verified, so it is described only as large-scale. Licensing and permitted commercial use of each dataset were not investigated — an item to check before any actual use.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. The bottleneck is not performance but getting into production</h3>
+                <p><strong>Where things stand:</strong> If the first four sections were about what and how we measure, the last is about
+                <strong>why well-built things go unused</strong>. Several surveys point the same way —
+                <strong>what gets named as the cause of failure is not model performance.</strong></p>
+
+                <div class="chart-container">
+                    <canvas id="pilotChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    Sources: IDC · MIT NANDA (300 public deployments) · McKinsey · IBM 2026 Think survey. ⚠️ <strong>These are separate surveys and must not be summed or compared directly.</strong>
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Buying overtook building</h4>
+                        <p>• Share of enterprise AI use cases that are <strong>purchased</strong>: 53% in 2024 → <strong>76%</strong><br>
+                        • Success rate of specialist vendor products <strong>~67%</strong> vs internally built <strong>~33%</strong><br>
+                        • Organisations using external vendors and platforms scale successfully at
+                        <strong>twice</strong> the rate of those relying solely on internal builds<br>
+                        • The actual winning shape is <strong>hybrid</strong> — vendor platforms for 80%,
+                        <strong>custom agents for the critical 20%</strong><br>
+                        • Named failure drivers: <strong>poor data quality, lack of governance, integration complexity</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Pricing moved to outcomes</h4>
+                        <p>• <strong>Intercom Fin:</strong> <strong>$0.99 per resolved outcome</strong>
+                        (charged once per conversation regardless of how many actions it takes)<br>
+                        • <strong>Sierra:</strong> negotiated outcome-based rate · platform minimum from
+                        <strong>$150,000 per year</strong> · setup $50,000–$200,000 ·
+                        <strong>unresolved conversations are generally not charged</strong><br>
+                        • <strong>Decagon:</strong> <strong>$50,000</strong> annual platform fee plus
+                        per-conversation or <strong>per-resolution</strong> (only conversations fully resolved without human intervention) ·
+                        median annual contract <strong>~$386,000</strong> per procurement data</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.intercom.com/fin" target="_blank">Intercom Fin</a> |
+                    <a href="https://sierra.ai/" target="_blank">Sierra</a> |
+                    <a href="https://decagon.ai/" target="_blank">Decagon</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Outcome-based pricing pulls <strong>the definition and measurement of "resolved" into the centre of the contract</strong>.
+                That joins up with the first four sections in a single line — <strong>what counts as success, and can it be measured in a way you trust?</strong>
+                Measurement has been promoted from an engineering concern to <strong>a commercial contract term</strong>.
+                The risk is equally clear: if the vendor owns the definition of "resolved", the buyer has no way to verify it.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Each figure is attributed to a named organisation (IDC, MIT NANDA with 300 deployments, McKinsey, IBM). The three vendors' pricing structures are reported consistently across several pricing analyses.<br>
+                        <strong>Gaps:</strong> 🔴 The pricing figures come from <strong>third-party analyses and procurement data, not vendor price lists</strong> (Sierra and Decagon negotiate rates and publish no list price). The 88%, 95%, 11%, 31% and 70% figures are <strong>from different populations</strong> and cannot be summed or compared. The primary sources behind the build/buy figures were not verified at first hand.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">Four layers of evaluation assets — what each measures</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    Not a product comparison but <strong>the assets used to evaluate dialogue systems</strong>, sorted by generation and character.
+                    Further down is closer to the field but costlier to build and maintain.
+                    <em>(This is a classification by the present analysis.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Representative assets</th>
+                            <th>What it measures</th>
+                            <th>Known limits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Layer 1 — turn-level corpora</strong></td>
+                            <td>MultiWOZ · SGD · STAR · ABCD · <strong>KLUE-WoS</strong> · <strong>JMultiWOZ</strong></td>
+                            <td>Accuracy of intent and slot extraction, and of state tracking</td>
+                            <td>Isolates useful capabilities but does not fully test inferring a goal across turns while updating external state</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Layer 2 — tool-calling benchmarks</strong></td>
+                            <td>BFCL v4 · ToolBench</td>
+                            <td>Accuracy of API selection, formatting and execution</td>
+                            <td>🔴 BFCL v4 received a <strong>"Flawed" verdict</strong> — 24 defects in a 50-task sample</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Layer 3 — trajectory benchmarks</strong></td>
+                            <td>τ-bench · <strong>τ²-bench</strong></td>
+                            <td>Reaching the correct final state on multi-turn tasks with tools, a user and policies</td>
+                            <td>τ-bench treats the user as passive → τ²-bench adds dual control</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Layer 4 — implementation comparison frameworks</strong></td>
+                            <td>clem:todd</td>
+                            <td>Compares <strong>combinations</strong> of user simulator and dialogue system under uniform datasets, metrics and compute constraints</td>
+                            <td>The costliest to stand up. Its purpose is isolating the effects of architecture, scale and prompting strategy</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Public dialogue corpora compared</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dataset</th>
+                            <th>Language</th>
+                            <th>Published scale</th>
+                            <th>Character</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>KLUE-WoS</strong> (Wizard of Seoul)</td>
+                            <td><strong>Korean</strong></td>
+                            <td><strong>10,000 dialogues · 146,692 turns · 5 domains</strong></td>
+                            <td>The dialogue state tracking task among KLUE's eight. Collected by self-dialog</td>
+                        </tr>
+                        <tr>
+                            <td><strong>JMultiWOZ</strong></td>
+                            <td><strong>Japanese</strong></td>
+                            <td>Large-scale multi-domain (exact figures unverified)</td>
+                            <td>The large public Japanese asset. For contrast, SCUD holds 210 dialogues</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SGD</strong></td>
+                            <td>English</td>
+                            <td>20k+ dialogues · <strong>20 domains</strong></td>
+                            <td>Intents and slots given as natural-language descriptions, predictions over a dynamic set. Built around API interaction</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STAR</strong></td>
+                            <td>English</td>
+                            <td>5,820 dialogues · 127,833 utterances · 13 domains</td>
+                            <td>Designed for task and domain transfer learning</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ABCD</strong></td>
+                            <td>English</td>
+                            <td>10k+ customer-service dialogues · <strong>55 intents</strong></td>
+                            <td>Fully labelled. Collected by pairing trained agents with crowdsourced users</td>
+                        </tr>
+                        <tr>
+                            <td><strong>MultiWOZ</strong></td>
+                            <td>English</td>
+                            <td>Multi-domain (2.0–2.4 cleaned revisions)</td>
+                            <td>The de facto standard baseline in this field</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Five shifts in the market</h3>
+                <ul class="key-findings">
+                    <li><strong>Benchmarks became audit subjects:</strong> one standard yardstick received a "Flawed" verdict in external review.</li>
+                    <li><strong>Evaluation premises are being re-examined:</strong> the assumption of a passive user broke, and dual-control environments appeared.</li>
+                    <li><strong>A path opened to fix the interface instead of retraining:</strong> renaming the schema alone raises accuracy.</li>
+                    <li><strong>Public assets outside English are confirmed:</strong> both Korean and Japanese have large corpora.</li>
+                    <li><strong>Measurement was promoted to a commercial term:</strong> outcome-based pricing makes the definition of "resolved" a contract condition.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Audit your tool names</strong> - check whether a running agent's tool and parameter names use common conventions, and count how often it invents a tool name that does not exist</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Measure once on an external baseline</strong> - if your metrics come only from your own corpus, run one measurement on a public corpus to locate yourself</p>
+                    <p style="line-height: 1.6;">3. <strong>Set a discount on benchmark scores</strong> - adopt a rule that model-selection documents record the benchmark's known defect rate alongside the score</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>A standard benchmark was judged "Flawed":</strong> Epoch AI examined 50 of BFCL v4's 5,088 scored items and found defects in 24 (48%), with category rates ranging from 20% to 70%.</li>
+                        <li><strong>The premise is under review too:</strong> existing evaluations assumed a passive information-providing user. τ²-bench broke that with dual control, and there the best models reach only 34–49% pass^1.</li>
+                        <li><strong>Tool calling can improve without retraining:</strong> renaming tools and parameters to conventions the model already knows raised accuracy by up to 17% and cut schema misalignment errors by 80%.</li>
+                        <li><strong>Korean and Japanese have public assets:</strong> KLUE-WoS holds 10,000 dialogues and 146,692 turns; Japanese has JMultiWOZ. Organisations using only their own data can acquire an external baseline.</li>
+                        <li><strong>The bottleneck is production, not performance:</strong> 88% of pilots never reach production, and the purchased share rose from 53% to 76%. Pricing moved to outcomes, making the definition of "resolved" a contract term.</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Reference points by situation</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>Choosing a model → read the benchmark's defect rate too</strong><br>
+                        Why: going by the score alone may mean choosing with a faulty instrument. Check first whether a published review of defect rates exists.<br>
+                        <strong>A small model failing to call tools → try names before fine-tuning</strong><br>
+                        Why: schema renaming needs no training, so it can be applied and verified the same day. If it does not help, consider fine-tuning then.<br>
+                        <strong>Metrics only from your own corpus → measure once on a public one</strong><br>
+                        Why: internal metrics tell you whether you improved, not where you stand relative to anyone else.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>Overall assessment:</strong> Neutral. Exposed benchmark defects are disruptive in the short term, but a scoring process becoming auditable is a sign of market maturity. A route to better performance without retraining, and the existence of public assets outside English, are immediately usable positives. That said, the pilot-to-production failure rate remains high, and the fact that its causes are data, governance and integration rather than model performance means engineering capability alone will not fix it.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">7.5/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> Sections 1 and 3 were verified against primary material read directly (an evaluation body's review page and a paper abstract); the rest rests on paper abstracts and summaries of industry surveys.</p>
+                        <p><strong>Main strengths:</strong> The BFCL v4 defect analysis was confirmed from the original down to sample size, defect count, defect types, category distribution, verdict basis and review date. PA-Tool's method and both figures are from the original. Dataset scales were cross-checked against papers and public repositories.</p>
+                        <p><strong>Priorities for improvement:</strong> ① The four-layer classification of evaluation assets is <strong>this report's proposal</strong>, not an established framework. ② 🔴 The 88%, 95%, 11%, 31% and 70% figures in section 5 are <strong>from different surveys</strong> and cannot be summed or compared. ③ Pricing figures are third-party analyses and procurement data, not vendor price lists. ④ JMultiWOZ's exact scale and each dataset's licensing were not verified. ⑤ The full papers for τ²-bench and PA-Tool were not read; verification was at abstract level.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Task-Oriented Dialogue (TOD)</strong> — a system handling conversations with an errand to finish, such as booking, enquiry or application. Unlike chit-chat it has a destination, and success is judged by whether it was reached.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Dialogue State Tracking (DST)</strong> — carrying "what has been settled so far" forward as turns accumulate. Most public corpora take this capability as their evaluation target.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Function calling</strong> — a model selecting an external API and calling it in a prescribed format. In practice the standard interface for today's dialogue systems.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Schema misalignment</strong> — a model inventing plausible tool names absent from the schema it was given. It arises when pretraining naming conventions differ from the ones supplied.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>pass^1</strong> — the rate of succeeding on a single attempt at a task. Unlike metrics that count one success out of many attempts, it is closer to what users actually experience.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Dual control</strong> — an evaluation environment where both agent and user can change the state of the world. Designed to measure work that only ends when the other party acts, as with "please restart your router".
+                    </div>
+                    <div>
+                        <strong>Outcome-based pricing</strong> — charging per resolved outcome rather than per seat or per call. It makes how "resolved" is defined and measured the heart of the contract.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> 14 October 2026</p>
+                    <ul>
+                        <li>• <a href="https://epoch.ai/benchmarks/berkeley-function-calling-leaderboard/review" target="_blank">Berkeley Function Calling Leaderboard (BFCL) v4 review — Epoch AI (reviewed 10 Sep 2026)</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2506.07982" target="_blank">τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment — arXiv 2506.07982</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2406.12045" target="_blank">τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains — arXiv 2406.12045</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2510.07248" target="_blank">Don't Adapt Small Language Models for Tools; Adapt Tool Schemas to the Models (PA-Tool) — arXiv 2510.07248</a></li>
+                        <li>• <a href="https://arxiv.org/abs/2505.05445" target="_blank">clem:todd: A Framework for the Systematic Benchmarking of LLM-Based Task-Oriented Dialogue System Realisations — arXiv 2505.05445</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2105.09680" target="_blank">KLUE: Korean Language Understanding Evaluation (including Wizard of Seoul) — arXiv 2105.09680</a></li>
+                        <li>• <a href="https://huggingface.co/datasets/klue/klue" target="_blank">KLUE dataset — Hugging Face</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2403.17319" target="_blank">JMultiWOZ: A Large-Scale Japanese Multi-Domain Task-Oriented Dialogue Dataset — arXiv 2403.17319</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/1909.05855" target="_blank">The Schema-Guided Dialogue Dataset — arXiv 1909.05855</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/1810.00278" target="_blank">MultiWOZ — arXiv 1810.00278</a></li>
+                        <li>• <a href="https://arxiv.org/html/2504.04717v6" target="_blank">Beyond Single-Turn: A Survey on Multi-Turn Interactions with Large Language Models — arXiv 2504.04717</a></li>
+                        <li>• <a href="https://arxiv.org/pdf/2503.22458" target="_blank">Evaluating LLM-based Agents for Multi-Turn Conversations: A Survey — arXiv 2503.22458</a></li>
+                        <li>• <a href="https://insoftex.com/insights/build-vs-buy-ai-agents/" target="_blank">Build vs. Buy AI Agents — What the Enterprise Data Actually Says</a></li>
+                        <li>• <a href="https://www.thewitn.com/blog/ai-agent-pricing-in-2026-what-fin-sierra-decagon-and-agentforce-actually-charge" target="_blank">AI Agent Pricing in 2026: Fin, Sierra, Decagon — The WITN</a></li>
+                        <li>• <a href="https://www.getmacha.com/blog/decagon-vs-sierra-ai" target="_blank">Decagon vs Sierra AI 2026: Pricing, Billing and Build Model — Macha</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Figure 1 — BFCL v4 defect rates (Epoch AI review, 50-task sample)
+        const ctx1 = document.getElementById('defectChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Overall sample\ndefect rate', 'Lowest category\n(non-live AST)', 'Highest category\n(memory)', 'Share of total\nscore affected'],
+                datasets: [{
+                    label: 'Percent (%)',
+                    data: [48, 20, 70, 20],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: ['rgb(239, 68, 68)', 'rgb(59, 130, 246)', 'rgb(168, 85, 247)', 'rgb(249, 115, 22)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Opening up a standard benchmark — 24 defects in 50 tasks' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 80, title: { display: true, text: '%' } } }
+            }
+        });
+
+        // Figure 2 — from pilot to production (separate surveys)
+        const ctx2 = document.getElementById('pilotChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['Pilots failing to\nreach production (IDC)', 'No P&L impact\n(MIT NANDA)', 'Running in live\nproduction (McKinsey)', 'Priority cases in\nfull production', 'Governance not fit\nfor purpose (IBM)'],
+                datasets: [{
+                    label: 'Percent (%)',
+                    data: [88, 95, 11, 31, 70],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(249, 115, 22, 0.7)'
+                    ],
+                    borderColor: ['rgb(239, 68, 68)', 'rgb(239, 68, 68)', 'rgb(34, 197, 94)', 'rgb(34, 197, 94)', 'rgb(249, 115, 22)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Building it well and getting it used are different problems (separate surveys)' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '%' } } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- Shared theme (Ink & Paper) — always include -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
