@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plenty of Books on Recommendation — What Is Missing Is a Definition</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 Shared theme (Ink & Paper): without this line the palette will not match -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="Between the books that criticise recommendation and the books that teach you to build it, the seat that asks what recommendation is sits empty">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-en.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="Plenty of Books on Recommendation — What Is Missing Is a Definition">
+<meta property="og:description" content="Between the books that criticise recommendation and the books that teach you to build it, the seat that asks what recommendation is sits empty">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-en.html">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-26">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Plenty of Books on Recommendation — What Is Missing Is a Definition">
+<meta name="twitter:description" content="Between the books that criticise recommendation and the books that teach you to build it, the seat that asks what recommendation is sits empty">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="Toggle brightness" aria-label="Toggle brightness">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='recommendation-book-landscape-definition-gap-20261026-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='recommendation-book-landscape-definition-gap-20261026-en.html'" class="lang-btn active">English</button>
+                    <button onclick="window.location.href='recommendation-book-landscape-definition-gap-20261026-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>Plenty of Books on Recommendation — What Is Missing Is a Definition<br>And the Closest One Comes Out in Two Weeks</h1>
+            <div class="subtitle">Between the books that criticise recommendation and the books that teach you to build it, the seat that asks what recommendation is sits empty</div>
+            <div class="meta">Report date: 26 October 2026 | Standard report (5-8 pages) | Data collected: 26 October 2026</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <div class="callout">
+                    <strong>The central claim of this report</strong><br>
+                    There is no shortage of books about recommendation. But they fall into two clusters:
+                    <strong>books that criticise what recommendation has done to society</strong>, and
+                    <strong>books that teach you how to build one</strong>.
+                    Between them, the seat that asks <strong>"what is a recommendation?" and sorts recommendation into kinds</strong> is empty.
+                    This survey <strong>found no book</strong> that makes that question the central argument of a volume.
+                    More striking: the title that comes closest to that seat is
+                    <strong>due out in Japan on 10 November 2026</strong>.
+                </div>
+
+                <h3 class="subsection-title">1. There is effectively one trade book on recommendation</h3>
+                <p><strong>Where things stand:</strong> Search for "a book on recommender systems" and almost everything returned is a textbook
+                or a practitioner's guide. A single volume a non-technical reader can pick up and read about recommendation as a subject in itself —
+                <strong>this survey confirmed exactly one.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>The one trade book confirmed</h4>
+                        <p>• <strong>Michael Schrage, <em>Recommendation Engines</em></strong>
+                        (MIT Press, <strong>1 September 2020</strong>, around 296 pp.)<br>
+                        • <strong>Essential Knowledge series</strong> — MIT Press's concept primers written for readers outside the field<br>
+                        • Contents: what recommenders are → the origins of recommendation (reaching back to antiquity's oracles
+                        and astrologers) → a brief history of recommendation engines → how recommenders work →
+                        experiencing recommendations → recommendation innovators → the recommender future<br>
+                        • Case studies: <strong>Spotify, ByteDance and Stitch Fix</strong><br>
+                        • The closing question: will recommenders leave us disappointed and dependent, or help us
+                        discover the world and ourselves in novel and serendipitous ways?</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Everything else is a textbook or a guide</h4>
+                        <p>• <em>Recommender Systems Handbook</em> (Springer) ·
+                        <em>Recommender Systems: Frontiers and Practices</em> (Springer, 2024)<br>
+                        • <em>Practical Recommender Systems for Work</em> — Japanese: 『推薦システム実践入門』
+                        (O'Reilly Japan, <strong>May 2022</strong>, 296 pp.), subtitled "a deployment guide you can use at work"<br>
+                        • 『基礎から学ぶ推薦システム』 (Corona Publishing) ·
+                        Jannach, Japanese edition 『情報推薦システム入門』 (Kyoritsu, 2012)<br>
+                        • 🔴 <strong>In the Korean market this survey found no original work.</strong>
+                        The only recommender-systems volume confirmed, <em>추천 시스템 입문</em>
+                        (Hanbit Media, <strong>May 2023</strong>, 296 pp.), is a <strong>translation</strong>
+                        of the Japanese guide above — the authors and page count match</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://mitpress.mit.edu/9780262539074/recommendation-engines/" target="_blank">Recommendation Engines — MIT Press</a> |
+                    <a href="https://www.oreilly.co.jp/books/9784873119663/" target="_blank">推薦システム実践入門 — O'Reilly Japan</a> |
+                    <a href="https://product.kyobobook.co.kr/detail/S000201794203" target="_blank">추천 시스템 입문 — Kyobo Book</a>
+                </div>
+
+                <p><strong>Outlook:</strong> That distribution does not mean there is no demand.
+                Recommendation reaches us dozens of times a day, and <strong>exactly one trade book explains it</strong>.
+                The saturated ground is not recommendation itself but the seat beside it — the next trend.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The Schrage book's publication date (2020-09-01), series, case studies and table of contents were confirmed from publisher and bookseller listings. The match between the Japanese guide and the Korean edition was checked on both listings (same authors, 296 pp.).<br>
+                        <strong>Gaps:</strong> 🔴 <strong>"Effectively one" is not the conclusion of an exhaustive survey.</strong> It means searches in English, Korean and Japanese surfaced nothing else; out-of-print titles, regional imprints and ebook-only releases were outside the range checked. The Schrage page count varies by source between 264 and 298. The Korean-to-Japanese correspondence is <strong>this analysis's inference</strong> from matching authors and page count; the copyright page was not inspected.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. The adjacent genre is already full — and all of it is critique</h3>
+                <p><strong>Where things stand:</strong> Books about the <strong>effects</strong> of recommendation form a genre of their own.
+                Filter bubbles, black-box scores, search bias, algorithms and culture. This ground is not vacant.
+                But the question these books share is <strong>"what has recommendation done?"</strong> — not
+                <strong>"what is recommendation?"</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Ground already taken</h4>
+                        <p>• <strong>Eli Pariser, <em>The Filter Bubble</em></strong> (2011) — personalisation splits our information worlds
+                        <em>(Japanese edition from Hayakawa)</em><br>
+                        • <strong>Cathy O'Neil, <em>Weapons of Math Destruction</em></strong> (2016) — the harms of opaque scoring models<br>
+                        • <strong>Safiya Noble, <em>Algorithms of Oppression</em></strong> (2018) — racial and gender bias in search engines<br>
+                        • <strong>Hannah Fry, <em>Hello World</em></strong> (2018) — the growing influence of algorithms on human life<br>
+                        • <strong>Kyle Chayka, <em>Filterworld</em></strong> (2024) — algorithms flatten culture<br>
+                        • Japan has the same lineage in translation and in original work —
+                        『アルゴリズム・AIを疑う』 (Shueisha) · 『AIから読み解く社会』 (University of Tokyo Press)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>The genre's own critics point the way</h4>
+                        <p>• Chayka's argument: algorithms have <strong>replaced human tastemakers</strong> to become the
+                        primary lever of a globally uniform culture · the turning point was feeds switching from
+                        <strong>chronological to algorithmic around 2015</strong> · his antidote is
+                        <strong>"curation"</strong>, the reimposition of individual human taste<br>
+                        • 🔴 Yet reviewers push back on that framing — they argue Chayka
+                        <strong>romanticises a past of "human tastemakers"</strong> and erases the
+                        <strong>race, gender, class and power</strong> that also decided what became popular<br>
+                        • One review calls the algorithm-versus-human-tastemaker split a <strong>false dichotomy</strong> outright<br>
+                        • So the genre's weak point is that <strong>it drew the wrong axis</strong>.
+                        Where, then, should the axis go? That is the question sitting vacant</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.theglobeandmail.com/arts/books/reviews/article-filterworld-is-a-sobering-look-at-how-algorithms-shape-what-we-buy-eat/" target="_blank">Filterworld review — The Globe and Mail</a> |
+                    <a href="https://www.npr.org/transcripts/1224955473" target="_blank">Filterworld review — NPR</a> |
+                    <a href="https://www.bookbug.jp/entry/%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0%E7%A4%BE%E4%BC%9A-%E3%81%8A%E3%81%99%E3%81%99%E3%82%81%E6%9C%AC" target="_blank">Ten books on algorithmic society (Japanese)</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The critique genre is close to saturated, and a new book will struggle to find a seat inside it.
+                But the critique levelled at that genre shows a route. <strong>Change the axis from "algorithm or human" to
+                "which kind of recommendation"</strong> and the same phenomena can be treated from a different position.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Chayka's argument (replacement of human tastemakers, the 2015 feed switch, curation as antidote) and the reviewers' objections (romanticised past, missing power axis, false dichotomy) were confirmed directly in several reviews. Fry's <em>Hello World</em> (2018) was also confirmed.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>The publication years and arguments of Pariser, O'Neil and Noble were not confirmed in this survey and rest on common knowledge.</strong> No book here was read to verify that it "does not ask the definitional question"; the judgement was made from descriptions and reviews. "Close to saturated" rests on a count of titles, not sales data, and is <strong>this analysis's impression</strong>.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 🔴 The closest book comes out in Japan in two weeks</h3>
+                <p><strong>Where things stand:</strong> The most unexpected result of this survey.
+                <strong>The book that comes closest to asking what recommendation is has not been published yet — it is published in two weeks.</strong>
+                Its title is itself a question.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Ryoma Sato, 『推薦システム』 (Recommender Systems)</h4>
+                        <p>• Subtitle: <strong>"Why are the products a recommender system recommends attractive — or why are they not?"</strong><br>
+                        • Kodansha Scientific · <strong>due 10 November 2026 (Tuesday)</strong><br>
+                        • Scope: the basic mechanism → content filtering → collaborative filtering → evaluation methods →
+                        <strong>recommendation using large language models</strong> → <strong>social dimensions</strong><br>
+                        • A follow-up to the same author's 『検索システム』 (Search Systems), which carries a
+                        question-shaped subtitle in the same mould — "why can a search system find the information
+                        you want, or why can it not?"<br>
+                        • The same author's public talk is titled
+                        <strong>"Recommender systems that do not maximise click-through rate"</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>It still occupies a different seat</h4>
+                        <p>• This is a <strong>technical book with Python code</strong>. That is a different layer
+                        from an Essential Knowledge primer written for readers outside the field<br>
+                        • And the question differs. <strong>"Why is it attractive" is a question about quality;
+                        "how many kinds are there" is a question about type.</strong>
+                        The first can be answered end to end while still assuming recommendation is one thing<br>
+                        • ⚠️ <strong>Because it is unpublished, the contents, page count and series were not confirmed.</strong>
+                        It is the first book to check against once it appears<br>
+                        • Note what the talk title shows: <strong>criticism of engagement metrics is already inside
+                        Japanese technical discourse</strong> — it is not the exclusive property of the critique genre</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.kodansha.co.jp/book/products/0000430427" target="_blank">推薦システム — Kodansha</a> |
+                    <a href="https://www.kodansha.co.jp/book/products/0000425089" target="_blank">検索システム — Kodansha</a> |
+                    <a href="https://speakerdeck.com/joisino/kuritukulu-wozui-da-hua-sinaitui-jian-sisutemu" target="_blank">Recommender systems that do not maximise CTR</a>
+                </div>
+
+                <div class="callout">
+                    <strong>Read alongside —</strong> the fact that publication is two weeks away is itself a market signal.
+                    It means <strong>demand for a book that asks about recommendation conceptually is forming now</strong>,
+                    and at the same time it is <strong>evidence that the seat was still empty</strong>.
+                    The same author put the same question to search two years earlier in 『検索システム』,
+                    and the publisher describes that book as having been very well received.
+                    In other words, <strong>opening a technical subject with a conceptual question worked in Japan,
+                    and recommendation is next in line.</strong>
+                </div>
+
+                <p><strong>Outlook:</strong> After 10 November the coordinates of this field shift by one square.
+                But the square that moves is <strong>"a technical book that asks a concept"</strong>, and
+                <strong>"a trade book that rewrites the definition"</strong> will most likely remain vacant.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The full title, subtitle, author, publisher and scope were confirmed on the publisher's product page. The release date "10 November (Tue)" comes from the publisher's official account, and <strong>10 November 2026 really is a Tuesday, which cross-checks the year</strong> (10 November 2025 was a Monday).<br>
+                        <strong>Gaps:</strong> 🔴 <strong>The book is unpublished, so it could not be read.</strong> The contents, page count, series and price were not confirmed (the publisher's page blocks automated access), so it cannot be said that it carries no typology. "A technical book with code" rests on the description's mention of accompanying Python code, and "a question about quality, not type" is <strong>this analysis's reading of the title</strong>.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 🔴 One author wrote "receiving is becoming" and "recommendation" in two separate books</h3>
+                <p><strong>Where things stand:</strong> The most important finding of this survey.
+                The insight that <strong>receiving a recommendation changes the person who receives it</strong> is already in print.
+                So is <strong>the history and mechanics of recommendation engines</strong>.
+                And yet those two books <strong>were never joined — by the same author.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Same author, two books, eight years apart</h4>
+                        <p>• <strong>17 July 2012</strong> — Michael Schrage,
+                        <em>Who Do You Want Your Customers to Become?</em>
+                        (Harvard Business Review Press, 76 pp. ebook)<br>
+                        • Core argument: <strong>asking customers to do something different does not go far enough;
+                        you must ask them to become something different</strong><br>
+                        • And to enable that change, the firm must <strong>invest in the customer's capabilities and competencies</strong> —
+                        "innovation is an investment in your client, not just a transaction with them"<br>
+                        • <strong>1 September 2020</strong> — the same author, <em>Recommendation Engines</em> (MIT Press)<br>
+                        • 🔴 Yet nowhere in the 2020 table of contents does that 2012 question appear as an axis.
+                        The contents run history → mechanics → experience → innovators → future:
+                        <strong>the grammar of a technical history</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Why they never joined — the grammars differ</h4>
+                        <p>• "Making someone become" was written in the <strong>grammar of corporate strategy and marketing</strong>.
+                        The subject is the firm, the object is the customer, the purpose is a better customer<br>
+                        • "Recommendation" was written in the <strong>grammar of technical history</strong>.
+                        The subject is the system, the object is the item, the purpose is to predict correctly<br>
+                        • The axis that would join the two grammars —
+                        <strong>"does holding the item change the person who received it?"</strong> —
+                        was not found as a classification criterion for recommendation in any book<br>
+                        • 🔴 The academic side is empty too. <strong>No literature was found using
+                        "state-dependent recommendation" as a taxonomic term</strong>, and no philosophical
+                        work was found addressing "what is a recommendation" head on — what exists is
+                        <strong>the lexical and rhetorical distinction between advice and recommendation</strong>
+                        (a line traced back to Aristotle's <em>Rhetoric</em>)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://store.hbr.org/product/who-do-you-want-your-customers-to-become/11245" target="_blank">Who Do You Want Your Customers to Become? — HBR Store</a> |
+                    <a href="https://sloanreview.mit.edu/article/a-challenging-question-for-innovators" target="_blank">A Challenging Question for Innovators — MIT SMR</a> |
+                    <a href="https://link.springer.com/chapter/10.1007/978-1-4899-7637-6_12" target="_blank">Panorama of Recommender Systems to Support Learning</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The education research literature has known about this split for a long time.
+                Drachsler and colleagues wrote <strong>as early as 2009</strong> that e-commerce recommendation
+                relies entirely on consumer interest and taste, whereas what a learner prefers may not be what is
+                pedagogically most appropriate; and the learning-recommendation survey chapter in the 2015
+                <em>Recommender Systems Handbook</em> (pp. 421–451) sorted the field's systems into
+                <strong>seven clusters</strong>.
+                But <strong>that classification stayed inside academic volumes and never came out as a trade book.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The 2012 book's publication date (2012-07-17), length (76 pp.) and core argument (not "do something different" but "become something different"; invest in the customer's capabilities) were confirmed from the publisher's store and an MIT SMR article. The 2020 book's table of contents was confirmed from bookseller listings. Common authorship was checked on both.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>"The two books were never joined" rests on the contents and descriptions, not on reading the 2020 book's text.</strong> It may address the question somewhere inside. "No taxonomic term found" and "no philosophical work found" are results of public search and are <strong>not proof of absence</strong>. The Drachsler 2009 quotation is a second-hand citation carried by later literature; the original was not consulted.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. The nonfiction market now — volume is abundant, trust is scarce</h3>
+                <p><strong>Where things stand:</strong> If a book is to be published, under what conditions is it published now?
+                These conditions reshape a manuscript regardless of its subject.
+                In short: <strong>you cannot win on volume, and trust has become the differentiator.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Volume is abundant</h4>
+                        <p>• A sample of <strong>14,419</strong> self-published genre novels on Amazon (2023–2026):
+                        about <strong>20%</strong> were flagged as having substantial AI text, meaning over 25% of the prose<br>
+                        • Yet that 20% took only <strong>about 12% of sales and 11% of revenue</strong> —
+                        they occupy the catalogue without taking the earnings
+                        <em>(arXiv preprint, not peer reviewed)</em><br>
+                        • Reporting on the same study summarises it as the number of selling books rising far faster
+                        than revenue, so <strong>revenue per book fell</strong><br>
+                        • Adult nonfiction was <strong>down 9% in early 2026 against the prior year</strong>
+                        (a Publishers Weekly figure, cited by Ferriss)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>So trust acquired a price</h4>
+                        <p>• Steven Rosenbaum's 2026 book on AI and truth,
+                        <em>The Future of Truth</em> (Matt Holt Books), was found to contain
+                        <strong>misattributed quotes hallucinated by AI tools</strong><br>
+                        • Karen Hao's <em>Empire of AI</em>, by contrast, won the
+                        <strong>2025 National Book Critics Circle Award for Nonfiction</strong> —
+                        a work built on reporting<br>
+                        • 🔴 The implication is plain. <strong>Books that can be written without sources are already abundant,
+                        and books that have sources have become the scarce ones.</strong>
+                        A manuscript carrying primary material and direct measurement is, paradoxically, favoured<br>
+                        • Tim Ferriss reports his own print sales <strong>down 46% in 2025 and 57% in 2026</strong>
+                        and argues prescriptive nonfiction is a leading indicator <em>(a single author's data)</em></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://arxiv.org/html/2607.20349v3" target="_blank">Generative AI floods and dilutes the market for books (arXiv)</a> |
+                    <a href="https://fortune.com/2026/09/14/ai-slop-books-amazon-marketplace-publishing-human-authors/" target="_blank">AI slop books flood marketplaces — Fortune</a> |
+                    <a href="https://www.thebookseller.com/news/predictions-what-lies-ahead-for-the-book-trade-in-2026" target="_blank">Predictions for the book trade in 2026 — The Bookseller</a>
+                </div>
+
+                <p><strong>Outlook:</strong> These conditions work in favour of a book that asks a definitional question.
+                Asking what something is cannot be replaced by a summary, and sorting things into kinds cannot be replaced by a search.
+                Conversely, <strong>a book that tidies up and introduces an existing debate now sits in the worst seat.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The sample size (14,419), the flagged share (about 20%) and the sales and revenue shares (about 12% and 11%) come from the arXiv paper; the 9% nonfiction decline and Ferriss's own figures from his post; the award and the misattribution case from their respective entries.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>The arXiv paper has not been peer reviewed</strong> (the authors say so themselves). The sample is <strong>self-published genre fiction</strong>, so it does not transfer directly to trade nonfiction. Ferriss's figures are <strong>one author's data</strong>, and the 9% decline is a second-hand citation; the Publishers Weekly original was not consulted. "Trust has become the differentiator" is <strong>this analysis's reading</strong> drawn from one award and one incident.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">A map of books on recommendation — five layers</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    A map sorted not by subject but by <strong>which question the book asks</strong>.
+                    Books in the same layer behave alike; books in different layers reach different readers
+                    even when they cover the same material.
+                    <em>(This analysis's classification.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Author</th>
+                            <th>Published</th>
+                            <th>Layer</th>
+                            <th>Sorts recommendation into kinds?</th>
+                            <th>Education, credentials, careers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><em>The Filter Bubble</em></td>
+                            <td>Eli Pariser</td>
+                            <td>2011 ⚠️</td>
+                            <td>Critique / society</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><em>Who Do You Want Your Customers to Become?</em></td>
+                            <td>Michael Schrage</td>
+                            <td><strong>2012-07-17</strong> (76 pp.)</td>
+                            <td>Management / strategy</td>
+                            <td>✗ <em>(but does treat "becoming")</em></td>
+                            <td>✗ <em>(reaches customer capability investment)</em></td>
+                        </tr>
+                        <tr>
+                            <td><em>Weapons of Math Destruction</em></td>
+                            <td>Cathy O'Neil</td>
+                            <td>2016 ⚠️</td>
+                            <td>Critique / society</td>
+                            <td>✗</td>
+                            <td>Partly ⚠️</td>
+                        </tr>
+                        <tr>
+                            <td><em>Hello World</em></td>
+                            <td>Hannah Fry</td>
+                            <td>2018</td>
+                            <td>Critique / society</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><em>Algorithms of Oppression</em></td>
+                            <td>Safiya Noble</td>
+                            <td>2018 ⚠️</td>
+                            <td>Critique / society</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><strong><em>Recommendation Engines</em></strong></td>
+                            <td>Michael Schrage</td>
+                            <td><strong>2020-09-01</strong> (~296 pp.)</td>
+                            <td><strong>Concept / explainer (trade)</strong></td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td>『推薦システム実践入門』<br><small>= 추천 시스템 입문 (Hanbit Media, 2023-05)</small></td>
+                            <td>Kazama, Iizuka &amp; Matsumura</td>
+                            <td>2022-05 (296 pp.)</td>
+                            <td>Practitioner guide</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><em>Filterworld</em></td>
+                            <td>Kyle Chayka</td>
+                            <td>2024-01</td>
+                            <td>Critique / society</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><strong>『推薦システム』</strong><br><small>Why are the recommended products attractive — or why are they not?</small></td>
+                            <td>Ryoma Sato</td>
+                            <td><strong>Due 2026-11-10</strong></td>
+                            <td>Concept + technical</td>
+                            <td>⚠️ Unconfirmed</td>
+                            <td>⚠️ Unconfirmed</td>
+                        </tr>
+                        <tr>
+                            <td><em>Recommender Systems for Learning</em></td>
+                            <td>Manouselis et al.</td>
+                            <td>2012 (~90 pp.)</td>
+                            <td>Academic brief</td>
+                            <td>✗</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>"Panorama of Recommender Systems to Support Learning"<br><small>chapter in <em>Recommender Systems Handbook</em>, pp. 421–451</small></td>
+                            <td>Drachsler et al.</td>
+                            <td>2015</td>
+                            <td>Academic chapter</td>
+                            <td>◐ <em>(seven clusters)</em></td>
+                            <td>✅</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="font-size: 0.8rem; color: #4a4a4a;">
+                    Items marked ⚠️ have publication years or contents that <strong>this survey did not confirm at first hand</strong> and that rest on common knowledge.
+                    The "sorts into kinds" column reflects contents and descriptions, not a full reading of each text.
+                </p>
+
+                <h3 class="subsection-title">Books per layer — which square is empty</h3>
+                <div class="chart-container">
+                    <canvas id="layerChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    The books listed above, counted by layer. <em>(This analysis's tally — not an exhaustive survey.)</em>
+                </p>
+
+                <h3 class="subsection-title">Five questions a definitional book must answer, and the nearest precedent</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    Five questions that cannot be avoided if a whole volume asks what recommendation is,
+                    each set against the literature that comes closest.
+                    <strong>Some questions overlap with existing work; some sit empty.</strong>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Definitional question</th>
+                            <th>Nearest precedent</th>
+                            <th>Where it overlaps</th>
+                            <th>What this survey did not find</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① Is "recommendation" one kind of thing?</strong></td>
+                            <td>— <em>(none found)</em></td>
+                            <td>—</td>
+                            <td>A book making <strong>the division of recommendation into two or more kinds</strong> its central argument</td>
+                        </tr>
+                        <tr>
+                            <td><strong>② Does the item change the recipient?</strong></td>
+                            <td>Schrage, <em>Who Do You Want Your Customers to Become?</em> (2012)</td>
+                            <td>Not "do something different" but <strong>"become something different"</strong></td>
+                            <td>That insight carried through into <strong>a classification criterion for recommender systems</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ Does the record reveal preference?</strong></td>
+                            <td>Chaney et al., algorithmic confounding (RecSys 2018) · Perdomo et al., performative prediction (ICML 2020)</td>
+                            <td>Recommendation <strong>trains on data it created itself</strong>, and prediction changes the world</td>
+                            <td>That argument worked out in <strong>a book for general readers</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ Is engagement a proxy for good?</strong></td>
+                            <td>Chayka, <em>Filterworld</em> (2024) · Sato, "Recommender systems that do not maximise CTR"</td>
+                            <td>Chasing engagement <strong>flattens culture</strong>, and click-through should not be the objective</td>
+                            <td>The distinction that <strong>"engagement ≠ good" splits by domain</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ Is recommendation different where opportunity is at stake?</strong></td>
+                            <td>Drachsler et al. (2009) · Panorama chapter (2015, seven clusters)</td>
+                            <td><strong>Learner preference ≠ pedagogical appropriateness</strong></td>
+                            <td>The same point outside academic literature, in <strong>a trade book</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Comparing the character of the main books</h3>
+                <div class="chart-container">
+                    <canvas id="axisChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    <strong>This analysis's assessment</strong> on five axes. These are not scores any source published, and
+                    <strong>Sato (2026) is unpublished, so its values are inferred from the title and description</strong>.
+                </p>
+
+                <h3 class="subsection-title">Five market shifts</h3>
+                <ul class="key-findings">
+                    <li><strong>There is one trade book on recommendation:</strong> apart from Schrage's <em>Recommendation Engines</em> (2020), no dedicated recommendation book for non-specialist readers was found. The rest are textbooks and guides.</li>
+                    <li><strong>The critique genre is close to saturated:</strong> five books from <em>The Filter Bubble</em> to <em>Filterworld</em> treat what recommendation has done. What it is is not among them.</li>
+                    <li><strong>Demand for a conceptual book is forming now:</strong> the nearest title comes out in Japan on 10 November 2026, after the same author's search volume was well received first.</li>
+                    <li><strong>The core insights are already scattered:</strong> "make them become" sits in a management book, "recommendation" in a technical one, "learner preference ≠ appropriateness" in an academic chapter. Nothing was found binding them on one axis.</li>
+                    <li><strong>Trust has become the differentiator:</strong> 20% of a self-published catalogue was AI-written and nonfiction fell 9% year on year. A sourced manuscript is, paradoxically, scarce.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Check unpublished titles first</strong> - a book two weeks out may sit closer than anything already on the shelf</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Declare the layer up front</strong> - critique, concept or textbook decides the reader and the review route</p>
+                    <p style="line-height: 1.6;">3. <strong>Put primary measurement in the text</strong> - material that a summary cannot replace is what differentiates in this market</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key points</h3>
+                    <ul class="key-findings">
+                        <li><strong>The book market splits into two clusters:</strong> five books criticising what recommendation has done to society, and six textbooks and guides teaching how to build one. The layer between them, asking what recommendation is, holds a single volume.</li>
+                        <li><strong>No book was found sorting recommendation into kinds:</strong> the academic side showed no literature using "state-dependent recommendation" as a taxonomic term, and the seven-cluster classification of educational recommenders stayed inside an academic chapter.</li>
+                        <li><strong>The core insights sit in two books by one author:</strong> "you must ask customers to become something different" (2012) and "the history and mechanics of recommendation engines" (2020) were written by the same person and never joined on one axis.</li>
+                        <li><strong>The closest competing title comes out in two weeks:</strong> Ryoma Sato's 『推薦システム』 (Kodansha, due 2026-11-10) poses a conceptual question in its very title. But it is a technical book with code, and it asks about quality rather than type.</li>
+                        <li><strong>Market conditions favour a sourced manuscript:</strong> 20% of a self-published catalogue was AI-written yet took only 12% of sales. Adult nonfiction fell 9% year on year, and the same year brought both a hallucinated-citation incident and an award for reported work.</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Reference points by situation</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>Writing on recommendation → pick the layer first</strong><br>
+                        Why: the critique layer is close to saturated, the textbook layer competes against specialists, and the concept layer holds one book.<br>
+                        <strong>Studying the field → one book has to be read in English</strong><br>
+                        Why: the only recommender-systems volume confirmed in the Korean market is a translation of a Japanese guide.<br>
+                        <strong>Mapping the competition → wait for 10 November</strong><br>
+                        Why: an unpublished book sits closer to the gap than anything already out.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>Overall assessment:</strong> Neutral. A confirmed gap is an opportunity, but the possibility that the gap exists because there is no demand cannot be ruled out. A book that asks a definitional question has no evidence it will sell like a critique, and no readership as clear as a textbook's. That said, a volume asking the same question of search appeared first, was well received, and its sequel arrives in two weeks — which reads as a signal that this seat is empty but not dead.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">6.4/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> The existence and publication details of the books named were confirmed mostly from publisher and bookseller material, while the layer classification and the five questions laid over them are this analysis's proposals. The central claim rests on "none found", which is why credibility sits in the middle.</p>
+                        <p><strong>Main strengths:</strong> The release date of the forthcoming title was <strong>pinned down to the year by a day-of-week cross-check</strong> (10 November 2026 is a Tuesday). The correspondence between the Korean edition and the Japanese original was confirmed by matching authors and page count (296 pp.). Market-condition figures were taken from the arXiv paper and the original articles, with their limits — not peer reviewed, single-author data — stated alongside.</p>
+                        <p><strong>Priority improvements:</strong> ① 🔴 <strong>"None found" is not proof of absence</strong> — out-of-print titles, regional imprints, ebook-only releases and languages beyond English, Korean and Japanese were outside the range checked. ② 🔴 <strong>No book was judged by reading its text</strong> — the judgements come from contents and descriptions, so "does not sort into kinds" may be wrong. ③ 🔴 <strong>Three critique-genre titles rest on common knowledge</strong> for their years and arguments (Pariser, O'Neil, Noble). ④ The closest competing title <strong>is unpublished and could not be inspected</strong>. ⑤ Both chart datasets are this analysis's tally and assessment, and one radar series is an estimate for an unpublished book.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Collaborative filtering</strong> — filtering by gathering <strong>what other people did</strong> rather than by analysing content. Like footprints across fresh snow becoming the path everyone follows.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Implicit feedback</strong> — not ratings a user deliberately left, but the behavioural record (clicks, watch time, purchases) that accumulates by itself while the service is used.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Filter bubble</strong> — personalisation taken far enough that each person ends up enclosed in a different information world. The term spread through the 2011 book of that name.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Performative prediction</strong> — a situation where issuing the prediction changes the very world being predicted. A navigation app announcing "this side street is faster" sends everyone down it and jams it.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Algorithmic confounding</strong> — when a recommender is retrained on the choice records it produced, the data ends up recording the recommender's past decisions rather than the users' taste.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Essential Knowledge series</strong> — MIT Press's line of short concept primers on single subjects, written for readers outside the field.
+                    </div>
+                    <div>
+                        <strong>Self-publishing</strong> — releasing a book directly to retailers without a publisher. With no gatekeeping step, catalogues grow quickly.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>Sources</h3>
+                    <p><strong>Data collected:</strong> 26 October 2026</p>
+                    <ul>
+                        <li>• <a href="https://mitpress.mit.edu/9780262539074/recommendation-engines/" target="_blank">Recommendation Engines — MIT Press (Essential Knowledge, 2020-09-01)</a></li>
+                        <li>• <a href="https://books.google.com/books/about/Recommendation_Engines.html?id=qs7tDwAAQBAJ" target="_blank">Recommendation Engines table of contents — Google Books</a></li>
+                        <li>• <a href="https://store.hbr.org/product/who-do-you-want-your-customers-to-become/11245" target="_blank">Who Do You Want Your Customers to Become? — Harvard Business Review Store (2012-07-17)</a></li>
+                        <li>• <a href="https://sloanreview.mit.edu/article/a-challenging-question-for-innovators" target="_blank">A Challenging Question for Innovators — MIT Sloan Management Review</a></li>
+                        <li>• <a href="https://www.kodansha.co.jp/book/products/0000430427" target="_blank">『推薦システム』 Ryoma Sato — Kodansha (due 2026-11-10)</a></li>
+                        <li>• <a href="https://www.kodansha.co.jp/book/products/0000425089" target="_blank">『検索システム』 Ryoma Sato — Kodansha</a></li>
+                        <li>• <a href="https://speakerdeck.com/joisino/kuritukulu-wozui-da-hua-sinaitui-jian-sisutemu" target="_blank">Recommender systems that do not maximise CTR — Speaker Deck</a></li>
+                        <li>• <a href="https://www.oreilly.co.jp/books/9784873119663/" target="_blank">『推薦システム実践入門』— O'Reilly Japan (2022-05, 296 pp.)</a></li>
+                        <li>• <a href="https://product.kyobobook.co.kr/detail/S000201794203" target="_blank">추천 시스템 입문 — Kyobo Book (Hanbit Media, 2023-05, 296 pp.)</a></li>
+                        <li>• <a href="https://www.coronasha.co.jp/np/isbn/9784339029284/" target="_blank">『基礎から学ぶ推薦システム』— Corona Publishing</a></li>
+                        <li>• <a href="https://www.theglobeandmail.com/arts/books/reviews/article-filterworld-is-a-sobering-look-at-how-algorithms-shape-what-we-buy-eat/" target="_blank">Filterworld review — The Globe and Mail</a></li>
+                        <li>• <a href="https://www.npr.org/transcripts/1224955473" target="_blank">Filterworld review — NPR</a></li>
+                        <li>• <a href="https://link.springer.com/chapter/10.1007/978-1-4899-7637-6_12" target="_blank">Panorama of Recommender Systems to Support Learning — Recommender Systems Handbook (2015), pp. 421–451</a></li>
+                        <li>• <a href="https://link.springer.com/chapter/10.1007/978-3-031-36336-8_7" target="_blank">Tutorial: Educational Recommender Systems — AIED 2023</a></li>
+                        <li>• <a href="https://arxiv.org/html/2607.20349v3" target="_blank">Generative AI floods and dilutes the market for books — arXiv (not peer reviewed)</a></li>
+                        <li>• <a href="https://fortune.com/2026/09/14/ai-slop-books-amazon-marketplace-publishing-human-authors/" target="_blank">AI slop books flood online marketplaces — Fortune (2026-09-14)</a></li>
+                        <li>• <a href="https://tim.blog/2026/06/12/has-ai-already-killed-nonfiction/" target="_blank">Has AI Already Killed How-To Nonfiction? — Tim Ferriss (single-author data)</a></li>
+                        <li>• <a href="https://www.thebookseller.com/news/predictions-what-lies-ahead-for-the-book-trade-in-2026" target="_blank">Predictions: what lies ahead for the book trade in 2026 — The Bookseller</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Empire_of_AI" target="_blank">Empire of AI — 2025 National Book Critics Circle Award for Nonfiction</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/The_Future_of_Truth_(Rosenbaum_book)" target="_blank">The Future of Truth (Rosenbaum) — misattributed quotations</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Figure 1 — books per layer (this analysis's tally)
+        const ctx1 = document.getElementById('layerChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Critique / society\n(trade)', 'Concept / explainer\n(trade)', 'Textbooks & guides', 'Academic briefs\n(educational recsys)', 'Definition / typology'],
+                datasets: [{
+                    label: 'Books confirmed in this survey',
+                    data: [5, 1, 6, 2, 0],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(239, 68, 68, 0.7)'
+                    ],
+                    borderColor: ['rgb(59, 130, 246)', 'rgb(34, 197, 94)', 'rgb(148, 163, 184)', 'rgb(168, 85, 247)', 'rgb(239, 68, 68)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Five for critique, one for explanation, none for definition (this analysis\'s tally)' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Number of books' } } }
+            }
+        });
+
+        // Figure 2 — character of the main books (this analysis's assessment)
+        const ctx2 = document.getElementById('axisChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['Accessible to general readers', 'Asks "what is it?"', 'Sorts into kinds', 'Covers education & credentials', 'Primary measurement'],
+                datasets: [
+                    {
+                        label: 'Schrage, Recommendation Engines (2020)',
+                        data: [85, 60, 20, 10, 25],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    },
+                    {
+                        label: 'Chayka, Filterworld (2024)',
+                        data: [90, 30, 10, 5, 20],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: 'Sato, Recommender Systems (due 2026-11, estimated)',
+                        data: [45, 70, 25, 5, 40],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)'
+                    },
+                    {
+                        label: 'Academic handbooks and briefs',
+                        data: [10, 20, 35, 60, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'The readable ones do not sort into kinds; the ones that do are hard to read (this analysis\'s assessment)' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- Shared theme (Ink & Paper): must be included -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

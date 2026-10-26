@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추천을 다룬 책은 많다 — 비어 있는 것은 정의다</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 공유 테마 (Ink & Paper) : 이 줄이 없으면 색이 통일되지 않습니다 -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="추천을 비판한 책과 만드는 법을 가르친 책 사이에, 「추천이 무엇인가」를 묻는 자리가 비어 있습니다">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ko.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="추천을 다룬 책은 많다 — 비어 있는 것은 정의다">
+<meta property="og:description" content="추천을 비판한 책과 만드는 법을 가르친 책 사이에, 「추천이 무엇인가」를 묻는 자리가 비어 있습니다">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ko.html">
+<meta property="og:locale" content="ko_KR">
+<meta property="article:published_time" content="2026-10-26">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="추천을 다룬 책은 많다 — 비어 있는 것은 정의다">
+<meta name="twitter:description" content="추천을 비판한 책과 만드는 법을 가르친 책 사이에, 「추천이 무엇인가」를 묻는 자리가 비어 있습니다">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/recommendation-book-landscape-definition-gap-20261026-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="밝기 전환" aria-label="밝기 전환">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='recommendation-book-landscape-definition-gap-20261026-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='recommendation-book-landscape-definition-gap-20261026-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='recommendation-book-landscape-definition-gap-20261026-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>추천을 다룬 책은 많다 — 비어 있는 것은 정의다<br>그리고 가장 가까운 책이 2주 뒤에 나온다</h1>
+            <div class="subtitle">추천을 비판한 책과 만드는 법을 가르친 책 사이에, 「추천이 무엇인가」를 묻는 자리가 비어 있습니다</div>
+            <div class="meta">보고서 작성일: 2026년 10월 26일 | 표준 보고서(5-8쪽) | 데이터 수집: 2026년 10월 26일</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <div class="callout">
+                    <strong>이 보고서의 중심 주장</strong><br>
+                    추천을 다룬 책은 적지 않습니다. 그런데 그 책들은 두 덩어리로 갈립니다.
+                    <strong>추천이 사회에 무엇을 했는지 비판하는 책</strong>과 <strong>추천을 만드는 법을 가르치는 책</strong>입니다.
+                    그 사이, <strong>「추천이란 무엇인가」를 묻고 추천을 종류로 가르는 자리</strong>가 비어 있습니다.
+                    본 조사에서 그 질문을 책 한 권의 중심 주장으로 세운 단행본을 <strong>찾지 못했습니다.</strong>
+                    더 눈에 띄는 것은, 그 자리에 가장 가까운 책이 <strong>2026년 11월 10일 일본에서 발매 예정</strong>이라는 사실입니다.
+                </div>
+
+                <h3 class="subsection-title">1. 일반 독자용 추천 단행본은 사실상 한 권이다</h3>
+                <p><strong>현황:</strong> 「추천 시스템 책」을 찾으면 거의 전부 교과서나 실무서가 나옵니다.
+                기술을 모르는 독자가 추천이라는 주제 하나를 붙들고 읽을 수 있는 단행본은 <strong>본 조사에서 한 권만 확인됐습니다.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>유일하게 확인된 일반 독자용 단행본</h4>
+                        <p>• <strong>Michael Schrage, <em>Recommendation Engines</em></strong>
+                        (MIT Press, <strong>2020년 9월 1일</strong>, 약 296쪽)<br>
+                        • <strong>Essential Knowledge 시리즈</strong> — 비전공 독자를 겨냥한 MIT Press 의 개념 입문 총서<br>
+                        • 목차: 추천자란 무엇인가 → 추천의 기원(고대의 신탁·점성술까지 거슬러 간다) →
+                        추천 엔진의 짧은 역사 → 작동 원리 → 추천을 경험한다 → 혁신가들 → 추천의 미래<br>
+                        • 사례 연구는 <strong>Spotify · ByteDance · Stitch Fix</strong><br>
+                        • 마지막 장의 질문: 추천은 우리를 실망과 의존으로 끌고 가는가, 아니면
+                        세계와 우리 자신을 새롭게 발견하도록 돕는가</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>나머지는 전부 교과서·실무서</h4>
+                        <p>• <em>Recommender Systems Handbook</em>(Springer) ·
+                        <em>Recommender Systems: Frontiers and Practices</em>(Springer, 2024)<br>
+                        • 『推薦システム実践入門』(O'Reilly Japan, <strong>2022년 5월</strong>, 296쪽) —
+                        부제가 「일에서 쓸 수 있는 도입 가이드」입니다<br>
+                        • 『基礎から学ぶ推薦システム』(コロナ社) ·
+                        Jannach 『情報推薦システム入門』(共立出版, 2012)<br>
+                        • 🔴 <strong>한국어 시장에서는 고유 저작을 찾지 못했습니다.</strong>
+                        확인된 유일한 추천 시스템 단행본 『추천 시스템 입문』(한빛미디어, <strong>2023년 5월</strong>, 296쪽)은
+                        위 일본 실무서의 <strong>번역서</strong>입니다 — 저자·쪽수가 일치합니다</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://mitpress.mit.edu/9780262539074/recommendation-engines/" target="_blank">Recommendation Engines — MIT Press</a> |
+                    <a href="https://www.oreilly.co.jp/books/9784873119663/" target="_blank">推薦システム実践入門 — O'Reilly Japan</a> |
+                    <a href="https://product.kyobobook.co.kr/detail/S000201794203" target="_blank">추천 시스템 입문 — 교보문고</a>
+                </div>
+
+                <p><strong>전망:</strong> 이 분포가 말해 주는 것은 수요가 없다는 뜻이 아닙니다.
+                추천은 하루에 수십 번 우리에게 닿는데, <strong>그것을 설명하는 일반 독자용 책은 한 권</strong>입니다.
+                시장이 포화인 쪽은 추천 자체가 아니라 그 옆자리입니다 — 다음 항목입니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Schrage 책의 출간일(2020-09-01)·시리즈·사례·목차는 출판사 및 서점 정보에서 확인했습니다. 일본 실무서와 한국어판의 저자·쪽수(296쪽) 일치도 양쪽 서점 정보에서 대조했습니다.<br>
+                        <strong>개선점:</strong> 🔴 <strong>「사실상 한 권」은 전수 조사의 결론이 아닙니다.</strong> 영어·한국어·일본어 검색으로 찾지 못했다는 뜻이며, 절판서·지역 출간물·전자책 전용 출간물은 확인 범위 밖입니다. Schrage 책의 쪽수는 출처마다 264~298쪽으로 엇갈립니다. 한국어판의 원서 대응은 저자명·쪽수 일치에 근거한 <strong>본 분석의 판단</strong>이며 판권 표기를 직접 확인하지는 않았습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 인접 장르는 이미 꽉 찼다 — 다만 전부 「비판」이다</h3>
+                <p><strong>현황:</strong> 추천의 <strong>영향</strong>을 다루는 책은 한 장르를 이뤘습니다.
+                필터 버블, 블랙박스 점수, 검색의 편향, 알고리즘과 문화. 이 땅은 비어 있지 않습니다.
+                다만 이 책들이 묻는 질문은 공통적으로 <strong>「추천이 무엇을 했는가」</strong>이고,
+                <strong>「추천이 무엇인가」</strong>가 아닙니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>이미 점령된 땅</h4>
+                        <p>• <strong>Eli Pariser, <em>The Filter Bubble</em></strong>(2011) — 개인화가 정보 세계를 가른다
+                        <em>(일본어판 早川書房)</em><br>
+                        • <strong>Cathy O'Neil, <em>Weapons of Math Destruction</em></strong>(2016) — 불투명한 점수 모형의 해악<br>
+                        • <strong>Safiya Noble, <em>Algorithms of Oppression</em></strong>(2018) — 검색 엔진의 인종·성 편향<br>
+                        • <strong>Hannah Fry, <em>Hello World</em></strong>(2018) — 알고리즘이 삶에 미치는 영향 전반<br>
+                        • <strong>Kyle Chayka, <em>Filterworld</em></strong>(2024) — 알고리즘이 문화를 균질화한다<br>
+                        • 일본에도 같은 계열이 번역·출간돼 있습니다 — 『アルゴリズム・AIを疑う』(集英社) ·
+                        『AIから読み解く社会』(東京大学出版会)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>그 장르가 받은 비판이 단서다</h4>
+                        <p>• Chayka 의 주장: 알고리즘이 <strong>인간 취향 중개자를 대체해</strong> 전 지구적 균질 문화의
+                        지렛대가 됐다 · 전환점은 피드가 <strong>시간순에서 알고리즘순으로 바뀐 2015년 무렵</strong> ·
+                        처방은 <strong>「큐레이션」</strong>, 곧 개인의 취향을 다시 들이미는 일<br>
+                        • 🔴 그런데 서평들은 이 구도를 되받습니다 — Chayka 가
+                        <strong>「인간 취향 중개자」의 과거를 낭만화</strong>하고, 무엇이 인기를 얻는지를 함께 정했던
+                        <strong>인종·성·계급·권력</strong>을 지운다는 지적입니다<br>
+                        • 한 서평은 「알고리즘 대 인간 중개자」를 아예 <strong>거짓 이분법</strong>이라고 부릅니다<br>
+                        • 즉 이 장르의 약점은 <strong>대립 축을 잘못 그었다</strong>는 데 있습니다.
+                        그러면 축은 어디에 그어야 하는가 — 그 질문이 비어 있는 자리입니다</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.theglobeandmail.com/arts/books/reviews/article-filterworld-is-a-sobering-look-at-how-algorithms-shape-what-we-buy-eat/" target="_blank">Filterworld 서평 — The Globe and Mail</a> |
+                    <a href="https://www.npr.org/transcripts/1224955473" target="_blank">Filterworld 서평 — NPR</a> |
+                    <a href="https://www.bookbug.jp/entry/%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0%E7%A4%BE%E4%BC%9A-%E3%81%8A%E3%81%99%E3%81%99%E3%82%81%E6%9C%AC" target="_blank">アルゴリズム社会おすすめ本 10冊</a>
+                </div>
+
+                <p><strong>전망:</strong> 비판 장르는 포화에 가깝고, 그 안에서 새 책이 자리를 얻기는 어렵습니다.
+                그러나 이 장르가 받은 비판이 길을 알려 줍니다. <strong>「알고리즘이냐 사람이냐」가 아니라
+                「어떤 종류의 추천이냐」로 축을 바꾸면</strong> 같은 현상을 다른 자리에서 다룰 수 있습니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> Chayka 의 주장(인간 취향 중개자 대체·2015년 피드 전환·처방으로서의 큐레이션)과 그에 대한 서평의 비판(과거 낭만화·권력 축 누락·거짓 이분법)은 복수의 서평에서 직접 확인했습니다. Fry 의 <em>Hello World</em>(2018)도 확인했습니다.<br>
+                        <strong>개선점:</strong> 🔴 <strong>Pariser·O'Neil·Noble 세 권의 출간연도와 주장은 이번 조사에서 1차 확인하지 못했고 통설에 기댔습니다.</strong> 각 책의 본문을 읽고 「정의를 묻지 않는다」를 확인한 것이 아니라, 소개문과 서평 수준에서 판단한 것입니다. 「포화에 가깝다」는 판매 데이터가 아니라 책 수에 근거한 <strong>본 분석의 인상</strong>입니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 🔴 가장 가까운 책이 2주 뒤 일본에서 나온다</h3>
+                <p><strong>현황:</strong> 이번 조사에서 가장 뜻밖의 결과입니다.
+                <strong>「추천이 무엇인가」에 가장 가까이 다가간 책이 아직 나오지 않았고, 2주 뒤에 나옵니다.</strong>
+                제목 자체가 질문입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>佐藤竜馬, 『推薦システム』</h4>
+                        <p>• 부제: <strong>「なぜ推薦システムが薦める商品は魅力的なのか、あるいはなぜ魅力的ではないのか」</strong>
+                        — 추천 시스템이 권하는 상품은 왜 매력적인가, 혹은 왜 매력적이지 않은가<br>
+                        • 講談社 사이언티픽 · <strong>2026년 11월 10일(화) 발매 예정</strong><br>
+                        • 다루는 범위: 기본 구조 → 내용 필터링 → 협업 필터링 → 평가 방법 →
+                        <strong>대규모 언어 모델을 쓰는 추천</strong> → <strong>사회적 측면</strong><br>
+                        • 같은 저자의 『検索システム』(검색 시스템) 후속편으로, 그 책도 같은 꼴의
+                        질문형 부제를 달고 있습니다 — 「なぜ検索システムは欲しい情報を見つけられるのか、
+                        あるいはなぜ見つけられないのか」<br>
+                        • 같은 저자의 공개 강연 제목: <strong>「클릭률을 최대화하지 않는 추천 시스템」</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>그래도 자리가 다르다</h4>
+                        <p>• 이 책은 <strong>Python 코드가 붙은 기술서</strong>입니다.
+                        비전공 독자를 겨냥한 Essential Knowledge 계열과 층이 다릅니다<br>
+                        • 그리고 묻는 질문이 다릅니다 — <strong>「왜 매력적인가」는 품질의 질문</strong>이고,
+                        <strong>「몇 종류인가」는 유형의 질문</strong>입니다.
+                        앞의 질문은 추천이 하나라고 전제한 채로도 끝까지 답할 수 있습니다<br>
+                        • ⚠️ <strong>발매 전이므로 목차·쪽수·시리즈 소속을 확인하지 못했습니다.</strong>
+                        나오면 가장 먼저 대조해야 할 책입니다<br>
+                        • 참고로 저자의 강연 제목이 보여 주듯, <strong>참여 지표(클릭률) 비판은
+                        이미 일본 기술 담론 안에 들어와 있습니다</strong> — 비판 장르의 전유물이 아닙니다</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.kodansha.co.jp/book/products/0000430427" target="_blank">推薦システム — 講談社</a> |
+                    <a href="https://www.kodansha.co.jp/book/products/0000425089" target="_blank">検索システム — 講談社</a> |
+                    <a href="https://speakerdeck.com/joisino/kuritukulu-wozui-da-hua-sinaitui-jian-sisutemu" target="_blank">クリック率を最大化しない推薦システム</a>
+                </div>
+
+                <div class="callout">
+                    <strong>함께 읽기 —</strong> 발매가 2주 뒤라는 사실 자체가 시장 신호입니다.
+                    <strong>「추천을 개념으로 묻는 책」의 수요가 지금 생기고 있다는 뜻</strong>이고,
+                    동시에 <strong>이 자리가 아직 비어 있었다는 증거</strong>입니다.
+                    같은 저자가 2년 전 『検索システム』으로 검색에 같은 질문을 던졌고,
+                    그 책이 「大好評」이었다고 출판사가 적고 있습니다.
+                    즉 <strong>기술 주제를 개념 질문으로 여는 형식이 일본에서 먹혔고, 추천이 그 다음 차례</strong>입니다.
+                </div>
+
+                <p><strong>전망:</strong> 11월 10일 이후 이 분야의 좌표가 한 칸 움직입니다.
+                다만 움직이는 칸은 <strong>「개념을 묻는 기술서」</strong>이고,
+                <strong>「정의를 다시 쓰는 일반서」</strong>는 여전히 비어 있을 가능성이 큽니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 책의 정식 제목·부제·저자·출판사와 다루는 범위는 출판사 제품 페이지에서 확인했습니다. 발매일 「11월 10일(화)」은 출판사 공식 계정의 告知이며, <strong>2026년 11월 10일이 실제로 화요일이어서 연도까지 교차 검증됐습니다</strong>(2025년 11월 10일은 월요일).<br>
+                        <strong>개선점:</strong> 🔴 <strong>발매 전 책이므로 내용을 읽지 못했습니다.</strong> 목차·쪽수·시리즈 소속·가격을 확인하지 못했고(출판사 페이지가 자동 접근을 차단), 「유형론이 없다」고 말할 수 없는 상태입니다. 「코드가 붙은 기술서」는 소개문의 「Pythonコード付き」 서술에 근거한 것이며, 「품질의 질문이지 유형의 질문이 아니다」는 <strong>제목 해석에 기댄 본 분석의 판단</strong>입니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 🔴 「받는다=된다」와 「추천」은 한 저자가 두 권에 따로 써 놓았다</h3>
+                <p><strong>현황:</strong> 이번 조사에서 가장 중요한 발견입니다.
+                <strong>추천을 받으면 받는 사람이 달라진다</strong>는 통찰은 이미 책으로 나와 있습니다.
+                그리고 <strong>추천 엔진의 역사와 작동 원리</strong>도 책으로 나와 있습니다.
+                그런데 그 두 책은 <strong>같은 저자가 썼는데도 합쳐지지 않았습니다.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>같은 저자, 두 권, 8년 간격</h4>
+                        <p>• <strong>2012년 7월 17일</strong> — Michael Schrage,
+                        <em>Who Do You Want Your Customers to Become?</em>
+                        (Harvard Business Review Press, 76쪽 전자책)<br>
+                        • 중심 주장: <strong>고객에게 「다른 것을 하라」고 묻는 것으로는 부족하고,
+                        「다른 무엇이 되라」고 물어야 한다</strong><br>
+                        • 그리고 그 변화를 위해 기업이 고객의 <strong>역량과 능력에 투자</strong>해야 한다고 적습니다 —
+                        「혁신은 고객과의 거래가 아니라 고객에 대한 투자다」<br>
+                        • <strong>2020년 9월 1일</strong> — 같은 저자, <em>Recommendation Engines</em> (MIT Press)<br>
+                        • 🔴 그런데 2020년 책의 목차 어디에도 2012년의 그 질문이 축으로 들어가 있지 않습니다.
+                        목차는 역사 → 원리 → 경험 → 혁신가 → 미래로, <strong>기술사의 문법</strong>입니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>왜 합쳐지지 않았나 — 문법이 달라서다</h4>
+                        <p>• 「되게 하는 것」은 <strong>기업 전략·마케팅의 문법</strong>으로 쓰였습니다.
+                        주체는 기업이고 대상은 고객이며, 목적은 더 나은 고객을 만드는 것입니다<br>
+                        • 「추천」은 <strong>기술사의 문법</strong>으로 쓰였습니다.
+                        주체는 시스템이고 대상은 아이템이며, 목적은 맞히는 것입니다<br>
+                        • 두 문법을 잇는 축 — <strong>「아이템을 가진 뒤 받은 사람이 달라지는가」</strong> —
+                        을 추천의 분류 기준으로 세운 저작을 찾지 못했습니다<br>
+                        • 🔴 학술 쪽도 비어 있습니다. <strong>「state-dependent recommendation」을
+                        유형론 용어로 쓴 문헌을 찾지 못했고</strong>, 「추천이란 무엇인가」를 정면으로 다룬
+                        철학 문헌도 찾지 못했습니다 — 있는 것은 <strong>조언과 추천의 사전적·수사학적 구분</strong>뿐입니다
+                        (아리스토텔레스 『수사학』 계보)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://store.hbr.org/product/who-do-you-want-your-customers-to-become/11245" target="_blank">Who Do You Want Your Customers to Become? — HBR Store</a> |
+                    <a href="https://sloanreview.mit.edu/article/a-challenging-question-for-innovators" target="_blank">A Challenging Question for Innovators — MIT SMR</a> |
+                    <a href="https://link.springer.com/chapter/10.1007/978-1-4899-7637-6_12" target="_blank">Panorama of Recommender Systems to Support Learning</a>
+                </div>
+
+                <p><strong>전망:</strong> 교육 쪽 학술 문헌은 이 갈라짐을 오래전부터 알고 있었습니다.
+                Drachsler 와 동료들은 <strong>2009년에 이미</strong> 「전자상거래 추천은 소비자의 관심과 취향에 전적으로 기대지만,
+                학습자가 선호하는 것이 교육적으로 가장 적절한 것은 아닐 수 있다」고 적었고,
+                2015년 <em>Recommender Systems Handbook</em> 의 학습 추천 개관 챕터(pp. 421–451)는
+                이 분야의 시스템을 <strong>일곱 개 군집으로 분류</strong>했습니다.
+                다만 <strong>그 분류는 학술서 안에 머물렀고, 일반 독자용 단행본으로 나오지 않았습니다.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 2012년 책의 출간일(2012-07-17)·분량(76쪽)·중심 주장(「다른 것을 하라」가 아니라 「다른 무엇이 되라」·고객의 역량에 투자)은 출판사 상점과 MIT SMR 기사에서 확인했습니다. 2020년 책의 목차도 서점 정보에서 확인했습니다. 두 책이 같은 저자라는 사실은 양쪽에서 대조했습니다.<br>
+                        <strong>개선점:</strong> 🔴 <strong>「두 책이 합쳐지지 않았다」는 목차와 소개문에 근거한 판단이며, 2020년 책의 본문을 읽고 확인한 것이 아닙니다.</strong> 본문 어딘가에서 그 질문을 다뤘을 가능성이 남습니다. 「유형론 용어를 찾지 못했다」와 「철학 문헌을 찾지 못했다」는 공개 검색의 결과이며 <strong>불재의 증명이 아닙니다</strong>. Drachsler 2009 인용문은 2차 인용(후속 문헌이 옮긴 것)으로 원문을 직접 확인하지 않았습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 지금 비소설 시장 — 양은 넘치고 신뢰는 희소하다</h3>
+                <p><strong>현황:</strong> 책을 낸다면 지금 어떤 조건에서 내는가.
+                이 조건은 주제와 무관하게 원고의 꼴을 바꿉니다.
+                요약하면 <strong>양으로는 이길 수 없고, 신뢰가 변별력이 됐습니다.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>양은 넘친다</h4>
+                        <p>• Amazon 자가출판 장르 소설 <strong>14,419권</strong> 표본(2023~2026):
+                        약 <strong>20%</strong>가 산문의 25%를 넘는 분량을 AI 로 쓴 것으로 표시됐습니다<br>
+                        • 그런데 그 20%가 차지한 것은 <strong>판매의 약 12%, 수익의 약 11%</strong>입니다 —
+                        목록은 점령했지만 매출은 그만큼 못 가져갔습니다 <em>(arXiv 사전공개, 심사 전)</em><br>
+                        • 보도는 같은 연구를 두고 <strong>팔리는 책의 수가 수익보다 훨씬 빨리 늘어
+                        책 한 권당 수익이 떨어졌다</strong>고 정리합니다<br>
+                        • 성인 비소설은 <strong>2026년 초 전년 대비 9% 감소</strong>
+                        (Publishers Weekly 수치, Ferriss 인용)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>그래서 신뢰가 값이 됐다</h4>
+                        <p>• Steven Rosenbaum 의 2026년 AI·진실 주제 단행본
+                        <em>The Future of Truth</em>(Matt Holt Books)에서
+                        <strong>AI 도구가 환각한 오귀속 인용</strong>이 발견됐습니다<br>
+                        • 반면 Karen Hao 의 <em>Empire of AI</em> 는
+                        <strong>2025년 전미도서비평가협회상 비소설 부문</strong>을 받았습니다 —
+                        취재에 기댄 보도형 저작입니다<br>
+                        • 🔴 함의가 분명합니다. <strong>출처 없이 쓸 수 있는 책은 이미 넘치고,
+                        출처가 있는 책이 오히려 희소해졌습니다.</strong>
+                        1차 자료와 직접 측정이 본문에 들어간 원고가 역설적으로 유리한 조건입니다<br>
+                        • Tim Ferriss 는 자기 인쇄 판매가 <strong>2025년 46%, 2026년 57% 줄었다</strong>며
+                        실용 비소설이 선행 지표라고 주장합니다 <em>(저자 1인의 데이터)</em></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://arxiv.org/html/2607.20349v3" target="_blank">Generative AI floods and dilutes the market for books (arXiv)</a> |
+                    <a href="https://fortune.com/2026/09/14/ai-slop-books-amazon-marketplace-publishing-human-authors/" target="_blank">AI slop books flood marketplaces — Fortune</a> |
+                    <a href="https://www.thebookseller.com/news/predictions-what-lies-ahead-for-the-book-trade-in-2026" target="_blank">Predictions for the book trade in 2026 — The Bookseller</a>
+                </div>
+
+                <p><strong>전망:</strong> 이 조건은 「정의를 묻는 책」에 유리한 쪽으로 작용합니다.
+                정의를 묻는 일은 요약으로 대체되지 않고, 유형을 가르는 일은 검색으로 대체되지 않습니다.
+                반대로 <strong>이미 있는 논의를 정리해 소개하는 책은 지금 가장 불리한 자리</strong>에 있습니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 표본 수(14,419권)·AI 표시 비율(약 20%)·판매와 수익 점유(약 12%·11%)는 arXiv 논문에서, 비소설 9% 감소와 Ferriss 본인 수치는 해당 글에서, 수상과 오귀속 인용 사례는 각 항목에서 확인했습니다.<br>
+                        <strong>개선점:</strong> 🔴 <strong>arXiv 논문은 동료 심사를 받지 않았습니다</strong>(논문 저자들이 직접 밝힙니다). 표본은 <strong>자가출판 장르 소설</strong>이므로, 상업 출판 비소설에 그대로 적용할 수 없습니다. Ferriss 수치는 <strong>저자 한 사람의 데이터</strong>이고, 비소설 9% 감소는 2차 인용이어서 Publishers Weekly 원문을 확인하지 않았습니다. 「신뢰가 변별력이 됐다」는 수상 한 건과 사고 한 건에서 끌어낸 <strong>본 분석의 해석</strong>입니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">추천을 다룬 단행본 지도 — 다섯 층</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    주제가 아니라 <strong>어떤 질문을 묻는가</strong>로 나눈 지도입니다.
+                    같은 층에 있으면 책의 성격이 비슷하고, 층이 다르면 같은 소재를 다뤄도 독자가 다릅니다.
+                    <em>(본 분석의 분류입니다.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>책</th>
+                            <th>저자</th>
+                            <th>출간</th>
+                            <th>층</th>
+                            <th>추천을 종류로 가르나</th>
+                            <th>교육·자격·진로</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><em>The Filter Bubble</em></td>
+                            <td>Eli Pariser</td>
+                            <td>2011 ⚠️</td>
+                            <td>비평·사회</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><em>Who Do You Want Your Customers to Become?</em></td>
+                            <td>Michael Schrage</td>
+                            <td><strong>2012-07-17</strong> (76쪽)</td>
+                            <td>경영·전략</td>
+                            <td>✗ <em>(「되게 한다」는 다룬다)</em></td>
+                            <td>✗ <em>(고객 역량 투자까지)</em></td>
+                        </tr>
+                        <tr>
+                            <td><em>Weapons of Math Destruction</em></td>
+                            <td>Cathy O'Neil</td>
+                            <td>2016 ⚠️</td>
+                            <td>비평·사회</td>
+                            <td>✗</td>
+                            <td>일부 ⚠️</td>
+                        </tr>
+                        <tr>
+                            <td><em>Hello World</em></td>
+                            <td>Hannah Fry</td>
+                            <td>2018</td>
+                            <td>비평·사회</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><em>Algorithms of Oppression</em></td>
+                            <td>Safiya Noble</td>
+                            <td>2018 ⚠️</td>
+                            <td>비평·사회</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><strong><em>Recommendation Engines</em></strong></td>
+                            <td>Michael Schrage</td>
+                            <td><strong>2020-09-01</strong> (약 296쪽)</td>
+                            <td><strong>개념·해설(일반 독자)</strong></td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td>『推薦システム実践入門』<br><small>= 『추천 시스템 입문』(한빛미디어, 2023-05)</small></td>
+                            <td>風間正弘 · 飯塚洸二郎 · 松村優也</td>
+                            <td>2022-05 (296쪽)</td>
+                            <td>실무서</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><em>Filterworld</em></td>
+                            <td>Kyle Chayka</td>
+                            <td>2024-01</td>
+                            <td>비평·사회</td>
+                            <td>✗</td>
+                            <td>✗</td>
+                        </tr>
+                        <tr>
+                            <td><strong>『推薦システム』</strong><br><small>なぜ…魅力的なのか、あるいはなぜ魅力的ではないのか</small></td>
+                            <td>佐藤竜馬</td>
+                            <td><strong>2026-11-10 예정</strong></td>
+                            <td>개념 + 기술</td>
+                            <td>⚠️ 미확인</td>
+                            <td>⚠️ 미확인</td>
+                        </tr>
+                        <tr>
+                            <td><em>Recommender Systems for Learning</em></td>
+                            <td>Manouselis 외</td>
+                            <td>2012 (약 90쪽)</td>
+                            <td>학술 총서</td>
+                            <td>✗</td>
+                            <td>✅</td>
+                        </tr>
+                        <tr>
+                            <td>「Panorama of Recommender Systems to Support Learning」<br><small><em>Recommender Systems Handbook</em> 챕터, pp. 421–451</small></td>
+                            <td>Drachsler 외</td>
+                            <td>2015</td>
+                            <td>학술 챕터</td>
+                            <td>◐ <em>(7개 군집 분류)</em></td>
+                            <td>✅</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="font-size: 0.8rem; color: #4a4a4a;">
+                    ⚠️ 표시한 출간연도와 내용은 <strong>이번 조사에서 1차 확인하지 못하고 통설에 기댄 항목</strong>입니다.
+                    「종류로 가르나」 칸은 목차·소개문 수준의 판단이며 본문 전수 확인이 아닙니다.
+                </p>
+
+                <h3 class="subsection-title">층별 단행본 수 — 어느 칸이 비었나</h3>
+                <div class="chart-container">
+                    <canvas id="layerChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    위 표에 오른 책을 층으로 세었습니다. <em>(본 분석의 집계 — 전수 조사가 아닙니다.)</em>
+                </p>
+
+                <h3 class="subsection-title">정의를 묻는다면 답해야 할 다섯 질문과, 가장 가까운 선행</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    「추천이 무엇인가」를 책 한 권으로 묻는다면 피할 수 없는 질문 다섯 개를 세우고,
+                    각 질문에 가장 가까이 간 선행 문헌을 대 봤습니다.
+                    <strong>겹치는 부분이 있는 질문도 있고, 비어 있는 질문도 있습니다.</strong>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>정의적 질문</th>
+                            <th>가장 가까운 선행</th>
+                            <th>겹치는 부분</th>
+                            <th>이번 조사에서 찾지 못한 것</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① 「추천」은 한 종류인가</strong></td>
+                            <td>— <em>(찾지 못함)</em></td>
+                            <td>—</td>
+                            <td>추천을 <strong>둘 이상의 종류로 가르는 것을 중심 주장으로 세운 단행본</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>② 아이템이 받는 사람을 바꾸는가</strong></td>
+                            <td>Schrage, <em>Who Do You Want Your Customers to Become?</em>(2012)</td>
+                            <td>「다른 것을 하라」가 아니라 <strong>「다른 무엇이 되라」</strong>고 물어야 한다</td>
+                            <td>그 통찰이 <strong>추천 시스템의 분류 기준</strong>으로 이어진 저작</td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ 기록은 선호를 드러내는가</strong></td>
+                            <td>Chaney 외, 알고리즘 교란(RecSys 2018) · Perdomo 외, 수행적 예측(ICML 2020)</td>
+                            <td>추천이 <strong>자기가 만든 데이터로 자기를 학습</strong>하고, 예측이 세계를 바꾼다</td>
+                            <td>이 논점을 <strong>일반 독자용 단행본</strong>으로 풀어낸 저작</td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ 참여는 좋음의 대리인가</strong></td>
+                            <td>Chayka, <em>Filterworld</em>(2024) · 佐藤竜馬 「클릭률을 최대화하지 않는 추천 시스템」</td>
+                            <td>참여를 좇는 추천이 <strong>문화를 균질화</strong>하고, 클릭률이 목표가 아니어야 한다</td>
+                            <td>「참여 ≠ 좋음」이 <strong>영역에 따라 갈린다</strong>는 구분</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ 기회를 가르는 추천은 다른가</strong></td>
+                            <td>Drachsler 외(2009) · Panorama 챕터(2015, 7개 군집)</td>
+                            <td><strong>학습자의 선호 ≠ 교육적 적절성</strong></td>
+                            <td>학술 문헌 밖, <strong>일반 독자용 단행본</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">주요 책의 성격 비교</h3>
+                <div class="chart-container">
+                    <canvas id="axisChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    다섯 축에 대한 <strong>본 분석의 평가</strong>입니다. 출처가 제시한 점수가 아니며,
+                    <strong>佐藤(2026)는 발매 전이므로 제목·소개문에 근거한 추정</strong>입니다.
+                </p>
+
+                <h3 class="subsection-title">시장의 다섯 가지 변화</h3>
+                <ul class="key-findings">
+                    <li><strong>일반 독자용 추천 단행본은 한 권입니다:</strong> Schrage <em>Recommendation Engines</em>(2020) 외에 비전공 독자용 추천 전문서를 찾지 못했습니다. 나머지는 교과서·실무서입니다.</li>
+                    <li><strong>비판 장르는 포화에 가깝습니다:</strong> 필터 버블부터 Filterworld 까지 다섯 권이 「추천이 무엇을 했는가」를 다루고 있습니다. 「무엇인가」는 그 안에 없습니다.</li>
+                    <li><strong>개념을 묻는 책의 수요가 지금 생기고 있습니다:</strong> 가장 가까운 책이 2026년 11월 10일 일본에서 나옵니다. 같은 저자의 검색 편이 먼저 호응을 얻었습니다.</li>
+                    <li><strong>핵심 통찰은 이미 흩어져 있습니다:</strong> 「되게 한다」는 경영서에, 「추천」은 기술서에, 「학습자의 선호 ≠ 적절성」은 학술 챕터에 있습니다. 한 축으로 묶인 것을 찾지 못했습니다.</li>
+                    <li><strong>신뢰가 변별력이 됐습니다:</strong> 자가출판 목록의 20%가 AI 로 쓰였고, 비소설은 전년 대비 9% 줄었습니다. 출처가 있는 원고가 역설적으로 희소합니다.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>선행 대조는 발매 전 책부터</strong> - 이미 나온 책보다 2주 뒤 신간이 더 가까운 자리에 있을 수 있다</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>층을 먼저 밝힌다</strong> - 비평·개념·교과서 가운데 어디에 서는지가 독자와 서평 경로를 정한다</p>
+                    <p style="line-height: 1.6;">3. <strong>1차 실측을 본문에 심는다</strong> - 요약으로 대체되지 않는 재료가 지금 시장의 변별력이다</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">종합 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">중요한 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>책 시장은 두 덩어리로 갈려 있습니다:</strong> 추천이 사회에 무엇을 했는지 비판하는 책 다섯 권과, 추천을 만드는 법을 가르치는 교과서·실무서 여섯 권. 그 사이 「추천이 무엇인가」를 묻는 층에는 한 권뿐입니다.</li>
+                        <li><strong>추천을 종류로 가르는 단행본을 찾지 못했습니다:</strong> 학술 쪽에도 「state-dependent recommendation」을 유형론 용어로 쓴 문헌이 없었고, 교육 추천을 일곱 군집으로 나눈 분류는 학술 챕터 안에 머물렀습니다.</li>
+                        <li><strong>핵심 통찰은 한 저자의 두 책에 따로 있습니다:</strong> 「고객에게 다른 무엇이 되라고 물어야 한다」(2012)와 「추천 엔진의 역사와 원리」(2020)는 같은 저자가 썼는데도 하나의 축으로 합쳐지지 않았습니다.</li>
+                        <li><strong>가장 가까운 경쟁서가 2주 뒤에 나옵니다:</strong> 佐藤竜馬 『推薦システム』(講談社, 2026-11-10 예정)은 제목 자체가 개념 질문입니다. 다만 코드가 붙은 기술서이고, 묻는 것은 품질이지 유형이 아닙니다.</li>
+                        <li><strong>시장 조건이 출처 있는 원고에 유리합니다:</strong> 자가출판 목록의 20%가 AI 로 쓰였고 그 몫이 판매의 12%에 그쳤습니다. 성인 비소설은 전년 대비 9% 줄었고, 환각 인용 사고와 보도형 저작의 수상이 같은 해에 있었습니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">상황별 참고</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>추천을 주제로 글을 쓰려는 사람 → 층을 먼저 고른다</strong><br>
+                        이유: 비평 층은 포화에 가깝고, 교과서 층은 경쟁자가 전문가이며, 개념 층은 한 권뿐입니다.<br>
+                        <strong>이 분야를 공부하려는 독자 → 한 권은 영어로 읽어야 한다</strong><br>
+                        이유: 한국어 시장에서 확인된 추천 시스템 단행본은 일본 실무서의 번역서 한 권입니다.<br>
+                        <strong>경쟁 지형을 보려는 사람 → 11월 10일을 기다린다</strong><br>
+                        이유: 발매 전 책이 이미 나온 책들보다 더 가까운 자리에 있습니다.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>종합 평가:</strong> 중립. 빈 자리가 확인된다는 점은 기회이지만, 비어 있는 이유가 수요 부재일 가능성을 배제할 수 없습니다. 「정의를 묻는 책」은 비평서만큼 팔릴 근거가 없고, 교과서만큼 명확한 독자층도 없습니다. 다만 같은 질문 형식으로 먼저 나온 검색 주제 단행본이 호응을 얻었고 그 후속이 2주 뒤에 나온다는 사실은, 이 자리가 비어 있되 죽어 있지는 않다는 신호로 읽힙니다.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">6.4/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> 언급한 책의 실재와 출간 정보는 대부분 출판사·서점 자료에서 확인했고, 그 위에 올린 층 분류와 다섯 질문은 본 분석의 제안입니다. 핵심 주장이 「찾지 못했다」에 기대는 구조여서 신뢰도를 중간으로 두었습니다.</p>
+                        <p><strong>주요 강점:</strong> 발매 전 신간의 발매일을 <strong>요일 교차 검증으로 연도까지 확정</strong>했습니다(2026-11-10 화요일). 한국어판과 일본 원서의 대응을 저자·쪽수(296쪽) 일치로 확인했습니다. 시장 조건 수치는 arXiv 논문과 원 기사에서 직접 확인하고, 심사 전·1인 데이터라는 한계를 함께 적었습니다.</p>
+                        <p><strong>개선 우선순위:</strong> ① 🔴 <strong>「찾지 못했다」는 불재의 증명이 아닙니다</strong> — 절판서·지역 출간물·전자책 전용 출간물과 영어·한국어·일본어 밖의 언어는 확인 범위 밖입니다. ② 🔴 <strong>어떤 책도 본문을 읽고 판정하지 않았습니다</strong> — 목차와 소개문 수준의 판단이므로 「종류로 가르지 않는다」가 틀릴 수 있습니다. ③ 🔴 <strong>비평 장르 세 권의 출간연도와 주장은 통설에 기댔습니다</strong>(Pariser·O'Neil·Noble). ④ 가장 가까운 경쟁서는 <strong>발매 전이라 내용을 확인할 수 없었습니다</strong>. ⑤ 두 차트의 값은 본 분석의 집계·평가이고, 레이더 차트의 한 계열은 발매 전 추정입니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>협업 필터링(Collaborative Filtering)</strong> — 내용을 분석하는 대신 <strong>다른 사람들이 무엇을 했는지</strong>를 모아 거르는 방식입니다. 눈 내린 잔디밭에 먼저 간 사람들의 발자국이 길이 되는 것과 같습니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>암묵 피드백(Implicit Feedback)</strong> — 별점처럼 사용자가 애써 남긴 평가가 아니라, 클릭·시청·구매처럼 서비스를 쓰는 동안 저절로 쌓이는 행동 기록입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>필터 버블(Filter Bubble)</strong> — 개인화가 지나쳐 사람마다 다른 정보 세계에 갇히는 현상입니다. 2011년 같은 제목의 책에서 널리 퍼진 말입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>수행적 예측(Performative Prediction)</strong> — 예측을 내놓는 행위 자체가 예측 대상인 세계를 바꾸는 상황입니다. 길 안내 앱이 「이 골목이 빠릅니다」라고 알려 주면 모두가 그 골목으로 가서 막히는 것이 그 예입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>알고리즘 교란(Algorithmic Confounding)</strong> — 추천이 만든 선택 기록으로 추천을 다시 학습시킬 때, 데이터가 사용자의 취향이 아니라 추천의 지난 결정을 기록하게 되는 문제입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Essential Knowledge 시리즈</strong> — MIT Press 가 비전공 독자를 겨냥해 한 주제를 짧게 정리해 내는 개념 입문 총서입니다.
+                    </div>
+                    <div>
+                        <strong>자가출판(Self-publishing)</strong> — 출판사를 거치지 않고 저자가 직접 전자서점 등에 올려 내는 출간 방식입니다. 심사 과정이 없어 목록이 빠르게 늘어납니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 10월 26일</p>
+                    <ul>
+                        <li>• <a href="https://mitpress.mit.edu/9780262539074/recommendation-engines/" target="_blank">Recommendation Engines — MIT Press (Essential Knowledge, 2020-09-01)</a></li>
+                        <li>• <a href="https://books.google.com/books/about/Recommendation_Engines.html?id=qs7tDwAAQBAJ" target="_blank">Recommendation Engines 목차 — Google Books</a></li>
+                        <li>• <a href="https://store.hbr.org/product/who-do-you-want-your-customers-to-become/11245" target="_blank">Who Do You Want Your Customers to Become? — Harvard Business Review Store (2012-07-17)</a></li>
+                        <li>• <a href="https://sloanreview.mit.edu/article/a-challenging-question-for-innovators" target="_blank">A Challenging Question for Innovators — MIT Sloan Management Review</a></li>
+                        <li>• <a href="https://www.kodansha.co.jp/book/products/0000430427" target="_blank">『推薦システム』佐藤竜馬 — 講談社 (2026-11-10 발매 예정)</a></li>
+                        <li>• <a href="https://www.kodansha.co.jp/book/products/0000425089" target="_blank">『検索システム』佐藤竜馬 — 講談社</a></li>
+                        <li>• <a href="https://speakerdeck.com/joisino/kuritukulu-wozui-da-hua-sinaitui-jian-sisutemu" target="_blank">クリック率を最大化しない推薦システム — Speaker Deck</a></li>
+                        <li>• <a href="https://www.oreilly.co.jp/books/9784873119663/" target="_blank">『推薦システム実践入門』— O'Reilly Japan (2022-05, 296쪽)</a></li>
+                        <li>• <a href="https://product.kyobobook.co.kr/detail/S000201794203" target="_blank">『추천 시스템 입문』— 교보문고 (한빛미디어, 2023-05, 296쪽)</a></li>
+                        <li>• <a href="https://www.coronasha.co.jp/np/isbn/9784339029284/" target="_blank">『基礎から学ぶ推薦システム』— コロナ社</a></li>
+                        <li>• <a href="https://www.theglobeandmail.com/arts/books/reviews/article-filterworld-is-a-sobering-look-at-how-algorithms-shape-what-we-buy-eat/" target="_blank">Filterworld 서평 — The Globe and Mail</a></li>
+                        <li>• <a href="https://www.npr.org/transcripts/1224955473" target="_blank">Filterworld 서평 — NPR</a></li>
+                        <li>• <a href="https://link.springer.com/chapter/10.1007/978-1-4899-7637-6_12" target="_blank">Panorama of Recommender Systems to Support Learning — Recommender Systems Handbook (2015), pp. 421–451</a></li>
+                        <li>• <a href="https://link.springer.com/chapter/10.1007/978-3-031-36336-8_7" target="_blank">Tutorial: Educational Recommender Systems — AIED 2023</a></li>
+                        <li>• <a href="https://arxiv.org/html/2607.20349v3" target="_blank">Generative AI floods and dilutes the market for books — arXiv (심사 전)</a></li>
+                        <li>• <a href="https://fortune.com/2026/09/14/ai-slop-books-amazon-marketplace-publishing-human-authors/" target="_blank">AI slop books flood online marketplaces — Fortune (2026-09-14)</a></li>
+                        <li>• <a href="https://tim.blog/2026/06/12/has-ai-already-killed-nonfiction/" target="_blank">Has AI Already Killed How-To Nonfiction? — Tim Ferriss (저자 1인 데이터)</a></li>
+                        <li>• <a href="https://www.thebookseller.com/news/predictions-what-lies-ahead-for-the-book-trade-in-2026" target="_blank">Predictions: what lies ahead for the book trade in 2026 — The Bookseller</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/Empire_of_AI" target="_blank">Empire of AI — 2025 전미도서비평가협회상 비소설 부문</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/The_Future_of_Truth_(Rosenbaum_book)" target="_blank">The Future of Truth (Rosenbaum) — 오귀속 인용 건</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 그림1 — 층별 단행본 수(본 분석의 집계)
+        const ctx1 = document.getElementById('layerChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['비평·사회\n(일반 독자)', '개념·해설\n(일반 독자)', '교과서·실무서', '학술 총서·챕터\n(교육 추천)', '정의·유형론'],
+                datasets: [{
+                    label: '본 조사에서 확인된 단행본 수',
+                    data: [5, 1, 6, 2, 0],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(239, 68, 68, 0.7)'
+                    ],
+                    borderColor: ['rgb(59, 130, 246)', 'rgb(34, 197, 94)', 'rgb(148, 163, 184)', 'rgb(168, 85, 247)', 'rgb(239, 68, 68)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '비판은 다섯 권, 해설은 한 권, 정의는 0권 (본 분석의 집계)' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, title: { display: true, text: '단행본 수' } } }
+            }
+        });
+
+        // 그림2 — 주요 책의 성격(본 분석의 평가)
+        const ctx2 = document.getElementById('axisChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['일반 독자 접근성', '「무엇인가」를 묻는가', '종류로 가르는가', '교육·자격·진로를 다루는가', '1차 실측 데이터'],
+                datasets: [
+                    {
+                        label: 'Schrage, Recommendation Engines (2020)',
+                        data: [85, 60, 20, 10, 25],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    },
+                    {
+                        label: 'Chayka, Filterworld (2024)',
+                        data: [90, 30, 10, 5, 20],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: '佐藤竜馬, 推薦システム (2026-11 예정·추정)',
+                        data: [45, 70, 25, 5, 40],
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'rgba(249, 115, 22, 0.15)'
+                    },
+                    {
+                        label: '학술 핸드북·총서 계열',
+                        data: [10, 20, 35, 60, 70],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '읽기 쉬운 쪽은 종류를 가르지 않고, 가르는 쪽은 읽기 어렵다 (본 분석의 평가)' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 공유 테마 (Ink & Paper) : 반드시 포함할 것 -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
