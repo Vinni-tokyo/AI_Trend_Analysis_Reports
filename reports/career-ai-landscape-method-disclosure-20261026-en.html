@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Separates Look-Alike Career AI Is Where Its Input Comes From — And Nobody Publishes How Theirs Is Built</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 Shared theme (Ink & Paper) — without this line the palette will not match -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="Lay out the landscape in six lineages and systems that looked identical split on what they are entitled to claim">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-en.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="What Separates Look-Alike Career AI Is Where Its Input Comes From — And Nobody Publishes How Theirs Is Built">
+<meta property="og:description" content="Lay out the landscape in six lineages and systems that looked identical split on what they are entitled to claim">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-en.html">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-10-26">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="What Separates Look-Alike Career AI Is Where Its Input Comes From — And Nobody Publishes How Theirs Is Built">
+<meta name="twitter:description" content="Lay out the landscape in six lineages and systems that looked identical split on what they are entitled to claim">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="Toggle brightness" aria-label="Toggle brightness">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='career-ai-landscape-method-disclosure-20261026-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='career-ai-landscape-method-disclosure-20261026-en.html'" class="lang-btn active">English</button>
+                    <button onclick="window.location.href='career-ai-landscape-method-disclosure-20261026-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>What Separates Look-Alike Career AI Is Where Its Input Comes From<br>— And Nobody Publishes How Theirs Is Built</h1>
+            <div class="subtitle">Lay out the landscape in six lineages and systems that looked identical split on what they are entitled to claim</div>
+            <div class="meta">Report date: 26 October 2026 | Standard report (5-8 pages) | Data collected: 26 October 2026</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <div class="callout">
+                    <strong>The argument of this report</strong><br>
+                    AI that asks about your career, names your skill gaps and hands you a learning path all looks alike from the outside.
+                    Lay the landscape out in six lineages, though, and <strong>it is not features but "what grounds the claim" that defines the category</strong> —
+                    a self-reported résumé, a platform's behavioural record, a credential verified by an issuer, or a national database.
+                    <strong>And we could not find a single product in this field that publishes a model card or a system card.</strong>
+                    The final section argues this is because <strong>regulation aims at the employer side and passes career advice by.</strong>
+                </div>
+
+                <h3 class="subsection-title">1. What exists out there — six lineages</h3>
+                <p><strong>Where things stand:</strong> This is not one market but <strong>six lineages with different origins meeting on the same screen.</strong>
+                General-purpose chat models come down from above, job platforms come in from the side, and governments are building up from below.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Four lineages from the private sector</h4>
+                        <p>• <strong>① General-purpose chat models:</strong> they do career counselling with no dedicated feature.
+                        Their only grounds are what the user told them<br>
+                        • <strong>② Career exploration experiments:</strong> widening the view to adjacent roles and possibilities.
+                        Google's <strong>Career Dreamer</strong> sits here<br>
+                        • <strong>③ Job-matching:</strong> connecting résumés to postings —
+                        <strong>LinkedIn</strong>, <strong>Teal</strong>, Korea's <strong>JobKorea</strong> and <strong>Wanted</strong>,
+                        Japan's <strong>doda</strong> and <strong>Miidas</strong><br>
+                        • <strong>④ Enterprise talent intelligence (B2B):</strong> mapping skills inside an organisation —
+                        <strong>Gloat</strong>, <strong>Eightfold</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Learning and public, two more</h4>
+                        <p>• <strong>⑤ Starting from a learning platform:</strong> coming down from role to learning path to credential —
+                        <strong>Coursera Career Academy</strong><br>
+                        • <strong>⑥ 🔴 National skills passports:</strong> the most striking lineage in this report.
+                        <strong>Singapore, the Philippines and Saudi Arabia</strong> are already live or launched,
+                        <strong>California</strong> is exploring, and the <strong>UK</strong> is changing who operates its service<br>
+                        • The private sector sells "a better recommendation"; the state builds
+                        <strong>"the verified record itself"</strong> —
+                        they are not competitors but <strong>different layers</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.linkedin.com/" target="_blank">LinkedIn</a> |
+                    <a href="https://www.tealhq.com/" target="_blank">Teal</a> |
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://www.coursera.org/career-academy" target="_blank">Coursera Career Academy</a> |
+                    <a href="https://www.skillsfuture.gov.sg/" target="_blank">SkillsFuture</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Because all six meet on one screen, users read them as the same thing.
+                But <strong>to pick out "systems like ours" you have to look at the origin, not the feature list.</strong>
+                The third section sets out how to judge that.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Every product and programme listed is confirmed to exist in public material. The five national passport cases rest on government announcements and institutional sources.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>The "six lineages" classification is this report's proposal</strong>, not an established market segmentation. The list is also not exhaustive — China, India and Latin America were not surveyed, and for the Japanese cases much of what is online is affiliate comparison content, so official specifications could not always be confirmed.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. Governments are moving in — five national skills passports</h3>
+                <p><strong>Where things stand:</strong> Most existing discussion covers private platforms.
+                The striking movement in 2026 is <strong>governments building "a verified record of skills" as public infrastructure</strong>,
+                with career AI layered on top.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Live or launched</h4>
+                        <p>• <strong>Singapore — SkillsFuture Skills Passport:</strong>
+                        a free <strong>verified profile</strong> holding skills, education and work history,
+                        with an "Insights" feature to explore career paths and plan skill development<br>
+                        • <strong>Philippines — TESDA Skills Passport:</strong>
+                        a mobile platform bringing training, verified credentials, scholarships, career information
+                        and employment into <strong>one system</strong>. Its AI career tool,
+                        <strong>My Career Advisor</strong>, comes from a partnership with the Wadhwani Foundation<br>
+                        • <strong>Saudi Arabia — AI Skills Passport:</strong>
+                        launched in July 2026 by the Ministry of Communications and Information Technology with EY and
+                        Microsoft through the national eLearning platform <strong>FutureX</strong>
+                        (AI fundamentals, ethics, career planning)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Exploring or transferring</h4>
+                        <p>• <strong>California — Career Passport:</strong>
+                        a concept in the state's master plan, framed as a
+                        <strong>digital wallet for learners and workers</strong><br>
+                        • <strong>UK — National Careers Service:</strong>
+                        offers skills assessments, career profiles and course search; the Department for Work and Pensions
+                        plans to bring operations in-house when contracts end in <strong>September 2027</strong><br>
+                        • What they share is <strong>"free, verified, state-backed"</strong> —
+                        a combination the private sector struggles to offer all at once</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.skillsfuture.gov.sg/skillspassport" target="_blank">SkillsFuture Skills Passport</a> |
+                    <a href="https://www.tesda.gov.ph/" target="_blank">TESDA</a> |
+                    <a href="https://www.ey.com/en_gl/ai-skills-passport" target="_blank">AI Skills Passport (EY)</a> |
+                    <a href="https://nationalcareers.service.gov.uk/" target="_blank">National Careers Service</a>
+                </div>
+
+                <p><strong>Outlook:</strong> If public infrastructure takes on "the verified record", the competitive ground shifts for everyone else —
+                <strong>from gathering the data to what you can say with it.</strong>
+                That said, the five cases are at very different stages and differ in what they cover.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The Saudi item comes from the state news agency (SPA); the Philippine TESDA programme and the UK transfer are confirmed from institutional and public records. That the five cases span different regions and stages is also verified.<br>
+                        <strong>Gaps:</strong> 🔴 The Singapore description rests on <strong>commercial guidance material</strong> and may differ from official specifications. Actual user numbers and the specific behaviour of each AI feature were not verified. <strong>No material on an EU Europass equivalent was found</strong> — which means not confirmed in this survey, not that none exists.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. What decides whether two systems are the same category is the origin of the input</h3>
+                <p><strong>Where things stand:</strong> Compare by feature list and almost every product has "career recommendations, skill-gap analysis, learning paths",
+                so nothing separates. The real divisions run along five axes — and <strong>the first one largely determines the rest.</strong></p>
+
+                <div class="chart-container">
+                    <canvas id="originChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    A count of the systems listed in this report, classified by the origin of their input. <em>(A tally by the present analysis — not an exhaustive survey.)</em>
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Five axes for judging similarity</h4>
+                        <p>• <strong>① Origin of the input:</strong> self-reported / platform behaviour / issuer-verified / national database<br>
+                        • <strong>② Conversation or form:</strong> narrowed over several turns, or taken in one go and generated<br>
+                        • <strong>③ Unit of recommendation:</strong> narrative and advice / courses / attainable credentials and badges / job postings<br>
+                        • <strong>④ Artefact you take away:</strong> does a document such as a résumé or application paragraph remain<br>
+                        • <strong>⑤ Who pays:</strong> individual subscription / enterprise / placement fee / public budget</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Why ① pulls the others along</h4>
+                        <p>• Take self-reported input and <strong>there is no way to verify it</strong>,
+                        which makes it hard to narrow the recommendation unit to a credential →
+                        the product drifts toward narrative and advice<br>
+                        • Take issuer-verified credentials and it becomes countable —
+                        <strong>"M of the N you hold"</strong> — and the unit narrows to real, issuable things<br>
+                        • Take a national database and free, universal access becomes possible,
+                        at the price of <strong>speed and scope being bound to policy</strong><br>
+                        • So choosing ① largely settles ③, ④ and ⑤ —
+                        <strong>when hunting for "a similar product", the first question is the input, not the features</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.1edtech.org/standards/open-badges" target="_blank">Open Badges — 1EdTech</a> |
+                    <a href="https://www.imsglobal.org/" target="_blank">1EdTech Consortium</a>
+                </div>
+
+                <div class="callout">
+                    <strong>Read alongside —</strong> this site's 30 September 2026 report
+                    <a href="ai-career-guidance-platforms-20260930-en.html">"AI Career Guidance Platforms: From Self-Report to Verified Evidence"</a>
+                    looked at <strong>the major platforms one by one</strong> (LinkedIn, Career Dreamer, Gloat, Teal).
+                    This report puts <strong>the whole landscape and a test for similarity</strong> on top of that —
+                    not profiles, but <strong>"what should count as the same category".</strong>
+                </div>
+
+                <p><strong>Outlook:</strong> These five axes are usable as soon as you build a comparison table.
+                Instead of adding feature columns, <strong>write ① first and read the rest against it</strong>,
+                and why a product looks the way it does starts to explain itself.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The value on each axis — what a given product takes as input — is an observable property that public material mostly confirms.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>The five axes and the claim that ① pulls the others along are entirely this report's proposal.</strong> No source offers this frame, and nothing here was tested statistically. Counter-examples are possible — a system drawing on a national database yet handing back no artefact, for one.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 🔴 Nobody publishes how theirs is built</h3>
+                <p><strong>Where things stand:</strong> <strong>This survey found no career or hiring AI product in this field publishing a model card or a system card.</strong>
+                Frontier model developers disclose to some degree; the products that use those models to advise people on their careers do not.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Four things not disclosed</h4>
+                        <p>• <strong>The decision structure:</strong> what decides whether to ask, answer or decline — code or the model<br>
+                        • <strong>Evaluation metrics and verdicts:</strong> how task success and safety axes are measured, and where something fails<br>
+                        • <strong>Provenance of training and retrieval data:</strong> which material the recommendation comes from<br>
+                        • <strong>Third-party audit:</strong> any externally verified record<br>
+                        • So <strong>there is no material with which to compare methodologies between products</strong> —
+                        those columns in a comparison table stay "unverified"</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Even the disclosers omit things</h4>
+                        <p>• One 2026 model-card audit reports that <strong>among the closed-weight cards in its sample,
+                        none published a FLOP count, GPU-hour figure or parameter count</strong>
+                        <em>(a sample of four — small)</em><br>
+                        • So "we disclose" and "what we disclose" are different questions<br>
+                        • An industry report on hiring argues that <strong>black-box screening and validation gaps</strong>
+                        are what holds trust back <em>(a vendor report, to be read with that in mind)</em></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.greenhouse.com/guidance/the-2026-ai-in-hiring-report" target="_blank">The 2026 AI in Hiring Report — Greenhouse</a> |
+                    <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI RMF</a> |
+                    <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a>
+                </div>
+
+                <div class="callout">
+                    <strong>Read alongside —</strong> the 14 October 2026 report
+                    <a href="benchmark-integrity-tod-development-20261014-en.html">"The Scorekeepers Are Now Being Audited"</a>
+                    covered a standard benchmark receiving a "Flawed" verdict after <strong>24 defects in a 50-task sample</strong>.
+                    Overlay the two and the shape is clear — <strong>the model layer published its scores and so became auditable;
+                    the product layer published nothing and so never came up for audit at all.</strong>
+                </div>
+
+                <p><strong>Outlook:</strong> The gap reads two ways.
+                Defensively it is a trade secret; as an opportunity it is <strong>vacant ground for whoever discloses first.</strong>
+                For now the incentive is weak — and the final section explains why.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The model-card audit result (no FLOP, GPU-hour or parameter disclosure among closed-weight cards in the sample) and the hiring industry report's criticism are confirmed in the sources.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>"Found none" is not proof of absence.</strong> It means a public search did not surface any; each vendor's responsible-AI pages and customer-only documentation were not exhaustively checked. The model-card audit sample is four, and the hiring report is from a vendor. A candidate-survey figure on transparency expectations was a second-hand citation, so the number was dropped and only the description kept.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. Regulation aims at the employer side and passes career advice by</h3>
+                <p><strong>Where things stand:</strong> The weak incentive to disclose has an institutional cause.
+                The EU AI Act's high-risk list (Annex III) <strong>aims at the employment relationship</strong> —
+                recruitment and selection, promotion and termination, task allocation, performance monitoring.
+                <strong>A product advising an individual on their career tends to fall outside that.</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>What Annex III covers</h4>
+                        <p>• <strong>Recruitment and selection</strong> — targeted job advertising, filtering applications, evaluating candidates<br>
+                        • <strong>Decisions in the employment relationship</strong> — promotion and termination, task allocation, performance and behaviour monitoring<br>
+                        • <strong>Duties to inform:</strong> Article 26(7) requires employers to inform workers' representatives
+                        and affected workers before putting a high-risk system into service at the workplace;
+                        26(11) adds that <strong>people subject to such a decision must be told</strong><br>
+                        • Article 6(3) can exempt narrow procedural tasks such as interview scheduling —
+                        but <strong>the exemption never applies to a system that profiles people</strong><br>
+                        • Emotion inference in the workplace is not high-risk but a <strong>prohibited</strong> practice</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>⚠️ Sources disagree on the timing</h4>
+                        <p>• Several sources give <strong>2 December 2027</strong> for Annex III obligations,
+                        describing an adjustment under the Digital Omnibus (Regulation (EU) 2026/1744)<br>
+                        • Others still say <strong>August 2026</strong>. The latter appear outdated,
+                        but <strong>this survey could not settle it</strong><br>
+                        • Article 50 transparency duties, such as marking generated content, are a separate track
+                        and applied on schedule on <strong>2 August 2026</strong><br>
+                        • 🔴 For anything that goes into a business document, verify against the
+                        <strong>Official Journal text</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act portal</a> |
+                    <a href="https://eur-lex.europa.eu/" target="_blank">EUR-Lex (Official Journal)</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The shape resolves like this.
+                <strong>Products sold to employers carry duties to inform; products advising individuals do not.</strong>
+                So methodology disclosure on the career-advice side remains <strong>a choice rather than a legal requirement</strong>.
+                That explains why the gap in the previous section does not close on its own —
+                and, by the same token, why <strong>whoever discloses voluntarily can make it a differentiator.</strong></p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The scope of Annex III point 4, the duties in Article 26(7) and 26(11), the limit on the Article 6(3) exemption, and the prohibition on workplace emotion inference are consistent across several commentaries.<br>
+                        <strong>Gaps:</strong> 🔴 <strong>Article numbers and the application date were not verified against the legal text.</strong> Most of what was consulted were compliance blogs, and <strong>the sources disagree on timing</strong> (2 Dec 2027 vs Aug 2026). The judgement that career-advice products fall outside is <strong>this report's interpretation</strong>, not a legal opinion — and it can change the moment such a product is sold to an employer.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">Six lineages — divided by where they started</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    A landscape divided not by features but by <strong>where each system started</strong>.
+                    Systems in the same lineage behave alike even with different features; across lineages they behave differently even with the same ones.
+                    <em>(This is a classification by the present analysis.)</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lineage</th>
+                            <th>Origin of input</th>
+                            <th>Unit of recommendation</th>
+                            <th>Who pays</th>
+                            <th>Representative cases</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① General-purpose chat</strong></td>
+                            <td>The user's self-report only</td>
+                            <td>Narrative, advice</td>
+                            <td>Individual subscription</td>
+                            <td>General-purpose LLM chat</td>
+                        </tr>
+                        <tr>
+                            <td><strong>② Career exploration experiment</strong></td>
+                            <td>Self-report plus occupational data</td>
+                            <td>Adjacent roles, possibilities</td>
+                            <td>Undetermined (experiment)</td>
+                            <td>Google Career Dreamer</td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ Job matching</strong></td>
+                            <td>Résumé plus platform behaviour</td>
+                            <td><strong>Job postings</strong></td>
+                            <td>Placement fees, advertising</td>
+                            <td>LinkedIn · Teal · JobKorea · Wanted · doda · Miidas</td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ Enterprise talent intelligence</strong></td>
+                            <td>Internal HR and skills data</td>
+                            <td>Internal mobility, skill gaps</td>
+                            <td>Enterprise (B2B)</td>
+                            <td>Gloat · Eightfold</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ Learning platform</strong></td>
+                            <td>Enrolment history</td>
+                            <td><strong>Courses, credentials</strong></td>
+                            <td>Individual and enterprise subscription</td>
+                            <td>Coursera Career Academy</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑥ National skills passport</strong></td>
+                            <td><strong>Verified records in a state database</strong></td>
+                            <td>Training, credentials, jobs</td>
+                            <td>Public budget (free to users)</td>
+                            <td>SkillsFuture (SG) · TESDA (PH) · AI Skills Passport (SA)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Five national skills passports</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Country and body</th>
+                            <th>Name</th>
+                            <th>Stage</th>
+                            <th>What is confirmed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Singapore</strong></td>
+                            <td>SkillsFuture Skills Passport</td>
+                            <td>Live</td>
+                            <td>A free verified profile of skills, education and work history; "Insights" supports career-path exploration and skill planning <em>(description from commercial material)</em></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Philippines — TESDA</strong></td>
+                            <td>TESDA Skills Passport</td>
+                            <td>Live</td>
+                            <td>Training, verified credentials, scholarships, career information and jobs in one system; AI career tool <strong>My Career Advisor</strong> with the Wadhwani Foundation</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Saudi Arabia — MCIT</strong></td>
+                            <td>AI Skills Passport</td>
+                            <td><strong>Launched July 2026</strong></td>
+                            <td>With EY and Microsoft, delivered through the national eLearning platform FutureX; AI fundamentals, ethics, career planning</td>
+                        </tr>
+                        <tr>
+                            <td><strong>United States — California</strong></td>
+                            <td>California Career Passport</td>
+                            <td>Exploring (concept)</td>
+                            <td>Explored in the state master plan as a <strong>digital wallet</strong> for learners and workers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>United Kingdom — DWP</strong></td>
+                            <td>National Careers Service</td>
+                            <td>Live → <strong>transfer planned</strong></td>
+                            <td>Skills assessments, career profiles and course search; operations to be brought in-house when contracts end in <strong>September 2027</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Character by lineage</h3>
+                <div class="chart-container">
+                    <canvas id="axisChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    An <strong>assessment by the present analysis</strong> across the five axes. These are not scores given by any source, and products within a lineage differ.
+                </p>
+
+                <h3 class="subsection-title">Five shifts in the market</h3>
+                <ul class="key-findings">
+                    <li><strong>Governments created a layer:</strong> Singapore, the Philippines and Saudi Arabia are live or launched, California is exploring, and the UK is changing who operates its service.</li>
+                    <li><strong>Feature lists no longer separate anyone:</strong> almost every product has career recommendations, skill-gap analysis and learning paths. The division runs along the origin of the input.</li>
+                    <li><strong>No methodology disclosure was found:</strong> this survey surfaced no career or hiring AI product publishing a model card or system card.</li>
+                    <li><strong>Regulation is asymmetric:</strong> products sold to employers carry duties to inform; products advising individuals do not.</li>
+                    <li><strong>The competitive ground is moving:</strong> as the state takes on the verified record, private players compete on what they can say with it.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Write the input origin first</strong> - in any comparison table, put "what grounds the claim" in the first column ahead of features and read the rest against it</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Check for public infrastructure</strong> - find out whether the territory you operate in has a skills passport, and whether it can be integrated with</p>
+                    <p style="line-height: 1.6;">3. <strong>Audit what you could disclose</strong> - list which of decision structure, evaluation metrics and data provenance your own organisation could publish</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>The landscape has six lineages:</strong> general-purpose chat, career exploration experiments, job matching, enterprise talent intelligence, learning platforms, and national skills passports. Different origins behave differently even with identical features.</li>
+                        <li><strong>Governments have moved in:</strong> Singapore, the Philippines and Saudi Arabia are live or launched; California is exploring; the UK brings operations in-house in September 2027. "Free, verified, state-backed" is a combination private players struggle to offer at once.</li>
+                        <li><strong>What defines the category is the origin of the input:</strong> self-reported input pushes a product toward narrative and advice; issuer-verified credentials narrow it to real, attainable things. Choosing the input largely settles the rest.</li>
+                        <li><strong>No product was found publishing its methodology:</strong> not a model card, system card, evaluation metric or data provenance. So there is no material with which to compare methodologies at all.</li>
+                        <li><strong>Asymmetric regulation keeps the incentive weak:</strong> EU AI Act Annex III aims at recruitment, selection, promotion and task allocation, and products advising individuals tend to fall outside it.</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Reference points by situation</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>Doing competitive analysis → put input origin in the first column</strong><br>
+                        Why: by feature list, nearly every product looks the same. With different inputs, the same feature works at a different level.<br>
+                        <strong>Looking at business in Asia → check public infrastructure first</strong><br>
+                        Why: Singapore and the Philippines already hold verified records as public infrastructure. That can be a foundation rather than a competitor.<br>
+                        <strong>Making trust your differentiator → this is vacant ground</strong><br>
+                        Why: no methodology disclosure was found in this field. Since the law does not demand it, whoever goes first takes the position.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>Overall assessment:</strong> Neutral. A widening landscape and the arrival of public infrastructure are signs this category is maturing. But methodology disclosure is effectively absent, so comparison between products stays at the level of feature lists, and asymmetric regulation means that will not improve by itself. With users short of material for judging what to trust, market maturity and trust maturity are not yet moving together.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility Assessment</h3>
+                    <div class="overall-credibility-score">6.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> The existence of every product and programme in the landscape was verified from public material; the classification and judgement axes built on top are this report's proposals. The balance tilts further toward proposal than in other reports here, so the score is set lower.</p>
+                        <p><strong>Main strengths:</strong> The five national skills passports were each confirmed — a government announcement (Saudi Arabia), institutional material (Philippines), public record (UK). The scope of Annex III and the Article 26 duties are consistent across several commentaries. The absence of methodology disclosure is stated precisely as "none found".</p>
+                        <p><strong>Priorities for improvement:</strong> ① 🔴 <strong>The six lineages and five judgement axes are entirely this report's proposal</strong>, not an established framework. ② 🔴 <strong>"No disclosure found" is not proof of absence</strong> — vendors' responsible-AI pages were not exhaustively checked. ③ 🔴 <strong>Article numbers and the application date were not verified against the Official Journal, and sources disagree on timing</strong> (2 Dec 2027 vs Aug 2026). ④ The landscape is not exhaustive — China, India and Latin America were not surveyed, and Japanese cases were limited by the prevalence of affiliate comparison content. ⑤ Both charts hold tallies and assessments by the present analysis.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Skills passport</strong> — a public profile holding an individual's skills, education and work history in verified form. It is called a passport because the holder carries it and presents it.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Self-report</strong> — information the person wrote themselves, as in a résumé or profile. With no way to verify it, there is a ceiling on the precision of anything built on top.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Verified credential</strong> — a qualification or badge vouched for by an issuer. Because who issued it, when, and on what basis travels with it, it becomes a countable signal.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Model card · system card</strong> — public documents: a model card covers specifications and benchmark results, a system card covers pre-deployment safety evaluation. Neither was found among products in this field.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>High-risk AI</strong> — the category the EU AI Act sets aside for uses that can materially affect people's rights or livelihoods, attaching extra obligations. Recruitment and selection fall here.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Annex III</strong> — the EU AI Act's list of high-risk uses. Point 4 covers employment and worker management.
+                    </div>
+                    <div>
+                        <strong>Talent intelligence</strong> — the enterprise (B2B) field in which a company infers its own workforce's skills to inform placement, mobility and development. Its inputs and its payer both differ from a consumer career service.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> 26 October 2026</p>
+                    <ul>
+                        <li>• <a href="https://spa.gov.sa/en/N2635809" target="_blank">Communications Ministry Launches AI Skills Passport Program — Saudi Press Agency (July 2026)</a></li>
+                        <li>• <a href="https://learnworkecosystemlibrary.com/initiatives/tesda-skills-passport-technical-education-and-skills-development-authority-philippines/" target="_blank">TESDA Skills Passport (Philippines) — Learn &amp; Work Ecosystem Library</a></li>
+                        <li>• <a href="https://verticalinstitute.com/blog/skillsfuture-skills-passport/" target="_blank">SkillsFuture Skills Passport: 2026 Guide — Vertical Institute (commercial guidance)</a></li>
+                        <li>• <a href="https://www.ey.com/en_gl/ai-skills-passport" target="_blank">AI Skills Passport — EY</a></li>
+                        <li>• <a href="https://c2c.ca.gov/wp-content/uploads/2026/05/Informing-the-California-Career-Passport.pdf" target="_blank">Informing the California Career Passport (PDF) — Credentials for California</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/National_Careers_Service" target="_blank">National Careers Service (UK) — overview</a></li>
+                        <li>• <a href="https://www.greenhouse.com/guidance/the-2026-ai-in-hiring-report" target="_blank">The 2026 AI in Hiring Report — Greenhouse (vendor report)</a></li>
+                        <li>• <a href="https://universeblend.blog/model-card-disclosure-audit/" target="_blank">Model Card Disclosure in 2026: What AI Labs Actually Tell You (sample of four)</a></li>
+                        <li>• <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI Act portal</a></li>
+                        <li>• <a href="https://www.knowlee.ai/blog/ai-act-annex-iii-hr-employment" target="_blank">AI Act Annex III HR &amp; Employment — compliance commentary</a></li>
+                        <li>• <a href="https://agentgovernancecloud.com/learn/ai-act-employment-recruitment/" target="_blank">AI in Hiring Under the EU AI Act — regulator comparison across six countries</a></li>
+                        <li>• <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI Risk Management Framework</a></li>
+                        <li>• <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a></li>
+                        <li>• <a href="https://www.nikkei.com/article/DGXZQOUC042UD0U4A001C2000000/" target="_blank">AI spreads in job placement; Persol automates career proposals — Nikkei</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Figure 1 — systems by origin of input (a tally by this analysis)
+        const ctx1 = document.getElementById('originChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Self-report\n(résumé, profile)', 'Platform\nbehaviour', 'Internal HR\ndata', 'Enrolment\nhistory', 'Verified records in\na state database'],
+                datasets: [{
+                    label: 'Systems listed in this report',
+                    data: [2, 6, 2, 1, 5],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(34, 197, 94, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(59, 130, 246)', 'rgb(168, 85, 247)', 'rgb(249, 115, 22)', 'rgb(34, 197, 94)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'They meet on one screen, but the grounds come in five kinds (this analysis)' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Number of systems' } } }
+            }
+        });
+
+        // Figure 2 — character of each lineage across the five axes (this analysis)
+        const ctx2 = document.getElementById('axisChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['Verification strength of input', 'Multi-turn conversation', 'Concreteness of recommendation', 'Artefact to take away', 'No cost to the user'],
+                datasets: [
+                    {
+                        label: '① General-purpose chat',
+                        data: [10, 95, 20, 85, 40],
+                        borderColor: 'rgb(148, 163, 184)',
+                        backgroundColor: 'rgba(148, 163, 184, 0.15)'
+                    },
+                    {
+                        label: '③ Job matching',
+                        data: [40, 45, 85, 80, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: '④ Enterprise talent intelligence',
+                        data: [60, 20, 70, 25, 15],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)'
+                    },
+                    {
+                        label: '⑥ National skills passport',
+                        data: [95, 25, 75, 30, 95],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Strong verification comes with weak conversation, and vice versa (this analysis)' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- Shared theme (Ink & Paper) — always include -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

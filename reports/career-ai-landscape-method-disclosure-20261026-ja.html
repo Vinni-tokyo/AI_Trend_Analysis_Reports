@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>似て見えるキャリア AI を分けるのは入力の出どころだ — そして誰も作り方を公開していない</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.1rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.85rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.7rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 共有テーマ (Ink & Paper)：この一行がないと配色が統一されません -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="地形を六つの系統に並べ直すと、同じ範疇に見えた仕組みが「何を根拠に言えるか」で分かれます">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ja.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="似て見えるキャリア AI を分けるのは入力の出どころだ — そして誰も作り方を公開していない">
+<meta property="og:description" content="地形を六つの系統に並べ直すと、同じ範疇に見えた仕組みが「何を根拠に言えるか」で分かれます">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ja.html">
+<meta property="og:locale" content="ja_JP">
+<meta property="article:published_time" content="2026-10-26">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="似て見えるキャリア AI を分けるのは入力の出どころだ — そして誰も作り方を公開していない">
+<meta name="twitter:description" content="地形を六つの系統に並べ直すと、同じ範疇に見えた仕組みが「何を根拠に言えるか」で分かれます">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/career-ai-landscape-method-disclosure-20261026-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← トップ</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="明るさ切り替え" aria-label="明るさ切り替え">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='career-ai-landscape-method-disclosure-20261026-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='career-ai-landscape-method-disclosure-20261026-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='career-ai-landscape-method-disclosure-20261026-ja.html'" class="lang-btn active">日本語</button>
+                </div>
+            </div>
+            <h1>似て見えるキャリア AI を分けるのは入力の出どころだ<br>— そして誰も作り方を公開していない</h1>
+            <div class="subtitle">地形を六つの系統に並べ直すと、同じ範疇に見えた仕組みが「何を根拠に言えるか」で分かれます</div>
+            <div class="meta">レポート作成日：2026年10月26日 | 標準レポート（5-8ページ） | データ収集：2026年10月26日</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">主要トレンド Top 5</h2>
+
+                <div class="callout">
+                    <strong>本レポートの中心的な主張</strong><br>
+                    「進路を尋ね、力量の不足を指し、学びの道筋を渡す」AI は、外から見れば皆似ています。
+                    ところが地形を六つの系統に並べ直すと、<strong>機能ではなく「何を根拠に言うのか」が範疇を分けます</strong> —
+                    自己申告の履歴書か、基盤の行動記録か、発行機関が検証した資格か、国家のデータベースか。
+                    <strong>そしてこの分野で、モデルカードやシステムカードを公開している製品を一つも見つけられませんでした。</strong>
+                    最後の項目は、<strong>規制が雇用主の側だけを狙い、キャリア助言の側をすり抜けるから</strong>だと論じます。
+                </div>
+
+                <h3 class="subsection-title">1. 世の中に何があるのか — 六つの系統</h3>
+                <p><strong>現状：</strong>これは一つの市場ではなく、<strong>出発点の違う六つの系統が同じ画面で出会って</strong>できたものです。
+                汎用の対話モデルが上から降りてき、求人・求職の基盤が横から入り、国家が下から上がってきます。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>民間から上がってきた四つ</h4>
+                        <p>• <strong>① 汎用の対話モデル：</strong>専用の機能なしに進路相談をこなします。
+                        根拠は利用者が語ったことだけです<br>
+                        • <strong>② 進路探索の実験：</strong>隣の職業や可能性を広げて見せる側。
+                        Google の <strong>Career Dreamer</strong> がこの位置です<br>
+                        • <strong>③ 求職・採用のマッチ：</strong>履歴書と求人をつなぎます —
+                        <strong>LinkedIn</strong>・<strong>Teal</strong>、韓国の<strong>ジョブコリア</strong>・<strong>Wanted</strong>、
+                        日本の <strong>doda</strong>・<strong>ミイダス</strong><br>
+                        • <strong>④ 企業向けの人材インテリジェンス（B2B）：</strong>組織の内側の技能の地形を扱います —
+                        <strong>Gloat</strong>・<strong>Eightfold</strong></p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>学びと公共、もう二つ</h4>
+                        <p>• <strong>⑤ 学習の基盤から出発：</strong>役割 → 学びの道筋 → 資格へと降りてきます —
+                        <strong>Coursera Career Academy</strong><br>
+                        • <strong>⑥ 🔴 国家の技能パスポート：</strong>本レポートで最も目を引く系統です。
+                        <strong>シンガポール・フィリピン・サウジアラビア</strong>がすでに運用・提供の段階、
+                        <strong>米国カリフォルニア州</strong>は検討、<strong>英国</strong>は運営主体を変えている途中です<br>
+                        • 民間は「より良い推薦」を売り、国家は<strong>「検証された記録そのもの」</strong>を作ります —
+                        競合ではなく<strong>層が違います</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.linkedin.com/" target="_blank">LinkedIn</a> |
+                    <a href="https://www.tealhq.com/" target="_blank">Teal</a> |
+                    <a href="https://gloat.com/" target="_blank">Gloat</a> |
+                    <a href="https://eightfold.ai/" target="_blank">Eightfold AI</a> |
+                    <a href="https://www.coursera.org/career-academy" target="_blank">Coursera Career Academy</a> |
+                    <a href="https://www.skillsfuture.gov.sg/" target="_blank">SkillsFuture</a>
+                </div>
+
+                <p><strong>展望：</strong>六つが同じ画面で出会うので、利用者はすべてを同じものとして見ます。
+                しかし<strong>「自分たちに似た仕組み」を選ぶには、機能の一覧ではなく出発点を見なければなりません。</strong>
+                三つ目の項目でその判定の軸を立てます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>挙げた製品・事業はいずれも公開資料で実在が確認できます。国家パスポートの五つの事例は各国の発表・機関資料に基づきます。<br>
+                        <strong>改善点：</strong>🔴 <strong>「六つの系統」という分類は本分析の提案</strong>であり、公認された市場区分ではありません。またこの一覧は全数調査ではありません — 中国・インド・中南米は調べられず、日本の事例は提携比較記事が多く公式仕様を確認できなかったものがあります。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 国家が入ってきている — 五か国の技能パスポート</h3>
+                <p><strong>現状：</strong>これまでの議論はおおむね民間の基盤を扱ってきました。
+                ところが2026年に目を引く動きは、<strong>政府が「検証された技能の記録」を公共の基盤として立てる</strong>側です。
+                キャリア AI がその上に載る構造です。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>運用・提供の段階</h4>
+                        <p>• <strong>シンガポール — SkillsFuture Skills Passport：</strong>
+                        技能・学歴・職歴を収めた<strong>検証済みのプロフィール</strong>を無料で提供し、
+                        「Insights」機能が進路の探索と力量の計画を支えます<br>
+                        • <strong>フィリピン — TESDA Skills Passport：</strong>
+                        職業訓練・検証済み資格・奨学・進路情報・仕事を<strong>一つの体系</strong>にまとめた携帯端末向けの基盤。
+                        AI の進路道具 <strong>My Career Advisor</strong> は Wadhwani Foundation との協働で提供されます<br>
+                        • <strong>サウジアラビア — AI Skills Passport：</strong>
+                        2026年7月に通信情報技術省が EY・Microsoft とともに国の電子学習基盤
+                        <strong>FutureX</strong> を通じて提供を始めました（AI の基礎・倫理・進路設計）</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>検討・移管の段階</h4>
+                        <p>• <strong>米国カリフォルニア州 — Career Passport：</strong>
+                        州の基本計画における構想段階で、<strong>学ぶ人・働く人のための電子財布</strong>という考え方です<br>
+                        • <strong>英国 — National Careers Service：</strong>
+                        力量の診断・職業の概観・講座の検索を提供しており、
+                        労働年金省（DWP）が契約の終わる<strong>2027年9月</strong>に運営を内部へ移す計画です<br>
+                        • 共通するのは<strong>「無料・検証・国の保証」</strong>です。
+                        民間がこの三つを同時に出すのは難しいです</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.skillsfuture.gov.sg/skillspassport" target="_blank">SkillsFuture Skills Passport</a> |
+                    <a href="https://www.tesda.gov.ph/" target="_blank">TESDA</a> |
+                    <a href="https://www.ey.com/en_gl/ai-skills-passport" target="_blank">AI Skills Passport (EY)</a> |
+                    <a href="https://nationalcareers.service.gov.uk/" target="_blank">National Careers Service</a>
+                </div>
+
+                <p><strong>展望：</strong>公共の基盤が「検証された記録」を担うと、民間の競う地点が変わります —
+                <strong>データを集めることから、その記録で何を語れるのか</strong>へ移ります。
+                ただし五つの事例は進み方がそれぞれで、国によって含む範囲も違います。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>サウジの件は国営通信（SPA）の発表で、フィリピン TESDA と英国 DWP の移管は機関・公的な記録で確認できます。五つが異なる地域・段階にあることも確認できます。<br>
+                        <strong>改善点：</strong>🔴 シンガポールの記述は<strong>商業的な案内資料</strong>に基づき、公式仕様と異なる可能性があります。各パスポートの実際の利用者数や AI 機能の具体的な動きは確認できていません。<strong>EU の Europass に当たる資料は見つけられませんでした</strong> — 存在しないという意味ではなく、今回の調査で確認できなかったということです。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. 同じ範疇かを分ける軸は入力の出どころだ</h3>
+                <p><strong>現状：</strong>機能の一覧で比べると、ほぼすべての製品が「進路の推薦・力量の分析・学びの道筋」を備えており
+                区別がつきません。実際に分かれる地点は五つの軸で、<strong>そのうち一つ目が残りをほぼ決めます。</strong></p>
+
+                <div class="chart-container">
+                    <canvas id="originChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    本レポートが挙げた仕組みを、入力の出どころで分類して数えた値です。<em>（本分析の集計 — 全数調査ではありません。）</em>
+                </p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>似ているかを判定する五つの軸</h4>
+                        <p>• <strong>① 入力の出どころ：</strong>自己申告 / 基盤の行動記録 / 発行機関の検証 / 国家のデータベース<br>
+                        • <strong>② 対話か入力欄か：</strong>何度かのやり取りで絞るのか、一度に受け取って生成するのか<br>
+                        • <strong>③ 推薦の単位：</strong>語り・助言 / 講座 / 取得できる資格・バッジ / 求人<br>
+                        • <strong>④ 持ち帰る成果物：</strong>履歴書や志望の文章のような書き物が残るか<br>
+                        • <strong>⑤ お金を払う側：</strong>個人の購読 / 企業 / 採用手数料 / 公共の予算</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>なぜ①が残りを引っぱるのか</h4>
+                        <p>• 自己申告を受け取ると<strong>検証する手立てがなく</strong>、推薦の単位を資格へ絞るのが難しくなります →
+                        結果として語り・助言の側へ傾きます<br>
+                        • 逆に検証済みの資格を入力にすると<strong>「保有 N のうち M」</strong>のように数えられるようになり、
+                        推薦の単位が実在する発行の単位へ絞られます<br>
+                        • 国家のデータベースを使えば無料・普遍が可能になる代わりに、
+                        <strong>速さと範囲が制度に縛られます</strong><br>
+                        • つまり①を選んだ瞬間に③④⑤がほぼ従います —
+                        <strong>「似た製品」を探すとき、先に問うべきは機能ではなく入力です</strong></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.1edtech.org/standards/open-badges" target="_blank">Open Badges — 1EdTech</a> |
+                    <a href="https://www.imsglobal.org/" target="_blank">1EdTech Consortium</a>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 本サイトの2026年9月30日のレポート
+                    <a href="ai-career-guidance-platforms-20260930-ja.html">「AI 進路案内の基盤 — 自己申告から検証された証拠へ」</a>は、
+                    <strong>主要な基盤を一つずつ</strong>見ていきました（LinkedIn・Career Dreamer・Gloat・Teal）。
+                    本レポートはその上に<strong>地形の全体と判定の軸</strong>を置きます —
+                    個別の紹介ではなく<strong>「何を同じ範疇と見るのか」</strong>を扱います。
+                </div>
+
+                <p><strong>展望：</strong>この五つの軸は比較表を作るときにそのまま使えます。
+                機能の欄を増やす代わりに<strong>①を先に書き、残りをそれに照らして見れば</strong>、なぜその製品がそういう形なのかが説明されます。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>各軸の値（どの製品が何を入力にするか）は、公開資料でおおむね確認できる観察可能な性質です。<br>
+                        <strong>改善点：</strong>🔴 <strong>五つの軸と「①が残りを引っぱる」という因果はすべて本分析の提案</strong>です。どの出典もこの枠組みを示しておらず、統計で検定したものでもありません。反例もありえます — たとえば国家のデータベースを使いながら成果物を渡さない事例がそうです。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. 🔴 誰も作り方を公開していない</h3>
+                <p><strong>現状：</strong><strong>この分野で、モデルカードやシステムカードを公開しているキャリア・採用の AI 製品を今回の調査で一つも見つけられませんでした。</strong>
+                先端のモデル開発企業はある程度公開しますが、そのモデルを使って人の進路を助言する製品の側はそうではありません。</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>公開されていない四つ</h4>
+                        <p>• <strong>判断の構造：</strong>尋ねるか・答えるか・断るかを何が決めるのか（コードかモデルか）<br>
+                        • <strong>評価の指標と判定：</strong>課題の成功率や安全性の軸を何で測り、どこで落とすのか<br>
+                        • <strong>学習・検索データの出どころ：</strong>推薦がどの資料から出てくるのか<br>
+                        • <strong>第三者の監査：</strong>外部が検証した記録<br>
+                        • そのため製品どうしで<strong>方法論を比べる材料そのものがありません</strong> —
+                        比較表の該当する欄はほとんど「未確認」のまま残ります</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>公開する側でも抜ける項目</h4>
+                        <p>• 2026年のあるモデルカード検証は、<strong>標本に含まれた非公開重みのカードのうち、
+                        演算量（FLOP）・GPU 時間・パラメータ数を公開したものが一つもなかった</strong>と報告しています
+                        <em>（標本4件 — 小さいです）</em><br>
+                        • つまり「公開する」と「何を公開するか」は別の問題です<br>
+                        • 採用側の業界報告は、<strong>中身の見えない選別と妥当性の検証の空白</strong>が
+                        信頼を妨げていると指摘します <em>（提供企業の報告なので、その観点を踏まえて読む必要があります）</em></p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://www.greenhouse.com/guidance/the-2026-ai-in-hiring-report" target="_blank">The 2026 AI in Hiring Report — Greenhouse</a> |
+                    <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI RMF</a> |
+                    <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a>
+                </div>
+
+                <div class="callout">
+                    <strong>あわせて読む —</strong> 2026年10月14日のレポート
+                    <a href="benchmark-integrity-tod-development-20261014-ja.html">「点数をつける側が監査の対象になった」</a>は、
+                    標準のベンチマーク一つが外部の検討で<strong>標本50件のうち24件の欠陥</strong>で「Flawed」の判定を受けた件を扱いました。
+                    二つを重ねると構図がはっきりします — <strong>モデルの側は点数を公開したから監査を受け始め、
+                    製品の側は公開しなかったから監査の対象にすら上がっていません。</strong>
+                </div>
+
+                <p><strong>展望：</strong>この空白は二通りに読めます。
+                守りとして見れば営業上の秘密であり、機会として見れば<strong>先に公開する側が信頼を取る空いた場所</strong>です。
+                ただし今は公開する動機が弱いです — なぜ弱いのかが最後の項目です。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>モデルカード検証の結果（標本内の非公開重みのカードで FLOP・GPU 時間・パラメータ数の公開が0件）と、採用業界の報告の指摘は出典で確認できます。<br>
+                        <strong>改善点：</strong>🔴 <strong>「一つも見つけられなかった」は不在の証明ではありません。</strong>公開の検索で見つけられなかったという意味で、各社の責任ある AI のページや顧客向けの文書を全数で確認したわけではありません。モデルカード検証の標本は4件で小さく、採用の報告は提供企業が出したものです。候補者調査の数値（透明性を求める割合）は二次引用だったため、本文から数値を外し記述だけ残しました。
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 規制は雇用主の側を狙い、キャリア助言はすり抜ける</h3>
+                <p><strong>現状：</strong>公開する動機が弱い理由は制度にあります。
+                EU の AI 法の高リスク一覧（附属書 III）は<strong>雇用の関係を狙います</strong> —
+                採用・選抜、昇進・解雇、業務の割り当て、成果の監視です。
+                <strong>個人に進路を助言する製品はその範疇の外に置かれやすいです。</strong></p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>附属書 III が含むもの</h4>
+                        <p>• <strong>採用・選抜</strong> — 標的を絞った求人広告、応募書類の選別、候補者の評価<br>
+                        • <strong>雇用関係の決定</strong> — 昇進・解雇、業務の割り当て、成果・行動の監視<br>
+                        • <strong>知らせる義務：</strong>第26条7項は高リスクの仕組みを職場に投入する前に
+                        <strong>労働者の代表と影響を受ける労働者に知らせる</strong>よう求め、
+                        11項は<strong>その決定の対象となった人に知らせる</strong>よう加えます<br>
+                        • 第6条3項は面接日程の調整のような狭い手続き的な業務を免除しえますが、
+                        <strong>人を profiling する仕組みには免除が及びません</strong><br>
+                        • 職場での感情の推測は高リスクではなく<strong>禁止</strong>の慣行です</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>⚠️ 施行の時期は出典が食い違います</h4>
+                        <p>• 複数の資料が附属書 III の義務の時期を<strong>2027年12月2日</strong>と記します
+                        — Digital Omnibus（Regulation (EU) 2026/1744）による調整という説明です<br>
+                        • 別の資料はいまも<strong>2026年8月</strong>と記します。
+                        後者は古いものに見えますが、<strong>本調査では確定できませんでした</strong><br>
+                        • 生成物の表示などの第50条の透明性の義務は別の日程で、
+                        <strong>2026年8月2日</strong>に予定どおり適用されました<br>
+                        • 🔴 事業の文書に書くときは必ず<strong>官報の原文</strong>で確認してください</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 関連リンク:</strong>
+                    <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI 法ポータル</a> |
+                    <a href="https://eur-lex.europa.eu/" target="_blank">EUR-Lex（官報の原文）</a>
+                </div>
+
+                <p><strong>展望：</strong>構図はこう整理されます。
+                <strong>雇用主を相手にする製品には知らせる義務が付き、個人に助言する製品には付きません。</strong>
+                そのためキャリア助言の側の方法論の公開は<strong>法ではなく選択</strong>として残ります。
+                前の項目の空白がなぜ埋まらないのかがここで説明されます —
+                そして同じ理由で、<strong>自ら公開する側は違いを作れます</strong>。</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 信頼性評価：</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>強み：</strong>附属書 III の4項の適用範囲、第26条7・11項の知らせる義務、第6条3項の免除の限界、職場での感情推測の禁止は、複数の解説で一貫して確認できます。<br>
+                        <strong>改善点：</strong>🔴 <strong>条文の番号と施行の時期を法令の原文で確認できていません。</strong>参照したのは主にコンプライアンスのブログで、施行の時期は 2027-12-02 と 2026-08 で<strong>出典が食い違います</strong>。「キャリア助言の製品は範疇の外」という判断も<strong>本分析の解釈</strong>であり法律の意見ではありません — 製品が雇用主に納められた瞬間に変わりえます。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">競争環境と市場ポジショニング</h2>
+
+                <h3 class="subsection-title">六つの系統 — 出発点で分ける</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.92rem;">
+                    機能ではなく<strong>どこから出発したか</strong>で分けた地形です。
+                    同じ系統なら機能が違っても似た動きをし、系統が違えば機能が同じでも違う動きをします。
+                    <em>（本分析による分類です。）</em>
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>系統</th>
+                            <th>入力の出どころ</th>
+                            <th>推薦の単位</th>
+                            <th>お金を払う側</th>
+                            <th>代表的な事例</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① 汎用の対話モデル</strong></td>
+                            <td>利用者の自己申告だけ</td>
+                            <td>語り・助言</td>
+                            <td>個人の購読</td>
+                            <td>汎用 LLM の対話</td>
+                        </tr>
+                        <tr>
+                            <td><strong>② 進路探索の実験</strong></td>
+                            <td>自己申告 ＋ 職業のデータ</td>
+                            <td>隣の職業・可能性</td>
+                            <td>未定（実験）</td>
+                            <td>Google Career Dreamer</td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ 求職・採用のマッチ</strong></td>
+                            <td>履歴書 ＋ 基盤の行動記録</td>
+                            <td><strong>求人</strong></td>
+                            <td>採用手数料・広告</td>
+                            <td>LinkedIn · Teal · ジョブコリア · Wanted · doda · ミイダス</td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ 企業の人材インテリジェンス</strong></td>
+                            <td>組織内部の人事・技能データ</td>
+                            <td>内部の異動・技能の不足</td>
+                            <td>企業（B2B）</td>
+                            <td>Gloat · Eightfold</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑤ 学習の基盤</strong></td>
+                            <td>受講の履歴</td>
+                            <td><strong>講座・資格</strong></td>
+                            <td>個人・企業の購読</td>
+                            <td>Coursera Career Academy</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⑥ 国家の技能パスポート</strong></td>
+                            <td><strong>国家・公共のデータベースの検証済み記録</strong></td>
+                            <td>訓練・資格・仕事</td>
+                            <td>公共の予算（利用者は無料）</td>
+                            <td>SkillsFuture（SG）· TESDA（PH）· AI Skills Passport（SA）</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">国家の技能パスポート 五つの事例</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>国・主体</th>
+                            <th>名称</th>
+                            <th>段階</th>
+                            <th>確認できた内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>シンガポール</strong></td>
+                            <td>SkillsFuture Skills Passport</td>
+                            <td>運用</td>
+                            <td>技能・学歴・職歴の検証済みプロフィールを無料提供 ·「Insights」が進路の探索と力量の計画を支援 <em>（記述の出典が商業資料）</em></td>
+                        </tr>
+                        <tr>
+                            <td><strong>フィリピン — TESDA</strong></td>
+                            <td>TESDA Skills Passport</td>
+                            <td>運用</td>
+                            <td>訓練・検証済み資格・奨学・進路情報・仕事を一つの体系に · AI の進路道具 <strong>My Career Advisor</strong>（Wadhwani Foundation と協働）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>サウジアラビア — 通信情報技術省</strong></td>
+                            <td>AI Skills Passport</td>
+                            <td><strong>2026年7月 提供開始</strong></td>
+                            <td>EY・Microsoft と協働 · 国の電子学習基盤 FutureX を通じて提供 · AI の基礎・倫理・進路設計</td>
+                        </tr>
+                        <tr>
+                            <td><strong>米国カリフォルニア州</strong></td>
+                            <td>California Career Passport</td>
+                            <td>検討（構想）</td>
+                            <td>州の基本計画で学ぶ人・働く人向けの<strong>電子財布</strong>という考え方として探索中</td>
+                        </tr>
+                        <tr>
+                            <td><strong>英国 — DWP</strong></td>
+                            <td>National Careers Service</td>
+                            <td>運用 → <strong>内部移管の予定</strong></td>
+                            <td>力量の診断・職業の概観・講座の検索を提供 · 契約の終わる<strong>2027年9月</strong>に運営を内部へ移す計画</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">系統ごとの性格の比較</h3>
+                <div class="chart-container">
+                    <canvas id="axisChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">
+                    五つの軸についての<strong>本分析の評価</strong>です。出典が示した点数ではなく、同じ系統の中でも製品ごとに違いがあります。
+                </p>
+
+                <h3 class="subsection-title">市場の五つの変化</h3>
+                <ul class="key-findings">
+                    <li><strong>国家が層を一つ作りました：</strong>シンガポール・フィリピン・サウジアラビアが運用・提供の段階、カリフォルニア州は検討、英国は運営主体を変えている途中です。</li>
+                    <li><strong>機能の一覧では区別がつきません：</strong>ほぼすべての製品が進路の推薦・力量の分析・学びの道筋を備えています。分かれる地点は入力の出どころです。</li>
+                    <li><strong>方法論を公開した事例を見つけられませんでした：</strong>モデルカードやシステムカードを公開したキャリア・採用の AI 製品が今回の調査では確認できませんでした。</li>
+                    <li><strong>規制が非対称です：</strong>雇用主を相手にする製品には知らせる義務が付き、個人に助言する製品には付きません。</li>
+                    <li><strong>競う地点が移ります：</strong>検証された記録を国家が担うと、民間はその記録で何を語れるかで競うようになります。</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">活用アイデア</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">市場で観察される主要な活用アプローチをご紹介します。</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>入力の出どころを先に書く</strong> - 比較表を作るとき、機能の欄より「何を根拠に言うのか」を最初の列に置き、残りをそれに照らして見る</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>公共の基盤を確かめる</strong> - 事業の対象となる地域に技能パスポートがあるか、あれば連携できる形かを見る</p>
+                    <p style="line-height: 1.6;">3. <strong>公開できる項目を棚卸しする</strong> - 判断の構造・評価の指標・データの出どころのうち、自社が公開できるものは何かを書き出す</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">エグゼクティブサマリー</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">重要なポイント</h3>
+                    <ul class="key-findings">
+                        <li><strong>地形は六つの系統です：</strong>汎用の対話モデル・進路探索の実験・求職採用のマッチ・企業の人材インテリジェンス・学習の基盤・国家の技能パスポート。出発点が違えば機能が同じでも違う動きをします。</li>
+                        <li><strong>国家が入ってきました：</strong>シンガポール・フィリピン・サウジアラビアが運用・提供の段階、カリフォルニア州は検討、英国は2027年9月に運営を内部へ移します。「無料・検証・国の保証」は民間が同時に出しにくい組み合わせです。</li>
+                        <li><strong>範疇を分けるのは入力の出どころです：</strong>自己申告を受け取ると推薦の単位が語り・助言へ傾き、検証済みの資格を使えば実在する取得可能なものへ絞られます。入力を選ぶ瞬間に残りがほぼ従います。</li>
+                        <li><strong>方法論を公開した製品を見つけられませんでした：</strong>モデルカード・システムカード・評価の指標・データの出どころのいずれも確認できませんでした。そのため製品どうしで方法論を比べる材料そのものがありません。</li>
+                        <li><strong>規制が非対称なので公開の動機が弱いです：</strong>EU の AI 法の附属書 III は採用・選抜・昇進・業務の割り当てを狙い、個人に助言する製品はその外に置かれやすいです。</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">状況別の参考</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>競合分析をする組織 → 入力の出どころを最初の列に</strong><br>
+                        理由：機能の一覧ではほぼすべての製品が似て見えます。入力が違えば同じ機能も違う水準で働きます。<br>
+                        <strong>アジアでの事業を見る組織 → 公共の基盤を先に確かめる</strong><br>
+                        理由：シンガポールとフィリピンはすでに検証された記録を公共の基盤として持っています。競合ではなく土台になりえます。<br>
+                        <strong>信頼を違いにする組織 → 公開が空いている場所です</strong><br>
+                        理由：この分野で方法論を公開した事例を見つけられませんでした。法が求めない領域なので、先に行う側が位置を取ります。
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>総合評価：</strong>中立。地形が広がり公共の基盤が入ってくるのは、この範疇が成熟へ向かう兆しです。ただし方法論の公開が事実上なく、製品間の比較が機能の一覧の水準にとどまり、規制が非対称なのでその状態が自然に改善することもありません。利用者が「どれを信じられるか」を判断する材料が足りないという点で、市場の成熟と信頼の成熟はまだ一緒に進んでいません。</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 総合信頼性評価</h3>
+                    <div class="overall-credibility-score">6.0/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>総合評価：</strong>地形に挙げた製品・事業の実在は公開資料で確認し、その上に載せた分類と判定の軸は本分析の提案です。事実と提案の比率が他のレポートより提案の側へ傾くため、信頼性を低く付けました。</p>
+                        <p><strong>主な強み：</strong>国家の技能パスポート五つの事例は、政府の発表（サウジ）・機関の資料（フィリピン）・公的な記録（英国）でそれぞれ確認しました。附属書 III の適用範囲と第26条の知らせる義務は複数の解説が一貫しています。方法論の公開の不在は「見つけられなかった」と正確に限定して記しました。</p>
+                        <p><strong>改善の優先順位：</strong>①🔴 <strong>六つの系統の分類と五つの判定の軸はすべて本分析の提案</strong>であり、公認された体系ではありません。②🔴 <strong>「公開の事例を見つけられなかった」は不在の証明ではありません</strong> — 各社の責任ある AI のページを全数で確認していません。③🔴 <strong>EU の AI 法の条文の番号と施行の時期を官報の原文で確認できておらず、施行の時期は出典が食い違います</strong>（2027-12-02 と 2026-08）。④地形は全数調査ではありません — 中国・インド・中南米を調べられず、日本の事例は提携比較記事が多く公式仕様の確認に限りがありました。⑤二つの図の値は本分析の集計・評価です。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">主要用語の説明</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>技能パスポート（Skills Passport）</strong> — 個人の技能・学歴・職歴を検証された形で収めておく公共のプロフィールです。本人が持ち歩いて示すという意味で「パスポート」と呼ばれます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>自己申告（Self-report）</strong> — 履歴書やプロフィールのように本人が書いて出した情報です。確かめる手立てがないため、その上に積む推薦の精度に限りが生じます。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>検証済みの資格（Verified credential）</strong> — 発行機関が保証した資格・バッジです。誰がいつ何を根拠に与えたかが一緒に残るので、数えられる信号になります。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>モデルカード · システムカード</strong> — モデルカードはモデルの仕様とベンチマークの結果を、システムカードは配備前の安全性の評価を収める公開の文書です。この分野の製品では確認できませんでした。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>高リスク AI（High-risk AI）</strong> — EU の AI 法が、人の権利や生計に重大な影響を与えうる用途をまとめて追加の義務を課す範疇です。採用・選抜がここに入ります。
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>附属書 III（Annex III）</strong> — EU の AI 法で高リスクの用途を列挙した一覧です。4項が雇用・労働者の管理に当たります。
+                    </div>
+                    <div>
+                        <strong>人材インテリジェンス（Talent intelligence）</strong> — 企業が内部の人材の技能を推し量って配置・異動・育成に使う企業向け（B2B）の分野です。個人向けの進路サービスとは入力も支払う側も違います。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>参考資料</h3>
+                    <p><strong>データ収集：</strong>2026年10月26日</p>
+                    <ul>
+                        <li>• <a href="https://spa.gov.sa/en/N2635809" target="_blank">Communications Ministry Launches AI Skills Passport Program — Saudi Press Agency（2026年7月）</a></li>
+                        <li>• <a href="https://learnworkecosystemlibrary.com/initiatives/tesda-skills-passport-technical-education-and-skills-development-authority-philippines/" target="_blank">TESDA Skills Passport（フィリピン）— Learn &amp; Work Ecosystem Library</a></li>
+                        <li>• <a href="https://verticalinstitute.com/blog/skillsfuture-skills-passport/" target="_blank">SkillsFuture Skills Passport: 2026 Guide — Vertical Institute（商業的な案内資料）</a></li>
+                        <li>• <a href="https://www.ey.com/en_gl/ai-skills-passport" target="_blank">AI Skills Passport — EY</a></li>
+                        <li>• <a href="https://c2c.ca.gov/wp-content/uploads/2026/05/Informing-the-California-Career-Passport.pdf" target="_blank">Informing the California Career Passport（PDF）— Credentials for California</a></li>
+                        <li>• <a href="https://en.wikipedia.org/wiki/National_Careers_Service" target="_blank">National Careers Service（英国）— 概要</a></li>
+                        <li>• <a href="https://www.greenhouse.com/guidance/the-2026-ai-in-hiring-report" target="_blank">The 2026 AI in Hiring Report — Greenhouse（提供企業の報告）</a></li>
+                        <li>• <a href="https://universeblend.blog/model-card-disclosure-audit/" target="_blank">Model Card Disclosure in 2026: What AI Labs Actually Tell You（標本4件）</a></li>
+                        <li>• <a href="https://artificialintelligenceact.eu/" target="_blank">EU AI 法ポータル</a></li>
+                        <li>• <a href="https://www.knowlee.ai/blog/ai-act-annex-iii-hr-employment" target="_blank">AI Act Annex III HR &amp; Employment — コンプライアンス解説</a></li>
+                        <li>• <a href="https://agentgovernancecloud.com/learn/ai-act-employment-recruitment/" target="_blank">AI in Hiring Under the EU AI Act — 6か国の規制機関の比較</a></li>
+                        <li>• <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank">NIST AI Risk Management Framework</a></li>
+                        <li>• <a href="https://www.iso.org/standard/81230.html" target="_blank">ISO/IEC 42001</a></li>
+                        <li>• <a href="https://www.nikkei.com/article/DGXZQOUC042UD0U4A001C2000000/" target="_blank">転職仲介にAI広がる パーソル、キャリア提案自動化 — 日本経済新聞</a></li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // 図1 — 入力の出どころ別の仕組みの数（本分析の集計）
+        const ctx1 = document.getElementById('originChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['自己申告\n（履歴書・プロフィール）', '基盤の\n行動記録', '組織内部の\n人事データ', '受講の履歴', '国家・公共 DB の\n検証済み記録'],
+                datasets: [{
+                    label: '本レポートが挙げた仕組みの数',
+                    data: [2, 6, 2, 1, 5],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(34, 197, 94, 0.7)'
+                    ],
+                    borderColor: ['rgb(148, 163, 184)', 'rgb(59, 130, 246)', 'rgb(168, 85, 247)', 'rgb(249, 115, 22)', 'rgb(34, 197, 94)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '同じ画面で出会うが、根拠は五通りある（本分析の集計）' },
+                    legend: { display: false }
+                },
+                scales: { y: { beginAtZero: true, title: { display: true, text: '仕組みの数' } } }
+            }
+        });
+
+        // 図2 — 系統ごとの五つの軸の性格（本分析の評価）
+        const ctx2 = document.getElementById('axisChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'radar',
+            data: {
+                labels: ['入力の検証の強さ', '多ターンの対話', '推薦の単位の具体性', '持ち帰る成果物', '利用者の負担なし'],
+                datasets: [
+                    {
+                        label: '① 汎用の対話モデル',
+                        data: [10, 95, 20, 85, 40],
+                        borderColor: 'rgb(148, 163, 184)',
+                        backgroundColor: 'rgba(148, 163, 184, 0.15)'
+                    },
+                    {
+                        label: '③ 求職・採用のマッチ',
+                        data: [40, 45, 85, 80, 70],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)'
+                    },
+                    {
+                        label: '④ 企業の人材インテリジェンス',
+                        data: [60, 20, 70, 25, 15],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)'
+                    },
+                    {
+                        label: '⑥ 国家の技能パスポート',
+                        data: [95, 25, 75, 30, 95],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.15)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '検証が強い側は対話が弱く、対話が強い側は根拠が弱い（本分析の評価）' },
+                    legend: { position: 'bottom' }
+                },
+                scales: { r: { beginAtZero: true, max: 100 } }
+            }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 共有テーマ (Ink & Paper)：必ず含めること -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
