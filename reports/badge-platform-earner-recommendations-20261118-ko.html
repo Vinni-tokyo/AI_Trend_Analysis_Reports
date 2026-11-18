@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배지 플랫폼은 이미 추천을 한다 — 가르는 것은 누가 돈을 내는가다</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 공유 테마 (Ink & Paper) : 이 줄이 없으면 색이 통일되지 않습니다 -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="Accredible·Credly·Europass 의 보유자 대상 추천을 재원과 범위로 나란히 놓아 봅니다">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ko.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="배지 플랫폼은 이미 추천을 한다 — 가르는 것은 누가 돈을 내는가다">
+<meta property="og:description" content="Accredible·Credly·Europass 의 보유자 대상 추천을 재원과 범위로 나란히 놓아 봅니다">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ko.html">
+<meta property="og:locale" content="ko_KR">
+<meta property="article:published_time" content="2026-11-18">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="배지 플랫폼은 이미 추천을 한다 — 가르는 것은 누가 돈을 내는가다">
+<meta name="twitter:description" content="Accredible·Credly·Europass 의 보유자 대상 추천을 재원과 범위로 나란히 놓아 봅니다">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← 홈</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="밝기 전환" aria-label="밝기 전환">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='badge-platform-earner-recommendations-20261118-ko.html'" class="lang-btn active">한국어</button>
+                    <button onclick="window.location.href='badge-platform-earner-recommendations-20261118-en.html'" class="lang-btn">English</button>
+                    <button onclick="window.location.href='badge-platform-earner-recommendations-20261118-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>배지 플랫폼은 이미 추천을 한다<br>— 가르는 것은 누가 돈을 내는가다</h1>
+            <div class="subtitle">Accredible·Credly·Europass 의 보유자 대상 추천을 재원과 범위로 나란히 놓아 봅니다</div>
+            <div class="meta">보고서 작성일: 2026년 11월 18일 | 표준 보고서(5-8쪽) | 데이터 수집: 2026년 11월 18일</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">주요 트렌드 Top 5</h2>
+
+                <div class="callout">
+                    <strong>이 보고서의 중심 주장</strong><br>
+                    「배지 플랫폼은 발급만 하고 추천은 하지 않는다」는 말은 이제 맞지 않습니다.
+                    <strong>Accredible·Credly·Europass 는 모두 배지 보유자에게 직업과 과정을 추천합니다.</strong>
+                    그래서 물어야 할 것은 추천이 있느냐가 아니라 <strong>그 추천이 누구의 돈으로, 어느 범위 안에서 도느냐</strong>입니다.
+                    두 민간 플랫폼은 발급기관이 돈을 내고 자기 망 안에서 추천이 돌며, Europass 는 공공 재원으로 유럽 안에서 돕니다.
+                    그리고 <strong>일본과 한국에서는 보유자에게 추천을 해 주는 배지 서비스를 찾지 못했습니다.</strong>
+                </div>
+
+                <h3 class="subsection-title">1. Accredible Career Journey — 배지에서 출발하는 무료 진로 안내</h3>
+                <p><strong>현황:</strong> Accredible 은 2026년 4월 30일 「Career Journey」를 내놓았습니다(공지 글은 7월 3일에 갱신).
+                보유자가 받은 크리덴셜을 출발점으로 삼는 <strong>무료 진로 안내</strong>이고, 앱 설치나 별도 가입 없이 쓸 수 있다고 밝혔습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>보유자가 넣는 것과 받는 것</h4>
+                        <p>• <strong>입력:</strong> 지금 보고 있는 크리덴셜에 더해 경력·학력·현재 직무·희망 직무·목표·지역<br>
+                        • <strong>스킬 번역:</strong> 이력서 문장, LinkedIn 소개 글, 면접에서 말할 거리<br>
+                        • <strong>관련 직무:</strong> 「실제 급여 범위, 수요 신호, 채용 중인 기업 데이터」와 함께 제시<br>
+                        • <strong>다음 한 걸음:</strong> 과정·직무·목표 가운데 하나를 구체적으로 제안</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>발급기관 쪽에서 본 모습</h4>
+                        <p>• <strong>설정 불필요:</strong> 발급기관은 아무것도 만들지 않아도 자기 크리덴셜에 진로 안내가 붙습니다<br>
+                        • <strong>노출:</strong> 「귀 기관의 프로그램이 자연스러운 다음 단계로 나타난다」 — 회사는 이를 「광고가 아니라 관련성 기반」이라고 설명합니다<br>
+                        • <strong>데이터:</strong> 자기 수취인의 행동·참여 데이터를 3분기에 제공하겠다고 예고<br>
+                        • <strong>규모:</strong> 매월 50만 건 이상 발급, 누적 1억 8,500만 건 이상(회사 발표)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://www.accredible.com/blog/introducing-career-journey-what-comes-after-the-credential" target="_blank">Career Journey 공지</a> |
+                    <a href="https://www.accredible.com/" target="_blank">Accredible</a>
+                </div>
+
+                <p><strong>전망:</strong> 회사가 든 근거는 자체 조사입니다. 2025년 조사에서 보유자의 76.8%가 크리덴셜을 받는 순간 그것이 일자리·진로와 어떻게 이어지는지 보고 싶다고 답했다고 합니다.
+                발급 플랫폼이 「발급 이후」를 제품으로 만들기 시작했다는 신호로 읽을 수 있습니다. 다만 급여·수요 데이터의 출처는 공지에 적혀 있지 않습니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 출시일·입력·출력·발급기관 혜택을 회사 공식 공지에서 직접 확인했습니다. 인용 문구는 원문 그대로입니다.<br>
+                        <strong>개선점:</strong> 🔴 <strong>전부 공급사 자신의 설명</strong>입니다. 실제 화면을 써 보지 못했고, 76.8%는 표본·방법이 공개되지 않은 자체 조사입니다. 제공 지역·언어, 노동시장 데이터 출처, 이용자 수는 공지에 없습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. 돈의 흐름 — 추천 자리를 사는 쪽은 발급기관이다</h3>
+                <p><strong>현황:</strong> Accredible 에는 Career Journey 보다 먼저 나온 「Recommendations」(2022년 9월 출시)가 있습니다.
+                이용 약관(2022년 7월 7일 갱신)을 읽어 보면 이것은 <strong>발급기관들이 서로의 크리덴셜 페이지에 자기 과정을 광고하는 망</strong>입니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>약관이 말하는 구조</h4>
+                        <p>• <strong>누가 내나:</strong> 광고를 싣는 발급기관. 과금 지표는 「노출 또는 클릭」<br>
+                        • <strong>기본 참여:</strong> 「네트워크 풀」 가입이 기본값이고, 빠지려면 10일 전 서면 통지<br>
+                        • <strong>우선 노출:</strong> 「우선 배치」를 살 수 있습니다. 순위·위치는 보장하지 않으며 선정 방식은 설명하지 않습니다<br>
+                        • <strong>수익 분배:</strong> 자기 페이지에 실린 타 기관 광고로 수익을 얻는 선택지(승인 필요)</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>같은 회사의 다른 상품</h4>
+                        <p>• <strong>타기팅:</strong> 방문한 페이지 내용 같은 「개인 식별이 되지 않는 기준」에 따른 문맥 타기팅<br>
+                        • <strong>Pathways:</strong> 발급기관이 설계하는 학습 경로. 회사는 신규 수강 등록이 「최대 367%」 늘었다고 주장합니다(방법 미공개)<br>
+                        • <strong>Spotlight Directory:</strong> 발급기관 구독의 유료 부가 상품인 인재 디렉터리<br>
+                        • <strong>기본 요금:</strong> 발급기관이 수취인 수에 따라 연 단위로 냅니다. 보유자는 무료</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://accredible.com/legal/recommendations-terms" target="_blank">Recommendations 약관</a> |
+                    <a href="https://www.accredible.com/features/pathways" target="_blank">Pathways</a> |
+                    <a href="https://www.accredible.com/pricing" target="_blank">Accredible 요금</a>
+                </div>
+
+                <p><strong>전망:</strong> 보유자에게는 무료이고 발급기관이 돈을 내는 구조에서는, 추천이 정교해질수록 「이 과정이 왜 내 다음 단계로 나왔는가」라는 물음이 따라옵니다.
+                Career Journey 는 「광고가 아니라 관련성 기반」이라고 밝혔지만, 같은 회사가 우선 배치를 파는 상품을 함께 운영합니다.
+                <strong>두 상품이 실제로 이어져 있는지는 공개 자료로 확인되지 않습니다.</strong> 확인되지 않는다는 사실 자체가 이 항목의 요점입니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 과금 지표·기본 참여·우선 배치·수익 분배는 약관 원문에서 확인했습니다. 법적 문서이므로 마케팅 문구보다 믿을 만합니다.<br>
+                        <strong>개선점:</strong> 🔴 약관은 <strong>2022년판</strong>이며 현재 운영 방식이 같은지 확인하지 못했습니다. 클릭 단가와 Accredible 의 몫은 비공개입니다. 「367%」는 공급사 주장입니다. Recommendations 와 Career Journey 의 연결 여부는 <strong>본 분석이 확인하지 못한 부분</strong>입니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. Credly — 직업 기반 추천과 채용 공고 연결</h3>
+                <p><strong>현황:</strong> Pearson 산하의 Credly 는 배지 1억 개, 보유자 4,800만 명 이상, 발급기관 4,000곳 이상을 가진 최대 사업자입니다(2025년 1월 Pearson 발표).
+                보유자 대시보드를 개편해 추천을 앞에 세웠고, 크리덴셜 페이지마다 채용 공고를 붙였습니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>보유자 화면</h4>
+                        <p>• <strong>홈 탭:</strong> 프로필·배지·스킬과 함께 직업 기반 배지 제안, 인기 배지, 개인화된 배지·스킬 추천<br>
+                        • <strong>탐색(Explore) 탭:</strong> 상위 스킬·떠오르는 스킬과 직업 기반 추천이 이곳으로 옮겨졌습니다<br>
+                        • <strong>성격:</strong> 추천은 제안일 뿐 요건이 아니라고 안내합니다<br>
+                        • <strong>관련 일자리:</strong> 모든 크리덴셜 페이지의 「Related Jobs」에서 검색·필터</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>노동시장 데이터</h4>
+                        <p>• <strong>출처:</strong> 「전 세계 25,000개 이상의 구인 게시판·기업 채용 사이트, 미국 인구조사국, 노동통계국」<br>
+                        • <strong>갱신:</strong> 상시 갱신하며 유효한 공고만 보여 준다고 밝힙니다<br>
+                        • <strong>검색 축:</strong> 직함·지역·고용주·급여 범위<br>
+                        • <strong>대상:</strong> 보유자와 발급기관 모두 — 「플랫폼의 모든 사람이 이용할 수 있다」</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://info.credly.com/product/labor-market" target="_blank">Credly Labor Market Insights</a> |
+                    <a href="https://support.credly.com/hc/en-us/articles/9927498181915-Get-to-know-the-new-Credly-Earner-Dashboard" target="_blank">새 보유자 대시보드 안내</a> |
+                    <a href="https://www.credly.com/" target="_blank">Credly</a>
+                </div>
+
+                <p><strong>전망:</strong> Credly 의 추천은 <strong>직업과 인기 흐름</strong>에서 출발합니다. 보유자가 목표를 정하면 모자란 스킬을 짚고 배우는 순서를 짜 주는 흐름은 공개 자료에서 확인하지 못했습니다.
+                또 이 추천은 Credly 안에서 돕니다. 보유자 약관(2023년 7월판)은 스크립트·로봇·크롤러 사용과 데이터의 수익화를 금지하고, API 인증은 조직 단위여서 보유자가 제3자에게 자기 이력을 넘겨주는 동의 흐름이 없습니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 노동시장 데이터의 출처와 검색 축은 Credly 제품 페이지에서, 규모 수치는 Pearson 공식 발표에서 확인했습니다.<br>
+                        <strong>개선점:</strong> 🔴 대시보드 도움말 페이지는 <strong>직접 열람이 막혀(403) 검색 요약에 근거</strong>했습니다. 갱신일 표기도 형식이 모호합니다. 「목표 → 갭 → 순서」가 없다는 것은 공개 자료에서 찾지 못했다는 뜻이며 기능이 없다는 증명이 아닙니다. 기업용 Talent Match 는 2차 자료 하나뿐이라 본문에서 뺐습니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. Europass — 공공이 운영하는 추천</h3>
+                <p><strong>현황:</strong> 유럽연합 집행위원회가 운영하는 Europass 는 2025년 7월 기준 등록 이용자 850만 명 이상, 31개 언어를 지원하는 무료 플랫폼입니다.
+                프로필에 적은 스킬과 관심사를 바탕으로 <strong>일자리와 과정을 제안</strong>합니다.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>제안이 만들어지는 방식</h4>
+                        <p>• <strong>입력:</strong> 프로필과 「My skills」·「My interests」에 적은 내용. 기능을 켜면 대시보드에 제안이 뜹니다<br>
+                        • <strong>스킬 사전:</strong> 유럽 표준 분류 ESCO. 스킬 제안은 포트폴리오 내용 분석과 이용자 유사성에 따라 생성된다고 설명합니다(2024년 5월 발표 자료)<br>
+                        • <strong>일자리:</strong> EURES 를 통해 「스킬과 관심사에 맞춘 300만 건 이상의 구인」<br>
+                        • <strong>사람:</strong> 31개국 약 1,000명의 EURES 상담사</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>지갑과 앞으로의 계획</h4>
+                        <p>• <strong>지갑:</strong> 기관이 유럽 학습 디지털 크리덴셜(EDC)을 보내면 라이브러리의 지갑에 담깁니다<br>
+                        • <strong>도구:</strong> 이력서·자기소개서 편집기, 디지털 역량 자가 진단, 지원 관리, 면접 준비<br>
+                        • <strong>예고:</strong> 특정 일자리에 맞춰 관련 스킬을 골라 주는 「Smart CV」 등 AI 활용<br>
+                        • <strong>재원:</strong> 공공 — 보유자도 발급기관도 추천에 돈을 내지 않습니다</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://europass.europa.eu/" target="_blank">Europass</a> |
+                    <a href="https://eures.europa.eu/" target="_blank">EURES</a> |
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO</a>
+                </div>
+
+                <p><strong>전망:</strong> Europass 는 돈을 내는 발급기관이 없으므로 이해충돌에서 가장 자유롭습니다.
+                대신 대화형 코칭이 아니라 프로필 기반 제안이고, 일자리 연결은 유럽 노동시장(EURES)에 묶여 있습니다.
+                집행위원회 스스로 2023년에 「맞춤 제안과 개인화를 더 개선 중」이라고 적었으므로 현재 기능 수준은 실제 포털에서 확인이 필요합니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 이용자 수·언어·제안 입력·EURES 연결은 유럽연합 공식 페이지(Europass·EURES)에서 확인했습니다.<br>
+                        <strong>개선점:</strong> ESCO 와 이용자 유사성에 관한 설명은 2024년 발표 자료에 근거하며 현행 구현과 같은지 확인하지 못했습니다. 발급된 EDC 의 수는 찾지 못했습니다. 「코칭이 아니다」는 본 분석의 해석입니다.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. 망의 경계와 지역 공백 — 추천이 닿지 않는 곳</h3>
+                <p><strong>현황:</strong> 세 서비스의 추천은 각자의 울타리 안에서 돕니다. 울타리를 넘는 표준(Open Badges 3.0)은 아직 발급량이 적고,
+                일본과 한국에서는 보유자에게 추천을 해 주는 배지 서비스를 찾지 못했습니다.</p>
+
+                <div class="chart-container">
+                    <canvas id="ob3Chart"></canvas>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>울타리를 넘는 길</h4>
+                        <p>• <strong>표준의 현재:</strong> 1EdTech 의 2025년 집계에서 수여된 배지 3억 2,050만 개 가운데 Open Badges 3.0 은 270만 개입니다<br>
+                        • <strong>Accredible:</strong> 2026년 1월 13일 OB 3.0·W3C VC 의 내보내기와 반입을 지원 — 「다른 발급기관의 검증 가능한 크리덴셜을 지갑에 들여올 수 있다」<br>
+                        • <strong>Credly:</strong> 보유자는 배지를 하나씩 내려받을 수 있으나, 제3자가 동의를 받아 이력을 받아 오는 API 는 없습니다<br>
+                        • <strong>유럽:</strong> LinkedIn 은 디지털시장법에 따라 유럽경제지역 회원에 한해 제3자 데이터 이동 API 를 엽니다</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>일본과 한국</h4>
+                        <p>• <strong>일본:</strong> 발급 배지 208만 개, 회원 조직 373곳(2025년 10월 · 2차 자료). 세계 집계의 1%에 못 미칩니다<br>
+                        • <strong>한국:</strong> 전국 집계를 찾지 못했습니다. 한 교원 배지 사업이 2023년 2,301건에서 2025년 상반기 65,173건으로 늘었다는 보도가 있습니다<br>
+                        • <strong>추천:</strong> 두 나라의 배지 플랫폼·지갑에서 보유자 대상 추천 기능을 찾지 못했습니다<br>
+                        • <strong>언어:</strong> Career Journey 와 Credly 의 제공 언어는 공식 자료에 명시되지 않았습니다</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 관련 링크:</strong>
+                    <a href="https://content.1edtech.org/badge-count-2025/results" target="_blank">1EdTech Badge Count 2025</a> |
+                    <a href="https://www.accredible.com/newsroom/accredible-launches-support-for-open-badge-3-0-and-w3c-verifiable-credentials" target="_blank">Accredible OB 3.0 지원 발표</a> |
+                    <a href="https://www.imsglobal.org/spec/ob/v3p0/" target="_blank">Open Badges 3.0 규격</a>
+                </div>
+
+                <p><strong>전망:</strong> 여러 곳에서 받은 배지를 한데 모아 보여 주는 추천은 표준이 퍼져야 쉬워집니다. Accredible 의 반입 지원은 그 방향의 첫걸음이지만,
+                OB 3.0 발급량이 전체의 1% 안팎인 지금은 보유자가 직접 파일을 올리거나 링크를 건네는 방식이 현실적인 길입니다.
+                일본·한국의 공백은 「없다」가 아니라 「찾지 못했다」로 읽어야 합니다.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 신뢰도 평가:</span>
+                        <span class="credibility-score-value">5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>강점:</strong> 세계 배지 수와 OB 3.0 발급량은 1EdTech 집계에서, Accredible 의 반입 지원은 회사 보도자료에서 확인했습니다.<br>
+                        <strong>개선점:</strong> 🔴 <strong>일본·한국의 「추천 없음」은 부재의 증거일 뿐</strong> 전수 조사가 아닙니다. 일본 수치는 재단 수치를 인용한 2차 자료이고, 한국은 전국 집계가 없어 사업 한 건의 보도에 기댔습니다. 1EdTech 도 연도 간 수치를 엄밀히 비교할 수 없다고 밝힙니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">경쟁 환경과 시장 포지셔닝</h2>
+
+                <h3 class="subsection-title">세 층의 구조 — 재원과 범위로 가른다</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">보유자 대상 추천을 「누가 돈을 내는가」와 「어느 범위의 크리덴셜 위에서 도는가」로 나누면 세 층이 됩니다. 이 구분은 본 분석의 제안입니다.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>서비스</th>
+                            <th>층</th>
+                            <th>보유자 대상 추천</th>
+                            <th>추천의 입력</th>
+                            <th>돈을 내는 쪽</th>
+                            <th>범위</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Accredible</strong></td>
+                            <td>발급기관 재원 · 민간</td>
+                            <td>Career Journey · Recommendations · Pathways</td>
+                            <td>크리덴셜 + 경력·희망 직무·지역</td>
+                            <td>발급기관(수취인당 연 과금 + 광고)</td>
+                            <td>자사 망 · OB 3.0 반입 지원</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Credly (Pearson)</strong></td>
+                            <td>발급기관 재원 · 민간</td>
+                            <td>직업 기반 배지·스킬 추천 · 관련 일자리</td>
+                            <td>보유 배지 + 직업 + 인기 흐름</td>
+                            <td>발급기관(견적)</td>
+                            <td>자사 망</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Europass</strong></td>
+                            <td>공공 재원</td>
+                            <td>일자리·과정 제안</td>
+                            <td>프로필 + 스킬 + 관심사</td>
+                            <td>유럽연합</td>
+                            <td>유럽(EURES · ESCO)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Canvas Credentials (구 Badgr)</strong></td>
+                            <td>발급 전용에 가까움</td>
+                            <td>기관이 설계하는 경로 — 개인 목표 기반 추천은 찾지 못함</td>
+                            <td>—</td>
+                            <td>기관</td>
+                            <td>여러 출처의 배지를 경로에 쌓을 수 있음</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Open Badge Factory</strong></td>
+                            <td>발급 전용</td>
+                            <td>찾지 못함</td>
+                            <td>—</td>
+                            <td>발급기관(연 €220~1,280)</td>
+                            <td>자사 지갑(Open Badge Passport)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Certifier · Sertifier</strong></td>
+                            <td>발급 전용</td>
+                            <td>찾지 못함</td>
+                            <td>—</td>
+                            <td>발급기관(월 구독)</td>
+                            <td>자사</td>
+                        </tr>
+                        <tr>
+                            <td><strong>일본·한국의 배지 플랫폼</strong></td>
+                            <td>발급 전용</td>
+                            <td>찾지 못함</td>
+                            <td>—</td>
+                            <td>발급 조직</td>
+                            <td>국내</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">공개된 규모 수치</h3>
+                <div class="chart-container">
+                    <canvas id="scaleChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">각 수치는 발표 주체와 기준 시점, 세는 단위(배지·크리덴셜·이용자)가 다릅니다. 서로 더하거나 점유율로 읽을 수 없습니다. 1EdTech 집계는 24개 플랫폼의 합계입니다.</p>
+
+                <h3 class="subsection-title">시장의 다섯 가지 변화</h3>
+                <ul class="key-findings">
+                    <li><strong>발급에서 「발급 이후」로:</strong> 큰 플랫폼들이 보유자 화면에 진로·일자리 기능을 넣고 있습니다.</li>
+                    <li><strong>보유자 무료, 발급기관 지불:</strong> 민간 두 곳 모두 추천 비용을 보유자에게 묻지 않습니다. 그만큼 추천의 중립성은 약관과 운영 방식에 달려 있습니다.</li>
+                    <li><strong>노동시장 데이터의 결합:</strong> 급여·수요·채용 기업 정보가 배지 옆에 붙기 시작했습니다. Credly 는 출처를 밝혔고 Accredible 의 공지에는 출처가 없습니다.</li>
+                    <li><strong>표준을 통한 반입의 시작:</strong> OB 3.0·VC 반입이 열리면서 「자기 망」의 경계가 조금씩 흐려지고 있습니다. 다만 발급량은 아직 전체의 1% 안팎입니다.</li>
+                    <li><strong>지역 편차:</strong> 추천 기능은 북미·유럽 사업자에 몰려 있고, 일본·한국에서는 확인되지 않았습니다.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">활용 아이디어</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">시장에서 관찰되는 주요 접근 방식을 소개합니다.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>재원부터 확인하기</strong> - 추천 서비스를 비교할 때 기능 목록보다 「누가 돈을 내는가」와 「우선 노출을 살 수 있는가」를 먼저 적어 보기</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>보유자 주도 반입 살펴보기</strong> - 배지 파일 올리기, 공유 링크, OB 3.0 지갑 제시처럼 보유자가 직접 건네는 경로가 어디까지 되는지 확인하기</p>
+                    <p style="line-height: 1.6;">3. <strong>지역 데이터 연결 점검하기</strong> - 일자리·과정 추천이 대상 지역의 구인 정보와 직업 분류에 닿아 있는지 살펴보기</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">핵심 요약</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">중요한 포인트</h3>
+                    <ul class="key-findings">
+                        <li><strong>추천은 이미 있습니다:</strong> Accredible(Career Journey, 2026년 4월), Credly(직업 기반 추천과 관련 일자리), Europass(일자리·과정 제안)가 모두 배지 보유자에게 추천을 합니다.</li>
+                        <li><strong>가르는 것은 재원입니다:</strong> 민간 두 곳은 발급기관이 돈을 내고 보유자는 무료입니다. Accredible 약관은 발급기관이 노출·클릭에 따라 과금되고 우선 배치를 살 수 있다고 적습니다.</li>
+                        <li><strong>범위는 자기 망입니다:</strong> Credly 는 제3자에게 보유자 동의 기반 API 를 열지 않고 수집을 약관으로 금지합니다. Accredible 은 2026년 1월부터 타 발급기관의 OB 3.0·VC 반입을 지원합니다.</li>
+                        <li><strong>공공 모델이 따로 있습니다:</strong> Europass 는 850만 명 이상에게 무료로 제안을 주며 이해충돌이 가장 적습니다. 대신 유럽 노동시장에 묶여 있습니다.</li>
+                        <li><strong>일본·한국은 비어 보입니다:</strong> 두 나라에서 보유자 대상 추천을 하는 배지 서비스를 찾지 못했습니다. 전수 조사가 아니므로 「없다」가 아니라 「찾지 못했다」입니다.</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">상황별 참고</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>배지를 발급하는 기관이라면 → 플랫폼의 추천 망 참여 조건을 읽어 보십시오</strong><br>
+                        이유: 기본값으로 참여되는 경우가 있고, 자기 수취인의 페이지에 다른 기관의 과정이 실릴 수 있습니다.<br>
+                        <strong>추천 서비스를 만들려는 조직이라면 → 데이터를 받는 길부터 확인하십시오</strong><br>
+                        이유: 큰 플랫폼의 이력은 보유자가 직접 건네는 방식 말고는 받기 어렵습니다. 기능보다 반입 경로가 먼저 막힙니다.<br>
+                        <strong>배지를 가진 개인이라면 → 추천 옆에 「제휴」 표시가 있는지 보십시오</strong><br>
+                        이유: 추천 자리를 발급기관이 살 수 있는 구조에서는 무엇이 관련성으로 나오고 무엇이 계약으로 나왔는지가 화면에 드러나야 판단할 수 있습니다.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>종합 평가:</strong> 긍정에 가까운 중립. 배지가 「받고 끝나는 것」에서 「다음 걸음으로 이어지는 것」으로 바뀌는 흐름은 보유자에게 이롭습니다. 다만 추천을 누가 사는지, 어떤 데이터로 급여·수요를 말하는지가 충분히 공개되지 않았고, 이 흐름은 아직 영어권과 유럽에 머물러 있습니다.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 종합 신뢰도 평가</h3>
+                    <div class="overall-credibility-score">6.4/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>종합 평가:</strong> 세 서비스의 기능·재원·규모는 각 사와 유럽연합의 공식 페이지에서 직접 확인했습니다. 그 위에 올린 「세 층」 구분과 이해충돌에 관한 해석은 본 분석의 제안입니다.</p>
+                        <p><strong>주요 강점:</strong> Accredible 의 과금 구조는 마케팅 문구가 아니라 약관 원문에서 읽었습니다. Credly 의 노동시장 데이터 출처, Europass 의 이용자 수와 제안 방식, 세계 배지 수와 OB 3.0 발급량은 모두 1차 자료입니다.</p>
+                        <p><strong>개선 우선순위:</strong> ① 🔴 <strong>어느 서비스도 실제 화면을 써 보지 못했습니다</strong> — 전부 공개 문서에 근거합니다. ② 🔴 Credly 대시보드 도움말은 직접 열람이 막혀 검색 요약에 기댔습니다. ③ 🔴 일본·한국의 「추천 없음」은 부재의 증거이지 전수 조사가 아닙니다. ④ Accredible 약관은 2022년판이고 Career Journey 와의 연결은 확인되지 않았습니다. ⑤ 공급사 자체 수치(76.8% · 367% · 1억 8,500만)는 독립 검증이 없습니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">주요 용어 설명</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>보유자(Earner)</strong> — 배지나 수료증을 받은 개인입니다. 발급 플랫폼의 요금은 대개 발급기관이 내고 보유자는 무료로 씁니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>발급기관(Issuer)</strong> — 배지를 주는 학교·기업·협회입니다. 발급 플랫폼의 고객은 이쪽입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>오픈 배지 3.0(Open Badges 3.0)</strong> — 배지를 검증 가능한 크리덴셜 형식으로 담는 최신 표준입니다. 발급한 플랫폼 밖의 지갑으로 옮겨도 진위를 확인할 수 있습니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>검증 가능한 크리덴셜(W3C Verifiable Credentials)</strong> — 누가 발급했는지를 암호 서명으로 확인할 수 있는 디지털 증명서의 웹 표준입니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ESCO</strong> — 유럽연합이 만든 스킬·역량·직업의 다국어 분류 체계입니다. Europass 의 스킬 입력과 제안이 이 분류를 씁니다.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>EURES</strong> — 유럽의 공공 구인·구직 네트워크입니다. Europass 의 일자리 제안이 여기서 옵니다.
+                    </div>
+                    <div>
+                        <strong>문맥 타기팅(Contextual targeting)</strong> — 개인 정보가 아니라 지금 보고 있는 페이지의 내용에 맞춰 광고를 고르는 방식입니다.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>참고 자료</h3>
+                    <p><strong>데이터 수집:</strong> 2026년 11월 18일</p>
+                    <ul>
+                        <li>• <a href="https://www.accredible.com/blog/introducing-career-journey-what-comes-after-the-credential" target="_blank">Accredible — Introducing Career Journey (2026-04-30, 갱신 2026-07-03)</a></li>
+                        <li>• <a href="https://accredible.com/legal/recommendations-terms" target="_blank">Accredible — Recommendations Terms (2022-07-07 갱신)</a></li>
+                        <li>• <a href="https://www.businesswire.com/news/home/20220913005332/en/Accredible-announces-launch-of-Recommendations%E2%84%A2-product-to-help-drive-enrollment-across-credentialing-programs" target="_blank">Accredible — Recommendations 출시 보도자료 (2022-09-13)</a></li>
+                        <li>• <a href="https://www.accredible.com/features/pathways" target="_blank">Accredible — Pathways</a></li>
+                        <li>• <a href="https://www.accredible.com/pricing" target="_blank">Accredible — Pricing</a></li>
+                        <li>• <a href="https://www.accredible.com/newsroom/accredible-launches-support-for-open-badge-3-0-and-w3c-verifiable-credentials" target="_blank">Accredible — Open Badge 3.0 · W3C VC 지원 발표 (2026-01-13)</a></li>
+                        <li>• <a href="https://info.credly.com/product/labor-market" target="_blank">Credly — Labor Market Insights</a></li>
+                        <li>• <a href="https://support.credly.com/hc/en-us/articles/9927498181915-Get-to-know-the-new-Credly-Earner-Dashboard" target="_blank">Credly — Get to know the new Credly Earner Dashboard (검색 요약으로 확인)</a></li>
+                        <li>• <a href="https://info.credly.com/earner-terms-of-service" target="_blank">Credly — Earner Terms of Service</a></li>
+                        <li>• <a href="https://docs.credly.com/browse/docs/authentication-methods" target="_blank">Credly — API Authentication Methods</a></li>
+                        <li>• <a href="https://plc.pearson.com/en-GB/news-and-insights/news/100-million-digital-credentials-issued-through-credly-pearson-fosters-future" target="_blank">Pearson — 100 million digital credentials issued through Credly (2025-01)</a></li>
+                        <li>• <a href="https://eures.europa.eu/use-europass-digital-tools-and-services-better-manage-your-career-2026-03-19_en" target="_blank">EURES — Use Europass digital tools and services (2026-03-19)</a></li>
+                        <li>• <a href="https://europass.europa.eu/en/news/20-years-anniversary-europass-empowering-people-supporting-skills-transparency-and-mobility" target="_blank">Europass — 20 years anniversary (2025-07-01)</a></li>
+                        <li>• <a href="https://esco.ec.europa.eu/system/files/2024-05/Dimitrios%20Pikios%20-%20ESCO%20in%20Europass_21-5-24.pdf" target="_blank">ESCO in Europass 발표 자료 (2024-05-21)</a></li>
+                        <li>• <a href="https://content.1edtech.org/badge-count-2025/results" target="_blank">1EdTech — Badge Count 2025</a></li>
+                        <li>• <a href="https://learn.microsoft.com/en-us/linkedin/dma/member-data-portability/member-data-portability-3rd-party" target="_blank">LinkedIn — DMA Member Data Portability (3rd Party)</a></li>
+                        <li>• <a href="https://openbadgefactory.com/en/pricing/" target="_blank">Open Badge Factory — Pricing</a></li>
+                        <li>• <a href="https://www.etnews.com/20251118000014" target="_blank">전자신문 — 교원 디지털 배지 발급 현황 보도</a></li>
+                    </ul>
+                    <p style="margin-top: 0.5rem; font-size: 0.72rem; color: #808080;"><em>함께 읽기: <a href="career-ai-landscape-method-disclosure-20261026-ko.html">비슷해 보이는 진로 AI 를 가르는 것은 입력의 출처다</a> — 이 글이 「누가 돈을 내는가」를 본다면, 그 글은 「무엇을 근거로 말하는가」를 봅니다.</em></p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        new Chart(document.getElementById('ob3Chart').getContext('2d'), {
+            type: 'bar',
+            data: { labels: ["Open Badges 3.0", "그 밖의 형식"],
+                datasets: [{ label: "2025년 수여된 배지 3억 2,050만 개 중 Open Badges 3.0 (1EdTech 집계 · 단위: 백만 개)", data: [2.7, 317.8],
+                    backgroundColor: ['rgba(249, 115, 22, 0.7)', 'rgba(59, 130, 246, 0.7)'],
+                    borderColor: ['rgb(249, 115, 22)', 'rgb(59, 130, 246)'], borderWidth: 1 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true } } }
+        });
+        new Chart(document.getElementById('scaleChart').getContext('2d'), {
+            type: 'bar',
+            data: { labels: ["1EdTech 24개 플랫폼 합계\n수여 배지 (2025)", "Accredible\n누적 크리덴셜 (2026)", "Credly\n누적 배지 (2025-01)", "Credly\n보유자 (2025-01)", "Europass\n등록 이용자 (2025-07)", "일본\n발급 배지 (2025-10)"].map(s => s.split('\n')),
+                datasets: [{ label: "공개된 규모 수치 (단위: 백만 · 단위와 기준 시점이 서로 다름)", data: [320.5, 185, 100, 48, 8.5, 2.08],
+                    backgroundColor: ['rgba(148, 163, 184, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(59, 130, 246, 0.4)', 'rgba(168, 85, 247, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                    borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 공유 테마 (Ink & Paper) : 반드시 포함할 것 -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>

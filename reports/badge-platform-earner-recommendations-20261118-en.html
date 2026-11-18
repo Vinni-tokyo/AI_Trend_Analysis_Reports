@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badge Platforms Already Recommend — What Divides Them Is Who Pays</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-navy: #001e5c; --secondary-navy: #003d8f; --accent-navy: #0052b8;
+            --primary-color: #1a1a1a; --secondary-color: #4a4a4a; --tertiary-color: #808080;
+            --bg-white: #ffffff; --bg-subtle: #fafafa; --border-color: #e5e5e5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.7; color: #1a1a1a; background: #fafafa; padding: 0; font-size: 16px; font-weight: 400;
+        }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+            color: white; padding: 2rem 2.5rem 1.5rem; text-align: center; position: relative;
+            border-bottom: 3px solid var(--primary-navy);
+        }
+        .header-actions { position: absolute; top: 1rem; right: 1.5rem; display: flex; gap: 0.75rem; z-index: 10; }
+        .back-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500;
+            transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .language-switcher { display: flex; gap: 0.3rem; }
+        .lang-btn {
+            padding: 0.3rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+            color: white; border-radius: 3px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+        .lang-btn.active { background: white; color: var(--primary-navy); border-color: white; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 0.15rem; line-height: 1.3; }
+        .header .subtitle { font-size: 0.9rem; margin-top: 0.25rem; opacity: 0.9; }
+        .header .meta { margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; }
+        .content { padding: 1.5rem; }
+        .section { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .section-title { font-size: 1.35rem; color: #1a1a1a; margin-bottom: 0.4rem; padding-bottom: 0.25rem; border-bottom: 2px solid #1a1a1a; }
+        .subsection-title { font-size: 1.05rem; color: #1a1a1a; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .executive-summary { background: #fafafa; border-left: 3px solid #e5e5e5; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .key-findings { list-style: none; }
+        .key-findings li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; font-size: 0.92rem; }
+        .key-findings li:before { content: "→"; position: absolute; left: 0; color: #1a1a1a; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.78rem; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; padding: 0.75rem; border-radius: 4px; border: 1px solid #e5e5e5; }
+        .sources { background: #fafafa; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.75rem; }
+        .sources ul { list-style: none; }
+        .sources li { padding: 0.25rem 0; }
+        .sources a { color: #1a1a1a; text-decoration: none; }
+        .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+        .trend-card { background: white; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1.5rem; }
+        .trend-card h4 { font-size: 0.95rem; margin-bottom: 0.5rem; color: #1a1a1a; }
+        .trend-card p { font-size: 0.87rem; line-height: 1.6; }
+        .related-links { background: #f0f7ff; border-left: 3px solid #0052b8; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.87rem; }
+        .related-links strong { color: #001e5c; font-size: 0.82rem; display: block; margin-bottom: 0.4rem; }
+        .related-links a { color: #0052b8; text-decoration: none; font-weight: 500; }
+        .related-links a:hover { text-decoration: underline; }
+        .callout { background: #fffbea; border-left: 3px solid #c9a87c; padding: 0.85rem 1rem; margin: 1rem 0; border-radius: 4px; font-size: 0.89rem; line-height: 1.65; }
+        .credibility-score { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.85rem 0; font-size: 0.79rem; }
+        .credibility-score-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .credibility-score-label { font-weight: 600; }
+        .credibility-score-value { font-weight: 700; }
+        .credibility-score-details { color: #4a4a4a; line-height: 1.55; }
+        .overall-credibility { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 4px; padding: 1rem 1.2rem; margin-top: 1rem; }
+        .overall-credibility h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .overall-credibility-score { font-size: 1.55rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .overall-credibility-details p { font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.3rem; }
+        @media (max-width: 768px) {
+            .trend-grid { grid-template-columns: 1fr; }
+            .header-actions { position: static; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+            .header { padding-top: 1rem; text-align: center; }
+            .language-switcher { justify-content: center; }
+            .back-btn { order: -1; }
+        }
+        @media print { body { padding: 0; font-size: 12px; } .container { box-shadow: none; } .header-actions { display: none; } }
+
+        /* Interaction Components Styles */
+        .interaction-section { max-width: 1000px; margin: 1.5rem auto; padding: 0 1.5rem; }
+        .interaction-card { background: #fafafa; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1rem; }
+        .interaction-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ddd; }
+        .interaction-title { font-size: 1.05rem; font-weight: 600; color: #333; }
+        .like-section { display: flex; align-items: center; gap: 0.75rem; }
+        .like-btn { background: #fff; color: #666; border: 1px solid #ddd; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.87rem; display: flex; align-items: center; gap: 0.3rem; }
+        .like-btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .like-btn.liked { color: #e74c3c; border-color: #e74c3c; }
+        .like-count { font-size: 0.87rem; color: #666; }
+        .comment-form { margin-bottom: 1.5rem; }
+        .comment-input-group { margin-bottom: 0.75rem; }
+        .comment-input-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; font-size: 0.82rem; }
+        .comment-input-group input, .comment-input-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; font-family: inherit; font-size: 0.87rem; }
+        .comment-input-group input:focus, .comment-input-group textarea:focus { outline: none; border-color: #999; }
+        .comment-input-group textarea { min-height: 80px; resize: vertical; }
+        .comment-submit-btn { background: #333; color: white; border: none; padding: 0.5rem 1.2rem; cursor: pointer; font-size: 0.87rem; }
+        .comment-submit-btn:hover { background: #555; }
+        .comment-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .comments-list { margin-top: 1.5rem; }
+        .comment-item { background: #fff; border-left: 2px solid #ddd; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; padding-bottom: 0; border: none; }
+        .comment-author { font-weight: 600; color: #333; font-size: 0.82rem; }
+        .comment-hash { font-size: 0.7rem; color: #999; font-family: monospace; }
+        .comment-time { font-size: 0.7rem; color: #999; margin-left: auto; }
+        .comment-content { color: #555; line-height: 1.5; font-size: 0.87rem; }
+        @media (max-width: 600px) { .interaction-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+    </style>
+    <!-- 🔴 공유 테마 (Ink & Paper) : 이 줄이 없으면 색이 통일되지 않습니다 -->
+    <link rel="stylesheet" href="../assets/theme.css">
+
+<!-- meta:auto -->
+<meta name="description" content="Earner-facing recommendations from Accredible, Credly and Europass, set side by side by funding and reach">
+<link rel="canonical" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-en.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="AI Trend Analysis Reports">
+<meta property="og:title" content="Badge Platforms Already Recommend — What Divides Them Is Who Pays">
+<meta property="og:description" content="Earner-facing recommendations from Accredible, Credly and Europass, set side by side by funding and reach">
+<meta property="og:url" content="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-en.html">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-11-18">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Badge Platforms Already Recommend — What Divides Them Is Who Pays">
+<meta name="twitter:description" content="Earner-facing recommendations from Accredible, Credly and Europass, set side by side by funding and reach">
+<link rel="alternate" hreflang="ko" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ko.html">
+<link rel="alternate" hreflang="en" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-en.html">
+<link rel="alternate" hreflang="ja" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ja.html">
+<link rel="alternate" hreflang="x-default" href="https://vinni-tokyo.github.io/AI_Trend_Analysis_Reports/reports/badge-platform-earner-recommendations-20261118-ko.html">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-actions">
+                <a href="../index.html" class="back-btn">← Home</a>
+                <button id="theme-btn" class="theme-btn" type="button" title="밝기 전환" aria-label="밝기 전환">◐</button>
+                <div class="language-switcher">
+                    <button onclick="window.location.href='badge-platform-earner-recommendations-20261118-ko.html'" class="lang-btn">한국어</button>
+                    <button onclick="window.location.href='badge-platform-earner-recommendations-20261118-en.html'" class="lang-btn active">English</button>
+                    <button onclick="window.location.href='badge-platform-earner-recommendations-20261118-ja.html'" class="lang-btn">日本語</button>
+                </div>
+            </div>
+            <h1>Badge Platforms Already Recommend<br>— What Divides Them Is Who Pays</h1>
+            <div class="subtitle">Earner-facing recommendations from Accredible, Credly and Europass, set side by side by funding and reach</div>
+            <div class="meta">Report date: November 18, 2026 | Standard report (5-8 pages) | Data collected: November 18, 2026</div>
+        </div>
+
+        <div class="content">
+
+            <!-- SECTION 1 -->
+            <section id="trends" class="section">
+                <h2 class="section-title">Top 5 Trends</h2>
+
+                <div class="callout">
+                    <strong>The central claim of this report</strong><br>
+                    "Badge platforms issue credentials but do not recommend anything" is no longer true.
+                    <strong>Accredible, Credly and Europass all recommend jobs and courses to the people who hold badges.</strong>
+                    The useful question is therefore not whether a recommendation exists but <strong>whose money pays for it and how far it reaches</strong>.
+                    On the two commercial platforms the issuer pays and the recommendations run inside the platform's own network. Europass is publicly funded and runs inside Europe.
+                    <strong>In Japan and Korea, we found no badge service that recommends anything to earners.</strong>
+                </div>
+
+                <h3 class="subsection-title">1. Accredible Career Journey: free career guidance that starts from the badge</h3>
+                <p><strong>Current state:</strong> Accredible launched Career Journey on April 30, 2026 (the announcement was updated on July 3).
+                It is a <strong>free career guidance experience</strong> that starts from the credential an earner has just received, and the company says it needs no app download and no separate sign-up.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>What the earner gives and gets</h4>
+                        <p>• <strong>Inputs:</strong> the credential being viewed, plus work history, education, current role, desired role, goals and location<br>
+                        • <strong>Skill translations:</strong> resume bullet points, LinkedIn summaries and interview talking points<br>
+                        • <strong>Relevant roles:</strong> shown with "real salary ranges, demand signals, and hiring employer data"<br>
+                        • <strong>One next step:</strong> a concrete course, role or goal</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>How it looks to the issuer</h4>
+                        <p>• <strong>No setup:</strong> issuers build nothing, and career guidance still appears on their credentials<br>
+                        • <strong>Exposure:</strong> "your programs surface as the natural next step", which the company describes as "Relevance-driven, not advertising"<br>
+                        • <strong>Data:</strong> behavioral and engagement data on the issuer's own recipients, promised for Q3<br>
+                        • <strong>Scale:</strong> more than 500,000 credentials issued each month and more than 185 million in total (company figures)</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://www.accredible.com/blog/introducing-career-journey-what-comes-after-the-credential" target="_blank">Career Journey announcement</a> |
+                    <a href="https://www.accredible.com/" target="_blank">Accredible</a>
+                </div>
+
+                <p><strong>Outlook:</strong> The company's stated rationale is its own research: in a 2025 survey, 76.8% of earners said they want to see how a credential connects to job or career opportunities at the moment they earn it.
+                This reads as a sign that issuing platforms have begun to treat "after the credential" as a product. The announcement does not name the source of its salary and demand data.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The launch date, inputs, outputs and issuer benefits were read directly from the company's announcement. Quoted phrases are verbatim.<br>
+                        <strong>Weaknesses:</strong> 🔴 <strong>Everything here is the vendor's own description.</strong> We did not use the product, and the 76.8% figure comes from in-house research with no published sample or method. Regions, languages, the labor-market data source and user counts are not stated.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">2. Follow the money: issuers are the ones buying recommendation slots</h3>
+                <p><strong>Current state:</strong> Accredible has an older product called Recommendations, launched in September 2022.
+                Its terms of service (last updated July 7, 2022) describe <strong>a network in which issuers advertise their courses on one another's credential pages</strong>.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>What the terms say</h4>
+                        <p>• <strong>Who pays:</strong> the issuer placing the ad. The billing metrics named are "Impressions or clicks"<br>
+                        • <strong>Default membership:</strong> the "Network Pool" is on by default, and leaving it takes ten days' written notice<br>
+                        • <strong>Priority:</strong> "prioritized placement" can be bought. Position and rank are not guaranteed, and the selection method is not explained<br>
+                        • <strong>Revenue share:</strong> an option to earn revenue from other issuers' ads shown on your own pages, subject to approval</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Other products from the same company</h4>
+                        <p>• <strong>Targeting:</strong> contextual, based on "non-personally identifiable criteria such as the content of the visited page"<br>
+                        • <strong>Pathways:</strong> learning paths designed by the issuer. The company claims new course enrollment rose "by up to 367%", with no method given<br>
+                        • <strong>Spotlight Directory:</strong> a talent directory sold as a paid add-on to the issuer's subscription<br>
+                        • <strong>Base pricing:</strong> issuers pay per recipient per year. Earners pay nothing</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://accredible.com/legal/recommendations-terms" target="_blank">Recommendations terms</a> |
+                    <a href="https://www.accredible.com/features/pathways" target="_blank">Pathways</a> |
+                    <a href="https://www.accredible.com/pricing" target="_blank">Accredible pricing</a>
+                </div>
+
+                <p><strong>Outlook:</strong> When the earner pays nothing and the issuer pays, better recommendations bring a sharper question: why did this course appear as my next step?
+                Career Journey says it is "Relevance-driven, not advertising", yet the same company also sells prioritized placement.
+                <strong>Public material does not show whether the two products are connected.</strong> That it cannot be checked is the point of this section.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Billing metrics, default membership, prioritized placement and revenue sharing were all read from the terms themselves. A legal document is more dependable than marketing copy.<br>
+                        <strong>Weaknesses:</strong> 🔴 The terms are the <strong>2022 version</strong>, and we could not confirm that the service still runs the same way. Per-click rates and Accredible's share are not public. "367%" is a vendor claim. Whether Recommendations and Career Journey are linked is <strong>something this analysis could not confirm</strong>.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">3. Credly: occupation-based recommendations tied to job postings</h3>
+                <p><strong>Current state:</strong> Credly, owned by Pearson, is the largest operator, with 100 million badges, more than 48 million earners and more than 4,000 issuers (Pearson, January 2025).
+                It has redesigned the earner dashboard around recommendations and attached job postings to every credential page.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>The earner's screen</h4>
+                        <p>• <strong>Home tab:</strong> profile, badges and skills alongside occupation-based badge suggestions, trending badges and personalized badge and skill recommendations<br>
+                        • <strong>Explore tab:</strong> top skills, emerging skills and occupation-based recommendations now live here<br>
+                        • <strong>Status:</strong> recommendations are described as suggestions, not requirements<br>
+                        • <strong>Related Jobs:</strong> search and filter on any credential page</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Labor-market data</h4>
+                        <p>• <strong>Sources:</strong> "more than 25,000 global job boards and corporate career sites, the U.S. Census Bureau, and The Bureau of Labor Statistics"<br>
+                        • <strong>Freshness:</strong> updated around the clock so that only active postings are shown<br>
+                        • <strong>Search by:</strong> title, location, employer and salary range<br>
+                        • <strong>Audience:</strong> earners and issuers alike, "available to everyone" on the platform</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://info.credly.com/product/labor-market" target="_blank">Credly Labor Market Insights</a> |
+                    <a href="https://support.credly.com/hc/en-us/articles/9927498181915-Get-to-know-the-new-Credly-Earner-Dashboard" target="_blank">New Earner Dashboard guide</a> |
+                    <a href="https://www.credly.com/" target="_blank">Credly</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Credly's recommendations start from <strong>occupation and trending activity</strong>. We found no public description of a flow in which the earner sets a goal and the system names the missing skills and the order in which to learn them.
+                The recommendations also stay inside Credly. The earner terms (July 2023 version) prohibit scripts, robots and crawlers and prohibit monetizing the data, and API authentication is at organization level, so there is no consent flow by which an earner can hand their history to a third party.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">6/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> Data sources and search dimensions come from Credly's product page, and the scale figures from Pearson's official announcement.<br>
+                        <strong>Weaknesses:</strong> 🔴 The dashboard help article <strong>could not be opened directly (403), so this rests on a search summary</strong>, and its update date is ambiguous. "No goal-to-gap-to-sequence flow" means we did not find one in public material, which is not proof of absence. The employer-side Talent Match rests on a single secondary source and was left out of the text.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">4. Europass: recommendations run by the public sector</h3>
+                <p><strong>Current state:</strong> Europass, run by the European Commission, is a free platform with more than 8.5 million registered users and 31 languages as of July 2025.
+                It <strong>suggests jobs and courses</strong> based on the skills and interests a user records in their profile.</p>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>How suggestions are produced</h4>
+                        <p>• <strong>Inputs:</strong> the profile plus the "My skills" and "My interests" sections. Once the feature is switched on, suggestions appear on the dashboard<br>
+                        • <strong>Vocabulary:</strong> ESCO, the European classification. Skill suggestions are generated from analysis of portfolio content and from user similarity (presentation, May 2024)<br>
+                        • <strong>Jobs:</strong> "over 3 million job listings tailored to your skills and interests" through EURES<br>
+                        • <strong>People:</strong> about 1,000 EURES advisers across 31 countries</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Wallet and plans</h4>
+                        <p>• <strong>Wallet:</strong> institutions send European Digital Credentials for Learning (EDC) to a wallet inside the user's library<br>
+                        • <strong>Tools:</strong> CV and cover letter editors, digital skills self-assessment, application tracking, interview preparation<br>
+                        • <strong>Announced:</strong> AI features such as a "Smart CV" that highlights the skills most relevant to a specific job<br>
+                        • <strong>Funding:</strong> public. Neither earners nor issuers pay for recommendations</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://europass.europa.eu/" target="_blank">Europass</a> |
+                    <a href="https://eures.europa.eu/" target="_blank">EURES</a> |
+                    <a href="https://esco.ec.europa.eu/" target="_blank">ESCO</a>
+                </div>
+
+                <p><strong>Outlook:</strong> With no paying issuer, Europass is the least exposed to conflicts of interest.
+                In exchange it offers profile-based suggestions, not conversational coaching, and its job links are bound to the European labor market through EURES.
+                The Commission itself wrote in 2023 that tailored suggestions and personalization were still being improved, so the current feature level should be checked on the live portal.</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">7/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> User numbers, languages, suggestion inputs and the EURES link were confirmed on official EU pages (Europass and EURES).<br>
+                        <strong>Weaknesses:</strong> The description of ESCO and user similarity rests on a 2024 presentation, and we could not confirm that it matches the current implementation. We found no count of EDCs issued. "Not coaching" is this analysis's reading.
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">5. Network borders and regional gaps: where recommendations do not reach</h3>
+                <p><strong>Current state:</strong> Each of the three services recommends within its own fence. The standard that crosses fences, Open Badges 3.0, is still issued in small volumes,
+                and in Japan and Korea we found no badge service that recommends anything to earners.</p>
+
+                <div class="chart-container">
+                    <canvas id="ob3Chart"></canvas>
+                </div>
+
+                <div class="trend-grid">
+                    <div class="trend-card">
+                        <h4>Ways across the fence</h4>
+                        <p>• <strong>Where the standard stands:</strong> in 1EdTech's 2025 count, 2.7 million of the 320.5 million badges awarded were Open Badges 3.0<br>
+                        • <strong>Accredible:</strong> on January 13, 2026 it announced export and ingestion of OB 3.0 and W3C VCs: "verifiable credentials from other issuers can be imported into the Accredible wallet"<br>
+                        • <strong>Credly:</strong> earners can download badges one at a time, but there is no API through which a third party can receive a history with the earner's consent<br>
+                        • <strong>Europe:</strong> under the Digital Markets Act, LinkedIn opens a third-party data portability API for members in the European Economic Area only</p>
+                    </div>
+                    <div class="trend-card">
+                        <h4>Japan and Korea</h4>
+                        <p>• <strong>Japan:</strong> 2.08 million badges issued and 373 member organizations (October 2025, secondary source), under 1% of the global count<br>
+                        • <strong>Korea:</strong> we found no national total. One teacher-badge programme was reported to have grown from 2,301 badges in 2023 to 65,173 by mid-2025<br>
+                        • <strong>Recommendations:</strong> we found no earner-facing recommendation feature on badge platforms or wallets in either country<br>
+                        • <strong>Languages:</strong> the official material does not state which languages Career Journey or Credly's features support</p>
+                    </div>
+                </div>
+
+                <div class="related-links">
+                    <strong>🔗 Related Links:</strong>
+                    <a href="https://content.1edtech.org/badge-count-2025/results" target="_blank">1EdTech Badge Count 2025</a> |
+                    <a href="https://www.accredible.com/newsroom/accredible-launches-support-for-open-badge-3-0-and-w3c-verifiable-credentials" target="_blank">Accredible OB 3.0 announcement</a> |
+                    <a href="https://www.imsglobal.org/spec/ob/v3p0/" target="_blank">Open Badges 3.0 specification</a>
+                </div>
+
+                <p><strong>Outlook:</strong> Recommending across badges earned in many places becomes easy only once the standard spreads. Accredible's ingestion support is a first step in that direction,
+                but while OB 3.0 accounts for roughly 1% of badges awarded, the practical route is for earners to upload a file or share a link themselves.
+                The gap in Japan and Korea should be read as "not found", not as "does not exist".</p>
+
+                <div class="credibility-score">
+                    <div class="credibility-score-header">
+                        <span class="credibility-score-label">📊 Credibility Assessment:</span>
+                        <span class="credibility-score-value">5/10</span>
+                    </div>
+                    <div class="credibility-score-details">
+                        <strong>Strengths:</strong> The global badge count and OB 3.0 volume come from the 1EdTech count, and Accredible's ingestion support from the company's press release.<br>
+                        <strong>Weaknesses:</strong> 🔴 <strong>"No recommendations" in Japan and Korea is absence of evidence</strong>, not an exhaustive survey. The Japan figures come from a secondary source citing the foundation, and Korea has no national total, so we relied on reporting about one programme. 1EdTech also warns that its yearly figures are not strictly comparable.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section id="competitive" class="section">
+                <h2 class="section-title">Competitive Landscape and Market Positioning</h2>
+
+                <h3 class="subsection-title">A three-tier structure, divided by funding and reach</h3>
+                <p style="margin-bottom: 1rem; color: #4a4a4a; font-size: 0.95rem;">Sorting earner-facing recommendations by who pays and by which credentials they run on gives three tiers. This division is proposed by this analysis.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Tier</th>
+                            <th>Earner-facing recommendation</th>
+                            <th>Input</th>
+                            <th>Who pays</th>
+                            <th>Reach</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Accredible</strong></td>
+                            <td>Issuer-funded, commercial</td>
+                            <td>Career Journey, Recommendations, Pathways</td>
+                            <td>Credential plus work history, desired role, location</td>
+                            <td>Issuers (per recipient per year, plus ads)</td>
+                            <td>Own network, with OB 3.0 ingestion</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Credly (Pearson)</strong></td>
+                            <td>Issuer-funded, commercial</td>
+                            <td>Occupation-based badge and skill recommendations, Related Jobs</td>
+                            <td>Badges held plus occupation and trending activity</td>
+                            <td>Issuers (by quote)</td>
+                            <td>Own network</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Europass</strong></td>
+                            <td>Publicly funded</td>
+                            <td>Job and course suggestions</td>
+                            <td>Profile, skills and interests</td>
+                            <td>European Union</td>
+                            <td>Europe (EURES, ESCO)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Canvas Credentials (formerly Badgr)</strong></td>
+                            <td>Close to issuing only</td>
+                            <td>Issuer-designed pathways; no goal-based personal recommendation found</td>
+                            <td>—</td>
+                            <td>Institutions</td>
+                            <td>Pathways can stack badges from several sources</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Open Badge Factory</strong></td>
+                            <td>Issuing only</td>
+                            <td>None found</td>
+                            <td>—</td>
+                            <td>Issuers (€220–1,280 per year)</td>
+                            <td>Own wallet (Open Badge Passport)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Certifier, Sertifier</strong></td>
+                            <td>Issuing only</td>
+                            <td>None found</td>
+                            <td>—</td>
+                            <td>Issuers (monthly subscription)</td>
+                            <td>Own platform</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Badge platforms in Japan and Korea</strong></td>
+                            <td>Issuing only</td>
+                            <td>None found</td>
+                            <td>—</td>
+                            <td>Issuing organizations</td>
+                            <td>Domestic</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Published scale figures</h3>
+                <div class="chart-container">
+                    <canvas id="scaleChart"></canvas>
+                </div>
+                <p style="font-size: 0.82rem; color: #4a4a4a;">Each figure has a different publisher, reference date and unit (badges, credentials, users). They cannot be added together or read as market share. The 1EdTech count is the total across 24 platforms.</p>
+
+                <h3 class="subsection-title">Five shifts in the market</h3>
+                <ul class="key-findings">
+                    <li><strong>From issuing to "after issuing":</strong> the large platforms are adding career and job features to the earner's screen.</li>
+                    <li><strong>Free to earners, paid by issuers:</strong> neither commercial platform charges earners for recommendations, which leaves neutrality dependent on terms and operating practice.</li>
+                    <li><strong>Labor-market data attached to badges:</strong> salary, demand and hiring-employer information now sits next to the credential. Credly names its sources; Accredible's announcement does not.</li>
+                    <li><strong>Ingestion through standards has begun:</strong> OB 3.0 and VC import is starting to blur the edge of "our network", though volumes remain around 1% of the total.</li>
+                    <li><strong>Regional imbalance:</strong> recommendation features are concentrated among North American and European operators and were not found in Japan or Korea.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section id="application-ideas" class="section">
+                <h2 class="section-title">Application Ideas</h2>
+                <p style="margin-bottom: 1rem; color: #4a4a4a;">Approaches observed in the market.</p>
+
+                <div style="background: #fafafa; padding: 1.5rem; border-left: 3px solid #e5e5e5;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">1. <strong>Check the funding first</strong> - When comparing recommendation services, note who pays and whether priority placement can be bought before listing features</p>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">2. <strong>Look at earner-led import</strong> - See how far routes the earner controls will go: uploading a badge file, sharing a link, presenting an OB 3.0 wallet</p>
+                    <p style="line-height: 1.6;">3. <strong>Test the regional data link</strong> - Check whether job and course recommendations connect to job postings and occupation classifications in the target region</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4 -->
+            <section id="executive-summary" class="section">
+                <h2 class="section-title">Executive Summary</h2>
+
+                <div class="executive-summary">
+                    <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem; color: #1a1a1a;">Key Findings</h3>
+                    <ul class="key-findings">
+                        <li><strong>Recommendations already exist:</strong> Accredible (Career Journey, April 2026), Credly (occupation-based recommendations and Related Jobs) and Europass (job and course suggestions) all recommend to badge earners.</li>
+                        <li><strong>Funding is the dividing line:</strong> on the two commercial platforms the issuer pays and the earner does not. Accredible's terms say issuers are billed on impressions or clicks and can buy prioritized placement.</li>
+                        <li><strong>Reach stops at the network:</strong> Credly offers third parties no earner-consent API and prohibits automated collection in its terms. Accredible has supported importing OB 3.0 and VCs from other issuers since January 2026.</li>
+                        <li><strong>There is a separate public model:</strong> Europass gives free suggestions to more than 8.5 million users with the least conflict of interest, and is bound to the European labor market.</li>
+                        <li><strong>Japan and Korea look empty:</strong> we found no badge service recommending to earners in either country. This was not an exhaustive survey, so the finding is "not found", not "none".</li>
+                    </ul>
+
+                    <h3 style="font-size: 0.95rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #1a1a1a;">Selection Guide</h3>
+                    <p style="font-size: 0.92rem; line-height: 1.8;">
+                        <strong>If you issue badges → read your platform's conditions for joining its recommendation network</strong><br>
+                        Why: membership can be on by default, and other organizations' courses may appear on your recipients' pages.<br>
+                        <strong>If you plan to build a recommendation service → check how you will receive the data first</strong><br>
+                        Why: histories on the large platforms are hard to obtain except when the earner hands them over. The import route fails before any feature does.<br>
+                        <strong>If you hold badges → look for a "sponsored" or "partner" label next to a recommendation</strong><br>
+                        Why: where issuers can buy placement, the screen has to show what appeared on relevance and what appeared under contract before you can judge it.
+                    </p>
+                </div>
+
+                <p style="margin-top: 1rem; font-size: 0.95rem; color: #4a4a4a;"><strong>Overall Market Sentiment:</strong> Neutral, leaning positive. The move from a badge that ends at receipt to one that leads to a next step is good for earners. But who buys the recommendation, and what data stands behind salary and demand claims, is not disclosed well enough, and the trend has so far stayed in English-speaking markets and Europe.</p>
+
+                <div class="overall-credibility">
+                    <h3>📋 Overall Credibility</h3>
+                    <div class="overall-credibility-score">6.4/10</div>
+                    <div class="overall-credibility-details">
+                        <p><strong>Overall:</strong> The features, funding and scale of the three services were confirmed on official pages of the companies and the EU. The three-tier division and the reading on conflicts of interest are proposed by this analysis.</p>
+                        <p><strong>Main strengths:</strong> Accredible's billing structure was read from the terms themselves, not from marketing copy. Credly's labor-market data sources, Europass's user numbers and suggestion method, the global badge count and the OB 3.0 volume are all primary sources.</p>
+                        <p><strong>Improvement priorities:</strong> (1) 🔴 <strong>We used none of the services ourselves</strong>; everything rests on public documents. (2) 🔴 Credly's dashboard help article could not be opened directly, so we relied on a search summary. (3) 🔴 "No recommendations" in Japan and Korea is absence of evidence, not an exhaustive survey. (4) Accredible's terms are the 2022 version, and the link to Career Journey is unconfirmed. (5) Vendor figures (76.8%, 367%, 185 million) have no independent verification.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5 -->
+            <section id="terminology" class="section">
+                <h2 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.4rem;">Key Terminology</h2>
+                <div style="background: #fafafa; padding: 0.75rem 1rem; border-left: 3px solid #e5e5e5; font-size: 0.87rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Earner</strong> — The individual who received a badge or certificate. Platform fees are usually paid by the issuer, and the earner uses the platform free of charge.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Issuer</strong> — The school, company or association that awards the badge. Issuers are the customers of an issuing platform.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Open Badges 3.0</strong> — The current standard that packages a badge as a verifiable credential, so its authenticity can be checked after it moves to a wallet outside the platform that issued it.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>W3C Verifiable Credentials</strong> — The web standard for digital certificates whose issuer can be confirmed by a cryptographic signature.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>ESCO</strong> — The European Union's multilingual classification of skills, competences and occupations. Europass uses it for skill entry and suggestions.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>EURES</strong> — Europe's public employment network. Europass job suggestions come from it.
+                    </div>
+                    <div>
+                        <strong>Contextual targeting</strong> — Choosing an ad from the content of the page being viewed, not from personal data.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6 -->
+            <section id="sources" class="section">
+                <div class="sources">
+                    <h3>References</h3>
+                    <p><strong>Data collected:</strong> November 18, 2026</p>
+                    <ul>
+                        <li>• <a href="https://www.accredible.com/blog/introducing-career-journey-what-comes-after-the-credential" target="_blank">Accredible — Introducing Career Journey (2026-04-30, updated 2026-07-03)</a></li>
+                        <li>• <a href="https://accredible.com/legal/recommendations-terms" target="_blank">Accredible — Recommendations Terms (updated 2022-07-07)</a></li>
+                        <li>• <a href="https://www.businesswire.com/news/home/20220913005332/en/Accredible-announces-launch-of-Recommendations%E2%84%A2-product-to-help-drive-enrollment-across-credentialing-programs" target="_blank">Accredible — Recommendations launch press release (2022-09-13)</a></li>
+                        <li>• <a href="https://www.accredible.com/features/pathways" target="_blank">Accredible — Pathways</a></li>
+                        <li>• <a href="https://www.accredible.com/pricing" target="_blank">Accredible — Pricing</a></li>
+                        <li>• <a href="https://www.accredible.com/newsroom/accredible-launches-support-for-open-badge-3-0-and-w3c-verifiable-credentials" target="_blank">Accredible — Open Badge 3.0 and W3C VC support (2026-01-13)</a></li>
+                        <li>• <a href="https://info.credly.com/product/labor-market" target="_blank">Credly — Labor Market Insights</a></li>
+                        <li>• <a href="https://support.credly.com/hc/en-us/articles/9927498181915-Get-to-know-the-new-Credly-Earner-Dashboard" target="_blank">Credly — Get to know the new Credly Earner Dashboard (confirmed via search summary)</a></li>
+                        <li>• <a href="https://info.credly.com/earner-terms-of-service" target="_blank">Credly — Earner Terms of Service</a></li>
+                        <li>• <a href="https://docs.credly.com/browse/docs/authentication-methods" target="_blank">Credly — API Authentication Methods</a></li>
+                        <li>• <a href="https://plc.pearson.com/en-GB/news-and-insights/news/100-million-digital-credentials-issued-through-credly-pearson-fosters-future" target="_blank">Pearson — 100 million digital credentials issued through Credly (January 2025)</a></li>
+                        <li>• <a href="https://eures.europa.eu/use-europass-digital-tools-and-services-better-manage-your-career-2026-03-19_en" target="_blank">EURES — Use Europass digital tools and services (2026-03-19)</a></li>
+                        <li>• <a href="https://europass.europa.eu/en/news/20-years-anniversary-europass-empowering-people-supporting-skills-transparency-and-mobility" target="_blank">Europass — 20 years anniversary (2025-07-01)</a></li>
+                        <li>• <a href="https://esco.ec.europa.eu/system/files/2024-05/Dimitrios%20Pikios%20-%20ESCO%20in%20Europass_21-5-24.pdf" target="_blank">ESCO in Europass presentation (2024-05-21)</a></li>
+                        <li>• <a href="https://content.1edtech.org/badge-count-2025/results" target="_blank">1EdTech — Badge Count 2025</a></li>
+                        <li>• <a href="https://learn.microsoft.com/en-us/linkedin/dma/member-data-portability/member-data-portability-3rd-party" target="_blank">LinkedIn — DMA Member Data Portability (3rd Party)</a></li>
+                        <li>• <a href="https://openbadgefactory.com/en/pricing/" target="_blank">Open Badge Factory — Pricing</a></li>
+                        <li>• <a href="https://www.etnews.com/20251118000014" target="_blank">ETNews — report on teacher digital badge issuance (Korean)</a></li>
+                    </ul>
+                    <p style="margin-top: 0.5rem; font-size: 0.72rem; color: #808080;"><em>Read alongside: <a href="career-ai-landscape-method-disclosure-20261026-en.html">What Separates Look-Alike Career AI Is Where Its Input Comes From</a>. This report asks who pays; that one asks what the system bases its statements on.</em></p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        new Chart(document.getElementById('ob3Chart').getContext('2d'), {
+            type: 'bar',
+            data: { labels: ["Open Badges 3.0", "Other formats"],
+                datasets: [{ label: "Open Badges 3.0 among the 320.5 million badges awarded in 2025 (1EdTech count, millions)", data: [2.7, 317.8],
+                    backgroundColor: ['rgba(249, 115, 22, 0.7)', 'rgba(59, 130, 246, 0.7)'],
+                    borderColor: ['rgb(249, 115, 22)', 'rgb(59, 130, 246)'], borderWidth: 1 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true } } }
+        });
+        new Chart(document.getElementById('scaleChart').getContext('2d'), {
+            type: 'bar',
+            data: { labels: ["1EdTech total, 24 platforms\nbadges awarded (2025)", "Accredible\ncredentials to date (2026)", "Credly\nbadges to date (Jan 2025)", "Credly\nearners (Jan 2025)", "Europass\nregistered users (Jul 2025)", "Japan\nbadges issued (Oct 2025)"].map(s => s.split('\n')),
+                datasets: [{ label: "Published scale figures (millions; units and reference dates differ)", data: [320.5, 185, 100, 48, 8.5, 2.08],
+                    backgroundColor: ['rgba(148, 163, 184, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(59, 130, 246, 0.4)', 'rgba(168, 85, 247, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                    borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+    </script>
+
+    <!-- Interaction Components -->
+    <div class="interaction-section">
+        <div class="interaction-card">
+            <div class="interaction-header">
+                <h2 class="interaction-title">💬 Comments & Reactions</h2>
+                <div class="like-section">
+                    <button id="like-btn" class="like-btn">
+                        <span>🤍</span> Like
+                    </button>
+                    <span class="like-count" id="like-count">0</span>
+                </div>
+            </div>
+
+            <div class="comment-form">
+                <div class="comment-input-group">
+                    <label for="comment-author">Name (optional)</label>
+                    <input type="text" id="comment-author" placeholder="Anonymous" maxlength="50">
+                </div>
+                <div class="comment-input-group">
+                    <label for="comment-content">Your Comment</label>
+                    <textarea id="comment-content" placeholder="Share your thoughts..." maxlength="1000"></textarea>
+                </div>
+                <button id="comment-submit" class="comment-submit-btn">Post Comment</button>
+            </div>
+
+            <div id="comments-list" class="comments-list">
+                <p style="color: #999; text-align: center; padding: 2rem;">Loading comments...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/interaction.js"></script>
+    <!-- 공유 테마 (Ink & Paper) : 반드시 포함할 것 -->
+    <script src="../assets/theme.js"></script>
+
+</body>
+</html>
